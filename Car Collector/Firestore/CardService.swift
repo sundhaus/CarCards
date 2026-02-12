@@ -2,64 +2,14 @@
 //  CardService.swift
 //  CarCardCollector
 //
-//  Cloud storage for car cards â€” Firestore metadata + Firebase Storage for images
-//  Replaces local-only CardStorage.swift
+//  Cloud storage for car cards – Firestore metadata + Firebase Storage for images
+//  CloudCard struct is now in separate CloudCard.swift file
 //
 
 import Foundation
 import FirebaseFirestore
 import FirebaseStorage
 import UIKit
-
-// Cloud card model (replaces local SavedCard for Firestore)
-struct CloudCard: Identifiable, Codable {
-    var id: String  // Firestore document ID
-    var ownerId: String
-    var make: String
-    var model: String
-    var color: String
-    var year: String
-    var imageURL: String
-    var createdAt: Date
-    
-    // From Firestore document
-    init?(document: DocumentSnapshot) {
-        guard let data = document.data() else { return nil }
-        
-        self.id = document.documentID
-        self.ownerId = data["ownerId"] as? String ?? ""
-        self.make = data["make"] as? String ?? ""
-        self.model = data["model"] as? String ?? ""
-        self.color = data["color"] as? String ?? ""
-        self.year = data["year"] as? String ?? ""
-        self.imageURL = data["imageURL"] as? String ?? ""
-        self.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
-    }
-    
-    // New card
-    init(id: String, ownerId: String, make: String, model: String, color: String, year: String, imageURL: String) {
-        self.id = id
-        self.ownerId = ownerId
-        self.make = make
-        self.model = model
-        self.color = color
-        self.year = year
-        self.imageURL = imageURL
-        self.createdAt = Date()
-    }
-    
-    var dictionary: [String: Any] {
-        return [
-            "ownerId": ownerId,
-            "make": make,
-            "model": model,
-            "color": color,
-            "year": year,
-            "imageURL": imageURL,
-            "createdAt": Timestamp(date: createdAt)
-        ]
-    }
-}
 
 @MainActor
 class CardService: ObservableObject {
@@ -103,13 +53,22 @@ class CardService: ObservableObject {
         _ = try await ref.putDataAsync(imageData, metadata: metadata)
         let downloadURL = try await ref.downloadURL()
         
-        print("âœ… Uploaded card image: \(path)")
+        print("✅ Uploaded card image: \(path)")
         return downloadURL.absoluteString
     }
     
-    // MARK: - Save New Card (image â†’ Storage, metadata â†’ Firestore)
+    // MARK: - Save New Card (UPDATED with metadata parameters)
     
-    func saveCard(image: UIImage, make: String, model: String, color: String, year: String) async throws -> CloudCard {
+    func saveCard(
+        image: UIImage,
+        make: String,
+        model: String,
+        color: String,
+        year: String,
+        capturedBy: String? = nil,
+        capturedLocation: String? = nil,
+        previousOwners: Int = 0
+    ) async throws -> CloudCard {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
         }
@@ -120,7 +79,7 @@ class CardService: ObservableObject {
         // 1. Upload image to Storage
         let imageURL = try await uploadCardImage(image, uid: uid, cardId: cardId)
         
-        // 2. Save metadata to Firestore
+        // 2. Save metadata to Firestore (with new fields)
         let card = CloudCard(
             id: cardId,
             ownerId: uid,
@@ -128,7 +87,10 @@ class CardService: ObservableObject {
             model: model,
             color: color,
             year: year,
-            imageURL: imageURL
+            imageURL: imageURL,
+            capturedBy: capturedBy,
+            capturedLocation: capturedLocation,
+            previousOwners: previousOwners
         )
         
         try await cardsCollection.document(cardId).setData(card.dictionary)
@@ -152,7 +114,7 @@ class CardService: ObservableObject {
             print("⚠️ Failed to post friend activity (non-critical): \(error)")
         }
         
-        print("✅ Saved card: \(make) \(model)")
+        print("✅ Saved card: \(make) \(model) - Captured by: \(capturedBy ?? "unknown"), Location: \(capturedLocation ?? "unknown")")
         return card
     }
     
@@ -168,7 +130,7 @@ class CardService: ObservableObject {
             .order(by: "createdAt", descending: true)
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {
-                    print("âŒ Cards listener error: \(error)")
+                    print("❌ Cards listener error: \(error)")
                     Task { @MainActor in self?.isLoading = false }
                     return
                 }
@@ -232,23 +194,41 @@ class CardService: ObservableObject {
         do {
             try await ref.delete()
         } catch {
-            print("âš ï¸ Image delete failed (may not exist): \(error)")
+            print("⚠️ Image delete failed (may not exist): \(error)")
         }
         
         // Delete Firestore document
         try await cardsCollection.document(cardId).delete()
         
-        print("âœ… Deleted card: \(cardId)")
+        print("✅ Deleted card: \(cardId)")
     }
     
-    // MARK: - Transfer Card Ownership (for marketplace trades)
+    // MARK: - Transfer Card Ownership (UPDATED to increment previousOwners)
     
     func transferCard(cardId: String, toUserId: String) async throws {
-        try await cardsCollection.document(cardId).updateData([
-            "ownerId": toUserId
-        ])
+        let cardRef = cardsCollection.document(cardId)
         
-        print("âœ… Transferred card \(cardId) to \(toUserId)")
+        try await db.runTransaction({ (transaction, errorPointer) -> Any? in
+            let cardDocument: DocumentSnapshot
+            do {
+                try cardDocument = transaction.getDocument(cardRef)
+            } catch let fetchError as NSError {
+                errorPointer?.pointee = fetchError
+                return nil
+            }
+            
+            let oldOwners = cardDocument.data()?["previousOwners"] as? Int ?? 0
+            
+            // Update ownership and increment previous owners
+            transaction.updateData([
+                "ownerId": toUserId,
+                "previousOwners": oldOwners + 1
+            ], forDocument: cardRef)
+            
+            return nil
+        })
+        
+        print("✅ Transferred card \(cardId) to \(toUserId)")
     }
     
     // MARK: - Stop Listening
@@ -257,8 +237,7 @@ class CardService: ObservableObject {
         cardsListener?.remove()
     }
     
-    // MARK: - Migrate Local Cards to Cloud
-    // Call once to move existing UserDefaults cards to Firestore
+    // MARK: - Migrate Local Cards to Cloud (UPDATED with metadata)
     
     func migrateLocalCards(localCards: [SavedCard]) async throws {
         guard FirebaseManager.shared.currentUserId != nil else {
@@ -273,10 +252,13 @@ class CardService: ObservableObject {
                 make: localCard.make,
                 model: localCard.model,
                 color: localCard.color,
-                year: localCard.year
+                year: localCard.year,
+                capturedBy: localCard.capturedBy,
+                capturedLocation: localCard.capturedLocation,
+                previousOwners: localCard.previousOwners
             )
         }
         
-        print("âœ… Migrated \(localCards.count) local cards to cloud")
+        print("✅ Migrated \(localCards.count) local cards to cloud with metadata")
     }
 }
