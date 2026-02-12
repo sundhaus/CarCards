@@ -244,7 +244,14 @@ struct ContentView: View {
                     CardDetailView(
                         card: card,
                         isShowing: $showCardDetail,
-                        forceOrientationUpdate: $forceOrientationUpdate
+                        forceOrientationUpdate: $forceOrientationUpdate,
+                        onSpecsUpdated: { updatedCard in
+                            // Update the card in savedCards array
+                            if let index = savedCards.firstIndex(where: { $0.id == updatedCard.id }) {
+                                savedCards[index] = updatedCard
+                                CardStorage.saveCards(savedCards)
+                            }
+                        }
                     )
                 }
                 
@@ -461,11 +468,14 @@ struct CardDetailView: View {
     let card: SavedCard
     @Binding var isShowing: Bool
     @Binding var forceOrientationUpdate: Bool
+    let onSpecsUpdated: (SavedCard) -> Void
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
     @State private var isFlipped = false
     @State private var flipDegrees: Double = 0
+    @State private var isFetchingSpecs = false
+    @State private var updatedCard: SavedCard?
     
     var body: some View {
         GeometryReader { geometry in
@@ -544,6 +554,13 @@ struct CardDetailView: View {
             }
         }
         .onTapGesture {
+            // If flipping to back for the first time and no specs, fetch them
+            if !isFlipped && (updatedCard ?? card).specs == nil {
+                Task {
+                    await fetchSpecsIfNeeded()
+                }
+            }
+            
             withAnimation(.easeInOut(duration: 0.6)) {
                 if isFlipped {
                     flipDegrees = 0
@@ -551,6 +568,60 @@ struct CardDetailView: View {
                     flipDegrees = 180
                 }
                 isFlipped.toggle()
+            }
+        }
+    }
+    
+    // MARK: - Fetch Specs
+    
+    private func fetchSpecsIfNeeded() async {
+        let currentCard = updatedCard ?? card
+        
+        // Don't fetch if we already have specs
+        guard currentCard.specs == nil else {
+            print("✅ Specs already exist, skipping fetch")
+            return
+        }
+        
+        await MainActor.run {
+            isFetchingSpecs = true
+        }
+        
+        print("🔍 Fetching specs for \(currentCard.make) \(currentCard.model) \(currentCard.year)")
+        
+        do {
+            // Use VehicleIDService directly - it handles Firestore caching
+            let vehicleService = VehicleIdentificationService()
+            let specs = try await vehicleService.fetchSpecs(
+                make: currentCard.make,
+                model: currentCard.model,
+                year: currentCard.year
+            )
+            
+            // Create updated card with specs
+            let newCard = SavedCard(
+                id: currentCard.id,
+                image: currentCard.image ?? UIImage(),
+                make: currentCard.make,
+                model: currentCard.model,
+                color: currentCard.color,
+                year: currentCard.year,
+                specs: specs,
+                capturedBy: currentCard.capturedBy,
+                capturedLocation: currentCard.capturedLocation,
+                previousOwners: currentCard.previousOwners
+            )
+            
+            await MainActor.run {
+                updatedCard = newCard
+                onSpecsUpdated(newCard)
+                isFetchingSpecs = false
+                print("✅ Specs fetched and saved")
+            }
+        } catch {
+            print("❌ Failed to fetch specs: \(error)")
+            await MainActor.run {
+                isFetchingSpecs = false
             }
         }
     }
@@ -609,46 +680,135 @@ struct CardDetailView: View {
     
     // Back view of the card
     private func cardBackView(cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
-        ZStack {
+        let currentCard = updatedCard ?? card
+        
+        return ZStack {
             // Background gradient
             LinearGradient(
-                colors: [Color(red: 0.15, green: 0.2, blue: 0.3), Color(red: 0.1, green: 0.15, blue: 0.25)],
+                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             
-            VStack(spacing: 20) {
-                // Title
-                Text("\(card.make) \(card.model)")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
-                
-                Divider()
-                    .background(.white.opacity(0.3))
-                
-                // Card details
-                VStack(alignment: .leading, spacing: 12) {
-                    DetailRow(label: "Make", value: card.make)
-                    DetailRow(label: "Model", value: card.model)
-                    DetailRow(label: "Year", value: card.year)
-                    DetailRow(label: "Color", value: card.color.isEmpty ? "Unknown" : card.color)
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 4) {
+                    Text("\(currentCard.make) \(currentCard.model)")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(.white)
+                    
+                    Text(currentCard.year)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
                 }
-                .padding(.horizontal, 30)
+                .padding(.top, 20)
+                .padding(.bottom, 16)
+                
+                // Loading indicator or stats
+                if isFetchingSpecs {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .tint(.white)
+                        Text("Loading specs...")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                    .frame(maxHeight: .infinity)
+                } else {
+                    // Stats Grid (FIFA-style)
+                    VStack(spacing: 12) {
+                        // Row 1: Power
+                        HStack(spacing: 20) {
+                            statItem(
+                                label: "HP",
+                                value: currentCard.parseHP().map { "\($0)" } ?? "???",
+                                highlight: currentCard.parseHP() != nil
+                            )
+                            statItem(
+                                label: "TRQ",
+                                value: currentCard.parseTorque().map { "\($0)" } ?? "???",
+                                highlight: currentCard.parseTorque() != nil
+                            )
+                        }
+                        
+                        // Row 2: Performance
+                        HStack(spacing: 20) {
+                            statItem(
+                                label: "0-60",
+                                value: currentCard.parseZeroToSixty().map { String(format: "%.1f", $0) + "s" } ?? "???",
+                                highlight: currentCard.parseZeroToSixty() != nil
+                            )
+                            statItem(
+                                label: "TOP",
+                                value: currentCard.parseTopSpeed().map { "\($0)" } ?? "???",
+                                highlight: currentCard.parseTopSpeed() != nil
+                            )
+                        }
+                        
+                        // Row 3: Details
+                        HStack(spacing: 20) {
+                            statItem(
+                                label: "ENGINE",
+                                value: currentCard.getEngine() ?? "???",
+                                highlight: currentCard.getEngine() != nil,
+                                compact: true
+                            )
+                            statItem(
+                                label: "DRIVE",
+                                value: currentCard.getDrivetrain() ?? "???",
+                                highlight: currentCard.getDrivetrain() != nil,
+                                compact: true
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                    .frame(maxHeight: .infinity)
+                }
                 
                 Spacer()
                 
-                // Tap hint at bottom
-                Text("Tap to flip back")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .padding(.bottom, 20)
+                // Footer
+                VStack(spacing: 4) {
+                    if (currentCard.parseHP() == nil || currentCard.parseTorque() == nil) && !isFetchingSpecs {
+                        Text("Some specs unavailable")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    
+                    Text("Tap to flip back")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                .padding(.bottom, 20)
             }
-            .padding(.top, 30)
             .frame(width: cardWidth, height: cardHeight)
         }
         .cornerRadius(15)
         .shadow(color: .black.opacity(0.5), radius: 20)
+    }
+    
+    // MARK: - Stat Item View
+    
+    private func statItem(label: String, value: String, highlight: Bool, compact: Bool = false) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: compact ? 14 : 24, weight: .bold))
+                .foregroundStyle(highlight ? .white : .white.opacity(0.4))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            
+            Text(label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, compact ? 6 : 10)
+        .background(
+            highlight ?
+            Color.white.opacity(0.15) :
+            Color.white.opacity(0.05)
+        )
+        .cornerRadius(8)
     }
 }
 
