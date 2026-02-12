@@ -276,10 +276,51 @@ struct FriendActivityCard: View {
             ZStack {
                 if !isFlipped {
                     // FRONT OF CARD
-                    cardFrontView
-                        .onTapGesture {
-                            // Single tap to flip
-                            if cardImage != nil {
+                    if let image = cardImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 360, height: 202.5)
+                            .clipped()
+                            .cornerRadius(12)
+                            .overlay(
+                                ZStack {
+                                    // Floating flame animation
+                                    if showFloatingFlame {
+                                        Image(systemName: "flame.fill")
+                                            .font(.system(size: 80))
+                                            .foregroundStyle(
+                                                LinearGradient(
+                                                    colors: [.orange, .red],
+                                                    startPoint: .top,
+                                                    endPoint: .bottom
+                                                )
+                                            )
+                                            .shadow(color: .black.opacity(0.3), radius: 10)
+                                            .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
+                                            .opacity(showFloatingFlame ? 1.0 : 0.0)
+                                            .transition(.scale.combined(with: .opacity))
+                                    }
+                                    
+                                    // Tap hint
+                                    VStack {
+                                        Spacer()
+                                        HStack {
+                                            Spacer()
+                                            Text("Tap for specs")
+                                                .font(.system(size: 11, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(Color.black.opacity(0.6))
+                                                .cornerRadius(6)
+                                                .padding(8)
+                                        }
+                                    }
+                                }
+                            )
+                            .onTapGesture {
+                                // Single tap to flip
                                 Task {
                                     await fetchSpecsIfNeeded()
                                 }
@@ -287,24 +328,117 @@ struct FriendActivityCard: View {
                                     isFlipped = true
                                 }
                             }
-                        }
-                        .onTapGesture(count: 2) {
-                            // Double tap to heat
-                            if !isHeated {
-                                toggleHeat()
+                            .onTapGesture(count: 2) {
+                                // Double tap to heat
+                                if !isHeated {
+                                    toggleHeat()
+                                }
+                            }
+                    } else {
+                        // Placeholder while loading
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                            
+                            if isLoadingImage {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                VStack(spacing: 8) {
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: 40))
+                                        .foregroundStyle(.white.opacity(0.6))
+                                    
+                                    VStack(spacing: 4) {
+                                        Text("\(activity.cardMake) \(activity.cardModel)")
+                                            .font(.headline)
+                                            .foregroundStyle(.white)
+                                        Text(activity.cardYear)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.white.opacity(0.8))
+                                    }
+                                }
                             }
                         }
+                        .frame(width: 360, height: 202.5)
+                    }
                 } else {
                     // BACK OF CARD
                     if isFetchingSpecs {
-                        specsLoadingView
+                        // Loading specs
+                        ZStack {
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .tint(.white)
+                                    .scaleEffect(1.5)
+                                Text("Loading specs...")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.8))
+                            }
+                        }
+                        .frame(width: 360, height: 202.5)
+                        .cornerRadius(12)
                     } else {
-                        cardBackView
+                        // Card back with specs
+                        ZStack {
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            
+                            VStack(spacing: 12) {
+                                Text("\(activity.cardMake) \(activity.cardModel)")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                
+                                Text(activity.cardYear)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.8))
+                                
+                                // Stats grid
+                                VStack(spacing: 8) {
+                                    HStack(spacing: 12) {
+                                        statItem(label: "HP", value: parseIntValue(fetchedSpecs?.horsepower))
+                                        statItem(label: "TRQ", value: parseIntValue(fetchedSpecs?.torque))
+                                    }
+                                    
+                                    HStack(spacing: 12) {
+                                        statItem(label: "0-60", value: parseDoubleValue(fetchedSpecs?.zeroToSixty))
+                                        statItem(label: "TOP", value: parseIntValue(fetchedSpecs?.topSpeed))
+                                    }
+                                    
+                                    HStack(spacing: 12) {
+                                        statItem(label: "ENGINE", value: fetchedSpecs?.engine ?? "???", compact: true)
+                                        statItem(label: "DRIVE", value: fetchedSpecs?.drivetrain ?? "???", compact: true)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                Text("Tap to flip back")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.white.opacity(0.6))
+                            }
+                            .padding(.vertical, 12)
+                        }
+                        .frame(width: 360, height: 202.5)
+                        .cornerRadius(12)
                     }
                 }
             }
-            .frame(width: 360, height: 202.5)
-            .padding(.horizontal)
             .onTapGesture {
                 // Tap when flipped to return to front
                 if isFlipped {
@@ -313,6 +447,7 @@ struct FriendActivityCard: View {
                     }
                 }
             }
+            .padding(.horizontal)
             .task {
                 await loadCardImage()
             }
@@ -497,157 +632,8 @@ struct FriendActivityCard: View {
             }
         }
     }
-}
     
-    // MARK: - Card Views
-    
-    private var cardFrontView: some View {
-        Group {
-            if let image = cardImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 360, height: 202.5)
-                    .clipped()
-                    .cornerRadius(12)
-                    .overlay(
-                        // Floating flame animation
-                        ZStack {
-                            if showFloatingFlame {
-                                Image(systemName: "flame.fill")
-                                    .font(.system(size: 80))
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [.orange, .red],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                                    .shadow(color: .black.opacity(0.3), radius: 10)
-                                    .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
-                                    .opacity(showFloatingFlame ? 1.0 : 0.0)
-                                    .transition(.scale.combined(with: .opacity))
-                            }
-                            
-                            // Tap hint
-                            VStack {
-                                Spacer()
-                                HStack {
-                                    Spacer()
-                                    Text("Tap for specs")
-                                        .font(.system(size: 11, weight: .semibold))
-                                        .foregroundStyle(.white)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.black.opacity(0.6))
-                                        .cornerRadius(6)
-                                        .padding(8)
-                                }
-                            }
-                        }
-                    )
-            } else {
-                // Placeholder while loading
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    
-                    if isLoadingImage {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        VStack(spacing: 8) {
-                            Image(systemName: "car.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(.white.opacity(0.6))
-                            
-                            VStack(spacing: 4) {
-                                Text("\(activity.cardMake) \(activity.cardModel)")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                Text(activity.cardYear)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white.opacity(0.8))
-                            }
-                        }
-                    }
-                }
-                .frame(width: 360, height: 202.5)
-            }
-        }
-    }
-    
-    private var cardBackView: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            
-            VStack(spacing: 12) {
-                Text("\(activity.cardMake) \(activity.cardModel)")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                
-                Text(activity.cardYear)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
-                
-                // Stats grid
-                VStack(spacing: 8) {
-                    HStack(spacing: 12) {
-                        statItem(label: "HP", value: parseIntValue(fetchedSpecs?.horsepower))
-                        statItem(label: "TRQ", value: parseIntValue(fetchedSpecs?.torque))
-                    }
-                    
-                    HStack(spacing: 12) {
-                        statItem(label: "0-60", value: parseDoubleValue(fetchedSpecs?.zeroToSixty))
-                        statItem(label: "TOP", value: parseIntValue(fetchedSpecs?.topSpeed))
-                    }
-                    
-                    HStack(spacing: 12) {
-                        statItem(label: "ENGINE", value: fetchedSpecs?.engine ?? "???", compact: true)
-                        statItem(label: "DRIVE", value: fetchedSpecs?.drivetrain ?? "???", compact: true)
-                    }
-                }
-                .padding(.horizontal, 20)
-                
-                Text("Tap to flip back")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.6))
-            }
-            .padding(.vertical, 12)
-        }
-        .cornerRadius(12)
-    }
-    
-    private var specsLoadingView: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            
-            VStack(spacing: 12) {
-                ProgressView()
-                    .tint(.white)
-                    .scaleEffect(1.5)
-                Text("Loading specs...")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.8))
-            }
-        }
-        .cornerRadius(12)
-    }
+    // MARK: - Helper Methods for Specs
     
     private func statItem(label: String, value: String, compact: Bool = false) -> some View {
         VStack(spacing: 4) {
@@ -666,8 +652,6 @@ struct FriendActivityCard: View {
         .background(Color.white.opacity(0.15))
         .cornerRadius(6)
     }
-    
-    // MARK: - Spec Fetching
     
     private func parseIntValue(_ string: String?) -> String {
         guard let string = string, string != "N/A" else { return "???" }
@@ -711,6 +695,7 @@ struct FriendActivityCard: View {
             }
         }
     }
+}
 
 // Friends/Following/Followers list popup
 struct FollowListPopup: View {
