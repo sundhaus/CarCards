@@ -10,7 +10,7 @@ import SwiftUI
 
 struct CardComposerView: View {
     let image: UIImage
-    let onSave: (UIImage, String, String, String, String, CarSpecs) -> Void
+    let onSave: (UIImage, String, String, String, String, VehicleSpecs?) -> Void
     let onRetake: () -> Void
     
     @State private var scale: CGFloat = 1.0
@@ -241,21 +241,11 @@ struct CardComposerView: View {
         .fullScreenCover(item: $previewData, onDismiss: {
             // Call onSave AFTER preview dismisses
             if let data = dataToSave {
-                print("ðŸ’¾ Saving card to garage...")
-                Task {
-                    isGeneratingSpecs = true
-                    let specs = await CarSpecsService.shared.getSpecs(
-                        make: data.make,
-                        model: data.model,
-                        year: data.generation
-                    )
-                    await MainActor.run {
-                        isGeneratingSpecs = false
-                        onSave(data.cardImage, data.make, data.model, "", data.generation, specs)
-                        dataToSave = nil
-                        previewData = nil
-                    }
-                }
+                print("Saving card to garage...")
+                // Specs will be fetched when user flips the card
+                onSave(data.cardImage, data.make, data.model, "", data.generation, nil)
+                dataToSave = nil
+                previewData = nil
             }
         }) { data in
             CardPreviewView(
