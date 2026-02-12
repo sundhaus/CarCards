@@ -47,333 +47,12 @@ struct CardDetailsView: View {
             Color.black.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Button(action: onDismiss) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(.white)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Item Details")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                    
-                    Spacer()
-                    
-                    // Coin counter
-                    HStack(spacing: 4) {
-                        Image(systemName: "dollarsign.circle.fill")
-                            .font(.system(size: 18))
-                            .foregroundStyle(.yellow)
-                        Text("\(userService.coins)")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(20)
-                }
-                .padding()
+                headerView
                 
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Card display
-                        ZStack {
-                            if !showCardBack {
-                                // Front of card
-                                if let image = card.image {
-                                    Image(uiImage: image)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(maxWidth: 500)
-                                        .cornerRadius(15)
-                                        .shadow(color: .black.opacity(0.3), radius: 10)
-                                }
-                            } else {
-                                // Back of card with specs
-                                if isFetchingSpecs {
-                                    specsLoadingView
-                                        .frame(maxWidth: 500)
-                                        .frame(height: 300)
-                                } else {
-                                    cardBackView
-                                        .frame(maxWidth: 500)
-                                        .frame(height: 300)
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 20)
-                        
-                        // Action buttons
-                        VStack(spacing: 16) {
-                            // List on Transfer Market (expandable)
-                            VStack(spacing: 0) {
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.3)) {
-                                        showListingForm.toggle()
-                                    }
-                                }) {
-                                    HStack {
-                                        Image(systemName: "tag.fill")
-                                            .font(.system(size: 18))
-                                        Text("List on Transfer Market")
-                                            .font(.system(size: 17, weight: .semibold))
-                                        Spacer()
-                                        Image(systemName: showListingForm ? "chevron.up" : "chevron.down")
-                                            .font(.system(size: 14, weight: .semibold))
-                                    }
-                                    .foregroundStyle(.white)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [Color.blue, Color.purple],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .cornerRadius(12)
-                                }
-                                
-                                // Expandable listing form
-                                if showListingForm {
-                                    VStack(spacing: 16) {
-                                        // Start Price
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            HStack {
-                                                Text("Start Price:")
-                                                    .font(.system(size: 15, weight: .medium))
-                                                    .foregroundStyle(.white)
-                                                Spacer()
-                                            }
-                                            
-                                            HStack(spacing: 12) {
-                                                Button(action: {
-                                                    if let current = Int(minStartBid), current > 100 {
-                                                        minStartBid = "\(current - 100)"
-                                                    }
-                                                }) {
-                                                    Image(systemName: "minus")
-                                                        .font(.system(size: 20, weight: .bold))
-                                                        .foregroundStyle(.white)
-                                                        .frame(width: 44, height: 44)
-                                                        .background(Color.white.opacity(0.2))
-                                                        .cornerRadius(8)
-                                                }
-                                                
-                                                TextField("0", text: $minStartBid)
-                                                    .font(.system(size: 18, weight: .semibold))
-                                                    .foregroundStyle(.white)
-                                                    .multilineTextAlignment(.center)
-                                                    .padding()
-                                                    .background(Color.white.opacity(0.1))
-                                                    .cornerRadius(10)
-                                                    .keyboardType(.numberPad)
-                                                
-                                                HStack(spacing: 2) {
-                                                    Image(systemName: "dollarsign.circle.fill")
-                                                        .foregroundStyle(.yellow)
-                                                }
-                                                .font(.system(size: 18))
-                                                
-                                                Button(action: {
-                                                    if let current = Int(minStartBid) {
-                                                        minStartBid = "\(current + 100)"
-                                                    } else {
-                                                        minStartBid = "100"
-                                                    }
-                                                }) {
-                                                    Image(systemName: "plus")
-                                                        .font(.system(size: 20, weight: .bold))
-                                                        .foregroundStyle(.white)
-                                                        .frame(width: 44, height: 44)
-                                                        .background(Color.white.opacity(0.2))
-                                                        .cornerRadius(8)
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Buy Now Price
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            HStack {
-                                                Text("Buy Now Price:")
-                                                    .font(.system(size: 15, weight: .medium))
-                                                    .foregroundStyle(.white)
-                                                Spacer()
-                                            }
-                                            
-                                            HStack(spacing: 12) {
-                                                Button(action: {
-                                                    if let current = Int(buyNowPrice), current > 100 {
-                                                        buyNowPrice = "\(current - 100)"
-                                                    }
-                                                }) {
-                                                    Image(systemName: "minus")
-                                                        .font(.system(size: 20, weight: .bold))
-                                                        .foregroundStyle(.white)
-                                                        .frame(width: 44, height: 44)
-                                                        .background(Color.white.opacity(0.2))
-                                                        .cornerRadius(8)
-                                                }
-                                                
-                                                TextField("0", text: $buyNowPrice)
-                                                    .font(.system(size: 18, weight: .semibold))
-                                                    .foregroundStyle(.white)
-                                                    .multilineTextAlignment(.center)
-                                                    .padding()
-                                                    .background(Color.white.opacity(0.1))
-                                                    .cornerRadius(10)
-                                                    .keyboardType(.numberPad)
-                                                
-                                                HStack(spacing: 2) {
-                                                    Image(systemName: "dollarsign.circle.fill")
-                                                        .foregroundStyle(.yellow)
-                                                }
-                                                .font(.system(size: 18))
-                                                
-                                                Button(action: {
-                                                    if let current = Int(buyNowPrice) {
-                                                        buyNowPrice = "\(current + 100)"
-                                                    } else {
-                                                        buyNowPrice = "100"
-                                                    }
-                                                }) {
-                                                    Image(systemName: "plus")
-                                                        .font(.system(size: 20, weight: .bold))
-                                                        .foregroundStyle(.white)
-                                                        .frame(width: 44, height: 44)
-                                                        .background(Color.white.opacity(0.2))
-                                                        .cornerRadius(8)
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Duration picker
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            Text("Duration")
-                                                .font(.system(size: 15, weight: .medium))
-                                                .foregroundStyle(.white)
-                                            
-                                            Picker("Duration", selection: $selectedDuration) {
-                                                ForEach(durations, id: \.self) { hours in
-                                                    Text("\(hours) Hour\(hours == 1 ? "" : "s")").tag(hours)
-                                                }
-                                            }
-                                            .pickerStyle(.menu)
-                                            .padding()
-                                            .background(Color.white.opacity(0.1))
-                                            .cornerRadius(10)
-                                            .tint(.white)
-                                        }
-                                        
-                                        // List button
-                                        Button(action: {
-                                            Task {
-                                                await createListing()
-                                            }
-                                        }) {
-                                            if isCreating {
-                                                ProgressView()
-                                                    .tint(.white)
-                                                    .frame(maxWidth: .infinity)
-                                                    .padding()
-                                            } else {
-                                                Text("List for Transfer")
-                                                    .font(.system(size: 17, weight: .bold))
-                                                    .foregroundStyle(.white)
-                                                    .frame(maxWidth: .infinity)
-                                                    .padding()
-                                            }
-                                        }
-                                        .background(
-                                            isFormValid && !isCreating ?
-                                            LinearGradient(colors: [Color.green, Color.blue], startPoint: .leading, endPoint: .trailing) :
-                                            LinearGradient(colors: [Color.gray, Color.gray], startPoint: .leading, endPoint: .trailing)
-                                        )
-                                        .cornerRadius(12)
-                                        .disabled(!isFormValid || isCreating)
-                                        
-                                        if let error = errorMessage {
-                                            Text(error)
-                                                .font(.caption)
-                                                .foregroundStyle(.red)
-                                        }
-                                    }
-                                    .padding()
-                                    .background(Color.white.opacity(0.05))
-                                    .cornerRadius(12)
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
-                                }
-                            }
-                            
-                            // Vehicle Specs button
-                            Button(action: {
-                                if !showCardBack {
-                                    Task {
-                                        await fetchSpecsIfNeeded()
-                                    }
-                                }
-                                withAnimation(.spring(response: 0.4)) {
-                                    showCardBack.toggle()
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: "gauge.with.dots.needle.67percent")
-                                        .font(.system(size: 18))
-                                    Text("Vehicle Specs")
-                                        .font(.system(size: 17, weight: .semibold))
-                                }
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(red: 0.3, green: 0.3, blue: 0.35))
-                                .cornerRadius(12)
-                            }
-                            
-                            // Compare Price button
-                            Button(action: onComparePrice) {
-                                HStack {
-                                    Image(systemName: "chart.bar.fill")
-                                        .font(.system(size: 18))
-                                    Text("Compare Price")
-                                        .font(.system(size: 17, weight: .semibold))
-                                }
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(red: 0.3, green: 0.3, blue: 0.35))
-                                .cornerRadius(12)
-                            }
-                            
-                            // Quick Sell button
-                            Button(action: {
-                                showQuickSellConfirm = true
-                            }) {
-                                HStack {
-                                    Text("Quick Sell")
-                                        .font(.system(size: 17, weight: .semibold))
-                                    Spacer()
-                                    HStack(spacing: 4) {
-                                        Text("250")
-                                            .font(.system(size: 16, weight: .bold))
-                                        Image(systemName: "dollarsign.circle.fill")
-                                            .foregroundStyle(.yellow)
-                                    }
-                                }
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(red: 0.3, green: 0.3, blue: 0.35))
-                                .cornerRadius(12)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom, 30)
+                        cardDisplayView
+                        actionButtonsView
                     }
                 }
             }
@@ -385,6 +64,331 @@ struct CardDetailsView: View {
             }
         } message: {
             Text("Sell this card for 250 coins?")
+        }
+    }
+    
+    // MARK: - Header
+    
+    private var headerView: some View {
+        HStack {
+            Button(action: onDismiss) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            
+            Spacer()
+            
+            Text("Item Details")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+            
+            Spacer()
+            
+            coinCounter
+        }
+        .padding()
+    }
+    
+    private var coinCounter: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "dollarsign.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(.yellow)
+            Text("\(userService.coins)")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(20)
+    }
+    
+    // MARK: - Card Display
+    
+    private var cardDisplayView: some View {
+        ZStack {
+            if !showCardBack {
+                if let image = card.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: 500)
+                        .cornerRadius(15)
+                        .shadow(color: .black.opacity(0.3), radius: 10)
+                }
+            } else {
+                if isFetchingSpecs {
+                    specsLoadingView
+                        .frame(maxWidth: 500)
+                        .frame(height: 300)
+                } else {
+                    cardBackView
+                        .frame(maxWidth: 500)
+                        .frame(height: 300)
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.top, 20)
+    }
+    
+    // MARK: - Action Buttons
+    
+    private var actionButtonsView: some View {
+        VStack(spacing: 16) {
+            listOnMarketButton
+            vehicleSpecsButton
+            comparePriceButton
+            quickSellButton
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 30)
+    }
+    
+    private var listOnMarketButton: some View {
+        VStack(spacing: 0) {
+            Button(action: {
+                withAnimation(.spring(response: 0.3)) {
+                    showListingForm.toggle()
+                }
+            }) {
+                HStack {
+                    Image(systemName: "tag.fill")
+                        .font(.system(size: 18))
+                    Text("List on Transfer Market")
+                        .font(.system(size: 17, weight: .semibold))
+                    Spacer()
+                    Image(systemName: showListingForm ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(
+                    LinearGradient(
+                        colors: [Color.blue, Color.purple],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(12)
+            }
+            
+            if showListingForm {
+                listingFormView
+            }
+        }
+    }
+    
+    private var listingFormView: some View {
+        VStack(spacing: 16) {
+            priceControl(
+                label: "Start Price:",
+                value: $minStartBid
+            )
+            
+            priceControl(
+                label: "Buy Now Price:",
+                value: $buyNowPrice
+            )
+            
+            durationPicker
+            
+            listButton
+            
+            if let error = errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+        .padding()
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(12)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+    
+    private func priceControl(label: String, value: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(label)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.white)
+                Spacer()
+            }
+            
+            HStack(spacing: 12) {
+                minusButton(value: value)
+                priceTextField(value: value)
+                coinIcon
+                plusButton(value: value)
+            }
+        }
+    }
+    
+    private func minusButton(value: Binding<String>) -> some View {
+        Button(action: {
+            if let current = Int(value.wrappedValue), current > 100 {
+                value.wrappedValue = "\(current - 100)"
+            }
+        }) {
+            Image(systemName: "minus")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(Color.white.opacity(0.2))
+                .cornerRadius(8)
+        }
+    }
+    
+    private func plusButton(value: Binding<String>) -> some View {
+        Button(action: {
+            if let current = Int(value.wrappedValue) {
+                value.wrappedValue = "\(current + 100)"
+            } else {
+                value.wrappedValue = "100"
+            }
+        }) {
+            Image(systemName: "plus")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(Color.white.opacity(0.2))
+                .cornerRadius(8)
+        }
+    }
+    
+    private func priceTextField(value: Binding<String>) -> some View {
+        TextField("0", text: value)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .padding()
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(10)
+            .keyboardType(.numberPad)
+    }
+    
+    private var coinIcon: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "dollarsign.circle.fill")
+                .foregroundStyle(.yellow)
+        }
+        .font(.system(size: 18))
+    }
+    
+    private var durationPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Duration")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.white)
+            
+            Picker("Duration", selection: $selectedDuration) {
+                ForEach(durations, id: \.self) { hours in
+                    Text("\(hours) Hour\(hours == 1 ? "" : "s")").tag(hours)
+                }
+            }
+            .pickerStyle(.menu)
+            .padding()
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(10)
+            .tint(.white)
+        }
+    }
+    
+    private var listButton: some View {
+        Button(action: {
+            Task {
+                await createListing()
+            }
+        }) {
+            if isCreating {
+                ProgressView()
+                    .tint(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            } else {
+                Text("List for Transfer")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+        }
+        .background(listButtonBackground)
+        .cornerRadius(12)
+        .disabled(!isFormValid || isCreating)
+    }
+    
+    private var listButtonBackground: LinearGradient {
+        isFormValid && !isCreating ?
+        LinearGradient(colors: [Color.green, Color.blue], startPoint: .leading, endPoint: .trailing) :
+        LinearGradient(colors: [Color.gray, Color.gray], startPoint: .leading, endPoint: .trailing)
+    }
+    
+    private var vehicleSpecsButton: some View {
+        Button(action: {
+            if !showCardBack {
+                Task {
+                    await fetchSpecsIfNeeded()
+                }
+            }
+            withAnimation(.spring(response: 0.4)) {
+                showCardBack.toggle()
+            }
+        }) {
+            HStack {
+                Image(systemName: "gauge.with.dots.needle.67percent")
+                    .font(.system(size: 18))
+                Text("Vehicle Specs")
+                    .font(.system(size: 17, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color(red: 0.3, green: 0.3, blue: 0.35))
+            .cornerRadius(12)
+        }
+    }
+    
+    private var comparePriceButton: some View {
+        Button(action: onComparePrice) {
+            HStack {
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 18))
+                Text("Compare Price")
+                    .font(.system(size: 17, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color(red: 0.3, green: 0.3, blue: 0.35))
+            .cornerRadius(12)
+        }
+    }
+    
+    private var quickSellButton: some View {
+        Button(action: {
+            showQuickSellConfirm = true
+        }) {
+            HStack {
+                Text("Quick Sell")
+                    .font(.system(size: 17, weight: .semibold))
+                Spacer()
+                HStack(spacing: 4) {
+                    Text("250")
+                        .font(.system(size: 16, weight: .bold))
+                    Image(systemName: "dollarsign.circle.fill")
+                        .foregroundStyle(.yellow)
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color(red: 0.3, green: 0.3, blue: 0.35))
+            .cornerRadius(12)
         }
     }
     
@@ -407,28 +411,31 @@ struct CardDetailsView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.8))
                 
-                // Stats grid
-                VStack(spacing: 8) {
-                    HStack(spacing: 12) {
-                        statItem(label: "HP", value: parseIntValue(displaySpecs?.horsepower))
-                        statItem(label: "TRQ", value: parseIntValue(displaySpecs?.torque))
-                    }
-                    
-                    HStack(spacing: 12) {
-                        statItem(label: "0-60", value: parseDoubleValue(displaySpecs?.zeroToSixty))
-                        statItem(label: "TOP", value: parseIntValue(displaySpecs?.topSpeed))
-                    }
-                    
-                    HStack(spacing: 12) {
-                        statItem(label: "ENGINE", value: displaySpecs?.engine ?? "???", compact: true)
-                        statItem(label: "DRIVE", value: displaySpecs?.drivetrain ?? "???", compact: true)
-                    }
-                }
-                .padding(.horizontal)
+                statsGrid
             }
             .padding()
         }
         .cornerRadius(15)
+    }
+    
+    private var statsGrid: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                statItem(label: "HP", value: parseIntValue(displaySpecs?.horsepower))
+                statItem(label: "TRQ", value: parseIntValue(displaySpecs?.torque))
+            }
+            
+            HStack(spacing: 12) {
+                statItem(label: "0-60", value: parseDoubleValue(displaySpecs?.zeroToSixty))
+                statItem(label: "TOP", value: parseIntValue(displaySpecs?.topSpeed))
+            }
+            
+            HStack(spacing: 12) {
+                statItem(label: "ENGINE", value: displaySpecs?.engine ?? "???", compact: true)
+                statItem(label: "DRIVE", value: displaySpecs?.drivetrain ?? "???", compact: true)
+            }
+        }
+        .padding(.horizontal)
     }
     
     private var specsLoadingView: some View {
@@ -550,9 +557,7 @@ struct CardDetailsView: View {
     }
     
     private func quickSell() {
-        // Award coins for quick sell
         userService.addCoins(250)
-        // Close and notify
         onDismiss()
     }
 }
