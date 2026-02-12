@@ -241,31 +241,11 @@ struct CardComposerView: View {
         .fullScreenCover(item: $previewData, onDismiss: {
             // Call onSave AFTER preview dismisses
             if let data = dataToSave {
-                print("ðŸ’¾ Saving card to garage...")
-                Task {
-                    isGeneratingSpecs = true
-                    do {
-                        let specs = try await aiService.fetchSpecs(
-                            make: data.make,
-                            model: data.model,
-                            year: data.generation
-                        )
-                        await MainActor.run {
-                            isGeneratingSpecs = false
-                            onSave(data.cardImage, data.make, data.model, "", data.generation, specs)
-                            dataToSave = nil
-                            previewData = nil
-                        }
-                    } catch {
-                        print("❌ Failed to fetch specs: \(error)")
-                        await MainActor.run {
-                            isGeneratingSpecs = false
-                            onSave(data.cardImage, data.make, data.model, "", data.generation, nil)
-                            dataToSave = nil
-                            previewData = nil
-                        }
-                    }
-                }
+                print("Saving card to garage...")
+                // Specs will be fetched when user flips the card
+                onSave(data.cardImage, data.make, data.model, "", data.generation, nil)
+                dataToSave = nil
+                previewData = nil
             }
         }) { data in
             CardPreviewView(

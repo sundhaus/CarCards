@@ -13,6 +13,7 @@ struct FriendsView: View {
     @StateObject private var friendsService = FriendsService.shared
     @State private var showFriendsList = false
     @State private var showSearch = false
+    @State private var flippedCardId: String? = nil  // Track which card is flipped
     @Environment(\.dismiss) private var dismiss
     
     // Generate gradient colors based on level (same as LevelHeader)
@@ -144,7 +145,8 @@ struct FriendsView: View {
                                 ForEach(friendsService.friendActivities) { activity in
                                     FriendActivityCard(
                                         activity: activity,
-                                        levelGradient: levelGradient(for: activity.level)
+                                        levelGradient: levelGradient(for: activity.level),
+                                        flippedCardId: $flippedCardId
                                     )
                                     
                                     if activity.id != friendsService.friendActivities.last?.id {
@@ -156,6 +158,18 @@ struct FriendsView: View {
                         }
                         .padding(.vertical, 16)
                         .padding(.bottom, isLandscape ? 20 : 100)
+                        .background(
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    // Tap anywhere in feed area to dismiss flipped card
+                                    if flippedCardId != nil {
+                                        withAnimation(.spring(response: 0.4)) {
+                                            flippedCardId = nil
+                                        }
+                                    }
+                                }
+                        )
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -211,6 +225,8 @@ struct FriendsView: View {
 struct FriendActivityCard: View {
     let activity: FriendActivity
     let levelGradient: [Color]
+    @Binding var flippedCardId: String?  // Shared state from parent
+    
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
     @State private var isHeated: Bool = false
@@ -218,9 +234,18 @@ struct FriendActivityCard: View {
     @State private var isAnimatingHeat = false
     @State private var showFloatingFlame = false
     
+    // Specs fetching state
+    @State private var fetchedSpecs: VehicleSpecs?
+    @State private var isFetchingSpecs = false
+    
     // Track the last synced state from Firestore to detect conflicts
     @State private var lastSyncedHeatedBy: [String] = []
     @State private var lastSyncedHeatCount: Int = 0
+    
+    // Computed property: is THIS card flipped?
+    private var isFlipped: Bool {
+        flippedCardId == activity.id
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -267,74 +292,179 @@ struct FriendActivityCard: View {
             .padding(.horizontal)
             .padding(.top, 16)
             
-            // Card preview with double-tap to heat
+            // Card preview with tap to flip, double-tap to heat
             ZStack {
-                if let image = cardImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 360, height: 202.5)
-                        .clipped()
-                        .cornerRadius(12)
-                        .overlay(
-                            // Floating flame animation
-                            ZStack {
-                                if showFloatingFlame {
-                                    Image(systemName: "flame.fill")
-                                        .font(.system(size: 80))
-                                        .foregroundStyle(
-                                            LinearGradient(
-                                                colors: [.orange, .red],
-                                                startPoint: .top,
-                                                endPoint: .bottom
+                if !isFlipped {
+                    // FRONT OF CARD
+                    if let image = cardImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 360, height: 202.5)
+                            .clipped()
+                            .cornerRadius(12)
+                            .overlay(
+                                ZStack {
+                                    // Floating flame animation
+                                    if showFloatingFlame {
+                                        Image(systemName: "flame.fill")
+                                            .font(.system(size: 80))
+                                            .foregroundStyle(
+                                                LinearGradient(
+                                                    colors: [.orange, .red],
+                                                    startPoint: .top,
+                                                    endPoint: .bottom
+                                                )
                                             )
-                                        )
-                                        .shadow(color: .black.opacity(0.3), radius: 10)
-                                        .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
-                                        .opacity(showFloatingFlame ? 1.0 : 0.0)
-                                        .transition(.scale.combined(with: .opacity))
+                                            .shadow(color: .black.opacity(0.3), radius: 10)
+                                            .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
+                                            .opacity(showFloatingFlame ? 1.0 : 0.0)
+                                            .transition(.scale.combined(with: .opacity))
+                                    }
+                                    
+                                    // Tap hint
+                                    VStack {
+                                        Spacer()
+                                        HStack {
+                                            Spacer()
+                                            Text("Tap for specs")
+                                                .font(.system(size: 11, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(Color.black.opacity(0.6))
+                                                .cornerRadius(6)
+                                                .padding(8)
+                                        }
+                                    }
                                 }
-                            }
-                        )
-                        .onTapGesture(count: 2) {
-                            // Double tap to heat
-                            if !isHeated {
-                                toggleHeat()
-                            }
-                        }
-                } else {
-                    // Placeholder while loading
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
                             )
-                        
-                        if isLoadingImage {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            VStack(spacing: 8) {
-                                Image(systemName: "car.fill")
-                                    .font(.system(size: 40))
-                                    .foregroundStyle(.white.opacity(0.6))
-                                
-                                VStack(spacing: 4) {
-                                    Text("\(activity.cardMake) \(activity.cardModel)")
-                                        .font(.headline)
-                                        .foregroundStyle(.white)
-                                    Text(activity.cardYear)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.white.opacity(0.8))
+                            .onTapGesture {
+                                // Single tap to flip/unflip
+                                if isFlipped {
+                                    // This card is flipped, flip it back
+                                    withAnimation(.spring(response: 0.4)) {
+                                        flippedCardId = nil
+                                    }
+                                } else {
+                                    // Flip this card (auto-flips any other card back)
+                                    Task {
+                                        await fetchSpecsIfNeeded()
+                                    }
+                                    withAnimation(.spring(response: 0.4)) {
+                                        flippedCardId = activity.id
+                                    }
+                                }
+                            }
+                            .onTapGesture(count: 2) {
+                                // Double tap to heat
+                                if !isHeated {
+                                    toggleHeat()
+                                }
+                            }
+                    } else {
+                        // Placeholder while loading
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                            
+                            if isLoadingImage {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                VStack(spacing: 8) {
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: 40))
+                                        .foregroundStyle(.white.opacity(0.6))
+                                    
+                                    VStack(spacing: 4) {
+                                        Text("\(activity.cardMake) \(activity.cardModel)")
+                                            .font(.headline)
+                                            .foregroundStyle(.white)
+                                        Text(activity.cardYear)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.white.opacity(0.8))
+                                    }
                                 }
                             }
                         }
+                        .frame(width: 360, height: 202.5)
                     }
-                    .frame(width: 360, height: 202.5)
+                } else {
+                    // BACK OF CARD
+                    if isFetchingSpecs {
+                        // Loading specs
+                        ZStack {
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .tint(.white)
+                                    .scaleEffect(1.5)
+                                Text("Loading specs...")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.8))
+                            }
+                        }
+                        .frame(width: 360, height: 202.5)
+                        .cornerRadius(12)
+                    } else {
+                        // Card back with specs
+                        ZStack {
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            
+                            VStack(spacing: 12) {
+                                Text("\(activity.cardMake) \(activity.cardModel)")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                
+                                Text(activity.cardYear)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.8))
+                                
+                                // Stats grid
+                                VStack(spacing: 8) {
+                                    HStack(spacing: 12) {
+                                        statItem(label: "HP", value: parseIntValue(fetchedSpecs?.horsepower))
+                                        statItem(label: "TRQ", value: parseIntValue(fetchedSpecs?.torque))
+                                    }
+                                    
+                                    HStack(spacing: 12) {
+                                        statItem(label: "0-60", value: parseDoubleValue(fetchedSpecs?.zeroToSixty))
+                                        statItem(label: "TOP", value: parseIntValue(fetchedSpecs?.topSpeed))
+                                    }
+                                    
+                                    HStack(spacing: 12) {
+                                        statItem(label: "ENGINE", value: fetchedSpecs?.engine ?? "???", compact: true)
+                                        statItem(label: "DRIVE", value: fetchedSpecs?.drivetrain ?? "???", compact: true)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                Text("Tap to flip back")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.white.opacity(0.6))
+                            }
+                            .padding(.vertical, 12)
+                        }
+                        .frame(width: 360, height: 202.5)
+                        .cornerRadius(12)
+                    }
                 }
             }
             .padding(.horizontal)
@@ -519,6 +649,69 @@ struct FriendActivityCard: View {
                     }
                     print("âŒ Failed to remove heat: \(error)")
                 }
+            }
+        }
+    }
+    
+    // MARK: - Helper Methods for Specs
+    
+    private func statItem(label: String, value: String, compact: Bool = false) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: compact ? 14 : 18, weight: .bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            
+            Text(label)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, compact ? 4 : 8)
+        .background(Color.white.opacity(0.15))
+        .cornerRadius(6)
+    }
+    
+    private func parseIntValue(_ string: String?) -> String {
+        guard let string = string, string != "N/A" else { return "???" }
+        let cleaned = string.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        return cleaned.isEmpty ? "???" : cleaned
+    }
+    
+    private func parseDoubleValue(_ string: String?) -> String {
+        guard let string = string, string != "N/A" else { return "???" }
+        let cleaned = string.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+        return cleaned.isEmpty ? "???" : cleaned + "s"
+    }
+    
+    private func fetchSpecsIfNeeded() async {
+        guard fetchedSpecs == nil else { return }
+        
+        await MainActor.run {
+            isFetchingSpecs = true
+        }
+        
+        do {
+            // Use VehicleIDService - checks Firestore cache first!
+            // If your friend already flipped this card, specs load instantly
+            let vehicleService = VehicleIdentificationService()
+            let specs = try await vehicleService.fetchSpecs(
+                make: activity.cardMake,
+                model: activity.cardModel,
+                year: activity.cardYear
+            )
+            
+            await MainActor.run {
+                fetchedSpecs = specs
+                isFetchingSpecs = false
+            }
+            
+            print("✅ Loaded specs for \(activity.cardMake) \(activity.cardModel) from shared cache")
+        } catch {
+            print("❌ Failed to fetch specs: \(error)")
+            await MainActor.run {
+                isFetchingSpecs = false
             }
         }
     }

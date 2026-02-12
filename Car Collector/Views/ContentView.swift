@@ -294,12 +294,36 @@ struct ContentView: View {
                         levelSystem.addXP(10)
                         
                         showCamera = false
-                        OrientationManager.unlockOrientation()
+                        
+                        // Return to appropriate orientation for current tab
+                        if selectedTab == 1 {
+                            OrientationManager.unlockOrientation()
+                        } else {
+                            OrientationManager.lockToPortrait()
+                        }
                     }
                 )
             }
             .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
                 deviceOrientation = UIDevice.current.orientation
+            }
+            .onChange(of: selectedTab) { oldValue, newValue in
+                // Lock to portrait for all tabs except garage (tab 1)
+                if newValue == 1 {
+                    // Garage - allow landscape
+                    OrientationManager.unlockOrientation()
+                } else {
+                    // All other tabs - lock to portrait
+                    OrientationManager.lockToPortrait()
+                }
+            }
+            .onAppear {
+                // Set initial orientation based on starting tab
+                if selectedTab == 1 {
+                    OrientationManager.unlockOrientation()
+                } else {
+                    OrientationManager.lockToPortrait()
+                }
             }
         }
     }
