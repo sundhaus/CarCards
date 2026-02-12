@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BDE5EF002F388D730068FD17 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = BDE5EEFF2F388D730068FD17 /* FirebaseAuth */; };
+		BDE5EF022F388D730068FD17 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = BDE5EF012F388D730068FD17 /* FirebaseFirestore */; };
+		BDE5EF042F388D730068FD17 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = BDE5EF032F388D730068FD17 /* FirebaseStorage */; };
+		BDE5EF292F3B1EDD0068FD17 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = BDE5EF282F3B1EDD0068FD17 /* FirebaseAI */; };
+		BDE5EF2D2F3B26BE0068FD17 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = BDE5EF2C2F3B26BE0068FD17 /* FirebaseAILogic */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		BD8E88D72F329CF10070C72D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +60,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BDE5EF002F388D730068FD17 /* FirebaseAuth in Frameworks */,
+				BDE5EF292F3B1EDD0068FD17 /* FirebaseAI in Frameworks */,
+				BDE5EF022F388D730068FD17 /* FirebaseFirestore in Frameworks */,
+				BDE5EF042F388D730068FD17 /* FirebaseStorage in Frameworks */,
+				BDE5EF2D2F3B26BE0068FD17 /* FirebaseAILogic in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +125,11 @@
 			);
 			name = "Car Collector";
 			packageProductDependencies = (
+				BDE5EEFF2F388D730068FD17 /* FirebaseAuth */,
+				BDE5EF012F388D730068FD17 /* FirebaseFirestore */,
+				BDE5EF032F388D730068FD17 /* FirebaseStorage */,
+				BDE5EF282F3B1EDD0068FD17 /* FirebaseAI */,
+				BDE5EF2C2F3B26BE0068FD17 /* FirebaseAILogic */,
 			);
 			productName = "Car Collector";
 			productReference = BD8E88C92F329CF00070C72D /* Car Collector.app */;
@@ -195,6 +213,9 @@
 			);
 			mainGroup = BD8E88C02F329CF00070C72D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BDE5EEFE2F388D730068FD17 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BD8E88CA2F329CF00070C72D /* Products */;
 			projectDirPath = "";
@@ -400,6 +421,12 @@
 				DEVELOPMENT_TEAM = 2FSUCQK593;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Car-Collector-Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to capture photos of cars for your collection.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to tag where you captured each car, ";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "We track your driving in the background to award credits with your favorite car card.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "We need access to motion data to detect when you're driving and award passive credits.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library to save car photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,6 +455,12 @@
 				DEVELOPMENT_TEAM = 2FSUCQK593;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Car-Collector-Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to capture photos of cars for your collection.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to tag where you captured each car, ";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "We track your driving in the background to award credits with your favorite car card.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "We need access to motion data to detect when you're driving and award passive credits.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library to save car photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -558,6 +591,45 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BDE5EEFE2F388D730068FD17 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BDE5EEFF2F388D730068FD17 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BDE5EEFE2F388D730068FD17 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		BDE5EF012F388D730068FD17 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BDE5EEFE2F388D730068FD17 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		BDE5EF032F388D730068FD17 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BDE5EEFE2F388D730068FD17 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+		BDE5EF282F3B1EDD0068FD17 /* FirebaseAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BDE5EEFE2F388D730068FD17 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAI;
+		};
+		BDE5EF2C2F3B26BE0068FD17 /* FirebaseAILogic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BDE5EEFE2F388D730068FD17 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAILogic;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BD8E88C12F329CF00070C72D /* Project object */;
 }
