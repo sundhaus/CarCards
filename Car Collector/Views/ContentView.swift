@@ -127,7 +127,7 @@ struct ContentView: View {
                     Image(systemName: "star.fill")
                         .foregroundStyle(.yellow)
                         .font(.caption)
-                    Text("\(userService.currentProfile?.totalXP ?? 0)")
+                    Text("\(userService.currentProfile?.xp ?? 0)")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                 }
@@ -197,52 +197,32 @@ struct ContentView: View {
     private var bottomTabBar: some View {
         HStack(spacing: 0) {
             // Home
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "house.fill")
-                        .font(.system(size: 24))
-                    Text("Home")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
+            TabButton(
+                icon: "house.fill",
+                title: "Home",
+                action: {}
+            )
             
             // Camera
-            Button(action: { showingCamera = true }) {
-                VStack(spacing: 4) {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 24))
-                    Text("Capture")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
+            TabButton(
+                icon: "camera.fill",
+                title: "Capture",
+                action: { showingCamera = true }
+            )
             
             // Marketplace
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "bag.fill")
-                        .font(.system(size: 24))
-                    Text("Market")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
+            TabButton(
+                icon: "bag.fill",
+                title: "Market",
+                action: {}
+            )
             
             // Friends
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 24))
-                    Text("Friends")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
+            TabButton(
+                icon: "person.2.fill",
+                title: "Friends",
+                action: {}
+            )
         }
         .background(Color(UIColor.systemBackground))
         .shadow(color: .black.opacity(0.1), radius: 5, y: -2)
@@ -253,52 +233,32 @@ struct ContentView: View {
     private var sideNavigationPanel: some View {
         VStack(spacing: 20) {
             // Home
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "house.fill")
-                        .font(.system(size: 24))
-                    Text("Home")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
+            SideNavButton(
+                icon: "house.fill",
+                title: "Home",
+                action: {}
+            )
             
             // Camera
-            Button(action: { showingCamera = true }) {
-                VStack(spacing: 4) {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 24))
-                    Text("Capture")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
+            SideNavButton(
+                icon: "camera.fill",
+                title: "Capture",
+                action: { showingCamera = true }
+            )
             
             // Marketplace
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "bag.fill")
-                        .font(.system(size: 24))
-                    Text("Market")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
+            SideNavButton(
+                icon: "bag.fill",
+                title: "Market",
+                action: {}
+            )
             
             // Friends
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 24))
-                    Text("Friends")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
+            SideNavButton(
+                icon: "person.2.fill",
+                title: "Friends",
+                action: {}
+            )
             
             Spacer()
         }
@@ -442,47 +402,39 @@ struct CardDetailView: View {
         guard let currentCard = updatedCard ?? card as SavedCard? else { return }
         
         // Don't fetch if we already have specs
-        if currentCard.specs != nil {
+        if currentCard.specs.horsepower != nil && currentCard.specs.torque != nil {
             return
         }
         
         print("🔄 Fetching specs for \(currentCard.make) \(currentCard.model) \(currentCard.year)")
         isFetchingSpecs = true
         
-        // Fetch specs using VehicleIDService directly
-        do {
-            let vehicleService = VehicleIdentificationService()
-            let specs = try await vehicleService.fetchSpecs(
-                make: currentCard.make,
-                model: currentCard.model,
-                year: currentCard.year
-            )
-            
-            // Create updated card with specs
-            let newCard = SavedCard(
-                id: currentCard.id,
-                image: currentCard.image ?? UIImage(),
-                make: currentCard.make,
-                model: currentCard.model,
-                color: currentCard.color,
-                year: currentCard.year,
-                specs: specs,
-                capturedBy: currentCard.capturedBy,
-                capturedLocation: currentCard.capturedLocation,
-                previousOwners: currentCard.previousOwners
-            )
-            
-            await MainActor.run {
-                updatedCard = newCard
-                onSpecsUpdated(newCard)
-                isFetchingSpecs = false
-                print("✅ Specs updated and saved")
-            }
-        } catch {
-            print("❌ Failed to fetch specs: \(error)")
-            await MainActor.run {
-                isFetchingSpecs = false
-            }
+        // Fetch specs using CarSpecsService
+        let specs = await CarSpecsService.shared.getSpecs(
+            make: currentCard.make,
+            model: currentCard.model,
+            year: currentCard.year
+        )
+        
+        // Create updated card with specs
+        let newCard = SavedCard(
+            id: currentCard.id,
+            image: currentCard.image ?? UIImage(),
+            make: currentCard.make,
+            model: currentCard.model,
+            color: currentCard.color,
+            year: currentCard.year,
+            specs: specs,
+            capturedBy: currentCard.capturedBy,
+            capturedLocation: currentCard.capturedLocation,
+            previousOwners: currentCard.previousOwners
+        )
+        
+        await MainActor.run {
+            updatedCard = newCard
+            onSpecsUpdated(newCard)
+            isFetchingSpecs = false
+            print("✅ Specs updated and saved")
         }
     }
     
@@ -584,13 +536,13 @@ struct CardDetailView: View {
                         HStack(spacing: 20) {
                             statItem(
                                 label: "HP",
-                                value: currentCard.parseHP().map { "\($0)" } ?? "???",
-                                highlight: currentCard.parseHP() != nil
+                                value: currentCard.specs.horsepower.map { "\($0)" } ?? "???",
+                                highlight: currentCard.specs.horsepower != nil
                             )
                             statItem(
                                 label: "TRQ",
-                                value: currentCard.parseTorque().map { "\($0)" } ?? "???",
-                                highlight: currentCard.parseTorque() != nil
+                                value: currentCard.specs.torque.map { "\($0)" } ?? "???",
+                                highlight: currentCard.specs.torque != nil
                             )
                         }
                         
@@ -598,13 +550,13 @@ struct CardDetailView: View {
                         HStack(spacing: 20) {
                             statItem(
                                 label: "0-60",
-                                value: currentCard.parseZeroToSixty().map { String(format: "%.1f", $0) } ?? "???",
-                                highlight: currentCard.parseZeroToSixty() != nil
+                                value: currentCard.specs.zeroToSixty.map { String(format: "%.1f", $0) } ?? "???",
+                                highlight: currentCard.specs.zeroToSixty != nil
                             )
                             statItem(
                                 label: "TOP",
-                                value: currentCard.parseTopSpeed().map { "\($0)" } ?? "???",
-                                highlight: currentCard.parseTopSpeed() != nil
+                                value: currentCard.specs.topSpeed.map { "\($0)" } ?? "???",
+                                highlight: currentCard.specs.topSpeed != nil
                             )
                         }
                         
@@ -612,14 +564,14 @@ struct CardDetailView: View {
                         HStack(spacing: 20) {
                             statItem(
                                 label: "ENGINE",
-                                value: currentCard.getEngine() ?? "???",
-                                highlight: currentCard.getEngine() != nil,
+                                value: currentCard.specs.engineType ?? "???",
+                                highlight: currentCard.specs.engineType != nil,
                                 compact: true
                             )
                             statItem(
                                 label: "DRIVE",
-                                value: currentCard.getDrivetrain() ?? "???",
-                                highlight: currentCard.getDrivetrain() != nil,
+                                value: currentCard.specs.drivetrain ?? "???",
+                                highlight: currentCard.specs.drivetrain != nil,
                                 compact: true
                             )
                         }
@@ -632,7 +584,7 @@ struct CardDetailView: View {
                 
                 // Footer
                 VStack(spacing: 4) {
-                    if (currentCard.parseHP() == nil || currentCard.parseTorque() == nil) && !isFetchingSpecs {
+                    if !currentCard.specs.isComplete && !isFetchingSpecs {
                         Text("Some specs unavailable")
                             .font(.system(size: 11))
                             .foregroundStyle(.white.opacity(0.5))
@@ -676,6 +628,48 @@ struct CardDetailView: View {
             Color.white.opacity(0.05)
         )
         .cornerRadius(8)
+    }
+}
+
+// MARK: - Tab Button
+
+struct TabButton: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                Text(title)
+                    .font(.caption2)
+            }
+            .frame(maxWidth: .infinity)
+            .foregroundStyle(.primary)
+        }
+    }
+}
+
+// MARK: - Side Nav Button
+
+struct SideNavButton: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                Text(title)
+                    .font(.caption2)
+            }
+            .frame(maxWidth: .infinity)
+            .foregroundStyle(.primary)
+        }
     }
 }
 
