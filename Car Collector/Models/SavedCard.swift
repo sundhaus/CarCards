@@ -14,7 +14,7 @@ struct SavedCard: Identifiable, Codable {
     let model: String
     let color: String
     let year: String
-    let specs: CarSpecs  // Car specifications
+    let specs: VehicleSpecs?  // Vehicle specifications from AI
     let capturedBy: String?  // Username who captured the card
     let capturedLocation: String?  // City where captured
     let previousOwners: Int  // Number of previous owners
@@ -26,7 +26,7 @@ struct SavedCard: Identifiable, Codable {
         model: String,
         color: String,
         year: String,
-        specs: CarSpecs = .empty,
+        specs: VehicleSpecs? = nil,
         capturedBy: String? = nil,
         capturedLocation: String? = nil,
         previousOwners: Int = 0
@@ -61,7 +61,7 @@ struct SavedCard: Identifiable, Codable {
         year = try container.decode(String.self, forKey: .year)
         
         // New fields - provide defaults if missing from older saved data
-        specs = try container.decodeIfPresent(CarSpecs.self, forKey: .specs) ?? .empty
+        specs = try container.decodeIfPresent(VehicleSpecs.self, forKey: .specs)
         capturedBy = try container.decodeIfPresent(String.self, forKey: .capturedBy)
         capturedLocation = try container.decodeIfPresent(String.self, forKey: .capturedLocation)
         previousOwners = try container.decodeIfPresent(Int.self, forKey: .previousOwners) ?? 0
@@ -74,5 +74,41 @@ struct SavedCard: Identifiable, Codable {
     // Key for spec lookup/caching
     var specKey: String {
         "\(make)|\(model)|\(year)"
+    }
+    
+    // MARK: - Helper Methods to Parse Specs
+    
+    func parseHP() -> Int? {
+        guard let specs = specs, specs.horsepower != "N/A" else { return nil }
+        let cleaned = specs.horsepower.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        return Int(cleaned)
+    }
+    
+    func parseTorque() -> Int? {
+        guard let specs = specs, specs.torque != "N/A" else { return nil }
+        let cleaned = specs.torque.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        return Int(cleaned)
+    }
+    
+    func parseZeroToSixty() -> Double? {
+        guard let specs = specs, specs.zeroToSixty != "N/A" else { return nil }
+        let cleaned = specs.zeroToSixty.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+        return Double(cleaned)
+    }
+    
+    func parseTopSpeed() -> Int? {
+        guard let specs = specs, specs.topSpeed != "N/A" else { return nil }
+        let cleaned = specs.topSpeed.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        return Int(cleaned)
+    }
+    
+    func getEngine() -> String? {
+        guard let specs = specs, specs.engine != "N/A" else { return nil }
+        return specs.engine
+    }
+    
+    func getDrivetrain() -> String? {
+        guard let specs = specs, specs.drivetrain != "N/A" else { return nil }
+        return specs.drivetrain
     }
 }
