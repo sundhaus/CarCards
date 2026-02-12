@@ -442,39 +442,47 @@ struct CardDetailView: View {
         guard let currentCard = updatedCard ?? card as SavedCard? else { return }
         
         // Don't fetch if we already have specs
-        if currentCard.specs.horsepower != nil && currentCard.specs.torque != nil {
+        if currentCard.specs != nil {
             return
         }
         
         print("🔄 Fetching specs for \(currentCard.make) \(currentCard.model) \(currentCard.year)")
         isFetchingSpecs = true
         
-        // Fetch specs using CarSpecsService
-        let specs = await CarSpecsService.shared.getSpecs(
-            make: currentCard.make,
-            model: currentCard.model,
-            year: currentCard.year
-        )
-        
-        // Create updated card with specs
-        let newCard = SavedCard(
-            id: currentCard.id,
-            image: currentCard.image ?? UIImage(),
-            make: currentCard.make,
-            model: currentCard.model,
-            color: currentCard.color,
-            year: currentCard.year,
-            specs: specs,
-            capturedBy: currentCard.capturedBy,
-            capturedLocation: currentCard.capturedLocation,
-            previousOwners: currentCard.previousOwners
-        )
-        
-        await MainActor.run {
-            updatedCard = newCard
-            onSpecsUpdated(newCard)
-            isFetchingSpecs = false
-            print("✅ Specs updated and saved")
+        // Fetch specs using VehicleIDService directly
+        do {
+            let vehicleService = VehicleIdentificationService()
+            let specs = try await vehicleService.fetchSpecs(
+                make: currentCard.make,
+                model: currentCard.model,
+                year: currentCard.year
+            )
+            
+            // Create updated card with specs
+            let newCard = SavedCard(
+                id: currentCard.id,
+                image: currentCard.image ?? UIImage(),
+                make: currentCard.make,
+                model: currentCard.model,
+                color: currentCard.color,
+                year: currentCard.year,
+                specs: specs,
+                capturedBy: currentCard.capturedBy,
+                capturedLocation: currentCard.capturedLocation,
+                previousOwners: currentCard.previousOwners
+            )
+            
+            await MainActor.run {
+                updatedCard = newCard
+                onSpecsUpdated(newCard)
+                isFetchingSpecs = false
+                print("✅ Specs updated and saved")
+            }
+        } catch {
+            print("❌ Failed to fetch specs: \(error)")
+            await MainActor.run {
+                isFetchingSpecs = false
+            }
         }
     }
     
@@ -576,13 +584,13 @@ struct CardDetailView: View {
                         HStack(spacing: 20) {
                             statItem(
                                 label: "HP",
-                                value: currentCard.specs.horsepower.map { "\($0)" } ?? "???",
-                                highlight: currentCard.specs.horsepower != nil
+                                value: currentCard.parseHP().map { "\($0)" } ?? "???",
+                                highlight: currentCard.parseHP() != nil
                             )
                             statItem(
                                 label: "TRQ",
-                                value: currentCard.specs.torque.map { "\($0)" } ?? "???",
-                                highlight: currentCard.specs.torque != nil
+                                value: currentCard.parseTorque().map { "\($0)" } ?? "???",
+                                highlight: currentCard.parseTorque() != nil
                             )
                         }
                         
@@ -590,13 +598,13 @@ struct CardDetailView: View {
                         HStack(spacing: 20) {
                             statItem(
                                 label: "0-60",
-                                value: currentCard.specs.zeroToSixty.map { String(format: "%.1f", $0) } ?? "???",
-                                highlight: currentCard.specs.zeroToSixty != nil
+                                value: currentCard.parseZeroToSixty().map { String(format: "%.1f", $0) } ?? "???",
+                                highlight: currentCard.parseZeroToSixty() != nil
                             )
                             statItem(
                                 label: "TOP",
-                                value: currentCard.specs.topSpeed.map { "\($0)" } ?? "???",
-                                highlight: currentCard.specs.topSpeed != nil
+                                value: currentCard.parseTopSpeed().map { "\($0)" } ?? "???",
+                                highlight: currentCard.parseTopSpeed() != nil
                             )
                         }
                         
@@ -604,14 +612,14 @@ struct CardDetailView: View {
                         HStack(spacing: 20) {
                             statItem(
                                 label: "ENGINE",
-                                value: currentCard.specs.engineType ?? "???",
-                                highlight: currentCard.specs.engineType != nil,
+                                value: currentCard.getEngine() ?? "???",
+                                highlight: currentCard.getEngine() != nil,
                                 compact: true
                             )
                             statItem(
                                 label: "DRIVE",
-                                value: currentCard.specs.drivetrain ?? "???",
-                                highlight: currentCard.specs.drivetrain != nil,
+                                value: currentCard.getDrivetrain() ?? "???",
+                                highlight: currentCard.getDrivetrain() != nil,
                                 compact: true
                             )
                         }
@@ -624,7 +632,7 @@ struct CardDetailView: View {
                 
                 // Footer
                 VStack(spacing: 4) {
-                    if !currentCard.specs.isComplete && !isFetchingSpecs {
+                    if (currentCard.parseHP() == nil || currentCard.parseTorque() == nil) && !isFetchingSpecs {
                         Text("Some specs unavailable")
                             .font(.system(size: 11))
                             .foregroundStyle(.white.opacity(0.5))
