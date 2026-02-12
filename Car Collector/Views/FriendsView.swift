@@ -228,7 +228,19 @@ struct FriendActivityCard: View {
     @State private var lastSyncedHeatCount: Int = 0
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        ZStack {
+            // Background overlay when card is flipped - tap to flip back
+            if isFlipped {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.4)) {
+                            isFlipped = false
+                        }
+                    }
+            }
+            
+            VStack(alignment: .leading, spacing: 8) {
             // Friend info header
             HStack(spacing: 8) {
                 // Level bubble
@@ -439,14 +451,6 @@ struct FriendActivityCard: View {
                     }
                 }
             }
-            .onTapGesture {
-                // Tap when flipped to return to front
-                if isFlipped {
-                    withAnimation(.spring(response: 0.4)) {
-                        isFlipped = false
-                    }
-                }
-            }
             .padding(.horizontal)
             .task {
                 await loadCardImage()
@@ -510,6 +514,7 @@ struct FriendActivityCard: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 8)
+        }
         }
     }
     
