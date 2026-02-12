@@ -43,6 +43,30 @@ struct SavedCard: Identifiable, Codable {
         self.previousOwners = previousOwners
     }
     
+    // MARK: - Custom Decoder (handles older cards missing new fields)
+    
+    enum CodingKeys: String, CodingKey {
+        case id, imageData, make, model, color, year
+        case specs, capturedBy, capturedLocation, previousOwners
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        imageData = try container.decode(Data.self, forKey: .imageData)
+        make = try container.decode(String.self, forKey: .make)
+        model = try container.decode(String.self, forKey: .model)
+        color = try container.decode(String.self, forKey: .color)
+        year = try container.decode(String.self, forKey: .year)
+        
+        // New fields - provide defaults if missing from older saved data
+        specs = try container.decodeIfPresent(CarSpecs.self, forKey: .specs) ?? .empty
+        capturedBy = try container.decodeIfPresent(String.self, forKey: .capturedBy)
+        capturedLocation = try container.decodeIfPresent(String.self, forKey: .capturedLocation)
+        previousOwners = try container.decodeIfPresent(Int.self, forKey: .previousOwners) ?? 0
+    }
+    
     var image: UIImage? {
         UIImage(data: imageData)
     }
