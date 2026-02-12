@@ -25,7 +25,6 @@ struct CardDetailsView: View {
     // NEW: Fetch specs when card flips
     @State private var fetchedSpecs: VehicleSpecs?
     @State private var isFetchingSpecs = false
-    @StateObject private var vehicleIDService = VehicleIdentificationService()
     
     let durations = [6, 12, 24, 48, 72]
     
@@ -187,20 +186,16 @@ struct CardDetailsView: View {
     
     private func fetchSpecsIfNeeded() async {
         // Only fetch if we don't have specs already
-        guard displaySpecs == nil else {
-            print("✅ Specs already exist, skipping fetch")
-            return
-        }
+        guard displaySpecs == nil else { return }
         
         await MainActor.run {
             isFetchingSpecs = true
         }
         
-        print("🔍 Fetching specs for \(card.make) \(card.model) \(card.year)")
-        
         do {
-            // Use VehicleIDService directly - it handles Firestore caching
-            let specs = try await vehicleIDService.fetchSpecs(
+            // Use VehicleIDService to fetch specs
+            let vehicleService = VehicleIdentificationService()
+            let specs = try await vehicleService.fetchSpecs(
                 make: card.make,
                 model: card.model,
                 year: card.year
@@ -209,7 +204,6 @@ struct CardDetailsView: View {
             await MainActor.run {
                 fetchedSpecs = specs
                 isFetchingSpecs = false
-                print("✅ Specs fetched successfully")
             }
         } catch {
             print("❌ Failed to fetch specs: \(error)")
@@ -270,15 +264,13 @@ struct CardDetailsView: View {
                 HStack(spacing: 12) {
                     statItem(
                         label: "ENGINE",
-                        value: displaySpecs?.engine ?? "???",
-                        highlight: displaySpecs?.engine != nil && displaySpecs?.engine != "N/A",
-                        compact: true
+                        value: displaySpecs?.engine ?? "N/A",
+                        highlight: displaySpecs?.engine != nil && displaySpecs?.engine != "N/A"
                     )
                     statItem(
                         label: "DRIVE",
-                        value: displaySpecs?.drivetrain ?? "???",
-                        highlight: displaySpecs?.drivetrain != nil && displaySpecs?.drivetrain != "N/A",
-                        compact: true
+                        value: displaySpecs?.drivetrain ?? "N/A",
+                        highlight: displaySpecs?.drivetrain != nil && displaySpecs?.drivetrain != "N/A"
                     )
                 }
             }
@@ -364,10 +356,10 @@ struct CardDetailsView: View {
     }
     
     // Helper view for stat items
-    private func statItem(label: String, value: String, highlight: Bool, compact: Bool = false) -> some View {
+    private func statItem(label: String, value: String, highlight: Bool) -> some View {
         VStack(spacing: 2) {
-            Text(value.isEmpty ? "???" : value)
-                .font(.system(size: compact ? 11 : 16, weight: .bold))
+            Text(value.isEmpty ? "N/A" : value)
+                .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(highlight ? .white : .white.opacity(0.4))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -376,7 +368,7 @@ struct CardDetailsView: View {
                 .foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, compact ? 4 : 6)
+        .padding(.vertical, 6)
         .background(highlight ? Color.white.opacity(0.15) : Color.white.opacity(0.05))
         .cornerRadius(8)
     }
