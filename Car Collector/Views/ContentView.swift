@@ -127,7 +127,7 @@ struct ContentView: View {
                     Image(systemName: "star.fill")
                         .foregroundStyle(.yellow)
                         .font(.caption)
-                    Text("\(userService.currentProfile?.xp ?? 0)")
+                    Text("\(userService.currentProfile?.totalXP ?? 0)")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                 }
@@ -197,32 +197,52 @@ struct ContentView: View {
     private var bottomTabBar: some View {
         HStack(spacing: 0) {
             // Home
-            TabButton(
-                icon: "house.fill",
-                title: "Home",
-                action: {}
-            )
+            Button(action: {}) {
+                VStack(spacing: 4) {
+                    Image(systemName: "house.fill")
+                        .font(.system(size: 24))
+                    Text("Home")
+                        .font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.primary)
+            }
             
             // Camera
-            TabButton(
-                icon: "camera.fill",
-                title: "Capture",
-                action: { showingCamera = true }
-            )
+            Button(action: { showingCamera = true }) {
+                VStack(spacing: 4) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 24))
+                    Text("Capture")
+                        .font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.primary)
+            }
             
             // Marketplace
-            TabButton(
-                icon: "bag.fill",
-                title: "Market",
-                action: {}
-            )
+            Button(action: {}) {
+                VStack(spacing: 4) {
+                    Image(systemName: "bag.fill")
+                        .font(.system(size: 24))
+                    Text("Market")
+                        .font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.primary)
+            }
             
             // Friends
-            TabButton(
-                icon: "person.2.fill",
-                title: "Friends",
-                action: {}
-            )
+            Button(action: {}) {
+                VStack(spacing: 4) {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 24))
+                    Text("Friends")
+                        .font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.primary)
+            }
         }
         .background(Color(UIColor.systemBackground))
         .shadow(color: .black.opacity(0.1), radius: 5, y: -2)
@@ -233,32 +253,52 @@ struct ContentView: View {
     private var sideNavigationPanel: some View {
         VStack(spacing: 20) {
             // Home
-            SideNavButton(
-                icon: "house.fill",
-                title: "Home",
-                action: {}
-            )
+            Button(action: {}) {
+                VStack(spacing: 4) {
+                    Image(systemName: "house.fill")
+                        .font(.system(size: 24))
+                    Text("Home")
+                        .font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.primary)
+            }
             
             // Camera
-            SideNavButton(
-                icon: "camera.fill",
-                title: "Capture",
-                action: { showingCamera = true }
-            )
+            Button(action: { showingCamera = true }) {
+                VStack(spacing: 4) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 24))
+                    Text("Capture")
+                        .font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.primary)
+            }
             
             // Marketplace
-            SideNavButton(
-                icon: "bag.fill",
-                title: "Market",
-                action: {}
-            )
+            Button(action: {}) {
+                VStack(spacing: 4) {
+                    Image(systemName: "bag.fill")
+                        .font(.system(size: 24))
+                    Text("Market")
+                        .font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.primary)
+            }
             
             // Friends
-            SideNavButton(
-                icon: "person.2.fill",
-                title: "Friends",
-                action: {}
-            )
+            Button(action: {}) {
+                VStack(spacing: 4) {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 24))
+                    Text("Friends")
+                        .font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.primary)
+            }
             
             Spacer()
         }
@@ -628,48 +668,6 @@ struct CardDetailView: View {
             Color.white.opacity(0.05)
         )
         .cornerRadius(8)
-    }
-}
-
-// MARK: - Tab Button
-
-struct TabButton: View {
-    let icon: String
-    let title: String
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                Text(title)
-                    .font(.caption2)
-            }
-            .frame(maxWidth: .infinity)
-            .foregroundStyle(.primary)
-        }
-    }
-}
-
-// MARK: - Side Nav Button
-
-struct SideNavButton: View {
-    let icon: String
-    let title: String
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                Text(title)
-                    .font(.caption2)
-            }
-            .frame(maxWidth: .infinity)
-            .foregroundStyle(.primary)
-        }
     }
 }
 
