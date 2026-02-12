@@ -35,18 +35,24 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
 // Orientation lock helper
 struct OrientationManager {
-    static func lockOrientation(_ orientation: UIInterfaceOrientationMask) {
+    static func lockOrientation(_ orientation: UIInterfaceOrientationMask, rotate: Bool = false) {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             AppDelegate.orientationLock = orientation
             windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientation))
+            
+            // Optionally force rotation to portrait
+            if rotate && orientation == .portrait {
+                UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+            }
         }
     }
     
+    static func lockToPortrait() {
+        lockOrientation(.portrait, rotate: true)
+    }
+    
     static func unlockOrientation() {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            // Only unlock to portrait and landscape-right (excludes landscape-left)
-            AppDelegate.orientationLock = [.portrait, .landscapeRight]
-            windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: [.portrait, .landscapeRight]))
-        }
+        // Only unlock to portrait and landscape-right (excludes landscape-left)
+        lockOrientation([.portrait, .landscapeRight])
     }
 }

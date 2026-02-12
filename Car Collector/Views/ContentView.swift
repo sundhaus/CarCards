@@ -2,372 +2,494 @@
 //  ContentView.swift
 //  CarCardCollector
 //
-//  Main app view with navigation and card display
-//  UPDATED: Fixed card back to show specs instead of basic info
+//  Main view with bottom navigation hub
 //
 
 import SwiftUI
 
 struct ContentView: View {
-    @State private var savedCards: [SavedCard] = []
-    @State private var showingCamera = false
-    @State private var selectedDetailCard: SavedCard?
-    @State private var showingShare = false
-    @State private var itemsToShare: [Any] = []
+    @State private var selectedTab = 0
+    @State private var showCamera = false
+    @State private var savedCards: [SavedCard] = CardStorage.loadCards()
+    @State private var showCardDetail = false
+    @State private var selectedCard: SavedCard?
+    @State private var orientationBeforeFullscreen: UIInterfaceOrientationMask = .all
     @State private var forceOrientationUpdate = false
-    
-    // Services
-    @ObservedObject private var userService = UserService.shared
-    @ObservedObject private var friendsService = FriendsService.shared
+    @StateObject private var levelSystem = LevelSystem()
+    @State private var deviceOrientation = UIDevice.current.orientation
+    @State private var showProfile = false
     
     var body: some View {
-        NavigationStack {
-            GeometryReader { geometry in
-                let isLandscape = geometry.size.width > geometry.size.height
-                
-                ZStack {
-                    // Background
-                    Color(UIColor.systemGray6)
-                        .ignoresSafeArea()
+        GeometryReader { geometry in
+            let landscape = geometry.size.width > geometry.size.height
+            
+            ZStack {
+                TabView(selection: $selectedTab) {
+                    // Home Tab
+                    HomeView(
+                        isLandscape: landscape,
+                        showProfile: $showProfile,
+                        levelSystem: levelSystem,
+                        totalCards: savedCards.count
+                    )
+                    .padding(.top, 60)
+                    .tag(0)
                     
-                    if isLandscape {
-                        // Landscape layout with side navigation
-                        HStack(spacing: 0) {
-                            // Main content
-                            mainContent
-                            
-                            // Side navigation panel
-                            sideNavigationPanel
-                                .frame(width: 100)
+                    // Garage Tab
+                    GarageViewWrapper(
+                        savedCards: $savedCards,
+                        isLandscape: landscape,
+                        showCardDetail: $showCardDetail,
+                        selectedCard: $selectedCard,
+                        forceOrientationUpdate: $forceOrientationUpdate
+                    )
+                    .padding(.top, 60)
+                    .tag(1)
+                    
+                    // Marketplace Tab
+                    MarketplaceLandingView(
+                        isLandscape: landscape,
+                        savedCards: savedCards,
+                        onCardListed: { card in
+                            // Remove card from local savedCards when listed
+                            if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                savedCards.remove(at: index)
+                                CardStorage.saveCards(savedCards)
+                            }
                         }
-                    } else {
-                        // Portrait layout with bottom tabs
-                        VStack(spacing: 0) {
-                            // Main content
-                            mainContent
-                            
-                            // Bottom tab bar
-                            bottomTabBar
-                                .frame(height: 70)
+                    )
+                        .padding(.top, 60)
+                        .tag(2)
+                    
+                    // Shop Tab
+                    ShopView(isLandscape: landscape)
+                        .padding(.top, 60)
+                        .tag(3)
+                }
+                .toolbar(.hidden, for: .tabBar) // Hide native iOS tab bar
+                
+                // Level Header - show on main hub pages (not camera/detail views)
+                if !showCamera && !showCardDetail {
+                    VStack {
+                        LevelHeader(
+                            levelSystem: levelSystem,
+                            isLandscape: landscape,
+                            totalCards: savedCards.count,
+                            showProfile: $showProfile
+                        )
+                        Spacer()
+                    }
+                }
+                
+                // Custom bottom/side navigation bar
+                if landscape {
+                    // Side navigation (right side in landscape)
+                    VStack(spacing: 0) {
+                        // Shop button (top in landscape)
+                        Button(action: {
+                            selectedTab = 3
+                        }) {
+                            Image(systemName: "bag")
+                                .font(.title2)
+                                .foregroundStyle(selectedTab == 3 ? .blue : .gray)
+                                .frame(maxHeight: .infinity)
+                                .padding(.horizontal, 8)
+                        }
+                        
+                        // Marketplace button
+                        Button(action: {
+                            selectedTab = 2
+                        }) {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.title2)
+                                .foregroundStyle(selectedTab == 2 ? .blue : .gray)
+                                .frame(maxHeight: .infinity)
+                                .padding(.horizontal, 8)
+                        }
+                        
+                        // Spacer for camera button
+                        Spacer()
+                            .frame(maxHeight: .infinity)
+                        
+                        // Home button
+                        Button(action: {
+                            selectedTab = 0
+                        }) {
+                            Image(systemName: "house")
+                                .font(.title2)
+                                .foregroundStyle(selectedTab == 0 ? .blue : .gray)
+                                .frame(maxHeight: .infinity)
+                                .padding(.horizontal, 8)
+                        }
+                        
+                        // Garage button (bottom in landscape)
+                        Button(action: {
+                            selectedTab = 1
+                        }) {
+                            Image(systemName: "wrench.and.screwdriver")
+                                .font(.title2)
+                                .foregroundStyle(selectedTab == 1 ? .blue : .gray)
+                                .frame(maxHeight: .infinity)
+                                .padding(.horizontal, 8)
                         }
                     }
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(20)
+                    .frame(width: 80)
+                    .blur(radius: showCardDetail ? 10 : 0)
+                    .overlay(
+                        // Camera button overlaid on center
+                        Button(action: {
+                            // Lock to portrait before opening camera
+                            OrientationManager.lockOrientation(.portrait)
+                            // Small delay to allow rotation
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showCamera = true
+                            }
+                        }) {
+                            Image(systemName: "camera.fill")
+                                .font(.title)
+                                .foregroundStyle(.white)
+                                .frame(width: 70, height: 70)
+                                .background(.blue)
+                                .clipShape(Circle())
+                        }
+                    )
+                    .edgesIgnoringSafeArea([.bottom, .trailing])
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+                    .padding(.trailing, -35)
+                } else {
+                    // Bottom navigation (portrait)
+                    VStack {
+                        Spacer()
+                        
+                        // Hub bar with camera button overlay
+                        HStack(spacing: 0) {
+                            // Garage button (left in portrait)
+                            Button(action: {
+                                selectedTab = 1
+                            }) {
+                                Image(systemName: "wrench.and.screwdriver")
+                                    .font(.title2)
+                                    .foregroundStyle(selectedTab == 1 ? .blue : .gray)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                            }
+                            
+                            // Home button
+                            Button(action: {
+                                selectedTab = 0
+                            }) {
+                                Image(systemName: "house")
+                                    .font(.title2)
+                                    .foregroundStyle(selectedTab == 0 ? .blue : .gray)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                            }
+                            
+                            // Spacer for camera button
+                            Spacer()
+                                .frame(maxWidth: .infinity)
+                            
+                            // Marketplace button
+                            Button(action: {
+                                selectedTab = 2
+                            }) {
+                                Image(systemName: "chart.line.uptrend.xyaxis")
+                                    .font(.title2)
+                                    .foregroundStyle(selectedTab == 2 ? .blue : .gray)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                            }
+                            
+                            // Shop button (right in portrait)
+                            Button(action: {
+                                selectedTab = 3
+                            }) {
+                                Image(systemName: "bag")
+                                    .font(.title2)
+                                    .foregroundStyle(selectedTab == 3 ? .blue : .gray)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                            }
+                        }
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(20)
+                        .padding(.horizontal)
+                        .blur(radius: showCardDetail ? 10 : 0)
+                        .overlay(
+                            // Camera button overlaid on center
+                            Button(action: {
+                                // Lock to portrait before opening camera
+                                OrientationManager.lockOrientation(.portrait)
+                                // Small delay to allow rotation
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    showCamera = true
+                                }
+                            }) {
+                                Image(systemName: "camera.fill")
+                                    .font(.title)
+                                    .foregroundStyle(.white)
+                                    .frame(width: 70, height: 70)
+                                    .background(.blue)
+                                    .clipShape(Circle())
+                            }
+                        )
+                        .padding(.bottom, 10)
+                    }
+                }
+                
+                // Card detail overlay - appears above everything
+                if showCardDetail, let card = selectedCard {
+                    CardDetailView(
+                        card: card,
+                        isShowing: $showCardDetail,
+                        forceOrientationUpdate: $forceOrientationUpdate
+                    )
+                }
+                
+                // Profile popup - appears when level icon tapped
+                if showProfile {
+                    ProfileView(
+                        isShowing: $showProfile,
+                        levelSystem: levelSystem,
+                        totalCards: savedCards.count
+                    )
+                }
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraView(
+                    isPresented: $showCamera,
+                    onCardSaved: { card in
+                        // Save locally
+                        savedCards.append(card)
+                        CardStorage.saveCards(savedCards)
+                        
+                        // Save to cloud
+                        if let image = card.image {
+                            Task {
+                                do {
+                                    let _ = try await CardService.shared.saveCard(
+                                        image: image,
+                                        make: card.make,
+                                        model: card.model,
+                                        color: card.color,
+                                        year: card.year
+                                    )
+                                    print("Ã¢Å“â€¦ Card saved to cloud")
+                                } catch {
+                                    print("Ã¢Å¡Â Ã¯Â¸Â Cloud save failed: \(error)")
+                                }
+                            }
+                        }
+                        
+                        // Award XP for capturing a card
+                        levelSystem.addXP(10)
+                        
+                        showCamera = false
+                        
+                        // Return to appropriate orientation for current tab
+                        if selectedTab == 1 {
+                            OrientationManager.unlockOrientation()
+                        } else {
+                            OrientationManager.lockToPortrait()
+                        }
+                    }
+                )
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+                deviceOrientation = UIDevice.current.orientation
+            }
+            .onChange(of: selectedTab) { oldValue, newValue in
+                // Lock to portrait for all tabs except garage (tab 1)
+                if newValue == 1 {
+                    // Garage - allow landscape
+                    OrientationManager.unlockOrientation()
+                } else {
+                    // All other tabs - lock to portrait
+                    OrientationManager.lockToPortrait()
                 }
             }
             .onAppear {
-                loadCards()
-            }
-            .onChange(of: showingCamera) { oldValue, newValue in
-                if !newValue {
-                    loadCards()
+                // Set initial orientation based on starting tab
+                if selectedTab == 1 {
+                    OrientationManager.unlockOrientation()
+                } else {
+                    OrientationManager.lockToPortrait()
                 }
             }
-            .sheet(isPresented: $showingCamera) {
-                CameraView(
-                    isPresented: $showingCamera,
-                    onCardSaved: { card in
-                        savedCards.append(card)
-                        CardStorage.saveCards(savedCards)
-                        showingCamera = false
-                    }
-                )
+        }
+    }
+}
+
+// Wrapper to pass savedCards to GarageView
+struct GarageViewWrapper: View {
+    @Binding var savedCards: [SavedCard]
+    let isLandscape: Bool
+    @Binding var showCardDetail: Bool
+    @Binding var selectedCard: SavedCard?
+    @Binding var forceOrientationUpdate: Bool
+    
+    var body: some View {
+        GarageViewContent(
+            savedCards: $savedCards,
+            isLandscape: isLandscape,
+            showCardDetail: $showCardDetail,
+            selectedCard: $selectedCard
+        )
+        .id(forceOrientationUpdate) // Force view refresh when this changes
+        .onAppear {
+            // Force portrait first
+            OrientationManager.lockOrientation(.portrait)
+            // Small delay then unlock for live orientation detection
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                OrientationManager.unlockOrientation()
+                // Force orientation check
+                forceOrientationUpdate.toggle()
             }
-            .sheet(item: $selectedDetailCard) { card in
-                CardDetailView(
-                    card: card,
-                    isShowing: Binding(
-                        get: { selectedDetailCard != nil },
-                        set: { if !$0 { selectedDetailCard = nil } }
-                    ),
-                    forceOrientationUpdate: $forceOrientationUpdate,
-                    onSpecsUpdated: { updatedCard in
-                        // Update the card in the array
-                        if let index = savedCards.firstIndex(where: { $0.id == updatedCard.id }) {
-                            savedCards[index] = updatedCard
-                            CardStorage.saveCards(savedCards)
+        }
+        .onDisappear {
+            OrientationManager.lockOrientation(.portrait)
+        }
+    }
+}
+
+// Modified GarageView content
+struct GarageViewContent: View {
+    @Binding var savedCards: [SavedCard]
+    let isLandscape: Bool
+    @Binding var showCardDetail: Bool
+    @Binding var selectedCard: SavedCard?
+    @State private var cardsPerRow = 2
+    @State private var currentPage = 0
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                VStack {
+                    if savedCards.isEmpty {
+                        Text("Your collection will appear here")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        if isLandscape {
+                            // Landscape: Continuous horizontal scroll
+                            landscapeScrollView
+                        } else {
+                            // Portrait: Paged vertical scroll
+                            portraitPagedView
                         }
                     }
-                )
-            }
-            .sheet(isPresented: $showingShare) {
-                ShareSheet(items: itemsToShare)
-            }
-        }
-    }
-    
-    // MARK: - Main Content
-    
-    private var mainContent: some View {
-        VStack(spacing: 0) {
-            // Header
-            headerView
-            
-            // Cards grid
-            if savedCards.isEmpty {
-                emptyStateView
-            } else {
-                cardsGridView
-            }
-        }
-    }
-    
-    // MARK: - Header
-    
-    private var headerView: some View {
-        HStack {
-            Text("Garage")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            Spacer()
-            
-            // User stats
-            HStack(spacing: 16) {
-                // XP display
-                HStack(spacing: 4) {
-                    Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
-                        .font(.caption)
-                    Text("\(userService.currentProfile?.totalXP ?? 0)")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
                 }
+                .blur(radius: showCardDetail ? 10 : 0)
                 
-                // Card count
-                HStack(spacing: 4) {
-                    Image(systemName: "rectangle.stack.fill")
-                        .foregroundStyle(.blue)
-                        .font(.caption)
-                    Text("\(savedCards.count)")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                // Landscape blur gradient on right side
+                if isLandscape {
+                    HStack(spacing: 0) {
+                        Spacer()
+                        LinearGradient(
+                            colors: [.clear, .clear, .black.opacity(0.7), .black, .black],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 200)
+                        .allowsHitTesting(false)
+                    }
+                    .ignoresSafeArea(edges: .trailing)
                 }
             }
         }
-        .padding()
-        .background(Color(UIColor.systemBackground))
     }
     
-    // MARK: - Empty State
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: "camera")
-                .font(.system(size: 60))
-                .foregroundStyle(.gray)
-            Text("No cards yet")
-                .font(.title2)
-                .fontWeight(.semibold)
-            Text("Tap the camera to capture your first car")
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-    
-    // MARK: - Cards Grid
-    
-    private var cardsGridView: some View {
-        ScrollView {
-            LazyVGrid(columns: [
-                GridItem(.adaptive(minimum: 280), spacing: 20)
-            ], spacing: 20) {
-                ForEach(savedCards) { card in
-                    Button(action: {
-                        selectedDetailCard = card
-                    }) {
-                        CardThumbnailView(card: card)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            deleteCard(card)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
+    // Portrait: Paged view (swipe left/right for pages)
+    private var portraitPagedView: some View {
+        GeometryReader { geometry in
+            let cardsPerPage = cardsPerRow == 1 ? 5 : 10 // 5 cards (5x1) or 10 cards (5x2)
+            let totalPages = Int(ceil(Double(savedCards.count) / Double(cardsPerPage)))
+            
+            TabView(selection: $currentPage) {
+                ForEach(0..<max(1, totalPages), id: \.self) { pageIndex in
+                    let startIndex = pageIndex * cardsPerPage
+                    let endIndex = min(startIndex + cardsPerPage, savedCards.count)
+                    let pageCards = Array(savedCards[startIndex..<endIndex])
+                    
+                    VStack {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
+                            ForEach(pageCards) { card in
+                                SavedCardView(card: card, isLargeSize: cardsPerRow == 1)
+                                    .onTapGesture {
+                                        selectedCard = card
+                                        withAnimation {
+                                            showCardDetail = true
+                                        }
+                                    }
+                                    .contextMenu {
+                                        Button(role: .destructive) {
+                                            if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                                savedCards.remove(at: index)
+                                                CardStorage.saveCards(savedCards)
+                                            }
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
+                            }
                         }
+                        .padding()
+                        .padding(.top, 20)
+                        
+                        Spacer()
                     }
+                    .padding(.bottom, 50) // Reduced from 80 to move cards down
+                    .tag(pageIndex)
+                }
+            }
+            .tabViewStyle(.page)
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
+            .padding(.bottom, 20) // Space between page indicators and capture button
+        }
+    }
+    
+    // Landscape: Continuous horizontal scroll (2 rows)
+    private var landscapeScrollView: some View {
+        ScrollView(.horizontal, showsIndicators: true) {
+            LazyHGrid(rows: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
+                ForEach(savedCards) { card in
+                    SavedCardView(card: card, isLargeSize: false)
+                        .frame(width: 200) // Fixed width for horizontal scrolling
+                        .onTapGesture {
+                            selectedCard = card
+                            withAnimation {
+                                showCardDetail = true
+                            }
+                        }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                    savedCards.remove(at: index)
+                                    CardStorage.saveCards(savedCards)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                 }
             }
             .padding()
-        }
-    }
-    
-    // MARK: - Bottom Tab Bar
-    
-    private var bottomTabBar: some View {
-        HStack(spacing: 0) {
-            // Home
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "house.fill")
-                        .font(.system(size: 24))
-                    Text("Home")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
-            
-            // Camera
-            Button(action: { showingCamera = true }) {
-                VStack(spacing: 4) {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 24))
-                    Text("Capture")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
-            
-            // Marketplace
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "bag.fill")
-                        .font(.system(size: 24))
-                    Text("Market")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
-            
-            // Friends
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 24))
-                    Text("Friends")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
-        }
-        .background(Color(UIColor.systemBackground))
-        .shadow(color: .black.opacity(0.1), radius: 5, y: -2)
-    }
-    
-    // MARK: - Side Navigation Panel
-    
-    private var sideNavigationPanel: some View {
-        VStack(spacing: 20) {
-            // Home
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "house.fill")
-                        .font(.system(size: 24))
-                    Text("Home")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
-            
-            // Camera
-            Button(action: { showingCamera = true }) {
-                VStack(spacing: 4) {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 24))
-                    Text("Capture")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
-            
-            // Marketplace
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "bag.fill")
-                        .font(.system(size: 24))
-                    Text("Market")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
-            
-            // Friends
-            Button(action: {}) {
-                VStack(spacing: 4) {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 24))
-                    Text("Friends")
-                        .font(.caption2)
-                }
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.primary)
-            }
-            
-            Spacer()
-        }
-        .padding(.vertical, 20)
-        .background(Color(UIColor.systemBackground))
-        .shadow(color: .black.opacity(0.1), radius: 5, x: -2)
-    }
-    
-    // MARK: - Helper Methods
-    
-    private func loadCards() {
-        savedCards = CardStorage.loadCards()
-    }
-    
-    private func deleteCard(_ card: SavedCard) {
-        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-            savedCards.remove(at: index)
-            CardStorage.saveCards(savedCards)
+            .padding(.trailing, 100) // Space for side nav
         }
     }
 }
 
-// MARK: - Card Thumbnail View
-
-struct CardThumbnailView: View {
-    let card: SavedCard
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Card image
-            if let image = card.image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 280, height: 157.5)
-                    .clipped()
-                    .cornerRadius(12)
-            }
-            
-            // Card info
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(card.make) \(card.model)")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                
-                Text(card.year)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 4)
-        }
-    }
-}
-
-// MARK: - Card Detail View with Flip
-
+// Card detail overlay view with flip animation
 struct CardDetailView: View {
     let card: SavedCard
     @Binding var isShowing: Bool
     @Binding var forceOrientationUpdate: Bool
-    let onSpecsUpdated: (SavedCard) -> Void
-    
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
     @State private var isFlipped = false
     @State private var flipDegrees: Double = 0
-    @State private var isFetchingSpecs = false
-    @State private var updatedCard: SavedCard?
     
     var body: some View {
         GeometryReader { geometry in
@@ -383,115 +505,84 @@ struct CardDetailView: View {
                         }
                     }
                 
-                // Card container
+                // Card container - rotates to landscape if device is portrait
                 Group {
                     if isDeviceLandscape {
                         // Device is landscape - show card normally
                         cardContent(geometry: geometry, rotated: false)
                     } else {
                         // Device is portrait - rotate card to landscape
-                        cardContent(geometry: geometry, rotated: true)
-                            .rotationEffect(.degrees(90))
-                            .frame(width: geometry.size.height, height: geometry.size.width)
-                            .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                        VStack {
+                            Spacer()
+                            cardContent(geometry: geometry, rotated: true)
+                                .rotationEffect(.degrees(90))
+                            Spacer()
+                        }
+                        .frame(width: geometry.size.width, height: geometry.size.height)
                     }
+                }
+                
+                // X button - always in top left of screen (not rotated)
+                VStack {
+                    HStack {
+                        Button(action: {
+                            withAnimation {
+                                isShowing = false
+                            }
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
+                        .padding(20)
+                        
+                        Spacer()
+                    }
+                    
+                    Spacer()
                 }
             }
         }
-        .onAppear {
-            updatedCard = card
-        }
+        .transition(.opacity)
     }
     
     private func cardContent(geometry: GeometryProxy, rotated: Bool) -> some View {
         let cardWidth: CGFloat = rotated ? geometry.size.height * 0.8 : geometry.size.width * 0.8
-        let cardHeight: CGFloat = cardWidth * (9.0 / 16.0)
+        let cardHeight: CGFloat = cardWidth / 16 * 9
         
         return ZStack {
+            // Front of card
             if !isFlipped {
                 cardFrontView(cardWidth: cardWidth, cardHeight: cardHeight)
-            } else {
+                    .rotation3DEffect(.degrees(flipDegrees), axis: (x: 0, y: 1, z: 0))
+            }
+            
+            // Back of card
+            if isFlipped {
                 cardBackView(cardWidth: cardWidth, cardHeight: cardHeight)
+                    .rotation3DEffect(.degrees(flipDegrees + 180), axis: (x: 0, y: 1, z: 0))
             }
         }
-        .rotation3DEffect(
-            .degrees(flipDegrees),
-            axis: (x: 0, y: 1, z: 0)
-        )
         .onTapGesture {
-            handleCardFlip()
-        }
-    }
-    
-    private func handleCardFlip() {
-        // If flipping to back for the first time and specs are empty, fetch them
-        if !isFlipped && (updatedCard?.specs.horsepower == nil || updatedCard?.specs.torque == nil) {
-            Task {
-                await fetchSpecsIfNeeded()
-            }
-        }
-        
-        // Perform flip animation
-        withAnimation(.easeInOut(duration: 0.6)) {
-            flipDegrees += 180
-            isFlipped.toggle()
-        }
-    }
-    
-    private func fetchSpecsIfNeeded() async {
-        guard let currentCard = updatedCard ?? card as SavedCard? else { return }
-        
-        // Don't fetch if we already have specs
-        if currentCard.specs != nil {
-            return
-        }
-        
-        print("🔄 Fetching specs for \(currentCard.make) \(currentCard.model) \(currentCard.year)")
-        isFetchingSpecs = true
-        
-        do {
-            // Fetch specs using VehicleIDService
-            let vehicleService = VehicleIdentificationService()
-            let specs = try await vehicleService.fetchSpecs(
-                make: currentCard.make,
-                model: currentCard.model,
-                year: currentCard.year
-            )
-            
-            // Create updated card with specs
-            let newCard = SavedCard(
-                id: currentCard.id,
-                image: currentCard.image ?? UIImage(),
-                make: currentCard.make,
-                model: currentCard.model,
-                color: currentCard.color,
-                year: currentCard.year,
-                specs: specs,
-                capturedBy: currentCard.capturedBy,
-                capturedLocation: currentCard.capturedLocation,
-                previousOwners: currentCard.previousOwners
-            )
-            
-            await MainActor.run {
-                updatedCard = newCard
-                onSpecsUpdated(newCard)
-                isFetchingSpecs = false
-                print("✅ Specs updated and saved")
-            }
-        } catch {
-            print("❌ Failed to fetch specs: \(error)")
-            await MainActor.run {
-                isFetchingSpecs = false
+            withAnimation(.easeInOut(duration: 0.6)) {
+                if isFlipped {
+                    flipDegrees = 0
+                } else {
+                    flipDegrees = 180
+                }
+                isFlipped.toggle()
             }
         }
     }
     
-    // MARK: - Card Front View
-    
+    // Front view of the card
     private func cardFrontView(cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
         ZStack {
-            // Card image
-            if let image = (updatedCard ?? card).image {
+            if let image = card.image {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -504,11 +595,11 @@ struct CardDetailView: View {
                 Spacer()
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\((updatedCard ?? card).make) \((updatedCard ?? card).model)")
+                        Text("\(card.make) \(card.model)")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundStyle(.white)
-                        Text((updatedCard ?? card).year)
+                        Text(card.year)
                             .font(.subheadline)
                             .foregroundStyle(.white.opacity(0.9))
                     }
@@ -540,147 +631,71 @@ struct CardDetailView: View {
         .shadow(color: .black.opacity(0.5), radius: 20)
     }
     
-    // MARK: - Card Back View (FIFA-style Stats)
-    
+    // Back view of the card
     private func cardBackView(cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
-        let currentCard = updatedCard ?? card
-        
-        return ZStack {
+        ZStack {
             // Background gradient
             LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                colors: [Color(red: 0.15, green: 0.2, blue: 0.3), Color(red: 0.1, green: 0.15, blue: 0.25)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: 4) {
-                    Text("\(currentCard.make) \(currentCard.model)")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
-                    
-                    Text(currentCard.year)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
-                }
-                .padding(.top, 20)
-                .padding(.bottom, 16)
+            VStack(spacing: 20) {
+                // Title
+                Text("\(card.make) \(card.model)")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
                 
-                // Loading indicator or stats
-                if isFetchingSpecs {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .tint(.white)
-                        Text("Loading specs...")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                    .frame(maxHeight: .infinity)
-                } else {
-                    // Stats Grid (FIFA-style)
-                    VStack(spacing: 12) {
-                        // Row 1: Power
-                        HStack(spacing: 20) {
-                            statItem(
-                                label: "HP",
-                                value: currentCard.specs.horsepower.map { "\($0)" } ?? "???",
-                                highlight: currentCard.specs.horsepower != nil
-                            )
-                            statItem(
-                                label: "TRQ",
-                                value: currentCard.specs.torque.map { "\($0)" } ?? "???",
-                                highlight: currentCard.specs.torque != nil
-                            )
-                        }
-                        
-                        // Row 2: Performance
-                        HStack(spacing: 20) {
-                            statItem(
-                                label: "0-60",
-                                value: currentCard.specs.zeroToSixty.map { String(format: "%.1f", $0) } ?? "???",
-                                highlight: currentCard.specs.zeroToSixty != nil
-                            )
-                            statItem(
-                                label: "TOP",
-                                value: currentCard.specs.topSpeed.map { "\($0)" } ?? "???",
-                                highlight: currentCard.specs.topSpeed != nil
-                            )
-                        }
-                        
-                        // Row 3: Details
-                        HStack(spacing: 20) {
-                            statItem(
-                                label: "ENGINE",
-                                value: currentCard.specs.engineType ?? "???",
-                                highlight: currentCard.specs.engineType != nil,
-                                compact: true
-                            )
-                            statItem(
-                                label: "DRIVE",
-                                value: currentCard.specs.drivetrain ?? "???",
-                                highlight: currentCard.specs.drivetrain != nil,
-                                compact: true
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 30)
-                    .frame(maxHeight: .infinity)
+                Divider()
+                    .background(.white.opacity(0.3))
+                
+                // Card details
+                VStack(alignment: .leading, spacing: 12) {
+                    DetailRow(label: "Make", value: card.make)
+                    DetailRow(label: "Model", value: card.model)
+                    DetailRow(label: "Year", value: card.year)
+                    DetailRow(label: "Color", value: card.color.isEmpty ? "Unknown" : card.color)
                 }
+                .padding(.horizontal, 30)
                 
                 Spacer()
                 
-                // Footer
-                VStack(spacing: 4) {
-                    if !currentCard.specs.isComplete && !isFetchingSpecs {
-                        Text("Some specs unavailable")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-                    
-                    Text("Tap to flip back")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .padding(.bottom, 20)
+                // Tap hint at bottom
+                Text("Tap to flip back")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.6))
+                    .padding(.bottom, 20)
             }
+            .padding(.top, 30)
             .frame(width: cardWidth, height: cardHeight)
         }
         .cornerRadius(15)
         .shadow(color: .black.opacity(0.5), radius: 20)
-        .rotation3DEffect(
-            .degrees(180),
-            axis: (x: 0, y: 1, z: 0)
-        )
-    }
-    
-    // MARK: - Stat Item View
-    
-    private func statItem(label: String, value: String, highlight: Bool, compact: Bool = false) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.system(size: compact ? 14 : 24, weight: .bold))
-                .foregroundStyle(highlight ? .white : .white.opacity(0.4))
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            
-            Text(label)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, compact ? 6 : 10)
-        .background(
-            highlight ?
-            Color.white.opacity(0.15) :
-            Color.white.opacity(0.05)
-        )
-        .cornerRadius(8)
     }
 }
 
-// MARK: - Share Sheet
+// Helper view for detail rows on card back
+struct DetailRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+            Spacer()
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white)
+        }
+    }
+}
 
+// Share Sheet for exporting files
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     
