@@ -1,0 +1,1329 @@
+{
+  "makes": [
+    {
+      "name": "Audi",
+      "models": [
+        {
+          "name": "A4",
+          "generations": [
+            { "years": "96-01" },
+            { "years": "01-05" },
+            { "years": "05-08" },
+            { "years": "08-15" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "A6",
+          "generations": [
+            { "years": "94-97" },
+            { "years": "97-04" },
+            { "years": "04-11" },
+            { "years": "11-18" },
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "Q4 e-tron",
+          "generations": [
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Q5",
+          "generations": [
+            { "years": "09-17" },
+            { "years": "17-Present" }
+          ]
+        },
+        {
+          "name": "Q7",
+          "generations": [
+            { "years": "06-15" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "R8",
+          "generations": [
+            { "years": "07-15" },
+            { "years": "16-24" }
+          ]
+        },
+        {
+          "name": "TT",
+          "generations": [
+            { "years": "98-06" },
+            { "years": "06-14" },
+            { "years": "15-23" }
+          ]
+        },
+        {
+          "name": "e-tron",
+          "generations": [
+            { "years": "19-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BMW",
+      "models": [
+        {
+          "name": "3 Series",
+          "generations": [
+            { "years": "92-99" },
+            { "years": "98-06" },
+            { "years": "05-13" },
+            { "years": "12-19" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "5 Series",
+          "generations": [
+            { "years": "88-96" },
+            { "years": "96-03" },
+            { "years": "03-10" },
+            { "years": "10-17" },
+            { "years": "17-Present" }
+          ]
+        },
+        {
+          "name": "7 Series",
+          "generations": [
+            { "years": "87-94" },
+            { "years": "94-01" },
+            { "years": "01-08" },
+            { "years": "08-15" },
+            { "years": "15-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "M3",
+          "generations": [
+            { "years": "92-99" },
+            { "years": "00-06" },
+            { "years": "07-13" },
+            { "years": "14-18" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "M5",
+          "generations": [
+            { "years": "88-95" },
+            { "years": "98-03" },
+            { "years": "05-10" },
+            { "years": "11-16" },
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "X3",
+          "generations": [
+            { "years": "04-10" },
+            { "years": "11-17" },
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "X5",
+          "generations": [
+            { "years": "00-06" },
+            { "years": "07-13" },
+            { "years": "14-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Z4",
+          "generations": [
+            { "years": "03-08" },
+            { "years": "09-16" },
+            { "years": "19-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chevrolet",
+      "models": [
+        {
+          "name": "Blazer",
+          "generations": [
+            { "years": "69-72" },
+            { "years": "73-91" },
+            { "years": "83-94" },
+            { "years": "95-05" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Camaro",
+          "generations": [
+            { "years": "82-92" },
+            { "years": "93-02" },
+            { "years": "10-15" },
+            { "years": "16-24" }
+          ]
+        },
+        {
+          "name": "Colorado",
+          "generations": [
+            { "years": "04-12" },
+            { "years": "15-23" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "Corvette",
+          "generations": [
+            { "years": "84-96" },
+            { "years": "97-04" },
+            { "years": "05-13" },
+            { "years": "14-19" },
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "Equinox",
+          "generations": [
+            { "years": "05-09" },
+            { "years": "10-17" },
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "Malibu",
+          "generations": [
+            { "years": "97-03" },
+            { "years": "04-07" },
+            { "years": "08-12" },
+            { "years": "13-15" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "Silverado",
+          "generations": [
+            { "years": "99-06" },
+            { "years": "07-13" },
+            { "years": "14-19" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Suburban",
+          "generations": [
+            { "years": "92-99" },
+            { "years": "00-06" },
+            { "years": "07-14" },
+            { "years": "15-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Tahoe",
+          "generations": [
+            { "years": "95-00" },
+            { "years": "00-06" },
+            { "years": "07-14" },
+            { "years": "15-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Traverse",
+          "generations": [
+            { "years": "09-17" },
+            { "years": "18-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dodge",
+      "models": [
+        {
+          "name": "Challenger",
+          "generations": [
+            { "years": "70-74" },
+            { "years": "78-83" },
+            { "years": "08-23" }
+          ]
+        },
+        {
+          "name": "Charger",
+          "generations": [
+            { "years": "66-67" },
+            { "years": "68-70" },
+            { "years": "71-74" },
+            { "years": "06-23" }
+          ]
+        },
+        {
+          "name": "Durango",
+          "generations": [
+            { "years": "98-03" },
+            { "years": "04-09" },
+            { "years": "11-Present" }
+          ]
+        },
+        {
+          "name": "Hornet",
+          "generations": [
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "Ram 1500",
+          "generations": [
+            { "years": "94-01" },
+            { "years": "02-08" },
+            { "years": "09-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Viper",
+          "generations": [
+            { "years": "92-95" },
+            { "years": "96-02" },
+            { "years": "03-06" },
+            { "years": "08-10" },
+            { "years": "13-17" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ford",
+      "models": [
+        {
+          "name": "Bronco",
+          "generations": [
+            { "years": "66-77" },
+            { "years": "78-79" },
+            { "years": "80-86" },
+            { "years": "87-91" },
+            { "years": "92-96" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Edge",
+          "generations": [
+            { "years": "07-14" },
+            { "years": "15-Present" }
+          ]
+        },
+        {
+          "name": "Escape",
+          "generations": [
+            { "years": "01-07" },
+            { "years": "08-12" },
+            { "years": "13-19" },
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "Explorer",
+          "generations": [
+            { "years": "91-94" },
+            { "years": "95-01" },
+            { "years": "02-05" },
+            { "years": "06-10" },
+            { "years": "11-19" },
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "F-150",
+          "generations": [
+            { "years": "92-96" },
+            { "years": "97-03" },
+            { "years": "04-08" },
+            { "years": "09-14" },
+            { "years": "15-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Maverick",
+          "generations": [
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "Mustang",
+          "generations": [
+            { "years": "79-93" },
+            { "years": "94-04" },
+            { "years": "05-14" },
+            { "years": "15-23" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Ranger",
+          "generations": [
+            { "years": "83-92" },
+            { "years": "93-97" },
+            { "years": "98-11" },
+            { "years": "19-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Honda",
+      "models": [
+        {
+          "name": "Accord",
+          "generations": [
+            { "years": "90-93" },
+            { "years": "94-97" },
+            { "years": "98-02" },
+            { "years": "03-07" },
+            { "years": "08-12" },
+            { "years": "13-17" },
+            { "years": "18-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "CR-V",
+          "generations": [
+            { "years": "97-01" },
+            { "years": "02-06" },
+            { "years": "07-11" },
+            { "years": "12-16" },
+            { "years": "17-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "Civic",
+          "generations": [
+            { "years": "92-95" },
+            { "years": "96-00" },
+            { "years": "01-05" },
+            { "years": "06-11" },
+            { "years": "12-15" },
+            { "years": "16-21" },
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "HR-V",
+          "generations": [
+            { "years": "16-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "Odyssey",
+          "generations": [
+            { "years": "95-98" },
+            { "years": "99-04" },
+            { "years": "05-10" },
+            { "years": "11-17" },
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "Passport",
+          "generations": [
+            { "years": "94-02" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Pilot",
+          "generations": [
+            { "years": "03-08" },
+            { "years": "09-15" },
+            { "years": "16-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "Ridgeline",
+          "generations": [
+            { "years": "06-14" },
+            { "years": "17-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hyundai",
+      "models": [
+        {
+          "name": "Elantra",
+          "generations": [
+            { "years": "96-00" },
+            { "years": "01-06" },
+            { "years": "07-10" },
+            { "years": "11-15" },
+            { "years": "16-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Ioniq 5",
+          "generations": [
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "Kona",
+          "generations": [
+            { "years": "18-23" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Palisade",
+          "generations": [
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "Santa Fe",
+          "generations": [
+            { "years": "01-06" },
+            { "years": "07-12" },
+            { "years": "13-18" },
+            { "years": "19-24" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Sonata",
+          "generations": [
+            { "years": "93-98" },
+            { "years": "99-05" },
+            { "years": "05-10" },
+            { "years": "11-14" },
+            { "years": "15-19" },
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "Tucson",
+          "generations": [
+            { "years": "05-09" },
+            { "years": "10-15" },
+            { "years": "16-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Venue",
+          "generations": [
+            { "years": "20-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Jeep",
+      "models": [
+        {
+          "name": "Cherokee",
+          "generations": [
+            { "years": "84-01" },
+            { "years": "02-07" },
+            { "years": "08-12" },
+            { "years": "14-Present" }
+          ]
+        },
+        {
+          "name": "Compass",
+          "generations": [
+            { "years": "07-17" },
+            { "years": "17-Present" }
+          ]
+        },
+        {
+          "name": "Gladiator",
+          "generations": [
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "Grand Cherokee",
+          "generations": [
+            { "years": "93-98" },
+            { "years": "99-04" },
+            { "years": "05-10" },
+            { "years": "11-21" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Grand Wagoneer",
+          "generations": [
+            { "years": "84-91" },
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "Renegade",
+          "generations": [
+            { "years": "15-Present" }
+          ]
+        },
+        {
+          "name": "Wagoneer",
+          "generations": [
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "Wrangler",
+          "generations": [
+            { "years": "87-95" },
+            { "years": "97-06" },
+            { "years": "07-18" },
+            { "years": "18-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kia",
+      "models": [
+        {
+          "name": "Carnival",
+          "generations": [
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "EV6",
+          "generations": [
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "Forte",
+          "generations": [
+            { "years": "09-13" },
+            { "years": "14-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "K5",
+          "generations": [
+            { "years": "11-15" },
+            { "years": "16-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Niro",
+          "generations": [
+            { "years": "17-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "Seltos",
+          "generations": [
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Sorento",
+          "generations": [
+            { "years": "03-09" },
+            { "years": "10-15" },
+            { "years": "16-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Sportage",
+          "generations": [
+            { "years": "95-02" },
+            { "years": "05-10" },
+            { "years": "11-15" },
+            { "years": "16-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "Stinger",
+          "generations": [
+            { "years": "18-23" }
+          ]
+        },
+        {
+          "name": "Telluride",
+          "generations": [
+            { "years": "20-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lexus",
+      "models": [
+        {
+          "name": "ES",
+          "generations": [
+            { "years": "92-96" },
+            { "years": "97-01" },
+            { "years": "02-06" },
+            { "years": "07-12" },
+            { "years": "13-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "GX",
+          "generations": [
+            { "years": "03-09" },
+            { "years": "10-23" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "IS",
+          "generations": [
+            { "years": "99-05" },
+            { "years": "06-13" },
+            { "years": "14-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "LC",
+          "generations": [
+            { "years": "17-Present" }
+          ]
+        },
+        {
+          "name": "LS",
+          "generations": [
+            { "years": "90-94" },
+            { "years": "95-00" },
+            { "years": "01-06" },
+            { "years": "07-17" },
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "LX",
+          "generations": [
+            { "years": "96-97" },
+            { "years": "98-07" },
+            { "years": "08-21" },
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "NX",
+          "generations": [
+            { "years": "15-21" },
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "RX",
+          "generations": [
+            { "years": "99-03" },
+            { "years": "04-09" },
+            { "years": "10-15" },
+            { "years": "16-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "UX",
+          "generations": [
+            { "years": "19-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mazda",
+      "models": [
+        {
+          "name": "CX-30",
+          "generations": [
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "CX-5",
+          "generations": [
+            { "years": "13-17" },
+            { "years": "17-Present" }
+          ]
+        },
+        {
+          "name": "CX-50",
+          "generations": [
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "CX-9",
+          "generations": [
+            { "years": "07-15" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "CX-90",
+          "generations": [
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "MX-5 Miata",
+          "generations": [
+            { "years": "90-97" },
+            { "years": "98-05" },
+            { "years": "06-15" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "Mazda3",
+          "generations": [
+            { "years": "04-09" },
+            { "years": "09-13" },
+            { "years": "14-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Mazda6",
+          "generations": [
+            { "years": "03-08" },
+            { "years": "08-12" },
+            { "years": "13-21" }
+          ]
+        },
+        {
+          "name": "RX-7",
+          "generations": [
+            { "years": "78-85" },
+            { "years": "86-91" },
+            { "years": "93-02" }
+          ]
+        },
+        {
+          "name": "RX-8",
+          "generations": [
+            { "years": "03-12" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mercedes-Benz",
+      "models": [
+        {
+          "name": "AMG GT",
+          "generations": [
+            { "years": "15-23" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "C-Class",
+          "generations": [
+            { "years": "93-00" },
+            { "years": "00-07" },
+            { "years": "07-14" },
+            { "years": "14-21" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "E-Class",
+          "generations": [
+            { "years": "85-95" },
+            { "years": "95-02" },
+            { "years": "02-09" },
+            { "years": "09-16" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "G-Class",
+          "generations": [
+            { "years": "79-91" },
+            { "years": "90-18" },
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "GLC",
+          "generations": [
+            { "years": "15-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "GLE",
+          "generations": [
+            { "years": "98-05" },
+            { "years": "06-11" },
+            { "years": "12-19" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "S-Class",
+          "generations": [
+            { "years": "91-98" },
+            { "years": "98-05" },
+            { "years": "05-13" },
+            { "years": "13-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "SL",
+          "generations": [
+            { "years": "89-01" },
+            { "years": "01-11" },
+            { "years": "12-20" },
+            { "years": "22-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Nissan",
+      "models": [
+        {
+          "name": "Altima",
+          "generations": [
+            { "years": "93-97" },
+            { "years": "98-01" },
+            { "years": "02-06" },
+            { "years": "07-12" },
+            { "years": "13-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Frontier",
+          "generations": [
+            { "years": "98-04" },
+            { "years": "05-21" },
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "GT-R",
+          "generations": [
+            { "years": "89-94" },
+            { "years": "95-98" },
+            { "years": "99-02" },
+            { "years": "07-Present" }
+          ]
+        },
+        {
+          "name": "Maxima",
+          "generations": [
+            { "years": "95-99" },
+            { "years": "00-03" },
+            { "years": "04-08" },
+            { "years": "09-14" },
+            { "years": "16-23" }
+          ]
+        },
+        {
+          "name": "Pathfinder",
+          "generations": [
+            { "years": "86-95" },
+            { "years": "96-04" },
+            { "years": "05-12" },
+            { "years": "13-22" },
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "Rogue",
+          "generations": [
+            { "years": "08-13" },
+            { "years": "14-20" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Titan",
+          "generations": [
+            { "years": "04-15" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "Z",
+          "generations": [
+            { "years": "90-96" },
+            { "years": "03-09" },
+            { "years": "09-20" },
+            { "years": "23-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Porsche",
+      "models": [
+        {
+          "name": "718 Boxster",
+          "generations": [
+            { "years": "97-04" },
+            { "years": "05-12" },
+            { "years": "12-16" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "718 Cayman",
+          "generations": [
+            { "years": "06-12" },
+            { "years": "13-16" },
+            { "years": "16-Present" }
+          ]
+        },
+        {
+          "name": "911",
+          "generations": [
+            { "years": "89-94" },
+            { "years": "95-98" },
+            { "years": "98-05" },
+            { "years": "05-12" },
+            { "years": "12-19" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Cayenne",
+          "generations": [
+            { "years": "03-10" },
+            { "years": "11-17" },
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "Macan",
+          "generations": [
+            { "years": "14-23" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Panamera",
+          "generations": [
+            { "years": "10-16" },
+            { "years": "17-Present" }
+          ]
+        },
+        {
+          "name": "Taycan",
+          "generations": [
+            { "years": "20-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Subaru",
+      "models": [
+        {
+          "name": "Ascent",
+          "generations": [
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "BRZ",
+          "generations": [
+            { "years": "13-20" },
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "Crosstrek",
+          "generations": [
+            { "years": "13-17" },
+            { "years": "18-23" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Forester",
+          "generations": [
+            { "years": "98-02" },
+            { "years": "03-08" },
+            { "years": "09-13" },
+            { "years": "14-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Impreza",
+          "generations": [
+            { "years": "93-01" },
+            { "years": "00-07" },
+            { "years": "07-11" },
+            { "years": "11-16" },
+            { "years": "17-Present" }
+          ]
+        },
+        {
+          "name": "Outback",
+          "generations": [
+            { "years": "95-99" },
+            { "years": "00-04" },
+            { "years": "05-09" },
+            { "years": "10-14" },
+            { "years": "15-19" },
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "WRX",
+          "generations": [
+            { "years": "92-00" },
+            { "years": "01-07" },
+            { "years": "08-14" },
+            { "years": "15-21" },
+            { "years": "22-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tesla",
+      "models": [
+        {
+          "name": "Cybertruck",
+          "generations": [
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Model 3",
+          "generations": [
+            { "years": "17-23" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Model S",
+          "generations": [
+            { "years": "12-16" },
+            { "years": "16-21" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Model X",
+          "generations": [
+            { "years": "15-21" },
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Model Y",
+          "generations": [
+            { "years": "20-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Toyota",
+      "models": [
+        {
+          "name": "4Runner",
+          "generations": [
+            { "years": "90-95" },
+            { "years": "96-02" },
+            { "years": "03-09" },
+            { "years": "10-24" },
+            { "years": "25-Present" }
+          ]
+        },
+        {
+          "name": "Camry",
+          "generations": [
+            { "years": "92-96" },
+            { "years": "97-01" },
+            { "years": "02-06" },
+            { "years": "07-11" },
+            { "years": "12-17" },
+            { "years": "18-24" },
+            { "years": "25-Present" }
+          ]
+        },
+        {
+          "name": "Corolla",
+          "generations": [
+            { "years": "93-97" },
+            { "years": "98-02" },
+            { "years": "03-08" },
+            { "years": "09-13" },
+            { "years": "14-19" },
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "GR Supra",
+          "generations": [
+            { "years": "86-92" },
+            { "years": "93-02" },
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "Highlander",
+          "generations": [
+            { "years": "01-07" },
+            { "years": "08-13" },
+            { "years": "14-19" },
+            { "years": "20-Present" }
+          ]
+        },
+        {
+          "name": "Land Cruiser",
+          "generations": [
+            { "years": "90-97" },
+            { "years": "98-07" },
+            { "years": "08-21" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Prius",
+          "generations": [
+            { "years": "97-03" },
+            { "years": "04-09" },
+            { "years": "10-15" },
+            { "years": "16-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "RAV4",
+          "generations": [
+            { "years": "96-00" },
+            { "years": "01-05" },
+            { "years": "06-12" },
+            { "years": "13-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Sequoia",
+          "generations": [
+            { "years": "01-07" },
+            { "years": "08-22" },
+            { "years": "23-Present" }
+          ]
+        },
+        {
+          "name": "Tacoma",
+          "generations": [
+            { "years": "95-04" },
+            { "years": "05-15" },
+            { "years": "16-24" },
+            { "years": "24-Present" }
+          ]
+        },
+        {
+          "name": "Tundra",
+          "generations": [
+            { "years": "00-06" },
+            { "years": "07-21" },
+            { "years": "22-Present" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Volkswagen",
+      "models": [
+        {
+          "name": "Arteon",
+          "generations": [
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Atlas",
+          "generations": [
+            { "years": "18-Present" }
+          ]
+        },
+        {
+          "name": "Golf GTI",
+          "generations": [
+            { "years": "92-98" },
+            { "years": "99-06" },
+            { "years": "06-09" },
+            { "years": "10-14" },
+            { "years": "15-21" },
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "ID.4",
+          "generations": [
+            { "years": "21-Present" }
+          ]
+        },
+        {
+          "name": "Jetta",
+          "generations": [
+            { "years": "93-98" },
+            { "years": "99-05" },
+            { "years": "06-10" },
+            { "years": "11-18" },
+            { "years": "19-Present" }
+          ]
+        },
+        {
+          "name": "Passat",
+          "generations": [
+            { "years": "88-93" },
+            { "years": "94-97" },
+            { "years": "98-05" },
+            { "years": "06-10" },
+            { "years": "11-15" },
+            { "years": "16-22" }
+          ]
+        },
+        {
+          "name": "Taos",
+          "generations": [
+            { "years": "22-Present" }
+          ]
+        },
+        {
+          "name": "Tiguan",
+          "generations": [
+            { "years": "08-17" },
+            { "years": "18-Present" }
+          ]
+        }
+      ]
+    }
+  ]
+}

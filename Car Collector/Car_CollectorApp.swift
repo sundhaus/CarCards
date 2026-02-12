@@ -1,0 +1,124 @@
+//
+//  CarCardCollectorApp.swift
+//  CarCardCollector
+//
+//  Updated with Firebase integration + anonymous auth onboarding
+//  Created for iOS 17.0+, Xcode 16.0
+//
+
+import SwiftUI
+import FirebaseCore
+
+@main
+struct CarCardCollectorApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var firebaseManager = FirebaseManager.shared
+    @State private var showOnboarding = false
+    @State private var isReady = false
+    
+    init() {
+        // FirebaseApp.configure() is called by FirebaseManager.configure() below
+        // Set up Firestore settings
+        FirebaseManager.configure()
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            rootView
+                .task {
+                    await checkAuthState()
+                }
+        }
+    }
+    
+    @ViewBuilder
+    private var rootView: some View {
+        if firebaseManager.isLoading {
+            launchScreen
+        } else if showOnboarding {
+            OnboardingView(onComplete: {
+                withAnimation {
+                    showOnboarding = false
+                    startServices()
+                }
+            })
+        } else if isReady {
+            ContentView()
+        } else {
+            launchScreen
+        }
+    }
+    
+    private var launchScreen: some View {
+        ZStack {
+            Color(red: 0.05, green: 0.08, blue: 0.15)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                Image(systemName: "car.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.blue)
+                
+                ProgressView()
+                    .tint(.white)
+            }
+        }
+        .onAppear {
+            OrientationManager.lockOrientation(.portrait)
+        }
+    }
+    
+    private func checkAuthState() async {
+        // Wait for Firebase auth to resolve
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        
+        if firebaseManager.isAuthenticated,
+           let uid = firebaseManager.currentUserId {
+            // Returning user Ã¢â‚¬â€ check if profile exists
+            do {
+                let exists = try await UserService.shared.profileExists(uid: uid)
+                if exists {
+                    startServices()
+                    withAnimation { isReady = true }
+                } else {
+                    // Auth exists but no profile (edge case)
+                    withAnimation { showOnboarding = true }
+                }
+            } catch {
+                print("Ã¢ÂÅ’ Auth check failed: \(error)")
+                withAnimation { showOnboarding = true }
+            }
+        } else {
+            // First launch or signed out
+            let completedBefore = UserDefaults.standard.bool(forKey: "onboardingComplete")
+            if !completedBefore {
+                withAnimation { showOnboarding = true }
+            } else {
+                // Had account but signed out Ã¢â‚¬â€ try re-auth
+                do {
+                    try await firebaseManager.signInAnonymously()
+                    startServices()
+                    withAnimation { isReady = true }
+                } catch {
+                    withAnimation { showOnboarding = true }
+                }
+            }
+        }
+    }
+    
+    private func startServices() {
+        guard let uid = firebaseManager.currentUserId else { return }
+        
+        // Start real-time listeners
+        UserService.shared.loadProfile(uid: uid)
+        CardService.shared.listenToMyCards(uid: uid)
+        
+        isReady = true
+        
+        // Load cloud data into LevelSystem after a brief delay for profile to load
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            // LevelSystem will be initialized in ContentView, sync happens via UserService
+        }
+    }
+}
