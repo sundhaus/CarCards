@@ -188,6 +188,45 @@ class UserService: ObservableObject {
         ])
     }
     
+    // MARK: - Coin Management
+    
+    func addCoins(_ amount: Int) {
+        guard let uid = currentProfile?.id else { return }
+        
+        // Update local state immediately
+        currentProfile?.coins += amount
+        
+        // Sync to Firestore
+        Task {
+            try? await usersCollection.document(uid).updateData([
+                "coins": FieldValue.increment(Int64(amount))
+            ])
+        }
+    }
+    
+    func spendCoins(_ amount: Int) -> Bool {
+        guard let currentCoins = currentProfile?.coins, currentCoins >= amount else {
+            return false
+        }
+        guard let uid = currentProfile?.id else { return false }
+        
+        // Update local state immediately
+        currentProfile?.coins -= amount
+        
+        // Sync to Firestore
+        Task {
+            try? await usersCollection.document(uid).updateData([
+                "coins": FieldValue.increment(Int64(-amount))
+            ])
+        }
+        
+        return true
+    }
+    
+    var coins: Int {
+        currentProfile?.coins ?? 0
+    }
+    
     // MARK: - Fetch Another User's Profile (for marketplace)
     
     func fetchProfile(uid: String) async throws -> UserProfile? {
