@@ -158,6 +158,18 @@ struct FriendsView: View {
                         }
                         .padding(.vertical, 16)
                         .padding(.bottom, isLandscape ? 20 : 100)
+                        .background(
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    // Tap anywhere in feed area to dismiss flipped card
+                                    if flippedCardId != nil {
+                                        withAnimation(.spring(response: 0.4)) {
+                                            flippedCardId = nil
+                                        }
+                                    }
+                                }
+                        )
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
