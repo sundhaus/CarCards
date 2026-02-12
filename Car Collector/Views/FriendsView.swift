@@ -13,6 +13,7 @@ struct FriendsView: View {
     @StateObject private var friendsService = FriendsService.shared
     @State private var showFriendsList = false
     @State private var showSearch = false
+    @State private var flippedCardId: String? = nil  // Track which card is flipped
     @Environment(\.dismiss) private var dismiss
     
     // Generate gradient colors based on level (same as LevelHeader)
@@ -144,7 +145,8 @@ struct FriendsView: View {
                                 ForEach(friendsService.friendActivities) { activity in
                                     FriendActivityCard(
                                         activity: activity,
-                                        levelGradient: levelGradient(for: activity.level)
+                                        levelGradient: levelGradient(for: activity.level),
+                                        flippedCardId: $flippedCardId
                                     )
                                     
                                     if activity.id != friendsService.friendActivities.last?.id {
@@ -211,6 +213,8 @@ struct FriendsView: View {
 struct FriendActivityCard: View {
     let activity: FriendActivity
     let levelGradient: [Color]
+    @Binding var flippedCardId: String?  // Shared state from parent
+    
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
     @State private var isHeated: Bool = false
@@ -218,8 +222,7 @@ struct FriendActivityCard: View {
     @State private var isAnimatingHeat = false
     @State private var showFloatingFlame = false
     
-    // Flip functionality
-    @State private var isFlipped = false
+    // Specs fetching state
     @State private var fetchedSpecs: VehicleSpecs?
     @State private var isFetchingSpecs = false
     
@@ -227,20 +230,13 @@ struct FriendActivityCard: View {
     @State private var lastSyncedHeatedBy: [String] = []
     @State private var lastSyncedHeatCount: Int = 0
     
+    // Computed property: is THIS card flipped?
+    private var isFlipped: Bool {
+        flippedCardId == activity.id
+    }
+    
     var body: some View {
-        ZStack {
-            // Background overlay when card is flipped - tap to flip back
-            if isFlipped {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.4)) {
-                            isFlipped = false
-                        }
-                    }
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             // Friend info header
             HStack(spacing: 8) {
                 // Level bubble
@@ -332,12 +328,20 @@ struct FriendActivityCard: View {
                                 }
                             )
                             .onTapGesture {
-                                // Single tap to flip
-                                Task {
-                                    await fetchSpecsIfNeeded()
-                                }
-                                withAnimation(.spring(response: 0.4)) {
-                                    isFlipped = true
+                                // Single tap to flip/unflip
+                                if isFlipped {
+                                    // This card is flipped, flip it back
+                                    withAnimation(.spring(response: 0.4)) {
+                                        flippedCardId = nil
+                                    }
+                                } else {
+                                    // Flip this card (auto-flips any other card back)
+                                    Task {
+                                        await fetchSpecsIfNeeded()
+                                    }
+                                    withAnimation(.spring(response: 0.4)) {
+                                        flippedCardId = activity.id
+                                    }
                                 }
                             }
                             .onTapGesture(count: 2) {
@@ -514,7 +518,6 @@ struct FriendActivityCard: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 8)
-        }
         }
     }
     
