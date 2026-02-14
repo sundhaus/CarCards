@@ -2,8 +2,11 @@
 //  HotCardsService.swift
 //  CarCardCollector
 //
-//  Service to fetch cards with the most heat globally
-//  Refreshes every 24 hours automatically
+//  Service to fetch cards with the most heat (likes) globally
+//  - Shows top 20 most liked cards from ALL users
+//  - Updates in real-time as likes change (snapshot listener)
+//  - Full refresh every 24 hours to reset timestamp
+//  - Cards can move in/out of top 20 as other cards get more likes
 //
 
 import SwiftUI
@@ -76,7 +79,9 @@ class HotCardsService: ObservableObject {
         // Remove existing listener
         listener?.remove()
         
-        // Query all activities ordered by heat count
+        print("🔍 Fetching top \(limit) cards globally by heat count (likes)...")
+        
+        // Query ALL activities from ALL users ordered by heat count (likes)
         listener = db.collection("friend_activities")
             .order(by: "heatCount", descending: true)
             .limit(to: limit)
@@ -99,7 +104,13 @@ class HotCardsService: ObservableObject {
                 }
                 
                 self.isLoading = false
-                print("🔥 Loaded \(self.hotCards.count) hot cards")
+                print("🔥 Loaded \(self.hotCards.count) hot cards globally")
+                print("🔥 Top card: \(self.hotCards.first?.cardMake ?? "none") \(self.hotCards.first?.cardModel ?? "") with \(self.hotCards.first?.heatCount ?? 0) likes")
+                
+                // Real-time updates enabled - cards will update as likes change
+                if !updateTimestamp {
+                    print("📡 Real-time updates active - cards will refresh as likes change")
+                }
             }
     }
     

@@ -81,24 +81,19 @@ struct HotCardsCarousel: View {
                 }
                 .overlayPreferenceValue(CardPositionPreferenceKey.self) { preferences in
                     GeometryReader { geo in
-                        Color.clear.onAppear {
-                            // This will trigger when preferences update
-                            if !isDragging {
-                                snapToClosestCard(preferences: preferences, geometry: geo, proxy: proxy)
-                            }
-                        }
-                        .onChange(of: isDragging) { oldValue, newValue in
-                            if oldValue && !newValue {
-                                // Dragging just ended - snap to closest
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                                    snapToClosestCard(preferences: preferences, geometry: geo, proxy: proxy)
+                        Color.clear
+                            .onChange(of: isDragging) { oldValue, newValue in
+                                if oldValue && !newValue {
+                                    // User just stopped dragging - wait for momentum to settle
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                        snapToClosestCard(preferences: preferences, geometry: geo, proxy: proxy)
+                                    }
                                 }
                             }
-                        }
                     }
                 }
-                .simultaneousGesture(
-                    DragGesture()
+                .gesture(
+                    DragGesture(minimumDistance: 0)
                         .onChanged { _ in
                             isDragging = true
                         }
