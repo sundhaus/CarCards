@@ -2,7 +2,7 @@
 //  HotCardsCarousel.swift
 //  CarCardCollector
 //
-//  3D horizontal carousel with snap-to-center, infinite loop, and blur
+//  3D horizontal carousel with free scrolling, snap on release, infinite loop, and blur
 //
 
 import SwiftUI
@@ -10,7 +10,7 @@ import SwiftUI
 struct HotCardsCarousel: View {
     @StateObject private var hotCardsService = HotCardsService()
     @State private var currentIndex = 0
-    @State private var dragOffset: CGFloat = 0
+    @State private var isDragging = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -45,16 +45,17 @@ struct HotCardsCarousel: View {
         }
     }
     
-    // MARK: - Carousel View (Snap-to-Center with Infinite Loop & Blur)
+    // MARK: - Carousel View (Free Scroll + Snap on Release + Blur)
     
     private var carouselView: some View {
         GeometryReader { geometry in
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 0) {
-                        ForEach(Array(hotCardsService.hotCards.enumerated()), id: \.element.id) { index, card in
+                    LazyHStack(spacing: 20) {
+                        // Create infinite loop by repeating cards
+                        ForEach(createInfiniteArray(), id: \.id) { item in
                             GeometryReader { cardGeometry in
-                                HotCardItem(card: card)
+                                HotCardItem(card: item.card)
                                     .rotation3DEffect(
                                         getRotationAngle(for: cardGeometry, screenWidth: geometry.size.width),
                                         axis: (x: 0, y: 1, z: 0),
@@ -65,52 +66,102 @@ struct HotCardsCarousel: View {
                                     .blur(radius: getBlurRadius(for: cardGeometry, screenWidth: geometry.size.width))
                                     .scaleEffect(getScale(for: cardGeometry, screenWidth: geometry.size.width))
                             }
-                            .frame(width: geometry.size.width)
-                            .id(index)
+                            .frame(width: 280, height: 220)
+                            .id(item.id)
                         }
                     }
+                    .padding(.horizontal, (geometry.size.width - 280) / 2)
+                    .padding(.vertical, 12)
                 }
-                .scrollDisabled(true)
-                .gesture(
+                .simultaneousGesture(
                     DragGesture()
-                        .onChanged { value in
-                            dragOffset = value.translation.width
+                        .onChanged { _ in
+                            isDragging = true
                         }
                         .onEnded { value in
-                            handleSwipe(translation: value.translation.width, proxy: proxy)
+                            isDragging = false
+                            handleSnapToNearest(proxy: proxy, geometry: geometry, translation: value.translation.width)
                         }
                 )
                 .onAppear {
-                    // Snap to first card
-                    proxy.scrollTo(currentIndex, anchor: .center)
-                }
-                .onChange(of: currentIndex) { oldValue, newValue in
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        proxy.scrollTo(newValue, anchor: .center)
-                    }
+                    // Start in the middle of infinite array
+                    let startIndex = hotCardsService.hotCards.count * 50
+                    proxy.scrollTo(startIndex, anchor: .center)
+                    currentIndex = startIndex
                 }
             }
         }
         .frame(height: 240)
     }
     
-    // MARK: - Helper Functions
+    // MARK: - Infinite Loop
+    
+    private struct CardItem: Identifiable {
+        let id: Int
+        let card: FriendActivity
+    }
+    
+    private func createInfiniteArray() -> [CardItem] {
+        guard !hotCardsService.hotCards.isEmpty else { return [] }
+        
+        var items: [CardItem] = []
+        let cards = hotCardsService.hotCards
+        
+        // Create 100 copies for smooth infinite scrolling
+        for i in 0..<(cards.count * 100) {
+            let cardIndex = i % cards.count
+            items.append(CardItem(id: i, card: cards[cardIndex]))
+        }
+        
+        return items
+    }
+    
+    // MARK: - Snap Logic
+    
+    private func handleSnapToNearest(proxy: ScrollViewProxy, geometry: GeometryProxy, translation: CGFloat) {
+        let totalCards = hotCardsService.hotCards.count
+        guard totalCards > 0 else { return }
+        
+        // Determine swipe direction
+        if translation > 50 {
+            // Swiped right - previous card
+            currentIndex = (currentIndex - 1 + totalCards * 100) % (totalCards * 100)
+        } else if translation < -50 {
+            // Swiped left - next card
+            currentIndex = (currentIndex + 1) % (totalCards * 100)
+        }
+        // Otherwise snap to current (no change needed)
+        
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            proxy.scrollTo(currentIndex, anchor: .center)
+        }
+        
+        // Reset to middle if we're getting near edges
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let middlePosition = totalCards * 50
+            if currentIndex < totalCards * 10 || currentIndex > totalCards * 90 {
+                let offset = currentIndex % totalCards
+                currentIndex = middlePosition + offset
+                proxy.scrollTo(currentIndex, anchor: .center)
+            }
+        }
+    }
+    
+    // MARK: - Visual Effects
     
     private func getRotationAngle(for geometry: GeometryProxy, screenWidth: CGFloat) -> Angle {
         let midX = geometry.frame(in: .global).midX
         let screenMidX = screenWidth / 2
         let distance = midX - screenMidX
         
-        // Rotation based on distance from center
-        return Angle(degrees: Double(distance + dragOffset) / -15.0)
+        return Angle(degrees: Double(distance) / -15.0)
     }
     
     private func getBlurRadius(for geometry: GeometryProxy, screenWidth: CGFloat) -> CGFloat {
         let midX = geometry.frame(in: .global).midX
         let screenMidX = screenWidth / 2
-        let distance = abs(midX - screenMidX + dragOffset)
+        let distance = abs(midX - screenMidX)
         
-        // Blur kicks in after threshold distance
         let blurThreshold: CGFloat = 80
         let maxBlur: CGFloat = 8
         
@@ -125,9 +176,8 @@ struct HotCardsCarousel: View {
     private func getScale(for geometry: GeometryProxy, screenWidth: CGFloat) -> CGFloat {
         let midX = geometry.frame(in: .global).midX
         let screenMidX = screenWidth / 2
-        let distance = abs(midX - screenMidX + dragOffset)
+        let distance = abs(midX - screenMidX)
         
-        // Scale decreases with distance from center
         let scaleThreshold: CGFloat = 60
         let minScale: CGFloat = 0.88
         
@@ -136,28 +186,6 @@ struct HotCardsCarousel: View {
         } else {
             let scaleProgress = (distance - scaleThreshold) / 180
             return max(minScale, 1.0 - (scaleProgress * (1.0 - minScale)))
-        }
-    }
-    
-    private func handleSwipe(translation: CGFloat, proxy: ScrollViewProxy) {
-        let threshold: CGFloat = 80
-        let totalCards = hotCardsService.hotCards.count
-        
-        guard totalCards > 0 else { return }
-        
-        dragOffset = 0 // Reset drag offset
-        
-        if translation < -threshold {
-            // Swiped left - next card (infinite loop)
-            currentIndex = (currentIndex + 1) % totalCards
-        } else if translation > threshold {
-            // Swiped right - previous card (infinite loop)
-            currentIndex = (currentIndex - 1 + totalCards) % totalCards
-        } else {
-            // Didn't swipe far enough - snap back to current
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                proxy.scrollTo(currentIndex, anchor: .center)
-            }
         }
     }
     
