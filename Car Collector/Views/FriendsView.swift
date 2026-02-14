@@ -218,20 +218,6 @@ struct FriendsView: View {
         
         friendsService.listenToFollows(uid: uid)
         friendsService.listenToFriendActivities(uid: uid)
-        
-        // One-time migration to backfill custom frames to existing activities
-        let migrationKey = "didBackfillFrames_v1"
-        if !UserDefaults.standard.bool(forKey: migrationKey) {
-            Task {
-                do {
-                    try await FriendsService.shared.backfillActivityFrames()
-                    UserDefaults.standard.set(true, forKey: migrationKey)
-                    print("✅ Frame backfill migration completed")
-                } catch {
-                    print("❌ Frame backfill failed: \(error)")
-                }
-            }
-        }
     }
 }
 
