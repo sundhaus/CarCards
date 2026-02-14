@@ -369,10 +369,17 @@ struct GarageViewContent: View {
     @Binding var selectedCard: SavedCard?
     @State private var cardsPerRow = 2
     @State private var currentPage = 0
+    @State private var showActionSheet = false
+    @State private var actionSheetCard: SavedCard?
+    @State private var showCustomize = false
     
     var body: some View {
         NavigationStack {
             ZStack {
+                // Dark blue background
+                Color.appBackgroundSolid
+                    .ignoresSafeArea()
+                
                 VStack {
                     if savedCards.isEmpty {
                         Text("Your collection will appear here")
@@ -405,6 +412,45 @@ struct GarageViewContent: View {
                 }
             }
         }
+        .confirmationDialog("Card Options", isPresented: $showActionSheet, presenting: actionSheetCard) { card in
+            Button("View Full Screen") {
+                selectedCard = card
+                withAnimation {
+                    showCardDetail = true
+                }
+            }
+            
+            Button("Customize") {
+                selectedCard = card
+                showCustomize = true
+            }
+            
+            Button("Quick Sell - 250 coins") {
+                quickSellCard(card)
+            }
+            
+            Button("Cancel", role: .cancel) {}
+        } message: { card in
+            Text("\(card.make) \(card.model)")
+        }
+        .fullScreenCover(isPresented: $showCustomize) {
+            if let card = selectedCard {
+                CustomizeCardView(card: card, savedCards: $savedCards)
+            }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func quickSellCard(_ card: SavedCard) {
+        // Award 250 coins
+        UserService.shared.addCoins(250)
+        
+        // Remove card from collection
+        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+            savedCards.remove(at: index)
+            CardStorage.saveCards(savedCards)
+        }
     }
     
     // Portrait: Paged view (swipe left/right for pages)
@@ -424,20 +470,8 @@ struct GarageViewContent: View {
                             ForEach(pageCards) { card in
                                 SavedCardView(card: card, isLargeSize: cardsPerRow == 1)
                                     .onTapGesture {
-                                        selectedCard = card
-                                        withAnimation {
-                                            showCardDetail = true
-                                        }
-                                    }
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                                savedCards.remove(at: index)
-                                                CardStorage.saveCards(savedCards)
-                                            }
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
+                                        actionSheetCard = card
+                                        showActionSheet = true
                                     }
                             }
                         }
@@ -464,20 +498,8 @@ struct GarageViewContent: View {
                     SavedCardView(card: card, isLargeSize: false)
                         .frame(width: 200) // Fixed width for horizontal scrolling
                         .onTapGesture {
-                            selectedCard = card
-                            withAnimation {
-                                showCardDetail = true
-                            }
-                        }
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                    savedCards.remove(at: index)
-                                    CardStorage.saveCards(savedCards)
-                                }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                            actionSheetCard = card
+                            showActionSheet = true
                         }
                 }
             }
@@ -653,6 +675,16 @@ struct CardDetailView: View {
     // Front view of the card
     private func cardFrontView(cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
         ZStack {
+            // Custom frame/border
+            if let frameName = card.customFrame, frameName != "None" {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        frameName == "White" ? Color.white : Color.black,
+                        lineWidth: 8
+                    )
+                    .frame(width: cardWidth, height: cardHeight)
+            }
+            
             if let image = card.image {
                 Image(uiImage: image)
                     .resizable()

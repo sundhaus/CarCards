@@ -23,6 +23,9 @@ struct CloudCard: Identifiable, Codable {
     var capturedLocation: String?
     var previousOwners: Int
     
+    // ADDED: Customization fields
+    var customFrame: String?
+    
     // From Firestore document
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -40,6 +43,9 @@ struct CloudCard: Identifiable, Codable {
         self.capturedBy = data["capturedBy"] as? String
         self.capturedLocation = data["capturedLocation"] as? String
         self.previousOwners = data["previousOwners"] as? Int ?? 0
+        
+        // ADDED: Load customization
+        self.customFrame = data["customFrame"] as? String
     }
     
     // New card
@@ -53,7 +59,8 @@ struct CloudCard: Identifiable, Codable {
         imageURL: String,
         capturedBy: String? = nil,
         capturedLocation: String? = nil,
-        previousOwners: Int = 0
+        previousOwners: Int = 0,
+        customFrame: String? = nil
     ) {
         self.id = id
         self.ownerId = ownerId
@@ -66,6 +73,7 @@ struct CloudCard: Identifiable, Codable {
         self.capturedBy = capturedBy
         self.capturedLocation = capturedLocation
         self.previousOwners = previousOwners
+        self.customFrame = customFrame
     }
     
     var dictionary: [String: Any] {
@@ -86,6 +94,11 @@ struct CloudCard: Identifiable, Codable {
         }
         if let capturedLocation = capturedLocation {
             dict["capturedLocation"] = capturedLocation
+        }
+        
+        // ADDED: Include customization if present
+        if let customFrame = customFrame {
+            dict["customFrame"] = customFrame
         }
         
         return dict

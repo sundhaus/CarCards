@@ -67,7 +67,8 @@ class CardService: ObservableObject {
         year: String,
         capturedBy: String? = nil,
         capturedLocation: String? = nil,
-        previousOwners: Int = 0
+        previousOwners: Int = 0,
+        customFrame: String? = nil
     ) async throws -> CloudCard {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
@@ -90,7 +91,8 @@ class CardService: ObservableObject {
             imageURL: imageURL,
             capturedBy: capturedBy,
             capturedLocation: capturedLocation,
-            previousOwners: previousOwners
+            previousOwners: previousOwners,
+            customFrame: customFrame
         )
         
         try await cardsCollection.document(cardId).setData(card.dictionary)
@@ -116,6 +118,15 @@ class CardService: ObservableObject {
         
         print("✅ Saved card: \(make) \(model) - Captured by: \(capturedBy ?? "unknown"), Location: \(capturedLocation ?? "unknown")")
         return card
+    }
+    
+    // MARK: - Update Custom Frame
+    
+    func updateCustomFrame(cardId: String, customFrame: String?) async throws {
+        try await cardsCollection.document(cardId).updateData([
+            "customFrame": customFrame ?? FieldValue.delete()
+        ])
+        print("✅ Updated custom frame for card: \(cardId)")
     }
     
     // MARK: - Listen to My Cards (real-time)

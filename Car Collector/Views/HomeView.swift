@@ -19,8 +19,8 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                Color.black
+                // Dark blue background
+                Color.appBackgroundSolid
                     .ignoresSafeArea()
                 
                 ScrollView {

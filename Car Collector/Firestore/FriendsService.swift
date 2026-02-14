@@ -48,6 +48,7 @@ struct FriendActivity: Identifiable {
     var createdAt: Date
     var heatedBy: [String]
     var heatCount: Int
+    var customFrame: String?
     
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -64,10 +65,11 @@ struct FriendActivity: Identifiable {
         self.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
         self.heatedBy = data["heatedBy"] as? [String] ?? []
         self.heatCount = data["heatCount"] as? Int ?? 0
+        self.customFrame = data["customFrame"] as? String
     }
     
     var dictionary: [String: Any] {
-        return [
+        var dict: [String: Any] = [
             "userId": userId,
             "username": username,
             "level": level,
@@ -80,6 +82,12 @@ struct FriendActivity: Identifiable {
             "heatedBy": heatedBy,
             "heatCount": heatCount
         ]
+        
+        if let customFrame = customFrame {
+            dict["customFrame"] = customFrame
+        }
+        
+        return dict
     }
     
     var timeAgo: String {
@@ -551,7 +559,7 @@ class FriendsService: ObservableObject {
     
     // MARK: - Post Activity (when user adds a card)
     
-    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String) async throws {
+    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, customFrame: String? = nil) async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
         }
@@ -573,7 +581,7 @@ class FriendsService: ObservableObject {
         }
         
         let activityId = UUID().uuidString
-        let data: [String: Any] = [
+        var data: [String: Any] = [
             "userId": uid,
             "username": profile.username,
             "level": profile.level,
@@ -584,6 +592,10 @@ class FriendsService: ObservableObject {
             "imageURL": imageURL,
             "createdAt": Timestamp(date: Date())
         ]
+        
+        if let customFrame = customFrame {
+            data["customFrame"] = customFrame
+        }
         
         try await activitiesCollection.document(activityId).setData(data)
         

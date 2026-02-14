@@ -26,7 +26,7 @@ struct TransferTargetsView: View {
     
     var body: some View {
         ZStack {
-            Color(.systemGray6)
+            Color.appBackgroundSolid
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {

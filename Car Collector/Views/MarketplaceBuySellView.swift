@@ -111,8 +111,8 @@ struct MarketplaceBuySellView: View {
     
     var body: some View {
         ZStack {
-            // Gray backdrop that extends entire page
-            Color(.systemGray6)
+            // Dark blue background
+            Color.appBackgroundSolid
                 .ignoresSafeArea(edges: .all)
             
             VStack(spacing: 0) {

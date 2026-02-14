@@ -61,11 +61,19 @@ struct SavedCardView: View {
     
     var body: some View {
         ZStack {
+            // Custom frame/border
+            if let frameName = card.customFrame, frameName != "None" {
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(frameName == "White" ? Color.white : Color.black, lineWidth: isLargeSize ? 6 : 3)
+                    .frame(width: isLargeSize ? 360 : 175, height: isLargeSize ? 202.5 : 98.4)
+            }
+            
+            // Card image
             if let image = card.image {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: isLargeSize ? 360 : 175, height: isLargeSize ? 202.5 : 98.4)
+                    .frame(width: isLargeSize ? 348 : 169, height: isLargeSize ? 195.75 : 92.4)
                     .clipped()
             }
             
@@ -79,7 +87,7 @@ struct SavedCardView: View {
                     .frame(maxWidth: .infinity)
                     .background(.black.opacity(0.6))
             }
-            .frame(width: isLargeSize ? 360 : 175, height: isLargeSize ? 202.5 : 98.4)
+            .frame(width: isLargeSize ? 348 : 169, height: isLargeSize ? 195.75 : 92.4)
         }
         .cornerRadius(10)
         .overlay(

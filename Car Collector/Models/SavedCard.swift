@@ -18,6 +18,7 @@ struct SavedCard: Identifiable, Codable {
     let capturedBy: String?  // Username who captured the card
     let capturedLocation: String?  // City where captured
     let previousOwners: Int  // Number of previous owners
+    var customFrame: String?  // Custom frame/border ("none", "white", "black")
     
     init(
         id: UUID = UUID(),
@@ -29,7 +30,8 @@ struct SavedCard: Identifiable, Codable {
         specs: VehicleSpecs? = nil,
         capturedBy: String? = nil,
         capturedLocation: String? = nil,
-        previousOwners: Int = 0
+        previousOwners: Int = 0,
+        customFrame: String? = nil
     ) {
         self.id = id
         self.imageData = image.jpegData(compressionQuality: 0.8) ?? Data()
@@ -41,13 +43,14 @@ struct SavedCard: Identifiable, Codable {
         self.capturedBy = capturedBy
         self.capturedLocation = capturedLocation
         self.previousOwners = previousOwners
+        self.customFrame = customFrame
     }
     
     // MARK: - Custom Decoder (handles older cards missing new fields)
     
     enum CodingKeys: String, CodingKey {
         case id, imageData, make, model, color, year
-        case specs, capturedBy, capturedLocation, previousOwners
+        case specs, capturedBy, capturedLocation, previousOwners, customFrame
     }
     
     init(from decoder: Decoder) throws {
@@ -65,6 +68,7 @@ struct SavedCard: Identifiable, Codable {
         capturedBy = try container.decodeIfPresent(String.self, forKey: .capturedBy)
         capturedLocation = try container.decodeIfPresent(String.self, forKey: .capturedLocation)
         previousOwners = try container.decodeIfPresent(Int.self, forKey: .previousOwners) ?? 0
+        customFrame = try container.decodeIfPresent(String.self, forKey: .customFrame)
     }
     
     var image: UIImage? {
