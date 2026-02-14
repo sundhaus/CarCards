@@ -62,13 +62,13 @@ struct HotCardsCarousel: View {
                                 perspective: 1.0
                             )
                     }
-                    .frame(width: 280, height: 340)
+                    .frame(width: 280, height: 220)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
         }
-        .frame(height: 360)
+        .frame(height: 240)
     }
     
     // MARK: - Loading & Empty States
@@ -112,21 +112,43 @@ struct HotCardItem: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            // Card image
-            cardImageView
-                .frame(width: 280)
-                .aspectRatio(16/9, contentMode: .fill)
-                .clipped()
-                .cornerRadius(12)
-                .overlay(
-                    // Custom frame border if present
-                    customFrameOverlay
-                )
+            // Card with proper format (like SavedCardView)
+            ZStack {
+                // Custom frame/border
+                if let frameName = card.customFrame, frameName != "None" {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(frameName == "White" ? Color.white : Color.black, lineWidth: 6)
+                        .frame(width: 280, height: 157.5)
+                }
+                
+                // Card image
+                cardImageView
+                    .frame(width: 268, height: 150.75)
+                    .clipped()
+                
+                // Card text overlay at bottom
+                VStack {
+                    Spacer()
+                    Text("\(card.cardMake) \(card.cardModel)")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding(10)
+                        .frame(maxWidth: .infinity)
+                        .background(.black.opacity(0.6))
+                }
+                .frame(width: 268, height: 150.75)
+            }
+            .frame(width: 280, height: 157.5)
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(.gray.opacity(0.3), lineWidth: 1)
+            )
             
-            // Heat info
+            // Heat info below card
             HStack(spacing: 8) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 16))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [.orange, .red],
@@ -136,20 +158,14 @@ struct HotCardItem: View {
                     )
                 
                 Text("\(card.heatCount)")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.white)
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(card.cardMake)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
-                    Text("\(card.cardModel) '\(String(card.cardYear.suffix(2)))")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
-                }
+                Text("'\(String(card.cardYear.suffix(2)))")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.7))
             }
             .frame(width: 280)
             .padding(.horizontal, 4)
@@ -175,17 +191,6 @@ struct HotCardItem: View {
             }
         } else {
             placeholderView(isLoading: false)
-        }
-    }
-    
-    @ViewBuilder
-    private var customFrameOverlay: some View {
-        if let frameName = card.customFrame, frameName != "None" {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    frameName == "White" ? Color.white : Color.black,
-                    lineWidth: 6
-                )
         }
     }
     
