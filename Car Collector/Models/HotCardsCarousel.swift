@@ -50,8 +50,9 @@ struct HotCardsCarousel: View {
     private var cardStackView: some View {
         GeometryReader { geometry in
             ZStack {
-                // Show 3 cards: left, center, right
-                ForEach(-1...1, id: \.self) { offset in
+                // Show 5 positions for smooth transitions: -2, -1, 0, 1, 2
+                // But only -1, 0, 1 are visible (others are off-screen staging)
+                ForEach(-2...2, id: \.self) { offset in
                     let cardIndex = getCardIndex(for: offset)
                     
                     if cardIndex >= 0 && cardIndex < hotCardsService.hotCards.count {
@@ -68,11 +69,11 @@ struct HotCardsCarousel: View {
                             )
                             .opacity(getCarouselOpacity(for: offset))
                             .zIndex(offset == 0 ? 10 : Double(5 - abs(offset)))
-                            .animation(.spring(response: 0.5, dampingFraction: 0.75), value: dragOffset)
-                            .animation(.spring(response: 0.5, dampingFraction: 0.75), value: currentIndex)
                     }
                 }
             }
+            .animation(.spring(response: 0.5, dampingFraction: 0.75), value: currentIndex)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: dragOffset)
             .frame(width: geometry.size.width, height: 300)
             .gesture(
                 DragGesture()
@@ -92,7 +93,7 @@ struct HotCardsCarousel: View {
     // MARK: - Carousel Position Calculations
     
     private func getCardIndex(for offset: Int) -> Int {
-        // Offset: -1 (left card), 0 (center card), 1 (right card)
+        // Offset: -2, -1 (left cards), 0 (center card), 1, 2 (right cards)
         let index = currentIndex + offset
         let totalCards = hotCardsService.hotCards.count
         
@@ -109,12 +110,16 @@ struct HotCardsCarousel: View {
         let baseOffset: CGFloat
         
         switch offset {
+        case -2: // Far left (off-screen staging)
+            baseOffset = -500
         case -1: // Left card
             baseOffset = -220
         case 0: // Center card
             baseOffset = 0
         case 1: // Right card
             baseOffset = 220
+        case 2: // Far right (off-screen staging)
+            baseOffset = 500
         default:
             baseOffset = 0
         }
@@ -122,9 +127,12 @@ struct HotCardsCarousel: View {
         // Add drag influence - center card follows drag, side cards move opposite
         if offset == 0 {
             return baseOffset + (dragOffset * 0.8)
-        } else {
-            // Side cards move slightly opposite for parallax effect
+        } else if abs(offset) == 1 {
+            // Visible side cards - parallax effect
             return baseOffset - (dragOffset * 0.15)
+        } else {
+            // Staging cards - minimal movement
+            return baseOffset - (dragOffset * 0.05)
         }
     }
     
@@ -133,24 +141,29 @@ struct HotCardsCarousel: View {
             // Center card is full size
             let dragScale = 1.0 - (abs(dragOffset) / 2000.0)
             return max(0.9, dragScale)
-        } else {
-            // Side cards are smaller
+        } else if abs(offset) == 1 {
+            // Visible side cards are 75% size
             return 0.75
+        } else {
+            // Staging cards are small
+            return 0.5
         }
     }
     
     private func getCarousel3DRotation(for offset: Int) -> Angle {
+        let dragInfluence = Double(dragOffset) / 10.0
+        
         switch offset {
-        case -1: // Left card - rotate right (towards center)
-            let baseRotation = 55.0
-            let dragInfluence = Double(dragOffset) / 10.0
-            return Angle(degrees: baseRotation + dragInfluence)
+        case -2: // Far left staging - rotated away more
+            return Angle(degrees: -75.0)
+        case -1: // Left card - rotate LEFT (away from center)
+            return Angle(degrees: -55.0 + dragInfluence)
         case 0: // Center card - slight rotation based on drag
             return Angle(degrees: Double(dragOffset) / 20.0)
-        case 1: // Right card - rotate left (towards center)
-            let baseRotation = -55.0
-            let dragInfluence = Double(dragOffset) / 10.0
-            return Angle(degrees: baseRotation + dragInfluence)
+        case 1: // Right card - rotate RIGHT (away from center)
+            return Angle(degrees: 55.0 + dragInfluence)
+        case 2: // Far right staging - rotated away more
+            return Angle(degrees: 75.0)
         default:
             return Angle(degrees: 0)
         }
@@ -160,9 +173,12 @@ struct HotCardsCarousel: View {
         if offset == 0 {
             // Center card always visible
             return 1.0
-        } else {
-            // Side cards slightly faded
+        } else if abs(offset) == 1 {
+            // Visible side cards slightly faded
             return 0.6
+        } else {
+            // Staging cards invisible (off-screen)
+            return 0
         }
     }
     
@@ -229,21 +245,21 @@ struct HotCardItem: View {
         VStack(spacing: 12) {
             // Card image with 3D shadow
             ZStack {
-                // Shadow layer
+                // Shadow layer - cast below
                 RoundedRectangle(cornerRadius: 12)
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.black.opacity(0.5),
-                                Color.black.opacity(0.25),
+                                Color.black.opacity(0.6),
+                                Color.black.opacity(0.3),
                                 Color.clear
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                    .blur(radius: 12)
-                    .offset(y: 18)
+                    .blur(radius: 15)
+                    .offset(x: 0, y: 25)
                 
                 // Card with image
                 cardImageView
@@ -251,7 +267,7 @@ struct HotCardItem: View {
                     .aspectRatio(16/9, contentMode: .fit)
                     .clipped()
                     .cornerRadius(12)
-                    .shadow(color: Color.black.opacity(0.6), radius: 20, x: 0, y: 12)
+                    .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 6)
                     .overlay(
                         // Custom frame border if present
                         customFrameOverlay
