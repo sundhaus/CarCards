@@ -204,20 +204,21 @@ struct HomeView: View {
                 .padding(.trailing, isLandscape ? 100 : 0)
                 
                 // Bottom blur gradient behind hub (portrait mode)
-                VStack(spacing: 0) {
-                    Spacer()
-                    LinearGradient(
-                        colors: [.clear, .clear, .black.opacity(0.7), .black, .black],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 200)
-                    .allowsHitTesting(false)
-                    .transaction { transaction in
-                        transaction.animation = nil // Appear instantly, no fade animation
+                if !isLandscape {
+                    VStack(spacing: 0) {
+                        Spacer()
+                        LinearGradient(
+                            colors: [.clear, .clear, .black.opacity(0.7), .black, .black],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 200)
+                        .allowsHitTesting(false)
                     }
+                    .ignoresSafeArea(edges: .bottom)
+                    .transition(.identity) // No transition animation
+                    .animation(.none, value: selectedTab) // Disable animation on tab change
                 }
-                .ignoresSafeArea(edges: .bottom)
             }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
@@ -226,6 +227,7 @@ struct HomeView: View {
                 FriendsView(isLandscape: isLandscape)
             }
             .toolbar(.hidden, for: .tabBar)
+            .transition(.identity) // Prevent transition animation
             .onAppear {
                 OrientationManager.lockOrientation(.portrait)
             }

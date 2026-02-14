@@ -33,6 +33,7 @@ struct ContentView: View {
                         totalCards: savedCards.count
                     )
                     .padding(.top, 60)
+                    .transition(.identity) // No transition animation
                     .tag(0)
                     
                     // Garage Tab
