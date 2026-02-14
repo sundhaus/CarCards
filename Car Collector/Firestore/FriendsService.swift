@@ -8,6 +8,7 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseAuth
 
 // Follow relationship model
 struct Follow: Identifiable {
@@ -765,7 +766,7 @@ enum FriendsServiceError: LocalizedError {
     func backfillActivityFrames() async throws {
         print("🔄 Starting frame backfill migration...")
         
-        guard let uid = FirebaseManager.shared.currentUserId else {
+        guard let uid = Auth.auth().currentUser?.uid else {
             throw FirebaseError.notAuthenticated
         }
         
@@ -784,13 +785,13 @@ enum FriendsServiceError: LocalizedError {
             let cardId = cardDoc.documentID
             
             // Find activities for this card
-            let activitiesSnapshot = try await activitiesCollection
+            let activitiesSnapshot = try await db.collection("friend_activities")
                 .whereField("cardId", isEqualTo: cardId)
                 .getDocuments()
             
             // Update each activity
             for activityDoc in activitiesSnapshot.documents {
-                try await activitiesCollection.document(activityDoc.documentID).updateData([
+                try await db.collection("friend_activities").document(activityDoc.documentID).updateData([
                     "customFrame": customFrame
                 ])
                 updateCount += 1
