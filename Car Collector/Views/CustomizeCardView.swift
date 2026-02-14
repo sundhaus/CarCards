@@ -254,7 +254,7 @@ struct CustomizeCardView: View {
             Task {
                 do {
                     try await CardService.shared.updateCustomFrame(
-                        cardId: card.id,
+                        cardId: card.id.uuidString,
                         customFrame: selectedFrame.rawValue
                     )
                     print("✅ Synced custom frame to Firebase: \(selectedFrame.rawValue)")
