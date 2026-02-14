@@ -40,7 +40,9 @@ struct HotCardsCarousel: View {
         )
         .cornerRadius(16)
         .onAppear {
-            hotCardsService.fetchHotCards(limit: 20)
+            // Check if 24 hours passed and refresh if needed
+            // On first launch, this will force a refresh and set the timer
+            hotCardsService.fetchHotCardsIfNeeded(limit: 20)
         }
     }
     
