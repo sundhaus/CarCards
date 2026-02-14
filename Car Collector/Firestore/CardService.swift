@@ -127,6 +127,17 @@ class CardService: ObservableObject {
             "customFrame": customFrame ?? FieldValue.delete()
         ])
         print("✅ Updated custom frame for card: \(cardId)")
+        
+        // Also update the frame in friend activities
+        do {
+            try await FriendsService.shared.updateActivityCustomFrame(
+                cardId: cardId,
+                customFrame: customFrame
+            )
+            print("✅ Updated custom frame in friend activity")
+        } catch {
+            print("⚠️ Failed to update friend activity frame (non-critical): \(error)")
+        }
     }
     
     // MARK: - Listen to My Cards (real-time)

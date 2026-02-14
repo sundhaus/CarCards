@@ -602,6 +602,31 @@ class FriendsService: ObservableObject {
         print("Ã¢Å“â€¦ Posted card activity: \(make) \(model) by \(profile.username)")
     }
     
+    // MARK: - Update Activity Custom Frame
+    
+    /// Update customFrame for all activities with a specific cardId
+    func updateActivityCustomFrame(cardId: String, customFrame: String?) async throws {
+        // Find all activities for this card
+        let snapshot = try await activitiesCollection
+            .whereField("cardId", isEqualTo: cardId)
+            .getDocuments()
+        
+        // Update each activity
+        for document in snapshot.documents {
+            if let frame = customFrame {
+                try await activitiesCollection.document(document.documentID).updateData([
+                    "customFrame": frame
+                ])
+            } else {
+                try await activitiesCollection.document(document.documentID).updateData([
+                    "customFrame": FieldValue.delete()
+                ])
+            }
+        }
+        
+        print("✅ Updated customFrame for \(snapshot.documents.count) activities with cardId: \(cardId)")
+    }
+    
     // MARK: - Get Follow Stats for User Profile
     
     /// Get follow statistics for a specific user
