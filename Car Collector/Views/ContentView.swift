@@ -148,6 +148,7 @@ struct ContentView: View {
                     .cornerRadius(20)
                     .frame(width: 80)
                     .blur(radius: showCardDetail ? 10 : 0)
+                    .id("hub-\(selectedTab)") // Force refresh when tab changes
                     .overlay(
                         // Camera button overlaid on center
                         Button(action: {
@@ -237,6 +238,7 @@ struct ContentView: View {
                         .cornerRadius(20)
                         .padding(.horizontal)
                         .blur(radius: showCardDetail ? 10 : 0)
+                        .id("hub-\(selectedTab)") // Force refresh when tab changes
                         .overlay(
                             // Camera button overlaid on center
                             Button(action: {
