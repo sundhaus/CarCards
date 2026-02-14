@@ -2,14 +2,15 @@
 //  HotCardsCarousel.swift
 //  CarCardCollector
 //
-//  3D horizontal scroll carousel with dynamic rotation based on position
-//  Based on: https://github.com/khanboy1989/ThreeDRotationEffectCarousel
+//  3D horizontal carousel with snap-to-center, infinite loop, and blur
 //
 
 import SwiftUI
 
 struct HotCardsCarousel: View {
     @StateObject private var hotCardsService = HotCardsService()
+    @State private var currentIndex = 0
+    @State private var dragOffset: CGFloat = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -40,37 +41,124 @@ struct HotCardsCarousel: View {
         )
         .cornerRadius(16)
         .onAppear {
-            // Check if 24 hours passed and refresh if needed
-            // On first launch, this will force a refresh and set the timer
             hotCardsService.fetchHotCardsIfNeeded(limit: 20)
         }
     }
     
-    // MARK: - Carousel View (Horizontal Scroll with 3D Rotation)
+    // MARK: - Carousel View (Snap-to-Center with Infinite Loop & Blur)
     
     private var carouselView: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 20) {
-                ForEach(hotCardsService.hotCards) { card in
-                    GeometryReader { geometry in
-                        HotCardItem(card: card)
-                            .rotation3DEffect(
-                                // Dynamic rotation based on card's horizontal position
-                                // Cards closer to screen center are flat, edges are rotated
-                                Angle(degrees: Double(geometry.frame(in: .global).minX - 50) / -20.0),
-                                axis: (x: 0, y: 1, z: 0),
-                                anchor: .center,
-                                anchorZ: 0.0,
-                                perspective: 1.0
-                            )
+        GeometryReader { geometry in
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 0) {
+                        ForEach(Array(hotCardsService.hotCards.enumerated()), id: \.element.id) { index, card in
+                            GeometryReader { cardGeometry in
+                                HotCardItem(card: card)
+                                    .rotation3DEffect(
+                                        getRotationAngle(for: cardGeometry, screenWidth: geometry.size.width),
+                                        axis: (x: 0, y: 1, z: 0),
+                                        anchor: .center,
+                                        anchorZ: 0.0,
+                                        perspective: 1.0
+                                    )
+                                    .blur(radius: getBlurRadius(for: cardGeometry, screenWidth: geometry.size.width))
+                                    .scaleEffect(getScale(for: cardGeometry, screenWidth: geometry.size.width))
+                            }
+                            .frame(width: geometry.size.width)
+                            .id(index)
+                        }
                     }
-                    .frame(width: 280, height: 220)
+                }
+                .scrollDisabled(true)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            dragOffset = value.translation.width
+                        }
+                        .onEnded { value in
+                            handleSwipe(translation: value.translation.width, proxy: proxy)
+                        }
+                )
+                .onAppear {
+                    // Snap to first card
+                    proxy.scrollTo(currentIndex, anchor: .center)
+                }
+                .onChange(of: currentIndex) { oldValue, newValue in
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        proxy.scrollTo(newValue, anchor: .center)
+                    }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
         }
         .frame(height: 240)
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func getRotationAngle(for geometry: GeometryProxy, screenWidth: CGFloat) -> Angle {
+        let midX = geometry.frame(in: .global).midX
+        let screenMidX = screenWidth / 2
+        let distance = midX - screenMidX
+        
+        // Rotation based on distance from center
+        return Angle(degrees: Double(distance + dragOffset) / -15.0)
+    }
+    
+    private func getBlurRadius(for geometry: GeometryProxy, screenWidth: CGFloat) -> CGFloat {
+        let midX = geometry.frame(in: .global).midX
+        let screenMidX = screenWidth / 2
+        let distance = abs(midX - screenMidX + dragOffset)
+        
+        // Blur kicks in after threshold distance
+        let blurThreshold: CGFloat = 80
+        let maxBlur: CGFloat = 8
+        
+        if distance < blurThreshold {
+            return 0
+        } else {
+            let blurProgress = (distance - blurThreshold) / 120
+            return min(maxBlur, blurProgress * maxBlur)
+        }
+    }
+    
+    private func getScale(for geometry: GeometryProxy, screenWidth: CGFloat) -> CGFloat {
+        let midX = geometry.frame(in: .global).midX
+        let screenMidX = screenWidth / 2
+        let distance = abs(midX - screenMidX + dragOffset)
+        
+        // Scale decreases with distance from center
+        let scaleThreshold: CGFloat = 60
+        let minScale: CGFloat = 0.88
+        
+        if distance < scaleThreshold {
+            return 1.0
+        } else {
+            let scaleProgress = (distance - scaleThreshold) / 180
+            return max(minScale, 1.0 - (scaleProgress * (1.0 - minScale)))
+        }
+    }
+    
+    private func handleSwipe(translation: CGFloat, proxy: ScrollViewProxy) {
+        let threshold: CGFloat = 80
+        let totalCards = hotCardsService.hotCards.count
+        
+        guard totalCards > 0 else { return }
+        
+        dragOffset = 0 // Reset drag offset
+        
+        if translation < -threshold {
+            // Swiped left - next card (infinite loop)
+            currentIndex = (currentIndex + 1) % totalCards
+        } else if translation > threshold {
+            // Swiped right - previous card (infinite loop)
+            currentIndex = (currentIndex - 1 + totalCards) % totalCards
+        } else {
+            // Didn't swipe far enough - snap back to current
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                proxy.scrollTo(currentIndex, anchor: .center)
+            }
+        }
     }
     
     // MARK: - Loading & Empty States
@@ -114,7 +202,7 @@ struct HotCardItem: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            // Card with proper format (like SavedCardView)
+            // Card with proper format
             ZStack {
                 // Custom frame/border
                 if let frameName = card.customFrame, frameName != "None" {
