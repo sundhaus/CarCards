@@ -44,7 +44,7 @@ struct ContentView: View {
                         selectedCard: $selectedCard,
                         forceOrientationUpdate: $forceOrientationUpdate
                     )
-                    .padding(.top, 60)
+                    .padding(.top, landscape ? 0 : 60) // Only add padding in portrait
                     .tag(1)
                     
                     // Marketplace Tab
@@ -484,7 +484,7 @@ struct GarageViewContent: View {
                         .frame(width: 200)
                         .allowsHitTesting(false)
                     }
-                    .ignoresSafeArea(edges: .trailing)
+                    .ignoresSafeArea() // Extend to all edges including top/bottom
                 }
             }
         }
@@ -572,7 +572,7 @@ struct GarageViewContent: View {
             LazyHGrid(rows: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
                 ForEach(savedCards) { card in
                     SavedCardView(card: card, isLargeSize: false)
-                        .frame(width: 200) // Fixed width for horizontal scrolling
+                        .frame(width: 260) // 30% bigger than 200
                         .onTapGesture {
                             actionSheetCard = card
                             showActionSheet = true
