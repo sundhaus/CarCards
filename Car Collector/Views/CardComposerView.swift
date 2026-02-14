@@ -257,7 +257,11 @@ struct CardComposerView: View {
                 model: data.model,
                 generation: data.generation,
                 onWrongVehicle: {
-                    // User tapped "Not My Vehicle" - fetch alternatives
+                    // User tapped "Not My Vehicle" - dismiss preview and fetch alternatives
+                    print("🚫 User rejected vehicle identification")
+                    print("📱 Dismissing preview...")
+                    previewData = nil  // Dismiss the preview first
+                    print("🔍 Fetching alternatives...")
                     Task {
                         await fetchAlternativeVehicles()
                     }
@@ -278,6 +282,7 @@ struct CardComposerView: View {
                 isFetching: isFetchingAlternatives,
                 onSelect: { vehicle in
                     // User selected an alternative
+                    print("✅ User selected: \(vehicle.make) \(vehicle.model)")
                     showAlternatives = false
                     previewData = nil
                     
@@ -291,10 +296,14 @@ struct CardComposerView: View {
                     )
                 },
                 onCancel: {
+                    print("❌ User cancelled alternative selection")
                     showAlternatives = false
                 }
             )
             .presentationDetents([.medium, .large])
+        }
+        .onChange(of: showAlternatives) { oldValue, newValue in
+            print("📊 showAlternatives changed: \(oldValue) → \(newValue)")
         }
         .onAppear {
             displayImage = image
@@ -488,6 +497,11 @@ struct AlternativeVehiclesSheet: View {
                 cancelButton
             }
             .navigationBarTitleDisplayMode(.inline)
+        }
+        .onAppear {
+            print("📋 AlternativeVehiclesSheet appeared")
+            print("   Alternatives count: \(alternatives.count)")
+            print("   Is fetching: \(isFetching)")
         }
     }
     

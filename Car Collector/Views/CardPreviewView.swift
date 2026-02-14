@@ -86,8 +86,7 @@ struct CardPreviewView: View {
                         
                         Button(action: {
                             print("⚠️ User clicked 'Not your vehicle?' - fetching alternatives...")
-                            dismiss()  // Dismiss preview first
-                            onWrongVehicle()  // Then trigger alternative fetch
+                            onWrongVehicle()  // Trigger alternative fetch
                         }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "exclamationmark.triangle.fill")
