@@ -477,89 +477,112 @@ struct AlternativeVehiclesSheet: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Header
-                Text("Choose Your Vehicle")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.top, 20)
-                    .padding(.bottom, 10)
-                
-                Text("Select the correct match from these options")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 20)
+                headerSection
                 
                 if isFetching {
-                    // Loading state
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                        Text("Finding alternatives...")
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxHeight: .infinity)
+                    loadingSection
                 } else {
-                    // List of alternatives
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            ForEach(alternatives) { vehicle in
-                                Button(action: {
-                                    onSelect(vehicle)
-                                }) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        HStack {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text("\(vehicle.make) \(vehicle.model)")
-                                                    .font(.headline)
-                                                    .foregroundStyle(.primary)
-                                                
-                                                Text(vehicle.generation)
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                            
-                                            Spacer()
-                                            
-                                            // Confidence indicator
-                                            HStack(spacing: 4) {
-                                                Image(systemName: confidenceIcon(vehicle.confidence))
-                                                    .foregroundStyle(confidenceColor(vehicle.confidence))
-                                                Text(vehicle.confidence.capitalized)
-                                                    .font(.caption)
-                                                    .fontWeight(.semibold)
-                                                    .foregroundStyle(confidenceColor(vehicle.confidence))
-                                            }
-                                        }
-                                    }
-                                    .padding()
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(12)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding()
-                    }
+                    alternativesList
                 }
                 
-                // Cancel button
-                Button(action: onCancel) {
-                    Text("Cancel")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.gray)
-                        .cornerRadius(12)
-                }
-                .padding()
+                cancelButton
             }
             .navigationBarTitleDisplayMode(.inline)
         }
     }
     
-    private func confidenceIcon(_ confidence: String) -> String {
+    private var headerSection: some View {
+        VStack(spacing: 10) {
+            Text("Choose Your Vehicle")
+                .font(.title2)
+                .fontWeight(.bold)
+                .padding(.top, 20)
+            
+            Text("Select the correct match from these options")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 20)
+        }
+    }
+    
+    private var loadingSection: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.5)
+            Text("Finding alternatives...")
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxHeight: .infinity)
+    }
+    
+    private var alternativesList: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                ForEach(alternatives) { vehicle in
+                    vehicleButton(vehicle)
+                }
+            }
+            .padding()
+        }
+    }
+    
+    private func vehicleButton(_ vehicle: VehicleIdentification) -> some View {
+        Button(action: {
+            onSelect(vehicle)
+        }) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    vehicleInfo(vehicle)
+                    Spacer()
+                    confidenceBadge(vehicle)
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func vehicleInfo(_ vehicle: VehicleIdentification) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("\(vehicle.make) \(vehicle.model)")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            
+            Text(vehicle.generation)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+    
+    private func confidenceBadge(_ vehicle: VehicleIdentification) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: confidenceIcon(vehicle.confidence))
+                .foregroundStyle(confidenceColor(vehicle.confidence))
+            Text(vehicle.confidence?.capitalized ?? "Unknown")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(confidenceColor(vehicle.confidence))
+        }
+    }
+    
+    private var cancelButton: some View {
+        Button(action: onCancel) {
+            Text("Cancel")
+                .font(.headline)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.gray)
+                .cornerRadius(12)
+        }
+        .padding()
+    }
+    
+    private func confidenceIcon(_ confidence: String?) -> String {
+        guard let confidence = confidence else { return "questionmark.circle" }
         switch confidence.lowercased() {
         case "high": return "checkmark.circle.fill"
         case "medium": return "checkmark.circle"
@@ -567,7 +590,8 @@ struct AlternativeVehiclesSheet: View {
         }
     }
     
-    private func confidenceColor(_ confidence: String) -> Color {
+    private func confidenceColor(_ confidence: String?) -> Color {
+        guard let confidence = confidence else { return .gray }
         switch confidence.lowercased() {
         case "high": return .green
         case "medium": return .orange
