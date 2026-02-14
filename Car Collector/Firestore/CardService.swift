@@ -219,7 +219,7 @@ class CardService: ObservableObject {
     func transferCard(cardId: String, toUserId: String) async throws {
         let cardRef = cardsCollection.document(cardId)
         
-        try await db.runTransaction({ (transaction, errorPointer) -> Any? in
+        _ = try await db.runTransaction({ (transaction, errorPointer) -> Any? in
             let cardDocument: DocumentSnapshot
             do {
                 try cardDocument = transaction.getDocument(cardRef)
