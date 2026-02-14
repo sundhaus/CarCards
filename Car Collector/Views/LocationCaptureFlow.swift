@@ -30,12 +30,14 @@ struct LocationCaptureFlow: View {
             Group {
                 switch currentStep {
                 case .camera:
-                    Color.black // Camera placeholder
-                        .onAppear { print("🟢 Showing: Location Camera (as fullScreenCover)") }
+                    // Show a temporary placeholder while camera is active
+                    Color.black
+                        .onAppear { print("🟢 Location camera active (fullScreenCover)") }
                 case .locationInfo:
                     if let image = capturedImage {
                         locationInfoForm(image: image)
                             .onAppear { print("🟢 Showing: Location Info Form") }
+                            .transition(.opacity)
                     } else {
                         Text("Error: No image")
                             .foregroundStyle(.red)
@@ -45,20 +47,23 @@ struct LocationCaptureFlow: View {
             }
         }
         .fullScreenCover(isPresented: $showCamera) {
+            // This closure runs AFTER the camera is dismissed
+            print("📤 Location camera fullScreenCover dismissed")
+            // Wait a bit for the dismissal animation to complete
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                print("🔄 Now switching to .locationInfo step")
+                currentStep = .locationInfo
+                print("✅ Current step is now: \(currentStep)")
+            }
+        } content: {
             PhotoCaptureView(
                 isPresented: $showCamera,
                 onPhotoCaptured: { image in
                     print("📸 Location photo captured, image size: \(image.size)")
                     capturedImage = image
+                    print("💾 Image stored, dismissing camera...")
                     showCamera = false
-                    print("⏱️ Waiting 0.2s before showing location info...")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        print("🔄 Switching to .locationInfo step")
-                        withAnimation {
-                            currentStep = .locationInfo
-                        }
-                        print("✅ Current step is now: \(currentStep)")
-                    }
+                    // Don't change step here - wait for onDismiss
                 }
             )
         }

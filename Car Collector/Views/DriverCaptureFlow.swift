@@ -35,12 +35,14 @@ struct DriverCaptureFlow: View {
                     driverTypeSelection
                         .onAppear { print("🟢 Showing: Type Selection") }
                 case .camera:
-                    Color.black // Camera placeholder
-                        .onAppear { print("🟢 Showing: Camera (as fullScreenCover)") }
+                    // Show a temporary placeholder while camera is active
+                    Color.black
+                        .onAppear { print("🟢 Camera active (fullScreenCover)") }
                 case .driverInfo:
                     if let image = capturedImage {
                         driverInfoForm(image: image)
                             .onAppear { print("🟢 Showing: Driver Info Form") }
+                            .transition(.opacity)
                     } else {
                         Text("Error: No image")
                             .foregroundStyle(.red)
@@ -50,20 +52,23 @@ struct DriverCaptureFlow: View {
             }
         }
         .fullScreenCover(isPresented: $showCamera) {
+            // This closure runs AFTER the camera is dismissed
+            print("📤 Camera fullScreenCover dismissed")
+            // Wait a bit more for the dismissal animation to complete
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                print("🔄 Now switching to .driverInfo step")
+                currentStep = .driverInfo
+                print("✅ Current step is now: \(currentStep)")
+            }
+        } content: {
             PhotoCaptureView(
                 isPresented: $showCamera,
                 onPhotoCaptured: { image in
                     print("📸 Photo captured, image size: \(image.size)")
                     capturedImage = image
+                    print("💾 Image stored, dismissing camera...")
                     showCamera = false
-                    print("⏱️ Waiting 0.2s before showing driver info...")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        print("🔄 Switching to .driverInfo step")
-                        withAnimation {
-                            currentStep = .driverInfo
-                        }
-                        print("✅ Current step is now: \(currentStep)")
-                    }
+                    // Don't change step here - wait for onDismiss
                 }
             )
         }
