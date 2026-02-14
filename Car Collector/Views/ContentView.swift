@@ -386,14 +386,8 @@ struct ContentView: View {
                 deviceOrientation = UIDevice.current.orientation
             }
             .onChange(of: selectedTab) { oldValue, newValue in
-                // Lock to portrait for all tabs except garage (tab 1)
-                if newValue == 1 {
-                    // Garage - allow landscape
-                    OrientationManager.unlockOrientation()
-                } else {
-                    // All other tabs - lock to portrait
-                    OrientationManager.lockToPortrait()
-                }
+                // All tabs are locked to portrait now
+                OrientationManager.lockToPortrait()
             }
             .onAppear {
                 // Set initial orientation based on starting tab
@@ -465,14 +459,8 @@ struct GarageViewWrapper: View {
         )
         .id(forceOrientationUpdate) // Force view refresh when this changes
         .onAppear {
-            // Force portrait first
+            // Lock to portrait for garage
             OrientationManager.lockOrientation(.portrait)
-            // Small delay then unlock for live orientation detection
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                OrientationManager.unlockOrientation()
-                // Force orientation check
-                forceOrientationUpdate.toggle()
-            }
         }
         .onDisappear {
             OrientationManager.lockOrientation(.portrait)
