@@ -15,11 +15,6 @@ struct CaptureLandingView: View {
     @State private var showLocationCapture = false
     @Environment(\.dismiss) private var dismiss
     
-    // Driver flow states
-    @State private var driverImage: UIImage?
-    @State private var isDriverPlusVehicle = false
-    @State private var showDriverInfo = false
-    
     // Location flow states
     @State private var locationImage: UIImage?
     @State private var showLocationInfo = false
@@ -127,24 +122,11 @@ struct CaptureLandingView: View {
                 DriverCaptureLandingView(
                     isLandscape: isLandscape,
                     onDriverCaptured: { image, isPlusVehicle in
-                        driverImage = image
-                        isDriverPlusVehicle = isPlusVehicle
-                        showDriverInfo = true
+                        print("📝 Driver saved: \(isPlusVehicle ? "Driver + Vehicle" : "Driver only")")
+                        // TODO: Save driver card with metadata
+                        // DriverCaptureLandingView handles the entire flow and dismisses itself
                     }
                 )
-            }
-            .fullScreenCover(isPresented: $showDriverInfo) {
-                if let image = driverImage {
-                    DriverInfoView(
-                        capturedImage: image,
-                        isDriverPlusVehicle: isDriverPlusVehicle,
-                        onComplete: { firstName, lastName, nickname in
-                            print("📝 Driver saved: \(firstName) \(lastName) (\(nickname))")
-                            // TODO: Save driver card with metadata
-                            dismiss()
-                        }
-                    )
-                }
             }
             // Location flow
             .fullScreenCover(isPresented: $showLocationCapture) {
@@ -152,7 +134,11 @@ struct CaptureLandingView: View {
                     isPresented: $showLocationCapture,
                     onPhotoCaptured: { image in
                         locationImage = image
-                        showLocationInfo = true
+                        showLocationCapture = false
+                        // Small delay to let camera dismiss before showing next view
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            showLocationInfo = true
+                        }
                     }
                 )
             }
