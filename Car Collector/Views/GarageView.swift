@@ -49,6 +49,10 @@ struct GarageView: View {
             .onAppear {
                 loadAllCards()
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CardSaved"))) { _ in
+                print("📬 Garage received card saved notification")
+                loadAllCards()
+            }
             .fullScreenCover(isPresented: $showCamera) {
                 CameraView(
                     isPresented: $showCamera,

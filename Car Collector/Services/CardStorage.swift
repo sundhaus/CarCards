@@ -21,6 +21,9 @@ class CardStorage {
             
             // Also save to CSV for rarity tracking
             saveCardsToCSV(cards)
+            
+            // Notify garage to refresh
+            NotificationCenter.default.post(name: NSNotification.Name("CardSaved"), object: nil)
         } catch {
             print("❌ Failed to save cards: \(error)")
         }
@@ -90,6 +93,9 @@ class CardStorage {
             let data = try encoder.encode(cards)
             UserDefaults.standard.set(data, forKey: driverCardsKey)
             print("✅ Successfully saved \(cards.count) driver cards")
+            
+            // Notify garage to refresh
+            NotificationCenter.default.post(name: NSNotification.Name("CardSaved"), object: nil)
         } catch {
             print("❌ Failed to save driver cards: \(error)")
         }
@@ -122,6 +128,9 @@ class CardStorage {
             let data = try encoder.encode(cards)
             UserDefaults.standard.set(data, forKey: locationCardsKey)
             print("✅ Successfully saved \(cards.count) location cards")
+            
+            // Notify garage to refresh
+            NotificationCenter.default.post(name: NSNotification.Name("CardSaved"), object: nil)
         } catch {
             print("❌ Failed to save location cards: \(error)")
         }
