@@ -105,6 +105,10 @@ class CardService: ObservableObject {
         
         // 5. Post activity to friend feed
         do {
+            print("📣 Posting card activity to friends feed")
+            print("   CardId: \(cardId)")
+            print("   CustomFrame: \(customFrame ?? "none")")
+            
             try await FriendsService.shared.postCardActivity(
                 cardId: cardId,
                 make: make,
@@ -113,6 +117,7 @@ class CardService: ObservableObject {
                 imageURL: imageURL,
                 customFrame: customFrame  // Pass the frame!
             )
+            print("✅ Posted activity to friends feed with cardId: \(cardId)")
         } catch {
             print("⚠️ Failed to post friend activity (non-critical): \(error)")
         }

@@ -569,6 +569,10 @@ class FriendsService: ObservableObject {
             throw UserServiceError.profileNotFound
         }
         
+        print("📝 Creating activity for card:")
+        print("   CardId: \(cardId)")
+        print("   CustomFrame: \(customFrame ?? "none")")
+        
         // Check if activity already exists for this card
         let existingActivity = try await activitiesCollection
             .whereField("userId", isEqualTo: uid)
@@ -577,7 +581,7 @@ class FriendsService: ObservableObject {
             .getDocuments()
         
         if !existingActivity.documents.isEmpty {
-            print("Ã¢â€žÂ¹Ã¯Â¸Â Activity already exists for card \(cardId)")
+            print("ℹ️  Activity already exists for card \(cardId)")
             return
         }
         
@@ -596,32 +600,44 @@ class FriendsService: ObservableObject {
         
         if let customFrame = customFrame {
             data["customFrame"] = customFrame
+            print("   ✅ Including customFrame in activity: \(customFrame)")
+        } else {
+            print("   ⚠️  No customFrame - activity will have no frame")
         }
         
         try await activitiesCollection.document(activityId).setData(data)
         
-        print("Ã¢Å“â€¦ Posted card activity: \(make) \(model) by \(profile.username)")
+        print("✅ Posted card activity: \(make) \(model) by \(profile.username)")
+        print("   Activity ID: \(activityId)")
+        print("   Stored cardId: \(cardId)")
     }
     
     // MARK: - Update Activity Custom Frame
     
     /// Update customFrame for all activities with a specific cardId
     func updateActivityCustomFrame(cardId: String, customFrame: String?) async throws {
+        print("🔍 Searching for activities with cardId: \(cardId)")
+        
         // Find all activities for this card
         let snapshot = try await activitiesCollection
             .whereField("cardId", isEqualTo: cardId)
             .getDocuments()
         
+        print("📊 Found \(snapshot.documents.count) activities to update")
+        
         // Update each activity
         for document in snapshot.documents {
+            print("   ⬆️ Updating activity \(document.documentID)")
             if let frame = customFrame {
                 try await activitiesCollection.document(document.documentID).updateData([
                     "customFrame": frame
                 ])
+                print("   ✅ Set customFrame to: \(frame)")
             } else {
                 try await activitiesCollection.document(document.documentID).updateData([
                     "customFrame": FieldValue.delete()
                 ])
+                print("   ✅ Removed customFrame")
             }
         }
         

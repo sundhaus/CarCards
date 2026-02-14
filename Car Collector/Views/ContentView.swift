@@ -284,12 +284,18 @@ struct ContentView: View {
                                         year: card.year
                                     )
                                     
+                                    print("☁️ CloudCard created with ID: \(cloudCard.id)")
+                                    
                                     // Update local card with Firebase ID
                                     if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
                                         var updatedCard = savedCards[index]
                                         updatedCard.firebaseId = cloudCard.id
                                         savedCards[index] = updatedCard
                                         CardStorage.saveCards(savedCards)
+                                        print("🔗 Linked local card \(card.id) to Firebase ID: \(cloudCard.id)")
+                                        print("✅ Card now has firebaseId - frame sync will work!")
+                                    } else {
+                                        print("❌ ERROR: Could not find card in savedCards array!")
                                     }
                                     
                                     print("✅ Card saved to cloud with ID: \(cloudCard.id)")
