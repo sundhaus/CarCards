@@ -284,6 +284,7 @@ struct ContentView: View {
             .fullScreenCover(isPresented: $showCaptureLanding) {
                 CaptureLandingView(
                     isLandscape: geometry.size.width > geometry.size.height,
+                    levelSystem: levelSystem,
                     onCardSaved: { card in
                         // Save locally
                         savedCards.append(card)

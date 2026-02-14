@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CaptureLandingView: View {
     var isLandscape: Bool = false
+    var levelSystem: LevelSystem
     var onCardSaved: ((SavedCard) -> Void)? = nil
     @State private var showCamera = false
     @State private var captureType: CaptureType = .vehicle
@@ -26,7 +27,6 @@ struct CaptureLandingView: View {
     
     // Services
     @ObservedObject private var locationService = LocationService.shared
-    @ObservedObject private var levelSystem = LevelSystem.shared
     
     @Environment(\.dismiss) private var dismiss
     
@@ -303,5 +303,5 @@ struct CaptureLandingView: View {
 }
 
 #Preview {
-    CaptureLandingView()
+    CaptureLandingView(levelSystem: LevelSystem())
 }
