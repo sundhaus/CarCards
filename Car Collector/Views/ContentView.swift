@@ -786,53 +786,35 @@ struct CardDetailView: View {
                     }
                     .frame(maxHeight: .infinity)
                 } else {
-                    // Stats Grid (FIFA-style)
-                    VStack(spacing: 12) {
-                        // Row 1: Power
-                        HStack(spacing: 20) {
-                            statItem(
-                                label: "HP",
-                                value: currentCard.parseHP().map { "\($0)" } ?? "???",
-                                highlight: currentCard.parseHP() != nil
-                            )
-                            statItem(
-                                label: "TRQ",
-                                value: currentCard.parseTorque().map { "\($0)" } ?? "???",
-                                highlight: currentCard.parseTorque() != nil
-                            )
+                    VStack(spacing: 16) {
+                        // Summary/Description
+                        if let description = currentCard.specs?.description, !description.isEmpty {
+                            Text(description)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.9))
+                                .multilineTextAlignment(.center)
+                                .lineLimit(3)
+                                .padding(.horizontal, 24)
                         }
                         
-                        // Row 2: Performance
-                        HStack(spacing: 20) {
-                            statItem(
-                                label: "0-60",
-                                value: currentCard.parseZeroToSixty().map { String(format: "%.1f", $0) + "s" } ?? "???",
-                                highlight: currentCard.parseZeroToSixty() != nil
-                            )
-                            statItem(
-                                label: "TOP",
-                                value: currentCard.parseTopSpeed().map { "\($0)" } ?? "???",
-                                highlight: currentCard.parseTopSpeed() != nil
-                            )
+                        // Stats in 2 columns
+                        HStack(alignment: .top, spacing: 16) {
+                            // Left column
+                            VStack(spacing: 8) {
+                                compactStatItem(label: "HP", value: currentCard.parseHP().map { "\($0)" } ?? "???")
+                                compactStatItem(label: "0-60", value: currentCard.parseZeroToSixty().map { String(format: "%.1f", $0) + "s" } ?? "???")
+                                compactStatItem(label: "ENGINE", value: currentCard.getEngine() ?? "???")
+                            }
+                            
+                            // Right column
+                            VStack(spacing: 8) {
+                                compactStatItem(label: "TRQ", value: currentCard.parseTorque().map { "\($0)" } ?? "???")
+                                compactStatItem(label: "TOP", value: currentCard.parseTopSpeed().map { "\($0)" } ?? "???")
+                                compactStatItem(label: "DRIVE", value: currentCard.getDrivetrain() ?? "???")
+                            }
                         }
-                        
-                        // Row 3: Details
-                        HStack(spacing: 20) {
-                            statItem(
-                                label: "ENGINE",
-                                value: currentCard.getEngine() ?? "???",
-                                highlight: currentCard.getEngine() != nil,
-                                compact: true
-                            )
-                            statItem(
-                                label: "DRIVE",
-                                value: currentCard.getDrivetrain() ?? "???",
-                                highlight: currentCard.getDrivetrain() != nil,
-                                compact: true
-                            )
-                        }
+                        .padding(.horizontal, 30)
                     }
-                    .padding(.horizontal, 30)
                     .frame(maxHeight: .infinity)
                 }
                 
@@ -890,6 +872,22 @@ struct CardDetailView: View {
             Color.white.opacity(0.05)
         )
         .cornerRadius(8)
+    }
+    
+    // Compact stat item without background container
+    private func compactStatItem(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(width: 50, alignment: .leading)
+            
+            Text(value)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
     }
 }
 

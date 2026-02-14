@@ -422,31 +422,56 @@ struct CardDetailsView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.8))
                 
-                statsGrid
+                // Summary/Description
+                if let description = displaySpecs?.description, !description.isEmpty {
+                    Text(description)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 4)
+                }
+                
+                compactStatsGrid
             }
             .padding()
         }
         .cornerRadius(15)
     }
     
-    private var statsGrid: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                statItem(label: "HP", value: parseIntValue(displaySpecs?.horsepower))
-                statItem(label: "TRQ", value: parseIntValue(displaySpecs?.torque))
+    private var compactStatsGrid: some View {
+        HStack(alignment: .top, spacing: 16) {
+            // Left column
+            VStack(spacing: 6) {
+                compactStatRow(label: "HP", value: parseIntValue(displaySpecs?.horsepower))
+                compactStatRow(label: "0-60", value: parseDoubleValue(displaySpecs?.zeroToSixty))
+                compactStatRow(label: "ENGINE", value: displaySpecs?.engine ?? "???")
             }
             
-            HStack(spacing: 12) {
-                statItem(label: "0-60", value: parseDoubleValue(displaySpecs?.zeroToSixty))
-                statItem(label: "TOP", value: parseIntValue(displaySpecs?.topSpeed))
-            }
-            
-            HStack(spacing: 12) {
-                statItem(label: "ENGINE", value: displaySpecs?.engine ?? "???", compact: true)
-                statItem(label: "DRIVE", value: displaySpecs?.drivetrain ?? "???", compact: true)
+            // Right column
+            VStack(spacing: 6) {
+                compactStatRow(label: "TRQ", value: parseIntValue(displaySpecs?.torque))
+                compactStatRow(label: "TOP", value: parseIntValue(displaySpecs?.topSpeed))
+                compactStatRow(label: "DRIVE", value: displaySpecs?.drivetrain ?? "???")
             }
         }
         .padding(.horizontal)
+    }
+    
+    private func compactStatRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(width: 50, alignment: .leading)
+            
+            Text(value)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
     }
     
     private var specsLoadingView: some View {

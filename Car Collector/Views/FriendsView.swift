@@ -450,33 +450,43 @@ struct FriendActivityCard: View {
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundStyle(.white.opacity(0.8))
                                     
-                                    // Stats grid
-                                    VStack(spacing: 8) {
-                                        HStack(spacing: 12) {
-                                            statItem(label: "HP", value: parseIntValue(fetchedSpecs?.horsepower))
-                                            statItem(label: "TRQ", value: parseIntValue(fetchedSpecs?.torque))
-                                        }
-                                        
-                                        HStack(spacing: 12) {
-                                            statItem(label: "0-60", value: parseDoubleValue(fetchedSpecs?.zeroToSixty))
-                                            statItem(label: "TOP", value: parseIntValue(fetchedSpecs?.topSpeed))
-                                        }
-                                        
-                                        HStack(spacing: 12) {
-                                            statItem(label: "ENGINE", value: fetchedSpecs?.engine ?? "???", compact: true)
-                                        statItem(label: "DRIVE", value: fetchedSpecs?.drivetrain ?? "???", compact: true)
+                                    // Summary/Description
+                                    if let description = fetchedSpecs?.description, !description.isEmpty {
+                                        Text(description)
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundStyle(.white.opacity(0.9))
+                                            .multilineTextAlignment(.center)
+                                            .lineLimit(3)
+                                            .padding(.horizontal, 20)
+                                            .padding(.vertical, 4)
                                     }
+                                    
+                                    // Compact stats in 2 columns
+                                    HStack(alignment: .top, spacing: 12) {
+                                        // Left column
+                                        VStack(spacing: 6) {
+                                            compactStatRow(label: "HP", value: parseIntValue(fetchedSpecs?.horsepower))
+                                            compactStatRow(label: "0-60", value: parseDoubleValue(fetchedSpecs?.zeroToSixty))
+                                            compactStatRow(label: "ENGINE", value: fetchedSpecs?.engine ?? "???")
+                                        }
+                                        
+                                        // Right column
+                                        VStack(spacing: 6) {
+                                            compactStatRow(label: "TRQ", value: parseIntValue(fetchedSpecs?.torque))
+                                            compactStatRow(label: "TOP", value: parseIntValue(fetchedSpecs?.topSpeed))
+                                            compactStatRow(label: "DRIVE", value: fetchedSpecs?.drivetrain ?? "???")
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                    
+                                    Text("Tap to flip back")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.white.opacity(0.6))
                                 }
-                                .padding(.horizontal, 20)
-                                
-                                Text("Tap to flip back")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.white.opacity(0.6))
+                                .padding(.vertical, 12)
                             }
-                            .padding(.vertical, 12)
-                        }
-                        .frame(width: 360, height: 202.5)
-                        .cornerRadius(12)
+                            .frame(width: 360, height: 202.5)
+                            .cornerRadius(12)
                     }
                     
                     // Custom frame/border overlay (on top of both front and back)
@@ -678,6 +688,22 @@ struct FriendActivityCard: View {
     }
     
     // MARK: - Helper Methods for Specs
+    
+    // Compact stat row without background container
+    private func compactStatRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(width: 45, alignment: .leading)
+            
+            Text(value)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
     
     private func statItem(label: String, value: String, compact: Bool = false) -> some View {
         VStack(spacing: 4) {

@@ -331,7 +331,7 @@ class VehicleIdentificationService: ObservableObject {
         - topSpeed: (e.g. "155 mph")
         - transmission: (e.g. "6-speed manual", "8-speed auto")
         - drivetrain: RWD/FWD/AWD/4WD
-        - description: 1-2 sentences about the car
+        - description: Write a punchy 2-3 sentence summary that captures this car's character and appeal. Focus on what makes it special, its performance personality, and key strengths. Write in an engaging, FIFA Ultimate Team card style.
         
         Use "N/A" if unknown. No markdown.
         """
