@@ -276,16 +276,25 @@ struct ContentView: View {
                         if let image = card.image {
                             Task {
                                 do {
-                                    let _ = try await CardService.shared.saveCard(
+                                    let cloudCard = try await CardService.shared.saveCard(
                                         image: image,
                                         make: card.make,
                                         model: card.model,
                                         color: card.color,
                                         year: card.year
                                     )
-                                    print("Ã¢Å“â€¦ Card saved to cloud")
+                                    
+                                    // Update local card with Firebase ID
+                                    if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                        var updatedCard = savedCards[index]
+                                        updatedCard.firebaseId = cloudCard.id
+                                        savedCards[index] = updatedCard
+                                        CardStorage.saveCards(savedCards)
+                                    }
+                                    
+                                    print("✅ Card saved to cloud with ID: \(cloudCard.id)")
                                 } catch {
-                                    print("Ã¢Å¡Â Ã¯Â¸Â Cloud save failed: \(error)")
+                                    print("❌ Cloud save failed: \(error)")
                                 }
                             }
                         }
