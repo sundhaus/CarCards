@@ -336,6 +336,7 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
 struct CameraView: View {
     @Binding var isPresented: Bool
     let onCardSaved: (SavedCard) -> Void
+    var captureType: CaptureType = .vehicle // Default to vehicle for backwards compatibility
     @StateObject private var camera = CameraService()
     @State private var lastZoomFactor: CGFloat = 1.0
     @ObservedObject private var locationService = LocationService.shared
@@ -362,7 +363,8 @@ struct CameraView: View {
                     onRetake: {
                         camera.capturedImage = nil
                         camera.startSession()
-                    }
+                    },
+                    captureType: captureType
                 )
             } else {
                 ZStack {

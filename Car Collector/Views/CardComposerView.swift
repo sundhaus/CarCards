@@ -12,6 +12,7 @@ struct CardComposerView: View {
     let image: UIImage
     let onSave: (UIImage, String, String, String, String, VehicleSpecs?) -> Void
     let onRetake: () -> Void
+    var captureType: CaptureType = .vehicle // Default to vehicle for backwards compatibility
     
     @State private var scale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
@@ -23,7 +24,7 @@ struct CardComposerView: View {
     @State private var isFlippedHorizontally = false
     @State private var isFlippedVertically = false
     
-    // AI Identification
+    // AI Identification (only for vehicle captures)
     @StateObject private var aiService = VehicleIdentificationService()
     @State private var previewData: PreviewData?
     @State private var dataToSave: PreviewData? // Hold data for onDismiss
@@ -33,6 +34,11 @@ struct CardComposerView: View {
     @State private var alternativeVehicles: [VehicleIdentification] = []
     @State private var showAlternatives = false
     @State private var isFetchingAlternatives = false
+    
+    // Skip AI for non-vehicle captures
+    private var shouldUseAI: Bool {
+        captureType == .vehicle
+    }
     
     // Data model for preview screen
     struct PreviewData: Identifiable {
@@ -174,7 +180,13 @@ struct CardComposerView: View {
                             .cornerRadius(10)
                     }
                     
-                    Button(action: saveWithAI) {
+                    Button(action: {
+                        if shouldUseAI {
+                            saveWithAI()
+                        } else {
+                            saveWithoutAI()
+                        }
+                    }) {
                         Text("Save")
                             .font(.headline)
                             .foregroundStyle(.white)
@@ -183,7 +195,7 @@ struct CardComposerView: View {
                             .background(.green)
                             .cornerRadius(10)
                     }
-                    .disabled(aiService.isIdentifying)
+                    .disabled(shouldUseAI && aiService.isIdentifying)
                 }
                 .padding()
             }
@@ -449,6 +461,16 @@ struct CardComposerView: View {
                 }
             }
         }
+    }
+    
+    private func saveWithoutAI() {
+        // For driver/location captures - skip AI, just save the composed image
+        print("💾 Saving without AI (capture type: \(captureType))")
+        let finalCardImage = renderFinalCard()
+        print("🖼️ Card rendered: \(finalCardImage.size)")
+        
+        // Call onSave with empty vehicle data
+        onSave(finalCardImage, "", "", "", "", nil)
     }
     
     private func fetchAlternativeVehicles() async {

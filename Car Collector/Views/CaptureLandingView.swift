@@ -127,7 +127,8 @@ struct CaptureLandingView: View {
                                 showLocationForm = true
                             }
                         }
-                    }
+                    },
+                    captureType: captureType
                 )
             }
             // Driver type selector
