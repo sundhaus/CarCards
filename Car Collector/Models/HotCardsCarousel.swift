@@ -11,6 +11,8 @@ struct HotCardsCarousel: View {
     @StateObject private var hotCardsService = HotCardsService()
     @State private var currentIndex = 0
     @State private var dragOffset: CGFloat = 0
+    @State private var isDismissing = false
+    @State private var dismissDirection: CGFloat = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -57,7 +59,7 @@ struct HotCardsCarousel: View {
                     if cardIndex < hotCardsService.hotCards.count {
                         let card = hotCardsService.hotCards[cardIndex]
                         
-                        HotCardItem(card: card)
+                        HotCardItem(card: card, position: position)
                             .frame(width: min(geometry.size.width - 40, 350))
                             .offset(x: getOffsetX(for: position), y: getOffsetY(for: position))
                             .scaleEffect(getScale(for: position))
@@ -70,11 +72,14 @@ struct HotCardsCarousel: View {
                             .opacity(getOpacity(for: position))
                             .zIndex(Double(3 - position))
                             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: dragOffset)
+                            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isDismissing)
                             .gesture(
                                 position == 0 ? // Only front card is swipeable
                                 DragGesture()
                                     .onChanged { value in
-                                        dragOffset = value.translation.width
+                                        if !isDismissing {
+                                            dragOffset = value.translation.width
+                                        }
                                     }
                                     .onEnded { value in
                                         handleSwipeEnd(translation: value.translation.width)
@@ -101,16 +106,48 @@ struct HotCardsCarousel: View {
     private func getOffsetX(for position: Int) -> CGFloat {
         if position == 0 {
             // Front card follows drag
+            if isDismissing {
+                // Fly off screen in swipe direction
+                return dismissDirection * 500
+            }
             return dragOffset * 0.7
         } else {
-            // Cards behind move slightly when front card is dragged
-            return -dragOffset * 0.1 * CGFloat(position)
+            // Cards behind - add stagger for messy look
+            let staggerX = getStaggerX(for: position)
+            // Move slightly when front card is dragged
+            return staggerX - (dragOffset * 0.1 * CGFloat(position))
         }
     }
     
     private func getOffsetY(for position: Int) -> CGFloat {
-        // Stack cards with slight vertical offset
-        return CGFloat(position) * 8
+        if position == 0 {
+            return 0
+        } else {
+            // Stack cards with slight vertical offset + stagger
+            let baseOffset = CGFloat(position) * 8
+            let staggerY = getStaggerY(for: position)
+            return baseOffset + staggerY
+        }
+    }
+    
+    // Deterministic "random" stagger based on position
+    private func getStaggerX(for position: Int) -> CGFloat {
+        // Create messy stack effect
+        let staggerValues: [CGFloat] = [0, -8, 12, -15, 10, -6, 14]
+        return staggerValues[position % staggerValues.count]
+    }
+    
+    private func getStaggerY(for position: Int) -> CGFloat {
+        // Create messy stack effect
+        let staggerValues: [CGFloat] = [0, 3, -2, 5, -4, 2, -3]
+        return staggerValues[position % staggerValues.count]
+    }
+    
+    private func getStaggerRotation(for position: Int) -> Angle {
+        // Slight rotation stagger for messy effect
+        if position == 0 { return Angle(degrees: 0) }
+        let rotationValues: [Double] = [0, -2, 3, -4, 2, -3, 4]
+        return Angle(degrees: rotationValues[position % rotationValues.count])
     }
     
     private func getScale(for position: Int) -> CGFloat {
@@ -132,7 +169,8 @@ struct HotCardsCarousel: View {
             // Front card rotates with drag (subtle tilt)
             return Angle(degrees: Double(dragOffset) / 15.0)
         }
-        return Angle(degrees: 0)
+        // Back cards have stagger rotation for messy effect
+        return getStaggerRotation(for: position)
     }
     
     private func getRotation3D(for position: Int) -> Angle {
@@ -145,6 +183,10 @@ struct HotCardsCarousel: View {
     
     private func getOpacity(for position: Int) -> Double {
         if position == 0 {
+            if isDismissing {
+                // Fade out completely when dismissing
+                return 0
+            }
             // Front card fades when dragged far
             return max(0.4, 1.0 - abs(dragOffset) / 500.0)
         } else if position <= 2 {
@@ -159,17 +201,37 @@ struct HotCardsCarousel: View {
     private func handleSwipeEnd(translation: CGFloat) {
         let threshold: CGFloat = 100
         
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-            if translation > threshold {
-                // Swiped right - go to previous card (infinite loop)
-                currentIndex = (currentIndex - 1 + hotCardsService.hotCards.count) % hotCardsService.hotCards.count
-            } else if translation < -threshold {
-                // Swiped left - go to next card (infinite loop)
-                currentIndex = (currentIndex + 1) % hotCardsService.hotCards.count
+        if abs(translation) > threshold {
+            // Swipe detected - animate card flying off
+            isDismissing = true
+            dismissDirection = translation > 0 ? 1 : -1
+            
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                dragOffset = dismissDirection * 500 // Fly off screen
             }
             
-            // Reset drag offset
-            dragOffset = 0
+            // After animation, update index and reset
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    if translation > 0 {
+                        // Swiped right - go to previous card (infinite loop)
+                        currentIndex = (currentIndex - 1 + hotCardsService.hotCards.count) % hotCardsService.hotCards.count
+                    } else {
+                        // Swiped left - go to next card (infinite loop)
+                        currentIndex = (currentIndex + 1) % hotCardsService.hotCards.count
+                    }
+                    
+                    // Reset states
+                    isDismissing = false
+                    dragOffset = 0
+                    dismissDirection = 0
+                }
+            }
+        } else {
+            // Didn't swipe far enough - snap back
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                dragOffset = 0
+            }
         }
     }
     
@@ -211,6 +273,7 @@ struct HotCardsCarousel: View {
 
 struct HotCardItem: View {
     let card: FriendActivity
+    let position: Int
     
     var body: some View {
         VStack(spacing: 12) {
@@ -245,35 +308,37 @@ struct HotCardItem: View {
                     )
             }
             
-            // Heat info
-            HStack(spacing: 8) {
-                Image(systemName: "flame.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.orange, .red],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+            // Heat info - ONLY show for front card
+            if position == 0 {
+                HStack(spacing: 8) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.orange, .red],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                
-                Text("\(card.heatCount)")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(card.cardMake)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                    
+                    Text("\(card.heatCount)")
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("\(card.cardModel) '\(String(card.cardYear.suffix(2)))")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(card.cardMake)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                        Text("\(card.cardModel) '\(String(card.cardYear.suffix(2)))")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
                 }
+                .padding(.horizontal, 4)
             }
-            .padding(.horizontal, 4)
         }
         .padding(.horizontal, 20)
     }
