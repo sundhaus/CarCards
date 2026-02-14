@@ -71,13 +71,16 @@ struct DriverInfoFormSheet: View {
                                     .textFieldStyle(CustomTextFieldStyle())
                             }
                             
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Vehicle Name")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.7))
-                                
-                                TextField("Optional", text: $vehicleName)
-                                    .textFieldStyle(CustomTextFieldStyle())
+                            // Only show Vehicle Name for Driver + Vehicle captures
+                            if isDriverPlusVehicle {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Vehicle Name")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(.white.opacity(0.7))
+                                    
+                                    TextField("Optional", text: $vehicleName)
+                                        .textFieldStyle(CustomTextFieldStyle())
+                                }
                             }
                         }
                         .padding(.horizontal, 20)

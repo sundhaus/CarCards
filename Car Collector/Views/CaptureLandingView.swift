@@ -72,8 +72,11 @@ struct CaptureLandingView: View {
                                 icon: "mappin.circle.fill",
                                 gradient: [Color.green, Color.teal],
                                 action: {
+                                    print("📍 Location button tapped")
                                     captureType = .location
+                                    print("   captureType set to: \(captureType)")
                                     showCamera = true
+                                    print("   Opening camera with captureType: \(captureType)")
                                 }
                             )
                         }

@@ -46,7 +46,9 @@ struct CardComposerView: View {
     
     // Skip AI for non-vehicle captures
     private var shouldUseAI: Bool {
-        captureType == .vehicle
+        let result = captureType == .vehicle
+        print("🤔 shouldUseAI computed: captureType=\(captureType), result=\(result)")
+        return result
     }
     
     // Data model for preview screen
@@ -334,6 +336,9 @@ struct CardComposerView: View {
         .onAppear {
             displayImage = image
             OrientationManager.lockOrientation(.portrait)
+            print("🎨 CardComposerView appeared")
+            print("   captureType: \(captureType)")
+            print("   shouldUseAI: \(shouldUseAI)")
         }
         .onDisappear {
             OrientationManager.unlockOrientation()
