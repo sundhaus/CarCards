@@ -75,6 +75,9 @@ struct PhotoCaptureView: View {
         .onAppear {
             camera.setupCamera()
         }
+        .onDisappear {
+            camera.session.stopRunning()
+        }
         .fullScreenCover(isPresented: $showComposer) {
             if let image = capturedImage {
                 PhotoComposerView(
@@ -213,9 +216,35 @@ class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureDelegat
     private var photoCaptureCompletion: ((UIImage) -> Void)?
     
     func setupCamera() {
+        // Request camera permission first
+        checkPermissions()
+    }
+    
+    private func checkPermissions() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            setupCaptureSession()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                if granted {
+                    DispatchQueue.main.async {
+                        self.setupCaptureSession()
+                    }
+                }
+            }
+        default:
+            break
+        }
+    }
+    
+    private func setupCaptureSession() {
+        session.beginConfiguration()
         session.sessionPreset = .photo
         
-        guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
+        guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+            session.commitConfiguration()
+            return
+        }
         currentCamera = camera
         
         do {
@@ -228,11 +257,15 @@ class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureDelegat
                 session.addOutput(photoOutput)
             }
             
+            session.commitConfiguration()
+            
+            // Start session on background thread
             DispatchQueue.global(qos: .userInitiated).async {
                 self.session.startRunning()
             }
         } catch {
             print("Error setting up camera: \(error)")
+            session.commitConfiguration()
         }
     }
     
@@ -246,12 +279,18 @@ class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureDelegat
         session.beginConfiguration()
         
         // Remove current input
-        guard let currentInput = session.inputs.first as? AVCaptureDeviceInput else { return }
+        guard let currentInput = session.inputs.first as? AVCaptureDeviceInput else {
+            session.commitConfiguration()
+            return
+        }
         session.removeInput(currentInput)
         
         // Get opposite camera
         let newPosition: AVCaptureDevice.Position = currentInput.device.position == .back ? .front : .back
-        guard let newCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition) else { return }
+        guard let newCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition) else {
+            session.commitConfiguration()
+            return
+        }
         
         do {
             let newInput = try AVCaptureDeviceInput(device: newCamera)
@@ -282,17 +321,33 @@ struct SimpleCameraPreview: UIViewRepresentable {
     
     func makeUIView(context: Context) -> UIView {
         let view = UIView(frame: .zero)
+        view.backgroundColor = .black
+        
         let previewLayer = AVCaptureVideoPreviewLayer(session: camera.session)
         previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.frame = UIScreen.main.bounds
+        previewLayer.connection?.videoOrientation = .portrait
         view.layer.addSublayer(previewLayer)
+        
+        // Store reference for updates
+        context.coordinator.previewLayer = previewLayer
+        
         return view
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        if let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
-            previewLayer.frame = uiView.bounds
+        DispatchQueue.main.async {
+            if let previewLayer = context.coordinator.previewLayer {
+                previewLayer.frame = uiView.bounds
+            }
         }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+    
+    class Coordinator {
+        var previewLayer: AVCaptureVideoPreviewLayer?
     }
 }
 
