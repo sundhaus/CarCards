@@ -19,7 +19,7 @@ struct PhotoCaptureView: View {
     var body: some View {
         ZStack {
             // Camera preview
-            CameraPreview(camera: camera)
+            SimpleCameraPreview(camera: camera)
                 .ignoresSafeArea()
             
             // Camera controls
@@ -276,8 +276,8 @@ class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureDelegat
     }
 }
 
-// Camera preview view
-struct CameraPreview: UIViewRepresentable {
+// Simple camera preview view
+struct SimpleCameraPreview: UIViewRepresentable {
     @ObservedObject var camera: CameraController
     
     func makeUIView(context: Context) -> UIView {
