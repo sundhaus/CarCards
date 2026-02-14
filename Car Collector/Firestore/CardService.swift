@@ -333,9 +333,7 @@ class CardService: ObservableObject {
         try await cardsCollection.document(cardId).setData(data)
         
         // 3. Increment user's card count
-        if let currentUser = UserService.shared.currentProfile {
-            try await UserService.shared.updateCardCount(currentUser.cardCount + 1)
-        }
+        try await UserService.shared.incrementCardCount(uid: uid)
         
         print("✅ Driver card saved: \(firstName) \(lastName)")
         return cardId
@@ -376,9 +374,7 @@ class CardService: ObservableObject {
         try await cardsCollection.document(cardId).setData(data)
         
         // 3. Increment user's card count
-        if let currentUser = UserService.shared.currentProfile {
-            try await UserService.shared.updateCardCount(currentUser.cardCount + 1)
-        }
+        try await UserService.shared.incrementCardCount(uid: uid)
         
         print("✅ Location card saved: \(locationName)")
         return cardId
