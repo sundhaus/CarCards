@@ -11,8 +11,6 @@ struct HotCardsCarousel: View {
     @StateObject private var hotCardsService = HotCardsService()
     @State private var currentIndex = 0
     @State private var dragOffset: CGFloat = 0
-    @State private var isDismissing = false
-    @State private var dismissDirection: CGFloat = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -47,191 +45,143 @@ struct HotCardsCarousel: View {
         }
     }
     
-    // MARK: - Card Stack View (3D Infinite Swipe)
+    // MARK: - Carousel Wheel View (3D Rotating Carousel)
     
     private var cardStackView: some View {
         GeometryReader { geometry in
             ZStack {
-                // Show up to 3 cards in the stack for depth effect
-                ForEach(0..<min(3, hotCardsService.hotCards.count), id: \.self) { position in
-                    let cardIndex = getCardIndex(for: position)
+                // Show 3 cards: left, center, right
+                ForEach(-1...1, id: \.self) { offset in
+                    let cardIndex = getCardIndex(for: offset)
                     
-                    if cardIndex < hotCardsService.hotCards.count {
+                    if cardIndex >= 0 && cardIndex < hotCardsService.hotCards.count {
                         let card = hotCardsService.hotCards[cardIndex]
                         
-                        HotCardItem(card: card, position: position)
-                            .frame(width: min(geometry.size.width - 40, 350))
-                            .offset(x: getOffsetX(for: position), y: getOffsetY(for: position))
-                            .scaleEffect(getScale(for: position))
-                            .rotationEffect(getRotation(for: position), anchor: .bottom)
+                        HotCardItem(card: card, position: offset == 0 ? 0 : 1)
+                            .frame(width: min(geometry.size.width - 100, 320))
+                            .offset(x: getCarouselOffsetX(for: offset), y: 0)
+                            .scaleEffect(getCarouselScale(for: offset))
                             .rotation3DEffect(
-                                getRotation3D(for: position),
+                                getCarousel3DRotation(for: offset),
                                 axis: (x: 0, y: 1, z: 0),
-                                perspective: 0.5
+                                perspective: 0.3
                             )
-                            .opacity(getOpacity(for: position))
-                            .zIndex(Double(3 - position))
-                            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: dragOffset)
-                            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isDismissing)
-                            .gesture(
-                                position == 0 ? // Only front card is swipeable
-                                DragGesture()
-                                    .onChanged { value in
-                                        if !isDismissing {
-                                            dragOffset = value.translation.width
-                                        }
-                                    }
-                                    .onEnded { value in
-                                        handleSwipeEnd(translation: value.translation.width)
-                                    }
-                                : nil
-                            )
+                            .opacity(getCarouselOpacity(for: offset))
+                            .zIndex(offset == 0 ? 10 : Double(5 - abs(offset)))
+                            .animation(.spring(response: 0.5, dampingFraction: 0.75), value: dragOffset)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.75), value: currentIndex)
                     }
                 }
             }
             .frame(width: geometry.size.width, height: 300)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        dragOffset = value.translation.width
+                    }
+                    .onEnded { value in
+                        handleCarouselSwipe(translation: value.translation.width)
+                    }
+            )
         }
         .frame(height: 300)
         .padding(.bottom, 12)
     }
     
-    // MARK: - Position Calculations
     
-    private func getCardIndex(for position: Int) -> Int {
-        // Infinite loop through cards
-        let index = (currentIndex + position) % hotCardsService.hotCards.count
-        return index >= 0 ? index : index + hotCardsService.hotCards.count
+    // MARK: - Carousel Position Calculations
+    
+    private func getCardIndex(for offset: Int) -> Int {
+        // Offset: -1 (left card), 0 (center card), 1 (right card)
+        let index = currentIndex + offset
+        let totalCards = hotCardsService.hotCards.count
+        
+        if index < 0 {
+            return index + totalCards
+        } else if index >= totalCards {
+            return index - totalCards
+        }
+        return index
     }
     
-    private func getOffsetX(for position: Int) -> CGFloat {
-        if position == 0 {
-            // Front card follows drag
-            if isDismissing {
-                // Fly off screen in swipe direction
-                return dismissDirection * 500
-            }
-            return dragOffset * 0.7
+    private func getCarouselOffsetX(for offset: Int) -> CGFloat {
+        // Base position for each card
+        let baseOffset: CGFloat
+        
+        switch offset {
+        case -1: // Left card
+            baseOffset = -220
+        case 0: // Center card
+            baseOffset = 0
+        case 1: // Right card
+            baseOffset = 220
+        default:
+            baseOffset = 0
+        }
+        
+        // Add drag influence - center card follows drag, side cards move opposite
+        if offset == 0 {
+            return baseOffset + (dragOffset * 0.8)
         } else {
-            // Cards behind - add stagger for messy look
-            let staggerX = getStaggerX(for: position)
-            // Move slightly when front card is dragged
-            return staggerX - (dragOffset * 0.1 * CGFloat(position))
+            // Side cards move slightly opposite for parallax effect
+            return baseOffset - (dragOffset * 0.15)
         }
     }
     
-    private func getOffsetY(for position: Int) -> CGFloat {
-        if position == 0 {
-            return 0
+    private func getCarouselScale(for offset: Int) -> CGFloat {
+        if offset == 0 {
+            // Center card is full size
+            let dragScale = 1.0 - (abs(dragOffset) / 2000.0)
+            return max(0.9, dragScale)
         } else {
-            // Stack cards with slight vertical offset + stagger
-            let baseOffset = CGFloat(position) * 8
-            let staggerY = getStaggerY(for: position)
-            return baseOffset + staggerY
+            // Side cards are smaller
+            return 0.75
         }
     }
     
-    // Deterministic "random" stagger based on position
-    private func getStaggerX(for position: Int) -> CGFloat {
-        // Create messy stack effect
-        let staggerValues: [CGFloat] = [0, -8, 12, -15, 10, -6, 14]
-        return staggerValues[position % staggerValues.count]
+    private func getCarousel3DRotation(for offset: Int) -> Angle {
+        switch offset {
+        case -1: // Left card - rotate right (towards center)
+            let baseRotation = 55.0
+            let dragInfluence = Double(dragOffset) / 10.0
+            return Angle(degrees: baseRotation + dragInfluence)
+        case 0: // Center card - slight rotation based on drag
+            return Angle(degrees: Double(dragOffset) / 20.0)
+        case 1: // Right card - rotate left (towards center)
+            let baseRotation = -55.0
+            let dragInfluence = Double(dragOffset) / 10.0
+            return Angle(degrees: baseRotation + dragInfluence)
+        default:
+            return Angle(degrees: 0)
+        }
     }
     
-    private func getStaggerY(for position: Int) -> CGFloat {
-        // Create messy stack effect
-        let staggerValues: [CGFloat] = [0, 3, -2, 5, -4, 2, -3]
-        return staggerValues[position % staggerValues.count]
-    }
-    
-    private func getStaggerRotation(for position: Int) -> Angle {
-        // Slight rotation stagger for messy effect
-        if position == 0 { return Angle(degrees: 0) }
-        let rotationValues: [Double] = [0, -2, 3, -4, 2, -3, 4]
-        return Angle(degrees: rotationValues[position % rotationValues.count])
-    }
-    
-    private func getScale(for position: Int) -> CGFloat {
-        if position == 0 {
-            // Front card scales down when dragged
-            let dragScale = 1.0 - min(abs(dragOffset) / 1000.0, 0.15)
-            return dragScale
+    private func getCarouselOpacity(for offset: Int) -> Double {
+        if offset == 0 {
+            // Center card always visible
+            return 1.0
         } else {
-            // Cards behind are progressively smaller
-            let baseScale = 1.0 - (CGFloat(position) * 0.08)
-            // Scale up slightly when front card is dragged
-            let dragInfluence = min(abs(dragOffset) / 2000.0, 0.04) * CGFloat(position)
-            return baseScale + dragInfluence
+            // Side cards slightly faded
+            return 0.6
         }
-    }
-    
-    private func getRotation(for position: Int) -> Angle {
-        if position == 0 {
-            // Front card rotates with drag (subtle tilt)
-            return Angle(degrees: Double(dragOffset) / 15.0)
-        }
-        // Back cards have stagger rotation for messy effect
-        return getStaggerRotation(for: position)
-    }
-    
-    private func getRotation3D(for position: Int) -> Angle {
-        if position == 0 {
-            // 3D rotation on Y-axis when dragging
-            return Angle(degrees: Double(dragOffset) / 10.0)
-        }
-        return Angle(degrees: 0)
-    }
-    
-    private func getOpacity(for position: Int) -> Double {
-        if position == 0 {
-            if isDismissing {
-                // Fade out completely when dismissing
-                return 0
-            }
-            // Front card fades when dragged far
-            return max(0.4, 1.0 - abs(dragOffset) / 500.0)
-        } else if position <= 2 {
-            // Show first 3 cards
-            return 1.0 - (Double(position) * 0.25)
-        }
-        return 0
     }
     
     // MARK: - Swipe Handling
     
-    private func handleSwipeEnd(translation: CGFloat) {
-        let threshold: CGFloat = 100
+    private func handleCarouselSwipe(translation: CGFloat) {
+        let threshold: CGFloat = 80
         
-        if abs(translation) > threshold {
-            // Swipe detected - animate card flying off
-            isDismissing = true
-            dismissDirection = translation > 0 ? 1 : -1
-            
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                dragOffset = dismissDirection * 500 // Fly off screen
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
+            if translation > threshold {
+                // Swiped right - go to previous card (infinite loop)
+                currentIndex = (currentIndex - 1 + hotCardsService.hotCards.count) % hotCardsService.hotCards.count
+            } else if translation < -threshold {
+                // Swiped left - go to next card (infinite loop)
+                currentIndex = (currentIndex + 1) % hotCardsService.hotCards.count
             }
             
-            // After animation, update index and reset
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                    if translation > 0 {
-                        // Swiped right - go to previous card (infinite loop)
-                        currentIndex = (currentIndex - 1 + hotCardsService.hotCards.count) % hotCardsService.hotCards.count
-                    } else {
-                        // Swiped left - go to next card (infinite loop)
-                        currentIndex = (currentIndex + 1) % hotCardsService.hotCards.count
-                    }
-                    
-                    // Reset states
-                    isDismissing = false
-                    dragOffset = 0
-                    dismissDirection = 0
-                }
-            }
-        } else {
-            // Didn't swipe far enough - snap back
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                dragOffset = 0
-            }
+            // Reset drag offset
+            dragOffset = 0
         }
     }
     
