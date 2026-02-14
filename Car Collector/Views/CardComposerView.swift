@@ -30,6 +30,9 @@ struct CardComposerView: View {
     @State private var showAIError = false
     @State private var aiErrorMessage = ""
     @State private var isGeneratingSpecs = false
+    @State private var alternativeVehicles: [VehicleIdentification] = []
+    @State private var showAlternatives = false
+    @State private var isFetchingAlternatives = false
     
     // Data model for preview screen
     struct PreviewData: Identifiable {
@@ -254,9 +257,10 @@ struct CardComposerView: View {
                 model: data.model,
                 generation: data.generation,
                 onWrongVehicle: {
-                    // User tapped "Not My Vehicle" - dismiss preview
-                    previewData = nil
-                    dataToSave = nil
+                    // User tapped "Not My Vehicle" - fetch alternatives
+                    Task {
+                        await fetchAlternativeVehicles()
+                    }
                 }
             )
         }
@@ -267,6 +271,30 @@ struct CardComposerView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text(aiErrorMessage)
+        }
+        .sheet(isPresented: $showAlternatives) {
+            AlternativeVehiclesSheet(
+                alternatives: alternativeVehicles,
+                isFetching: isFetchingAlternatives,
+                onSelect: { vehicle in
+                    // User selected an alternative
+                    showAlternatives = false
+                    previewData = nil
+                    
+                    // Create preview with selected vehicle
+                    let finalImage = renderFinalCard()
+                    previewData = PreviewData(
+                        cardImage: finalImage,
+                        make: vehicle.make,
+                        model: vehicle.model,
+                        generation: vehicle.generation
+                    )
+                },
+                onCancel: {
+                    showAlternatives = false
+                }
+            )
+            .presentationDetents([.medium, .large])
         }
         .onAppear {
             displayImage = image
@@ -411,6 +439,139 @@ struct CardComposerView: View {
                     showAIError = true
                 }
             }
+        }
+    }
+    
+    private func fetchAlternativeVehicles() async {
+        print("🔍 Fetching alternative vehicles...")
+        isFetchingAlternatives = true
+        showAlternatives = true
+        
+        let result = await aiService.identifyVehicleMultiple(from: displayImage)
+        
+        await MainActor.run {
+            isFetchingAlternatives = false
+            
+            switch result {
+            case .success(let vehicles):
+                print("✅ Got \(vehicles.count) alternatives")
+                alternativeVehicles = vehicles
+            case .failure(let error):
+                print("❌ Failed to get alternatives: \(error)")
+                showAlternatives = false
+                aiErrorMessage = "Failed to get alternative vehicles: \(error.localizedDescription)"
+                showAIError = true
+            }
+        }
+    }
+}
+
+// MARK: - Alternative Vehicles Sheet
+
+struct AlternativeVehiclesSheet: View {
+    let alternatives: [VehicleIdentification]
+    let isFetching: Bool
+    let onSelect: (VehicleIdentification) -> Void
+    let onCancel: () -> Void
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Header
+                Text("Choose Your Vehicle")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.top, 20)
+                    .padding(.bottom, 10)
+                
+                Text("Select the correct match from these options")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 20)
+                
+                if isFetching {
+                    // Loading state
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("Finding alternatives...")
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxHeight: .infinity)
+                } else {
+                    // List of alternatives
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(alternatives) { vehicle in
+                                Button(action: {
+                                    onSelect(vehicle)
+                                }) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("\(vehicle.make) \(vehicle.model)")
+                                                    .font(.headline)
+                                                    .foregroundStyle(.primary)
+                                                
+                                                Text(vehicle.generation)
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            // Confidence indicator
+                                            HStack(spacing: 4) {
+                                                Image(systemName: confidenceIcon(vehicle.confidence))
+                                                    .foregroundStyle(confidenceColor(vehicle.confidence))
+                                                Text(vehicle.confidence.capitalized)
+                                                    .font(.caption)
+                                                    .fontWeight(.semibold)
+                                                    .foregroundStyle(confidenceColor(vehicle.confidence))
+                                            }
+                                        }
+                                    }
+                                    .padding()
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(12)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding()
+                    }
+                }
+                
+                // Cancel button
+                Button(action: onCancel) {
+                    Text("Cancel")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray)
+                        .cornerRadius(12)
+                }
+                .padding()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    private func confidenceIcon(_ confidence: String) -> String {
+        switch confidence.lowercased() {
+        case "high": return "checkmark.circle.fill"
+        case "medium": return "checkmark.circle"
+        default: return "questionmark.circle"
+        }
+    }
+    
+    private func confidenceColor(_ confidence: String) -> Color {
+        switch confidence.lowercased() {
+        case "high": return .green
+        case "medium": return .orange
+        default: return .gray
         }
     }
 }

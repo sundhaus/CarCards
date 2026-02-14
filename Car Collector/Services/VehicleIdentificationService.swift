@@ -11,7 +11,8 @@ import FirebaseAILogic
 import FirebaseFirestore
 
 /// Simplified response - just what we need
-struct VehicleIdentification: Codable {
+struct VehicleIdentification: Codable, Identifiable {
+    var id: String { "\(make)_\(model)_\(generation)" }  // Computed ID
     let isVehicle: Bool  // NEW: Is this actually a vehicle?
     let isAppropriate: Bool  // NEW: Is the content appropriate?
     let rejectionReason: String?  // NEW: Why was it rejected (if applicable)
