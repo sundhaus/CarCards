@@ -16,6 +16,14 @@ struct CaptureLandingView: View {
     @State private var showDriverForm = false
     @State private var showLocationForm = false
     @State private var showDriverTypeSelector = false
+    
+    // Card preview states
+    @State private var showCardPreview = false
+    @State private var previewCardImage: UIImage?
+    @State private var previewMake = ""
+    @State private var previewModel = ""
+    @State private var previewGeneration = ""
+    
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -154,12 +162,20 @@ struct CaptureLandingView: View {
                     DriverInfoFormSheet(
                         capturedImage: image,
                         isDriverPlusVehicle: captureType == .driverPlusVehicle,
-                        onComplete: { firstName, lastName, nickname, vehicleName in
+                        onComplete: { cardImage, firstName, lastName, nickname, vehicleName in
                             print("📝 Driver saved: \(firstName) \(lastName)" + (nickname.isEmpty ? "" : " (\(nickname))"))
-                            print("   Vehicle: \(vehicleName)")
-                            // TODO: Create driver card and show on CardDetailsView
+                            if !vehicleName.isEmpty {
+                                print("   Vehicle: \(vehicleName)")
+                            }
+                            
+                            // Show card preview
+                            previewCardImage = cardImage
+                            previewMake = firstName
+                            previewModel = lastName
+                            previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
+                            
                             showDriverForm = false
-                            dismiss()
+                            showCardPreview = true
                         }
                     )
                 }
@@ -169,13 +185,35 @@ struct CaptureLandingView: View {
                 if let image = capturedImage {
                     LocationInfoFormSheet(
                         capturedImage: image,
-                        onComplete: { locationName in
+                        onComplete: { cardImage, locationName in
                             print("📍 Location saved: \(locationName)")
-                            // TODO: Create location card and show on CardDetailsView
+                            
+                            // Show card preview
+                            previewCardImage = cardImage
+                            previewMake = locationName
+                            previewModel = ""
+                            previewGeneration = ""
+                            
                             showLocationForm = false
-                            dismiss()
+                            showCardPreview = true
                         }
                     )
+                }
+            }
+            // Card preview
+            .fullScreenCover(isPresented: $showCardPreview) {
+                if let cardImage = previewCardImage {
+                    CardPreviewView(
+                        cardImage: cardImage,
+                        make: previewMake,
+                        model: previewModel,
+                        generation: previewGeneration,
+                        onWrongVehicle: nil, // Not applicable for driver/location
+                        showWrongVehicleButton: false // Hide "Not your vehicle" button
+                    )
+                    .onDisappear {
+                        dismiss() // Dismiss CaptureLandingView when preview is dismissed
+                    }
                 }
             }
         }

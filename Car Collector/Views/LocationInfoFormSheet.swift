@@ -9,7 +9,7 @@ import SwiftUI
 
 struct LocationInfoFormSheet: View {
     let capturedImage: UIImage
-    var onComplete: ((String) -> Void)? // locationName
+    var onComplete: ((UIImage, String) -> Void)? // cardImage, locationName
     
     @State private var locationName = ""
     @Environment(\.dismiss) private var dismiss
@@ -52,7 +52,7 @@ struct LocationInfoFormSheet: View {
                         .padding(.horizontal, 20)
                         
                         Button(action: {
-                            onComplete?(locationName)
+                            onComplete?(capturedImage, locationName)
                         }) {
                             Text("Save Location")
                                 .font(.system(size: 18, weight: .bold))

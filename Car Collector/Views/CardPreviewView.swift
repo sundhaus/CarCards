@@ -14,6 +14,7 @@ struct CardPreviewView: View {
     let model: String
     let generation: String
     let onWrongVehicle: (() -> Void)?  // NEW: Callback when user clicks "Not your vehicle?"
+    var showWrongVehicleButton: Bool = true // Only show for vehicle captures
     @Environment(\.dismiss) private var dismiss
     
     @State private var allowDismiss = false
@@ -78,8 +79,8 @@ struct CardPreviewView: View {
             }
             .zIndex(0)  // Main content layer
             
-            // NEW: "Not your vehicle?" button in top-right corner
-            if let onWrongVehicle = onWrongVehicle {
+            // NEW: "Not your vehicle?" button in top-right corner (only for vehicle captures)
+            if showWrongVehicleButton, let onWrongVehicle = onWrongVehicle {
                 VStack {
                     HStack {
                         Spacer()
