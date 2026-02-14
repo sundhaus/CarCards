@@ -201,7 +201,7 @@ struct ListingFormView: View {
     // Create a dummy image for preview
     let dummyImage = UIImage(systemName: "car.fill")!
     
-    return ListingFormView(
+    ListingFormView(
         card: SavedCard(
             id: UUID(),
             image: dummyImage,
