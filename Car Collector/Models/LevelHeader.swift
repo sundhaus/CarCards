@@ -88,7 +88,7 @@ struct LevelHeader: View {
             .frame(height: 60)
             .background(
                 Rectangle()
-                    .fill(.headerBackground)
+                    .fill(Color.headerBackground)
                     .ignoresSafeArea(edges: .top)
             )
             .frame(maxWidth: .infinity)
@@ -239,7 +239,7 @@ struct LevelHeader: View {
                 levelBadge(size: 28)
             }
             .padding(8)
-            .background(.headerBackground)
+            .background(Color.headerBackground)
             .cornerRadius(12)
         }
         .buttonStyle(.plain)
