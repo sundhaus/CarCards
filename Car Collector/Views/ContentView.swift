@@ -144,7 +144,7 @@ struct ContentView: View {
                             }
                         }
                     }
-                    .background(.ultraThinMaterial)
+                    .background(.headerBackground)
                     .cornerRadius(20)
                     .frame(width: 80)
                     .blur(radius: showCardDetail ? 10 : 0)
@@ -233,7 +233,7 @@ struct ContentView: View {
                                 }
                             }
                         }
-                        .background(.ultraThinMaterial)
+                        .background(.headerBackground)
                         .cornerRadius(20)
                         .padding(.horizontal)
                         .blur(radius: showCardDetail ? 10 : 0)

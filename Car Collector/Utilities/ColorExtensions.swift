@@ -20,4 +20,8 @@ extension Color {
     
     // Solid version for non-gradient contexts
     static let appBackgroundSolid = Color(red: 0.075, green: 0.075, blue: 0.175)
+    
+    // Header and hub background - dark blue-gray with transparency
+    // Matches the appearance of ultraThinMaterial on appBackgroundSolid
+    static let headerBackground = Color(red: 0.15, green: 0.16, blue: 0.22).opacity(0.85)
 }
