@@ -17,7 +17,7 @@ struct CaptureLandingView: View {
     
     // Location flow states
     @State private var locationImage: UIImage?
-    @State private var showLocationInfo = false
+    @State private var navigateToLocationInfo = false
     
     var body: some View {
         NavigationStack {
@@ -135,14 +135,13 @@ struct CaptureLandingView: View {
                     onPhotoCaptured: { image in
                         locationImage = image
                         showLocationCapture = false
-                        // Small delay to let camera dismiss before showing next view
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showLocationInfo = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            navigateToLocationInfo = true
                         }
                     }
                 )
             }
-            .fullScreenCover(isPresented: $showLocationInfo) {
+            .navigationDestination(isPresented: $navigateToLocationInfo) {
                 if let image = locationImage {
                     LocationInfoView(
                         capturedImage: image,

@@ -13,7 +13,7 @@ struct DriverCaptureLandingView: View {
     @State private var showCamera = false
     @State private var captureDriverPlusVehicle = false
     @State private var capturedImage: UIImage?
-    @State private var showDriverInfo = false
+    @State private var navigateToDriverInfo = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -98,26 +98,22 @@ struct DriverCaptureLandingView: View {
                 PhotoCaptureView(
                     isPresented: $showCamera,
                     onPhotoCaptured: { image in
-                        // Store the image and show driver info
                         capturedImage = image
                         showCamera = false
-                        // Small delay to let camera dismiss before showing next view
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showDriverInfo = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            navigateToDriverInfo = true
                         }
                     }
                 )
             }
-            .fullScreenCover(isPresented: $showDriverInfo) {
+            .navigationDestination(isPresented: $navigateToDriverInfo) {
                 if let image = capturedImage {
                     DriverInfoView(
                         capturedImage: image,
                         isDriverPlusVehicle: captureDriverPlusVehicle,
                         onComplete: { firstName, lastName, nickname in
                             print("📝 Driver saved: \(firstName) \(lastName)" + (nickname.isEmpty ? "" : " (\(nickname))"))
-                            // Pass the data back and dismiss everything
                             onDriverCaptured?(image, captureDriverPlusVehicle)
-                            showDriverInfo = false
                             dismiss()
                         }
                     )
