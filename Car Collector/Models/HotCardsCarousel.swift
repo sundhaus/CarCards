@@ -45,7 +45,7 @@ struct HotCardsCarousel: View {
         }
     }
     
-    // MARK: - Carousel View (Free Scroll + One Card at a Time + Blur)
+    // MARK: - Carousel View (One Card at a Time - Direction Only)
     
     private var carouselView: some View {
         GeometryReader { geometry in
@@ -73,10 +73,12 @@ struct HotCardsCarousel: View {
                     .padding(.horizontal, (geometry.size.width - 280) / 2)
                     .padding(.vertical, 12)
                 }
+                .scrollDisabled(true)  // Disable natural scrolling - only gesture control
                 .gesture(
                     DragGesture(minimumDistance: 20)
-                        .onChanged { _ in
+                        .onChanged { value in
                             isDragging = true
+                            // Visual preview only - no actual scrolling
                         }
                         .onEnded { value in
                             isDragging = false
@@ -86,8 +88,10 @@ struct HotCardsCarousel: View {
                 .onAppear {
                     // Start in the middle of infinite array
                     let startIndex = hotCardsService.hotCards.count * 50
-                    proxy.scrollTo(startIndex, anchor: .center)
-                    currentIndex = startIndex
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(startIndex, anchor: .center)
+                        currentIndex = startIndex
+                    }
                 }
             }
         }
@@ -109,9 +113,9 @@ struct HotCardsCarousel: View {
             // Swiped right - previous card only
             currentIndex = (currentIndex - 1 + totalCards * 100) % (totalCards * 100)
         }
-        // If less than threshold, stay on current card
+        // If less than threshold, stay on current card (do nothing, already centered)
         
-        // Snap to the card
+        // Snap to the card with animation
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             proxy.scrollTo(currentIndex, anchor: .center)
         }
@@ -121,8 +125,9 @@ struct HotCardsCarousel: View {
         if currentIndex < totalCards * 10 || currentIndex > totalCards * 90 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 let offset = currentIndex % totalCards
-                currentIndex = middlePosition + offset
-                proxy.scrollTo(currentIndex, anchor: .center)
+                let newIndex = middlePosition + offset
+                currentIndex = newIndex
+                proxy.scrollTo(newIndex, anchor: .center)
             }
         }
     }
