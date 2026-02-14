@@ -79,4 +79,68 @@ class CardStorage {
         }
         return csv
     }
+    
+    // MARK: - Driver Card Storage
+    
+    private static let driverCardsKey = "savedDriverCards"
+    
+    static func saveDriverCards(_ cards: [DriverCard]) {
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(cards)
+            UserDefaults.standard.set(data, forKey: driverCardsKey)
+            print("✅ Successfully saved \(cards.count) driver cards")
+        } catch {
+            print("❌ Failed to save driver cards: \(error)")
+        }
+    }
+    
+    static func loadDriverCards() -> [DriverCard] {
+        guard let data = UserDefaults.standard.data(forKey: driverCardsKey) else {
+            print("ℹ️ No saved driver cards found")
+            return []
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            let cards = try decoder.decode([DriverCard].self, from: data)
+            print("✅ Successfully loaded \(cards.count) driver cards")
+            return cards
+        } catch {
+            print("❌ Failed to load driver cards: \(error)")
+            return []
+        }
+    }
+    
+    // MARK: - Location Card Storage
+    
+    private static let locationCardsKey = "savedLocationCards"
+    
+    static func saveLocationCards(_ cards: [LocationCard]) {
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(cards)
+            UserDefaults.standard.set(data, forKey: locationCardsKey)
+            print("✅ Successfully saved \(cards.count) location cards")
+        } catch {
+            print("❌ Failed to save location cards: \(error)")
+        }
+    }
+    
+    static func loadLocationCards() -> [LocationCard] {
+        guard let data = UserDefaults.standard.data(forKey: locationCardsKey) else {
+            print("ℹ️ No saved location cards found")
+            return []
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            let cards = try decoder.decode([LocationCard].self, from: data)
+            print("✅ Successfully loaded \(cards.count) location cards")
+            return cards
+        } catch {
+            print("❌ Failed to load location cards: \(error)")
+            return []
+        }
+    }
 }

@@ -289,4 +289,98 @@ class CardService: ObservableObject {
         
         print("✅ Migrated \(localCards.count) local cards to cloud with metadata")
     }
+    
+    // MARK: - Save Driver Card
+    
+    func saveDriverCard(
+        image: UIImage,
+        firstName: String,
+        lastName: String,
+        nickname: String = "",
+        vehicleName: String = "",
+        isDriverPlusVehicle: Bool = false,
+        capturedBy: String? = nil,
+        capturedLocation: String? = nil
+    ) async throws -> String {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
+        // Generate card ID
+        let cardId = UUID().uuidString
+        
+        // 1. Upload image to Storage
+        let imageURL = try await uploadCardImage(image, uid: uid, cardId: cardId)
+        
+        // 2. Save metadata to Firestore
+        let data: [String: Any] = [
+            "id": cardId,
+            "type": "driver",
+            "ownerId": uid,
+            "firstName": firstName,
+            "lastName": lastName,
+            "nickname": nickname,
+            "vehicleName": vehicleName,
+            "isDriverPlusVehicle": isDriverPlusVehicle,
+            "imageURL": imageURL,
+            "capturedBy": capturedBy ?? "",
+            "capturedLocation": capturedLocation ?? "",
+            "capturedDate": Timestamp(date: Date()),
+            "likes": 0,
+            "likedBy": []
+        ]
+        
+        try await cardsCollection.document(cardId).setData(data)
+        
+        // 3. Increment user's card count
+        if let currentUser = UserService.shared.currentProfile {
+            try await UserService.shared.updateCardCount(currentUser.cardCount + 1)
+        }
+        
+        print("✅ Driver card saved: \(firstName) \(lastName)")
+        return cardId
+    }
+    
+    // MARK: - Save Location Card
+    
+    func saveLocationCard(
+        image: UIImage,
+        locationName: String,
+        capturedBy: String? = nil,
+        capturedLocation: String? = nil
+    ) async throws -> String {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
+        // Generate card ID
+        let cardId = UUID().uuidString
+        
+        // 1. Upload image to Storage
+        let imageURL = try await uploadCardImage(image, uid: uid, cardId: cardId)
+        
+        // 2. Save metadata to Firestore
+        let data: [String: Any] = [
+            "id": cardId,
+            "type": "location",
+            "ownerId": uid,
+            "locationName": locationName,
+            "imageURL": imageURL,
+            "capturedBy": capturedBy ?? "",
+            "capturedLocation": capturedLocation ?? "",
+            "capturedDate": Timestamp(date: Date()),
+            "likes": 0,
+            "likedBy": []
+        ]
+        
+        try await cardsCollection.document(cardId).setData(data)
+        
+        // 3. Increment user's card count
+        if let currentUser = UserService.shared.currentProfile {
+            try await UserService.shared.updateCardCount(currentUser.cardCount + 1)
+        }
+        
+        print("✅ Location card saved: \(locationName)")
+        return cardId
+    }
 }

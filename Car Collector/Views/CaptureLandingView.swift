@@ -24,6 +24,10 @@ struct CaptureLandingView: View {
     @State private var previewModel = ""
     @State private var previewGeneration = ""
     
+    // Services
+    @ObservedObject private var locationService = LocationService.shared
+    @ObservedObject private var levelSystem = LevelSystem.shared
+    
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -168,14 +172,57 @@ struct CaptureLandingView: View {
                                 print("   Vehicle: \(vehicleName)")
                             }
                             
-                            // Show card preview
-                            previewCardImage = cardImage
-                            previewMake = firstName
-                            previewModel = lastName
-                            previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
-                            
-                            showDriverForm = false
-                            showCardPreview = true
+                            // Save to Firebase and local storage
+                            Task {
+                                do {
+                                    // Save to Firebase
+                                    let firebaseId = try await CardService.shared.saveDriverCard(
+                                        image: cardImage,
+                                        firstName: firstName,
+                                        lastName: lastName,
+                                        nickname: nickname,
+                                        vehicleName: vehicleName,
+                                        isDriverPlusVehicle: captureType == .driverPlusVehicle,
+                                        capturedBy: UserService.shared.currentProfile?.username,
+                                        capturedLocation: locationService.currentCity
+                                    )
+                                    
+                                    // Save to local storage
+                                    let driverCard = DriverCard(
+                                        image: cardImage,
+                                        firstName: firstName,
+                                        lastName: lastName,
+                                        nickname: nickname,
+                                        vehicleName: vehicleName,
+                                        isDriverPlusVehicle: captureType == .driverPlusVehicle,
+                                        capturedBy: UserService.shared.currentProfile?.username,
+                                        capturedLocation: locationService.currentCity,
+                                        firebaseId: firebaseId
+                                    )
+                                    
+                                    var localCards = CardStorage.loadDriverCards()
+                                    localCards.append(driverCard)
+                                    CardStorage.saveDriverCards(localCards)
+                                    
+                                    // Award XP
+                                    await levelSystem.addXP(10)
+                                    
+                                    print("✅ Driver card saved successfully")
+                                    
+                                    // Show card preview
+                                    await MainActor.run {
+                                        previewCardImage = cardImage
+                                        previewMake = firstName
+                                        previewModel = lastName
+                                        previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
+                                        
+                                        showDriverForm = false
+                                        showCardPreview = true
+                                    }
+                                } catch {
+                                    print("❌ Failed to save driver card: \(error)")
+                                }
+                            }
                         }
                     )
                 }
@@ -188,14 +235,49 @@ struct CaptureLandingView: View {
                         onComplete: { cardImage, locationName in
                             print("📍 Location saved: \(locationName)")
                             
-                            // Show card preview
-                            previewCardImage = cardImage
-                            previewMake = locationName
-                            previewModel = ""
-                            previewGeneration = ""
-                            
-                            showLocationForm = false
-                            showCardPreview = true
+                            // Save to Firebase and local storage
+                            Task {
+                                do {
+                                    // Save to Firebase
+                                    let firebaseId = try await CardService.shared.saveLocationCard(
+                                        image: cardImage,
+                                        locationName: locationName,
+                                        capturedBy: UserService.shared.currentProfile?.username,
+                                        capturedLocation: locationService.currentCity
+                                    )
+                                    
+                                    // Save to local storage
+                                    let locationCard = LocationCard(
+                                        image: cardImage,
+                                        locationName: locationName,
+                                        capturedBy: UserService.shared.currentProfile?.username,
+                                        capturedLocation: locationService.currentCity,
+                                        firebaseId: firebaseId
+                                    )
+                                    
+                                    var localCards = CardStorage.loadLocationCards()
+                                    localCards.append(locationCard)
+                                    CardStorage.saveLocationCards(localCards)
+                                    
+                                    // Award XP
+                                    await levelSystem.addXP(10)
+                                    
+                                    print("✅ Location card saved successfully")
+                                    
+                                    // Show card preview
+                                    await MainActor.run {
+                                        previewCardImage = cardImage
+                                        previewMake = locationName
+                                        previewModel = ""
+                                        previewGeneration = ""
+                                        
+                                        showLocationForm = false
+                                        showCardPreview = true
+                                    }
+                                } catch {
+                                    print("❌ Failed to save location card: \(error)")
+                                }
+                            }
                         }
                     )
                 }
