@@ -10,9 +10,12 @@ import SwiftUI
 struct CaptureLandingView: View {
     var isLandscape: Bool = false
     var onCardSaved: ((SavedCard) -> Void)? = nil
-    @State private var showVehicleCapture = false
-    @State private var showDriverFlow = false
-    @State private var showLocationFlow = false
+    @State private var showCamera = false
+    @State private var captureType: CaptureType = .vehicle
+    @State private var capturedImage: UIImage?
+    @State private var showDriverForm = false
+    @State private var showLocationForm = false
+    @State private var showDriverTypeSelector = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -46,7 +49,8 @@ struct CaptureLandingView: View {
                                 icon: "car.fill",
                                 gradient: [Color.blue, Color.cyan],
                                 action: {
-                                    showVehicleCapture = true
+                                    captureType = .vehicle
+                                    showCamera = true
                                 }
                             )
                             
@@ -57,7 +61,7 @@ struct CaptureLandingView: View {
                                 icon: "person.fill",
                                 gradient: [Color.purple, Color.pink],
                                 action: {
-                                    showDriverFlow = true
+                                    showDriverTypeSelector = true
                                 }
                             )
                             
@@ -68,7 +72,8 @@ struct CaptureLandingView: View {
                                 icon: "mappin.circle.fill",
                                 gradient: [Color.green, Color.teal],
                                 action: {
-                                    showLocationFlow = true
+                                    captureType = .location
+                                    showCamera = true
                                 }
                             )
                         }
@@ -102,39 +107,69 @@ struct CaptureLandingView: View {
                     Spacer()
                 }
             }
-            // Vehicle flow
-            .fullScreenCover(isPresented: $showVehicleCapture) {
+            // Camera for all capture types
+            .fullScreenCover(isPresented: $showCamera) {
                 CameraView(
-                    isPresented: $showVehicleCapture,
+                    isPresented: $showCamera,
                     onCardSaved: { card in
-                        onCardSaved?(card)
-                        showVehicleCapture = false
-                        dismiss()
+                        // Vehicle flow - use existing AI detection
+                        if captureType == .vehicle {
+                            onCardSaved?(card)
+                            showCamera = false
+                            dismiss()
+                        } else {
+                            // Driver or Location - save image and show form
+                            capturedImage = card.image
+                            showCamera = false
+                            if captureType == .driver || captureType == .driverPlusVehicle {
+                                showDriverForm = true
+                            } else if captureType == .location {
+                                showLocationForm = true
+                            }
+                        }
                     }
                 )
             }
-            // Driver flow
-            .fullScreenCover(isPresented: $showDriverFlow) {
-                DriverCaptureFlow(
-                    isLandscape: isLandscape,
-                    onComplete: { image, isPlusVehicle, firstName, lastName, nickname in
-                        print("📝 Driver saved: \(firstName) \(lastName)" + (nickname.isEmpty ? "" : " (\(nickname))"))
-                        print("   Type: \(isPlusVehicle ? "Driver + Vehicle" : "Driver only")")
-                        // TODO: Save driver card with metadata
-                        showDriverFlow = false
+            // Driver type selector
+            .sheet(isPresented: $showDriverTypeSelector) {
+                DriverTypeSelectorView(
+                    onSelect: { type in
+                        captureType = type
+                        showDriverTypeSelector = false
+                        showCamera = true
                     }
                 )
+                .presentationDetents([.height(300)])
             }
-            // Location flow
-            .fullScreenCover(isPresented: $showLocationFlow) {
-                LocationCaptureFlow(
-                    isLandscape: isLandscape,
-                    onComplete: { image, locationName in
-                        print("📍 Location saved: \(locationName)")
-                        // TODO: Save location card with metadata
-                        showLocationFlow = false
-                    }
-                )
+            // Driver info form
+            .sheet(isPresented: $showDriverForm) {
+                if let image = capturedImage {
+                    DriverInfoFormSheet(
+                        capturedImage: image,
+                        isDriverPlusVehicle: captureType == .driverPlusVehicle,
+                        onComplete: { firstName, lastName, nickname, vehicleName in
+                            print("📝 Driver saved: \(firstName) \(lastName)" + (nickname.isEmpty ? "" : " (\(nickname))"))
+                            print("   Vehicle: \(vehicleName)")
+                            // TODO: Create driver card and show on CardDetailsView
+                            showDriverForm = false
+                            dismiss()
+                        }
+                    )
+                }
+            }
+            // Location info form
+            .sheet(isPresented: $showLocationForm) {
+                if let image = capturedImage {
+                    LocationInfoFormSheet(
+                        capturedImage: image,
+                        onComplete: { locationName in
+                            print("📍 Location saved: \(locationName)")
+                            // TODO: Create location card and show on CardDetailsView
+                            showLocationForm = false
+                            dismiss()
+                        }
+                    )
+                }
             }
         }
     }
