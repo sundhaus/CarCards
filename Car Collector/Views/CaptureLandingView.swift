@@ -11,13 +11,9 @@ struct CaptureLandingView: View {
     var isLandscape: Bool = false
     var onCardSaved: ((SavedCard) -> Void)? = nil
     @State private var showVehicleCapture = false
-    @State private var showDriverLanding = false
-    @State private var showLocationCapture = false
+    @State private var showDriverFlow = false
+    @State private var showLocationFlow = false
     @Environment(\.dismiss) private var dismiss
-    
-    // Location flow states
-    @State private var locationImage: UIImage?
-    @State private var navigateToLocationInfo = false
     
     var body: some View {
         NavigationStack {
@@ -61,7 +57,7 @@ struct CaptureLandingView: View {
                                 icon: "person.fill",
                                 gradient: [Color.purple, Color.pink],
                                 action: {
-                                    showDriverLanding = true
+                                    showDriverFlow = true
                                 }
                             )
                             
@@ -72,7 +68,7 @@ struct CaptureLandingView: View {
                                 icon: "mappin.circle.fill",
                                 gradient: [Color.green, Color.teal],
                                 action: {
-                                    showLocationCapture = true
+                                    showLocationFlow = true
                                 }
                             )
                         }
@@ -118,40 +114,27 @@ struct CaptureLandingView: View {
                 )
             }
             // Driver flow
-            .fullScreenCover(isPresented: $showDriverLanding) {
-                DriverCaptureLandingView(
+            .fullScreenCover(isPresented: $showDriverFlow) {
+                DriverCaptureFlow(
                     isLandscape: isLandscape,
-                    onDriverCaptured: { image, isPlusVehicle in
-                        print("📝 Driver saved: \(isPlusVehicle ? "Driver + Vehicle" : "Driver only")")
+                    onComplete: { image, isPlusVehicle, firstName, lastName, nickname in
+                        print("📝 Driver saved: \(firstName) \(lastName)" + (nickname.isEmpty ? "" : " (\(nickname))"))
+                        print("   Type: \(isPlusVehicle ? "Driver + Vehicle" : "Driver only")")
                         // TODO: Save driver card with metadata
-                        // DriverCaptureLandingView handles the entire flow and dismisses itself
+                        showDriverFlow = false
                     }
                 )
             }
             // Location flow
-            .fullScreenCover(isPresented: $showLocationCapture) {
-                PhotoCaptureView(
-                    isPresented: $showLocationCapture,
-                    onPhotoCaptured: { image in
-                        locationImage = image
-                        showLocationCapture = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            navigateToLocationInfo = true
-                        }
+            .fullScreenCover(isPresented: $showLocationFlow) {
+                LocationCaptureFlow(
+                    isLandscape: isLandscape,
+                    onComplete: { image, locationName in
+                        print("📍 Location saved: \(locationName)")
+                        // TODO: Save location card with metadata
+                        showLocationFlow = false
                     }
                 )
-            }
-            .navigationDestination(isPresented: $navigateToLocationInfo) {
-                if let image = locationImage {
-                    LocationInfoView(
-                        capturedImage: image,
-                        onComplete: { locationName in
-                            print("📍 Location saved: \(locationName)")
-                            // TODO: Save location card with metadata
-                            dismiss()
-                        }
-                    )
-                }
             }
         }
     }

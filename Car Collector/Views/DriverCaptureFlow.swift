@@ -1,0 +1,278 @@
+//
+//  DriverCaptureFlow.swift
+//  CarCardCollector
+//
+//  Unified driver capture flow - no nested presentations
+//
+
+import SwiftUI
+
+enum DriverCaptureStep {
+    case selectType
+    case camera
+    case driverInfo
+}
+
+struct DriverCaptureFlow: View {
+    var isLandscape: Bool = false
+    var onComplete: ((UIImage, Bool, String, String, String) -> Void)? = nil
+    
+    @State private var currentStep: DriverCaptureStep = .selectType
+    @State private var captureDriverPlusVehicle = false
+    @State private var capturedImage: UIImage?
+    @State private var showCamera = false
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        ZStack {
+            Color.appBackgroundSolid
+                .ignoresSafeArea()
+            
+            Group {
+                switch currentStep {
+                case .selectType:
+                    driverTypeSelection
+                case .camera:
+                    EmptyView() // Camera shown as fullScreenCover
+                case .driverInfo:
+                    if let image = capturedImage {
+                        driverInfoForm(image: image)
+                    }
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showCamera) {
+            PhotoCaptureView(
+                isPresented: $showCamera,
+                onPhotoCaptured: { image in
+                    capturedImage = image
+                    showCamera = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        withAnimation {
+                            currentStep = .driverInfo
+                        }
+                    }
+                }
+            )
+        }
+    }
+    
+    private var driverTypeSelection: some View {
+        VStack(spacing: 0) {
+            // Header
+            VStack(spacing: 8) {
+                Text("Capture Driver")
+                    .font(.system(size: 42, weight: .bold))
+                    .foregroundStyle(.white)
+                
+                Text("Choose capture type")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .padding(.top, 60)
+            .padding(.bottom, 30)
+            
+            // Options
+            ScrollView {
+                VStack(spacing: 16) {
+                    NavigationButton(
+                        title: "Driver",
+                        subtitle: "Capture driver portrait",
+                        icon: "person.fill",
+                        gradient: [Color.purple, Color.pink],
+                        action: {
+                            captureDriverPlusVehicle = false
+                            currentStep = .camera
+                            showCamera = true
+                        }
+                    )
+                    
+                    NavigationButton(
+                        title: "Driver + Vehicle",
+                        subtitle: "Capture driver with their car",
+                        icon: "person.and.background.dotted",
+                        gradient: [Color.blue, Color.purple],
+                        action: {
+                            captureDriverPlusVehicle = true
+                            currentStep = .camera
+                            showCamera = true
+                        }
+                    )
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
+            }
+            
+            Spacer()
+        }
+        .overlay(alignment: .topLeading) {
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color.headerBackground)
+                    .clipShape(Circle())
+            }
+            .padding(20)
+        }
+    }
+    
+    private func driverInfoForm(image: UIImage) -> some View {
+        DriverInfoFormView(
+            capturedImage: image,
+            isDriverPlusVehicle: captureDriverPlusVehicle,
+            onComplete: { firstName, lastName, nickname in
+                onComplete?(image, captureDriverPlusVehicle, firstName, lastName, nickname)
+                dismiss()
+            },
+            onBack: {
+                withAnimation {
+                    currentStep = .selectType
+                    capturedImage = nil
+                }
+            }
+        )
+    }
+}
+
+// Standalone driver info form without nested navigation
+struct DriverInfoFormView: View {
+    let capturedImage: UIImage
+    let isDriverPlusVehicle: Bool
+    var onComplete: ((String, String, String) -> Void)?
+    var onBack: (() -> Void)?
+    
+    @State private var firstName = ""
+    @State private var lastName = ""
+    @State private var nickname = ""
+    @State private var showSignature = false
+    @State private var signatureImage: UIImage?
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            // Header
+            VStack(spacing: 8) {
+                Text("Driver Info")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(.white)
+                
+                Text("Add driver details")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .padding(.top, 60)
+            
+            // Preview image
+            Image(uiImage: capturedImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 200, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                )
+            
+            // Form fields
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("First Name")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                    
+                    TextField("Required", text: $firstName)
+                        .textFieldStyle(CustomTextFieldStyle())
+                }
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Last Name")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                    
+                    TextField("Required", text: $lastName)
+                        .textFieldStyle(CustomTextFieldStyle())
+                }
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Nickname (Optional)")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                    
+                    TextField("Optional", text: $nickname)
+                        .textFieldStyle(CustomTextFieldStyle())
+                }
+                
+                Button(action: {
+                    showSignature = true
+                }) {
+                    HStack {
+                        Image(systemName: signatureImage != nil ? "checkmark.circle.fill" : "signature")
+                            .font(.system(size: 20))
+                        
+                        Text(signatureImage != nil ? "Signature Added" : "Add Signature")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(signatureImage != nil ? Color.green.opacity(0.3) : Color.white.opacity(0.15))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(signatureImage != nil ? Color.green : Color.white.opacity(0.3), lineWidth: 2)
+                    )
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            Spacer()
+            
+            Button(action: {
+                guard !firstName.isEmpty && !lastName.isEmpty else { return }
+                onComplete?(firstName, lastName, nickname)
+            }) {
+                Text("Save Driver")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(firstName.isEmpty || lastName.isEmpty ? Color.gray : Color.blue)
+                    )
+            }
+            .disabled(firstName.isEmpty || lastName.isEmpty)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 40)
+        }
+        .overlay(alignment: .topLeading) {
+            Button(action: { onBack?() }) {
+                Image(systemName: "chevron.left")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color.headerBackground)
+                    .clipShape(Circle())
+            }
+            .padding(20)
+        }
+        .fullScreenCover(isPresented: $showSignature) {
+            SignatureView(
+                cardImage: capturedImage,
+                onSignatureComplete: { signature in
+                    signatureImage = signature
+                    showSignature = false
+                }
+            )
+        }
+    }
+}
+
+#Preview {
+    DriverCaptureFlow()
+}
