@@ -65,6 +65,12 @@ struct HotCardsCarousel: View {
                                     )
                                     .blur(radius: getBlurRadius(for: cardGeometry, screenWidth: geometry.size.width))
                                     .scaleEffect(getScale(for: cardGeometry, screenWidth: geometry.size.width))
+                                    .anchorPreference(
+                                        key: CardPositionPreferenceKey.self,
+                                        value: .bounds
+                                    ) { anchor in
+                                        [CardPosition(id: item.id, bounds: anchor)]
+                                    }
                             }
                             .frame(width: 280, height: 220)
                             .id(item.id)
@@ -73,14 +79,31 @@ struct HotCardsCarousel: View {
                     .padding(.horizontal, (geometry.size.width - 280) / 2)
                     .padding(.vertical, 12)
                 }
+                .overlayPreferenceValue(CardPositionPreferenceKey.self) { preferences in
+                    GeometryReader { geo in
+                        Color.clear.onAppear {
+                            // This will trigger when preferences update
+                            if !isDragging {
+                                snapToClosestCard(preferences: preferences, geometry: geo, proxy: proxy)
+                            }
+                        }
+                        .onChange(of: isDragging) { oldValue, newValue in
+                            if oldValue && !newValue {
+                                // Dragging just ended - snap to closest
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                    snapToClosestCard(preferences: preferences, geometry: geo, proxy: proxy)
+                                }
+                            }
+                        }
+                    }
+                }
                 .simultaneousGesture(
                     DragGesture()
                         .onChanged { _ in
                             isDragging = true
                         }
-                        .onEnded { value in
+                        .onEnded { _ in
                             isDragging = false
-                            handleSnapToNearest(proxy: proxy, geometry: geometry, translation: value.translation.width)
                         }
                 )
                 .onAppear {
@@ -92,6 +115,61 @@ struct HotCardsCarousel: View {
             }
         }
         .frame(height: 240)
+    }
+    
+    // MARK: - Preference Key for Card Positions
+    
+    private struct CardPosition {
+        let id: Int
+        let bounds: Anchor<CGRect>
+    }
+    
+    private struct CardPositionPreferenceKey: PreferenceKey {
+        static var defaultValue: [CardPosition] = []
+        
+        static func reduce(value: inout [CardPosition], nextValue: () -> [CardPosition]) {
+            value.append(contentsOf: nextValue())
+        }
+    }
+    
+    // MARK: - Find and Snap to Center
+    
+    private func snapToClosestCard(preferences: [CardPosition], geometry: GeometryProxy, proxy: ScrollViewProxy) {
+        let screenCenter = geometry.size.width / 2
+        
+        // Find card closest to center
+        var closestCard: (id: Int, distance: CGFloat)?
+        
+        for position in preferences {
+            let rect = geometry[position.bounds]
+            let cardMidX = rect.midX
+            let distance = abs(cardMidX - screenCenter)
+            
+            if closestCard == nil || distance < closestCard!.distance {
+                closestCard = (position.id, distance)
+            }
+        }
+        
+        guard let closest = closestCard else { return }
+        
+        // Snap to that card
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            proxy.scrollTo(closest.id, anchor: .center)
+            currentIndex = closest.id
+        }
+        
+        // Reset to middle if we're getting near edges
+        let totalCards = hotCardsService.hotCards.count
+        if totalCards > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let middlePosition = totalCards * 50
+                if currentIndex < totalCards * 10 || currentIndex > totalCards * 90 {
+                    let offset = currentIndex % totalCards
+                    currentIndex = middlePosition + offset
+                    proxy.scrollTo(currentIndex, anchor: .center)
+                }
+            }
+        }
     }
     
     // MARK: - Infinite Loop
@@ -114,37 +192,6 @@ struct HotCardsCarousel: View {
         }
         
         return items
-    }
-    
-    // MARK: - Snap Logic
-    
-    private func handleSnapToNearest(proxy: ScrollViewProxy, geometry: GeometryProxy, translation: CGFloat) {
-        let totalCards = hotCardsService.hotCards.count
-        guard totalCards > 0 else { return }
-        
-        // Determine swipe direction
-        if translation > 50 {
-            // Swiped right - previous card
-            currentIndex = (currentIndex - 1 + totalCards * 100) % (totalCards * 100)
-        } else if translation < -50 {
-            // Swiped left - next card
-            currentIndex = (currentIndex + 1) % (totalCards * 100)
-        }
-        // Otherwise snap to current (no change needed)
-        
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-            proxy.scrollTo(currentIndex, anchor: .center)
-        }
-        
-        // Reset to middle if we're getting near edges
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let middlePosition = totalCards * 50
-            if currentIndex < totalCards * 10 || currentIndex > totalCards * 90 {
-                let offset = currentIndex % totalCards
-                currentIndex = middlePosition + offset
-                proxy.scrollTo(currentIndex, anchor: .center)
-            }
-        }
     }
     
     // MARK: - Visual Effects
