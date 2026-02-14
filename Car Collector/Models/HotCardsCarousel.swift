@@ -116,13 +116,13 @@ struct HotCardsCarousel: View {
     private func getScale(for position: Int) -> CGFloat {
         if position == 0 {
             // Front card scales down when dragged
-            let dragScale = 1.0 - min(abs(dragOffset) / 1000, 0.15)
+            let dragScale = 1.0 - min(abs(dragOffset) / 1000.0, 0.15)
             return dragScale
         } else {
             // Cards behind are progressively smaller
             let baseScale = 1.0 - (CGFloat(position) * 0.08)
             // Scale up slightly when front card is dragged
-            let dragInfluence = min(abs(dragOffset) / 2000, 0.04) * CGFloat(position)
+            let dragInfluence = min(abs(dragOffset) / 2000.0, 0.04) * CGFloat(position)
             return baseScale + dragInfluence
         }
     }
@@ -130,7 +130,7 @@ struct HotCardsCarousel: View {
     private func getRotation(for position: Int) -> Angle {
         if position == 0 {
             // Front card rotates with drag (subtle tilt)
-            return Angle(degrees: Double(dragOffset) / 15)
+            return Angle(degrees: Double(dragOffset) / 15.0)
         }
         return Angle(degrees: 0)
     }
@@ -138,7 +138,7 @@ struct HotCardsCarousel: View {
     private func getRotation3D(for position: Int) -> Angle {
         if position == 0 {
             // 3D rotation on Y-axis when dragging
-            return Angle(degrees: Double(dragOffset) / 10)
+            return Angle(degrees: Double(dragOffset) / 10.0)
         }
         return Angle(degrees: 0)
     }
@@ -146,7 +146,7 @@ struct HotCardsCarousel: View {
     private func getOpacity(for position: Int) -> Double {
         if position == 0 {
             // Front card fades when dragged far
-            return max(0.4, 1.0 - abs(dragOffset) / 500)
+            return max(0.4, 1.0 - abs(dragOffset) / 500.0)
         } else if position <= 2 {
             // Show first 3 cards
             return 1.0 - (Double(position) * 0.25)
