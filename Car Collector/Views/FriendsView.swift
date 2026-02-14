@@ -44,8 +44,8 @@ struct FriendsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background extends to all edges including bottom
-                Color(.systemGray6)
+                // Dark blue background
+                Color.appBackgroundSolid
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
@@ -175,23 +175,6 @@ struct FriendsView: View {
                 .ignoresSafeArea(edges: .bottom)
                 .padding(.trailing, isLandscape ? 100 : 0)
                 
-                // Friends/Following/Followers list popup
-                if showFriendsList {
-                    FollowListPopup(
-                        isShowing: $showFriendsList,
-                        onSearch: {
-                            showFriendsList = false
-                            showSearch = true
-                        },
-                        levelGradient: levelGradient
-                    )
-                }
-                
-                // Search/Follow users popup
-                if showSearch {
-                    SearchUsersView(isShowing: $showSearch)
-                }
-                
                 // Bottom blur gradient behind hub (portrait mode)
                 VStack(spacing: 0) {
                     Spacer()
@@ -296,14 +279,25 @@ struct FriendActivityCard: View {
             ZStack {
                 if !isFlipped {
                     // FRONT OF CARD
-                    if let image = cardImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 360, height: 202.5)
-                            .clipped()
-                            .cornerRadius(12)
-                            .overlay(
+                    ZStack {
+                        // Custom frame/border
+                        if let frameName = activity.customFrame, frameName != "None" {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(
+                                    frameName == "White" ? Color.white : Color.black,
+                                    lineWidth: 6
+                                )
+                                .frame(width: 360, height: 202.5)
+                        }
+                        
+                        if let image = cardImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 360, height: 202.5)
+                                .clipped()
+                                .cornerRadius(12)
+                                .overlay(
                                 ZStack {
                                     // Floating flame animation
                                     if showFloatingFlame {
@@ -339,47 +333,24 @@ struct FriendActivityCard: View {
                                     }
                                 }
                             )
-                            .onTapGesture {
-                                // Single tap to flip/unflip
-                                if isFlipped {
-                                    // This card is flipped, flip it back
-                                    withAnimation(.spring(response: 0.4)) {
-                                        flippedCardId = nil
-                                    }
-                                } else {
-                                    // Flip this card (auto-flips any other card back)
-                                    Task {
-                                        await fetchSpecsIfNeeded()
-                                    }
-                                    withAnimation(.spring(response: 0.4)) {
-                                        flippedCardId = activity.id
-                                    }
-                                }
-                            }
-                            .onTapGesture(count: 2) {
-                                // Double tap to heat
-                                if !isHeated {
-                                    toggleHeat()
-                                }
-                            }
-                    } else {
-                        // Placeholder while loading
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
+                        } else {
+                            // Placeholder while loading
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
                                     )
-                                )
-                            
-                            if isLoadingImage {
-                                ProgressView()
-                                    .tint(.white)
-                            } else {
-                                VStack(spacing: 8) {
-                                    Image(systemName: "car.fill")
+                                
+                                if isLoadingImage {
+                                    ProgressView()
+                                        .tint(.white)
+                                } else {
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "car.fill")
                                         .font(.system(size: 40))
                                         .foregroundStyle(.white.opacity(0.6))
                                     
@@ -393,8 +364,31 @@ struct FriendActivityCard: View {
                                     }
                                 }
                             }
+                            .frame(width: 360, height: 202.5)
                         }
-                        .frame(width: 360, height: 202.5)
+                    }
+                    .onTapGesture {
+                        // Single tap to flip/unflip
+                        if isFlipped {
+                            // This card is flipped, flip it back
+                            withAnimation(.spring(response: 0.4)) {
+                                flippedCardId = nil
+                            }
+                        } else {
+                            // Flip this card (auto-flips any other card back)
+                            Task {
+                                await fetchSpecsIfNeeded()
+                            }
+                            withAnimation(.spring(response: 0.4)) {
+                                flippedCardId = activity.id
+                            }
+                        }
+                    }
+                    .onTapGesture(count: 2) {
+                        // Double tap to heat
+                        if !isHeated {
+                            toggleHeat()
+                        }
                     }
                 } else {
                     // BACK OF CARD
@@ -466,6 +460,7 @@ struct FriendActivityCard: View {
                         .cornerRadius(12)
                     }
                 }
+            }
             }
             .padding(.horizontal)
             .task {
@@ -543,7 +538,7 @@ struct FriendActivityCard: View {
                 isLoadingImage = false
             }
         } catch {
-            print("âŒ Failed to load card image: \(error)")
+            print("❌ Failed to load card image: \(error)")
             await MainActor.run {
                 isLoadingImage = false
             }
@@ -561,7 +556,7 @@ struct FriendActivityCard: View {
         lastSyncedHeatedBy = activity.heatedBy
         lastSyncedHeatCount = activity.heatCount
         
-        print("ðŸ“Š Loaded heat state - isHeated: \(isHeated), count: \(heatCount)")
+        print("📊 Loaded heat state - isHeated: \(isHeated), count: \(heatCount)")
     }
     
     private func syncFromFirestoreIfNeeded(newHeatedBy: [String], newHeatCount: Int) {
@@ -569,11 +564,11 @@ struct FriendActivityCard: View {
         
         // Check if Firestore data actually changed from what we last synced
         guard newHeatedBy != lastSyncedHeatedBy || newHeatCount != lastSyncedHeatCount else {
-            print("ðŸ“Š No change in Firestore data, skipping sync")
+            print("📊 No change in Firestore data, skipping sync")
             return
         }
         
-        print("ðŸ“Š Firestore updated - syncing: heatedBy: \(newHeatedBy.count), count: \(newHeatCount)")
+        print("📊 Firestore updated - syncing: heatedBy: \(newHeatedBy.count), count: \(newHeatCount)")
         
         // Update our local state to match Firestore
         isHeated = newHeatedBy.contains(currentUserId)
@@ -593,7 +588,7 @@ struct FriendActivityCard: View {
         // Determine action
         let willBeHeated = !isHeated
         
-        print("ðŸ”¥ Toggle heat - current: \(isHeated), will be: \(willBeHeated)")
+        print("🔥 Toggle heat - current: \(isHeated), will be: \(willBeHeated)")
         
         // Optimistic UI update
         isHeated = willBeHeated
@@ -623,14 +618,14 @@ struct FriendActivityCard: View {
             Task {
                 do {
                     try await FriendsService.shared.addHeat(activityId: activity.id, userId: currentUserId)
-                    print("âœ… Heat added to Firestore")
+                    print("✅ Heat added to Firestore")
                 } catch {
                     // Revert on error
                     await MainActor.run {
                         isHeated = false
                         heatCount = max(0, heatCount - 1)
                     }
-                    print("âŒ Failed to add heat: \(error)")
+                    print("❌ Failed to add heat: \(error)")
                 }
             }
         } else {
@@ -640,14 +635,14 @@ struct FriendActivityCard: View {
             Task {
                 do {
                     try await FriendsService.shared.removeHeat(activityId: activity.id, userId: currentUserId)
-                    print("âœ… Heat removed from Firestore")
+                    print("✅ Heat removed from Firestore")
                 } catch {
                     // Revert on error
                     await MainActor.run {
                         isHeated = true
                         heatCount += 1
                     }
-                    print("âŒ Failed to remove heat: \(error)")
+                    print("❌ Failed to remove heat: \(error)")
                 }
             }
         }
@@ -714,624 +709,6 @@ struct FriendActivityCard: View {
                 isFetchingSpecs = false
             }
         }
-    }
-}
-
-// Friends/Following/Followers list popup
-struct FollowListPopup: View {
-    @Binding var isShowing: Bool
-    var onSearch: () -> Void
-    var levelGradient: (Int) -> [Color]
-    @StateObject private var friendsService = FriendsService.shared
-    @State private var selectedTab: FollowTab = .friends
-    
-    enum FollowTab: String, CaseIterable {
-        case friends = "Friends"
-        case following = "Following"
-        case followers = "Followers"
-    }
-    
-    var body: some View {
-        ZStack {
-            // Backdrop
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation {
-                        isShowing = false
-                    }
-                }
-            
-            // Popup card
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text(selectedTab.rawValue)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        withAnimation {
-                            isShowing = false
-                        }
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.gray)
-                    }
-                }
-                .padding()
-                
-                // Tab selector
-                HStack(spacing: 0) {
-                    ForEach(FollowTab.allCases, id: \.self) { tab in
-                        TabButton(
-                            title: tab.rawValue,
-                            count: countForTab(tab),
-                            notificationCount: tab == .followers ? friendsService.newFollowersCount : nil,
-                            isSelected: selectedTab == tab,
-                            action: {
-                                withAnimation {
-                                    selectedTab = tab
-                                    if tab == .followers {
-                                        friendsService.markFollowersAsViewed()
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-                .padding(.horizontal)
-                
-                Divider()
-                
-                // List content
-                ScrollView {
-                    VStack(spacing: 0) {
-                        switch selectedTab {
-                        case .friends:
-                            if friendsService.friends.isEmpty {
-                                emptyStateView(message: "No mutual friends yet")
-                            } else {
-                                ForEach(friendsService.friends) { person in
-                                    FollowRow(person: person, levelGradient: levelGradient(person.level))
-                                    if person.id != friendsService.friends.last?.id {
-                                        Divider()
-                                    }
-                                }
-                            }
-                            
-                        case .following:
-                            if friendsService.following.isEmpty {
-                                emptyStateView(message: "You're not following anyone yet")
-                            } else {
-                                ForEach(friendsService.following) { person in
-                                    FollowRow(person: person, levelGradient: levelGradient(person.level))
-                                    if person.id != friendsService.following.last?.id {
-                                        Divider()
-                                    }
-                                }
-                            }
-                            
-                        case .followers:
-                            if friendsService.followers.isEmpty {
-                                emptyStateView(message: "No followers yet")
-                            } else {
-                                ForEach(friendsService.followers) { person in
-                                    FollowRow(person: person, levelGradient: levelGradient(person.level))
-                                    if person.id != friendsService.followers.last?.id {
-                                        Divider()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                .frame(maxHeight: 400)
-                
-                // Bottom button
-                Button(action: {
-                    onSearch()
-                }) {
-                    HStack {
-                        Image(systemName: "person.badge.plus")
-                        Text("Find People to Follow")
-                    }
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(.blue)
-                    .cornerRadius(12)
-                }
-                .padding()
-            }
-            .frame(maxWidth: 500)
-            .background(.regularMaterial)
-            .cornerRadius(20)
-            .shadow(radius: 20)
-            .padding(40)
-        }
-        .transition(.opacity)
-    }
-    
-    private func countForTab(_ tab: FollowTab) -> Int {
-        switch tab {
-        case .friends:
-            return friendsService.friends.count
-        case .following:
-            return friendsService.following.count
-        case .followers:
-            return friendsService.followers.count
-        }
-    }
-    
-    @ViewBuilder
-    private func emptyStateView(message: String) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: "person.2")
-                .font(.system(size: 40))
-                .foregroundStyle(.gray)
-            Text(message)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
-    }
-}
-
-// Tab button
-struct TabButton: View {
-    let title: String
-    let count: Int
-    let notificationCount: Int?
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(isSelected ? .semibold : .regular)
-                    .foregroundStyle(isSelected ? .primary : .secondary)
-                
-                HStack(spacing: 4) {
-                    Text("\(count)")
-                        .font(.caption)
-                        .foregroundStyle(isSelected ? .blue : .secondary)
-                    
-                    // Notification badge
-                    if let notificationCount = notificationCount, notificationCount > 0 {
-                        ZStack {
-                            Circle()
-                                .fill(.red)
-                                .frame(width: 16, height: 16)
-                            
-                            Text("\(notificationCount)")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(
-                VStack {
-                    Spacer()
-                    Rectangle()
-                        .fill(isSelected ? Color.blue : Color.clear)
-                        .frame(height: 2)
-                }
-            )
-        }
-    }
-}
-
-// Search users view
-struct SearchUsersView: View {
-    @Binding var isShowing: Bool
-    @State private var searchQuery = ""
-    @State private var searchResults: [FriendProfile] = []
-    @State private var isSearching = false
-    @State private var errorMessage: String?
-    @State private var successMessage: String?
-    
-    var body: some View {
-        ZStack {
-            // Backdrop
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation {
-                        isShowing = false
-                    }
-                }
-            
-            // Search popup
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Find People")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        withAnimation {
-                            isShowing = false
-                        }
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.gray)
-                    }
-                }
-                .padding()
-                
-                // Search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                    
-                    TextField("Search by username", text: $searchQuery)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .onChange(of: searchQuery) { _, newValue in
-                            if newValue.isEmpty {
-                                searchResults = []
-                            }
-                        }
-                        .onSubmit {
-                            performSearch()
-                        }
-                    
-                    if !searchQuery.isEmpty {
-                        Button(action: {
-                            searchQuery = ""
-                            searchResults = []
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-                
-                // Search button
-                Button(action: {
-                    performSearch()
-                }) {
-                    HStack {
-                        if isSearching {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Image(systemName: "magnifyingglass")
-                            Text("Search")
-                        }
-                    }
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(searchQuery.isEmpty ? Color.gray : Color.blue)
-                    .cornerRadius(12)
-                }
-                .disabled(searchQuery.isEmpty || isSearching)
-                .padding(.horizontal)
-                .padding(.bottom)
-                
-                // Messages
-                if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                }
-                
-                if let successMessage = successMessage {
-                    Text(successMessage)
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                }
-                
-                Divider()
-                
-                // Search results
-                ScrollView {
-                    VStack(spacing: 0) {
-                        if searchResults.isEmpty && !searchQuery.isEmpty && !isSearching {
-                            VStack(spacing: 12) {
-                                Image(systemName: "person.fill.questionmark")
-                                    .font(.system(size: 40))
-                                    .foregroundStyle(.gray)
-                                Text("No users found")
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 60)
-                        } else {
-                            ForEach(searchResults) { user in
-                                SearchResultRow(
-                                    user: user,
-                                    onFollow: { followUser(user) },
-                                    onUnfollow: { unfollowUser(user) }
-                                )
-                                
-                                if user.id != searchResults.last?.id {
-                                    Divider()
-                                }
-                            }
-                        }
-                    }
-                }
-                .frame(maxHeight: 400)
-            }
-            .frame(maxWidth: 500)
-            .background(.regularMaterial)
-            .cornerRadius(20)
-            .shadow(radius: 20)
-            .padding(40)
-        }
-        .transition(.opacity)
-    }
-    
-    private func performSearch() {
-        guard !searchQuery.isEmpty else { return }
-        
-        isSearching = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                let results = try await UserService.shared.searchUsers(query: searchQuery)
-                
-                await MainActor.run {
-                    searchResults = results.map { FriendProfile(profile: $0) }
-                    isSearching = false
-                    
-                    // Update follow status for results
-                    updateFollowStatus()
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                    isSearching = false
-                }
-            }
-        }
-    }
-    
-    private func updateFollowStatus() {
-        guard let myUid = FirebaseManager.shared.currentUserId else { return }
-        
-        let followingIds = Set(FriendsService.shared.following.map { $0.id })
-        let followerIds = Set(FriendsService.shared.followers.map { $0.id })
-        
-        for index in searchResults.indices {
-            let userId = searchResults[index].id
-            
-            // Skip current user
-            if userId == myUid {
-                continue
-            }
-            
-            searchResults[index].isFollowing = followingIds.contains(userId)
-            searchResults[index].followsMe = followerIds.contains(userId)
-            searchResults[index].isFriend = followingIds.contains(userId) && followerIds.contains(userId)
-        }
-    }
-    
-    private func followUser(_ user: FriendProfile) {
-        Task {
-            do {
-                try await FriendsService.shared.followUser(userId: user.id)
-                
-                await MainActor.run {
-                    successMessage = "Now following \(user.username)"
-                    
-                    // Update local state
-                    if let index = searchResults.firstIndex(where: { $0.id == user.id }) {
-                        searchResults[index].isFollowing = true
-                        searchResults[index].isFriend = searchResults[index].followsMe
-                    }
-                    
-                    // Clear message after 2 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        successMessage = nil
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func unfollowUser(_ user: FriendProfile) {
-        Task {
-            do {
-                try await FriendsService.shared.unfollowUser(userId: user.id)
-                
-                await MainActor.run {
-                    successMessage = "Unfollowed \(user.username)"
-                    
-                    // Update local state
-                    if let index = searchResults.firstIndex(where: { $0.id == user.id }) {
-                        searchResults[index].isFollowing = false
-                        searchResults[index].isFriend = false
-                    }
-                    
-                    // Clear message after 2 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        successMessage = nil
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-}
-
-// Individual follow row
-struct FollowRow: View {
-    let person: FriendProfile
-    let levelGradient: [Color]
-    
-    var body: some View {
-        NavigationLink {
-            UserProfileView(userId: person.id, username: person.username)
-        } label: {
-            HStack(spacing: 12) {
-                // Level bubble
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: levelGradient,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 40, height: 40)
-                    
-                    Text("\(person.level)")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-                
-                // Username and stats
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(person.username)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                        
-                        if person.isFriend {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.caption)
-                                .foregroundStyle(.blue)
-                        }
-                    }
-                    
-                    Text("\(person.totalCards) cards")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                // Follow status indicator
-                if person.followsMe && !person.isFollowing {
-                    Text("Follows you")
-                        .font(.caption)
-                        .foregroundStyle(.blue)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 12)
-            .contentShape(Rectangle())
-        }
-    }
-}
-
-// Search result row
-struct SearchResultRow: View {
-    let user: FriendProfile
-    let onFollow: () -> Void
-    let onUnfollow: () -> Void
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            // Tappable user info area
-            NavigationLink {
-                UserProfileView(userId: user.id, username: user.username)
-            } label: {
-                HStack(spacing: 12) {
-                    // Profile circle placeholder
-                    Circle()
-                        .fill(Color(.systemGray5))
-                        .frame(width: 40, height: 40)
-                        .overlay(
-                            Text(String(user.username.prefix(1)).uppercased())
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                        )
-                    
-                    // Username and stats
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(user.username)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.primary)
-                            
-                            if user.isFriend {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.blue)
-                            }
-                        }
-                        
-                        HStack(spacing: 8) {
-                            Text("Level \(user.level)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            
-                            Text("â€¢")
-                                .foregroundStyle(.secondary)
-                            
-                            Text("\(user.totalCards) cards")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            
-            Spacer()
-            
-            // Follow/Following button
-            if user.isFollowing {
-                Button(action: onUnfollow) {
-                    Text("Following")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(.blue)
-                        .cornerRadius(12)
-                }
-            } else {
-                Button(action: onFollow) {
-                    Image(systemName: "person.badge.plus")
-                        .font(.title3)
-                        .foregroundStyle(.blue)
-                }
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 12)
     }
 }
 
