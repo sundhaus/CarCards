@@ -23,16 +23,23 @@ struct LocationCaptureFlow: View {
     
     var body: some View {
         ZStack {
-            Color.appBackgroundSolid
+            // Explicit background - always visible
+            Color(red: 0.1, green: 0.12, blue: 0.18)
                 .ignoresSafeArea()
             
             Group {
                 switch currentStep {
                 case .camera:
-                    EmptyView() // Camera shown as fullScreenCover
+                    Color.black // Camera placeholder
+                        .onAppear { print("🟢 Showing: Location Camera (as fullScreenCover)") }
                 case .locationInfo:
                     if let image = capturedImage {
                         locationInfoForm(image: image)
+                            .onAppear { print("🟢 Showing: Location Info Form") }
+                    } else {
+                        Text("Error: No image")
+                            .foregroundStyle(.red)
+                            .onAppear { print("🔴 ERROR: No captured image!") }
                     }
                 }
             }
@@ -41,17 +48,22 @@ struct LocationCaptureFlow: View {
             PhotoCaptureView(
                 isPresented: $showCamera,
                 onPhotoCaptured: { image in
+                    print("📸 Location photo captured, image size: \(image.size)")
                     capturedImage = image
                     showCamera = false
+                    print("⏱️ Waiting 0.2s before showing location info...")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        print("🔄 Switching to .locationInfo step")
                         withAnimation {
                             currentStep = .locationInfo
                         }
+                        print("✅ Current step is now: \(currentStep)")
                     }
                 }
             )
         }
         .onAppear {
+            print("🎬 LocationCaptureFlow appeared, current step: \(currentStep)")
             // Start with camera
             showCamera = true
         }
@@ -80,7 +92,12 @@ struct LocationInfoFormView: View {
     @State private var locationName = ""
     
     var body: some View {
-        VStack(spacing: 24) {
+        ZStack {
+            // Explicit dark blue background
+            Color(red: 0.1, green: 0.12, blue: 0.18)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
             // Header
             VStack(spacing: 8) {
                 Text("Location Info")
@@ -149,6 +166,7 @@ struct LocationInfoFormView: View {
             }
             .padding(20)
         }
+        } // Close ZStack
     }
 }
 

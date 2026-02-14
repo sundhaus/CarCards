@@ -25,18 +25,26 @@ struct DriverCaptureFlow: View {
     
     var body: some View {
         ZStack {
-            Color.appBackgroundSolid
+            // Explicit background - always visible
+            Color(red: 0.1, green: 0.12, blue: 0.18)
                 .ignoresSafeArea()
             
             Group {
                 switch currentStep {
                 case .selectType:
                     driverTypeSelection
+                        .onAppear { print("🟢 Showing: Type Selection") }
                 case .camera:
-                    EmptyView() // Camera shown as fullScreenCover
+                    Color.black // Camera placeholder
+                        .onAppear { print("🟢 Showing: Camera (as fullScreenCover)") }
                 case .driverInfo:
                     if let image = capturedImage {
                         driverInfoForm(image: image)
+                            .onAppear { print("🟢 Showing: Driver Info Form") }
+                    } else {
+                        Text("Error: No image")
+                            .foregroundStyle(.red)
+                            .onAppear { print("🔴 ERROR: No captured image!") }
                     }
                 }
             }
@@ -45,15 +53,22 @@ struct DriverCaptureFlow: View {
             PhotoCaptureView(
                 isPresented: $showCamera,
                 onPhotoCaptured: { image in
+                    print("📸 Photo captured, image size: \(image.size)")
                     capturedImage = image
                     showCamera = false
+                    print("⏱️ Waiting 0.2s before showing driver info...")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        print("🔄 Switching to .driverInfo step")
                         withAnimation {
                             currentStep = .driverInfo
                         }
+                        print("✅ Current step is now: \(currentStep)")
                     }
                 }
             )
+        }
+        .onAppear {
+            print("🎬 DriverCaptureFlow appeared, current step: \(currentStep)")
         }
     }
     
@@ -151,7 +166,12 @@ struct DriverInfoFormView: View {
     @State private var signatureImage: UIImage?
     
     var body: some View {
-        VStack(spacing: 24) {
+        ZStack {
+            // Explicit dark blue background
+            Color(red: 0.1, green: 0.12, blue: 0.18)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
             // Header
             VStack(spacing: 8) {
                 Text("Driver Info")
@@ -270,6 +290,7 @@ struct DriverInfoFormView: View {
                 }
             )
         }
+        } // Close ZStack
     }
 }
 
