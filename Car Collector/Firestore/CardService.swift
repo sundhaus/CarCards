@@ -110,7 +110,8 @@ class CardService: ObservableObject {
                 make: make,
                 model: model,
                 year: year,
-                imageURL: imageURL
+                imageURL: imageURL,
+                customFrame: customFrame  // Pass the frame!
             )
         } catch {
             print("⚠️ Failed to post friend activity (non-critical): \(error)")

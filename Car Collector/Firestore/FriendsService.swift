@@ -759,3 +759,45 @@ enum FriendsServiceError: LocalizedError {
         }
     }
 }
+    
+    // MARK: - Migration: Backfill Custom Frames
+    
+    /// One-time migration to backfill customFrame from cards to activities
+    func backfillActivityFrames() async throws {
+        print("🔄 Starting frame backfill migration...")
+        
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
+        // Get all my cards with frames
+        let cardsSnapshot = try await db.collection("cards")
+            .whereField("ownerId", isEqualTo: uid)
+            .getDocuments()
+        
+        var updateCount = 0
+        
+        for cardDoc in cardsSnapshot.documents {
+            guard let customFrame = cardDoc.data()["customFrame"] as? String else {
+                continue  // Skip cards without frames
+            }
+            
+            let cardId = cardDoc.documentID
+            
+            // Find activities for this card
+            let activitiesSnapshot = try await activitiesCollection
+                .whereField("cardId", isEqualTo: cardId)
+                .getDocuments()
+            
+            // Update each activity
+            for activityDoc in activitiesSnapshot.documents {
+                try await activitiesCollection.document(activityDoc.documentID).updateData([
+                    "customFrame": customFrame
+                ])
+                updateCount += 1
+            }
+        }
+        
+        print("✅ Frame backfill complete: Updated \(updateCount) activities")
+    }
+}
