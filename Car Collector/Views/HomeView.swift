@@ -217,7 +217,6 @@ struct HomeView: View {
                     }
                     .ignoresSafeArea(edges: .bottom)
                     .transition(.identity) // No transition animation
-                    .animation(.none, value: selectedTab) // Disable animation on tab change
                 }
             }
             .navigationDestination(isPresented: $showTransferList) {
