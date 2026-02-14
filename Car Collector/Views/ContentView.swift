@@ -63,7 +63,7 @@ struct ContentView: View {
                     
                     // Shop Tab
                     ShopView(isLandscape: landscape)
-                        .padding(.top, 60)
+                        .ignoresSafeArea(.all) // Extend to full screen
                         .tag(3)
                 }
                 .toolbar(.hidden, for: .tabBar) // Hide native iOS tab bar
@@ -84,53 +84,62 @@ struct ContentView: View {
                 // Custom bottom/side navigation bar
                 if landscape {
                     // Side navigation (right side in landscape)
-                    VStack(spacing: 0) {
-                        // Garage button (top in landscape)
-                        Button(action: {
-                            selectedTab = 1
-                        }) {
-                            Image(systemName: "wrench.and.screwdriver")
-                                .font(.title2)
-                                .foregroundStyle(selectedTab == 1 ? .blue : .gray)
-                                .frame(maxHeight: .infinity)
-                                .padding(.horizontal, 8)
-                        }
+                    ZStack {
+                        // Animated background indicator
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.blue.opacity(0.2))
+                            .frame(width: 60, height: 50)
+                            .offset(y: getIndicatorOffsetLandscape())
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedTab)
                         
-                        // Marketplace button
-                        Button(action: {
-                            selectedTab = 2
-                        }) {
-                            Image(systemName: "chart.line.uptrend.xyaxis")
-                                .font(.title2)
-                                .foregroundStyle(selectedTab == 2 ? .blue : .gray)
+                        VStack(spacing: 0) {
+                            // Garage button (top in landscape)
+                            Button(action: {
+                                selectedTab = 1
+                            }) {
+                                Image(systemName: "wrench.and.screwdriver")
+                                    .font(.title2)
+                                    .foregroundStyle(selectedTab == 1 ? .blue : .gray)
+                                    .frame(maxHeight: .infinity)
+                                    .padding(.horizontal, 8)
+                            }
+                            
+                            // Marketplace button
+                            Button(action: {
+                                selectedTab = 2
+                            }) {
+                                Image(systemName: "chart.line.uptrend.xyaxis")
+                                    .font(.title2)
+                                    .foregroundStyle(selectedTab == 2 ? .blue : .gray)
+                                    .frame(maxHeight: .infinity)
+                                    .padding(.horizontal, 8)
+                            }
+                            
+                            // Spacer for camera button
+                            Spacer()
                                 .frame(maxHeight: .infinity)
-                                .padding(.horizontal, 8)
-                        }
-                        
-                        // Spacer for camera button
-                        Spacer()
-                            .frame(maxHeight: .infinity)
-                        
-                        // Home button
-                        Button(action: {
-                            selectedTab = 0
-                        }) {
-                            Image(systemName: "house")
-                                .font(.title2)
-                                .foregroundStyle(selectedTab == 0 ? .blue : .gray)
-                                .frame(maxHeight: .infinity)
-                                .padding(.horizontal, 8)
-                        }
-                        
-                        // Shop button (bottom in landscape)
-                        Button(action: {
-                            selectedTab = 3
-                        }) {
-                            Image(systemName: "bag")
-                                .font(.title2)
-                                .foregroundStyle(selectedTab == 3 ? .blue : .gray)
-                                .frame(maxHeight: .infinity)
-                                .padding(.horizontal, 8)
+                            
+                            // Home button
+                            Button(action: {
+                                selectedTab = 0
+                            }) {
+                                Image(systemName: "house")
+                                    .font(.title2)
+                                    .foregroundStyle(selectedTab == 0 ? .blue : .gray)
+                                    .frame(maxHeight: .infinity)
+                                    .padding(.horizontal, 8)
+                            }
+                            
+                            // Shop button (bottom in landscape)
+                            Button(action: {
+                                selectedTab = 3
+                            }) {
+                                Image(systemName: "bag")
+                                    .font(.title2)
+                                    .foregroundStyle(selectedTab == 3 ? .blue : .gray)
+                                    .frame(maxHeight: .infinity)
+                                    .padding(.horizontal, 8)
+                            }
                         }
                     }
                     .background(.ultraThinMaterial)
@@ -164,53 +173,62 @@ struct ContentView: View {
                         Spacer()
                         
                         // Hub bar with camera button overlay
-                        HStack(spacing: 0) {
-                            // Shop button (left in portrait)
-                            Button(action: {
-                                selectedTab = 3
-                            }) {
-                                Image(systemName: "bag")
-                                    .font(.title2)
-                                    .foregroundStyle(selectedTab == 3 ? .blue : .gray)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                            }
+                        ZStack {
+                            // Animated background indicator
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.blue.opacity(0.2))
+                                .frame(width: 60, height: 40)
+                                .offset(x: getIndicatorOffsetPortrait())
+                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedTab)
                             
-                            // Home button
-                            Button(action: {
-                                selectedTab = 0
-                            }) {
-                                Image(systemName: "house")
-                                    .font(.title2)
-                                    .foregroundStyle(selectedTab == 0 ? .blue : .gray)
+                            HStack(spacing: 0) {
+                                // Shop button (left in portrait)
+                                Button(action: {
+                                    selectedTab = 3
+                                }) {
+                                    Image(systemName: "bag")
+                                        .font(.title2)
+                                        .foregroundStyle(selectedTab == 3 ? .blue : .gray)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                }
+                                
+                                // Home button
+                                Button(action: {
+                                    selectedTab = 0
+                                }) {
+                                    Image(systemName: "house")
+                                        .font(.title2)
+                                        .foregroundStyle(selectedTab == 0 ? .blue : .gray)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                }
+                                
+                                // Spacer for camera button
+                                Spacer()
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                            }
-                            
-                            // Spacer for camera button
-                            Spacer()
-                                .frame(maxWidth: .infinity)
-                            
-                            // Marketplace button
-                            Button(action: {
-                                selectedTab = 2
-                            }) {
-                                Image(systemName: "chart.line.uptrend.xyaxis")
-                                    .font(.title2)
-                                    .foregroundStyle(selectedTab == 2 ? .blue : .gray)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                            }
-                            
-                            // Garage button (right in portrait)
-                            Button(action: {
-                                selectedTab = 1
-                            }) {
-                                Image(systemName: "wrench.and.screwdriver")
-                                    .font(.title2)
-                                    .foregroundStyle(selectedTab == 1 ? .blue : .gray)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                
+                                // Marketplace button
+                                Button(action: {
+                                    selectedTab = 2
+                                }) {
+                                    Image(systemName: "chart.line.uptrend.xyaxis")
+                                        .font(.title2)
+                                        .foregroundStyle(selectedTab == 2 ? .blue : .gray)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                }
+                                
+                                // Garage button (right in portrait)
+                                Button(action: {
+                                    selectedTab = 1
+                                }) {
+                                    Image(systemName: "wrench.and.screwdriver")
+                                        .font(.title2)
+                                        .foregroundStyle(selectedTab == 1 ? .blue : .gray)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                }
                             }
                         }
                         .background(.ultraThinMaterial)
@@ -340,6 +358,47 @@ struct ContentView: View {
                     OrientationManager.lockToPortrait()
                 }
             }
+        }
+    }
+    
+    // MARK: - Helper Functions for Animated Indicator
+    
+    private func getIndicatorOffsetPortrait() -> CGFloat {
+        // Calculate horizontal offset for portrait bottom nav
+        // Layout: Shop(3) | Home(0) | [Camera] | Market(2) | Garage(1)
+        let screenWidth = UIScreen.main.bounds.width
+        let buttonWidth = (screenWidth - 32 - 70) / 4 // Subtract padding and camera space, divide by 4 buttons
+        
+        switch selectedTab {
+        case 3: // Shop (far left)
+            return -buttonWidth * 1.5 - 35
+        case 0: // Home (left of center)
+            return -buttonWidth * 0.5 - 35
+        case 2: // Marketplace (right of center)
+            return buttonWidth * 0.5 + 35
+        case 1: // Garage (far right)
+            return buttonWidth * 1.5 + 35
+        default:
+            return 0
+        }
+    }
+    
+    private func getIndicatorOffsetLandscape() -> CGFloat {
+        // Calculate vertical offset for landscape side nav
+        // Layout (top to bottom): Garage(1) | Market(2) | [Camera] | Home(0) | Shop(3)
+        let buttonHeight: CGFloat = 60 // Approximate height per button
+        
+        switch selectedTab {
+        case 1: // Garage (top)
+            return -buttonHeight * 1.5
+        case 2: // Marketplace (second from top)
+            return -buttonHeight * 0.5
+        case 0: // Home (second from bottom)
+            return buttonHeight * 0.5
+        case 3: // Shop (bottom)
+            return buttonHeight * 1.5
+        default:
+            return 0
         }
     }
 }

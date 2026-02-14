@@ -12,7 +12,7 @@ struct ShopView: View {
     
     var body: some View {
         ZStack {
-            // Dark blue background
+            // Dark blue background - extends full screen
             Color.appBackgroundSolid
                 .ignoresSafeArea()
             
@@ -31,8 +31,6 @@ struct ShopView: View {
                 Spacer()
             }
         }
-        .padding(.bottom, isLandscape ? 0 : 80) // Space for bottom nav in portrait
-        .padding(.trailing, isLandscape ? 100 : 0) // Space for side nav in landscape
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
         }
