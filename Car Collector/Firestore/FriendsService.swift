@@ -758,7 +758,6 @@ enum FriendsServiceError: LocalizedError {
             return "Activity not found"
         }
     }
-}
     
     // MARK: - Migration: Backfill Custom Frames
     
@@ -771,7 +770,7 @@ enum FriendsServiceError: LocalizedError {
         }
         
         // Get all my cards with frames
-        let cardsSnapshot = try await db.collection("cards")
+        let cardsSnapshot = try await Firestore.firestore().collection("cards")
             .whereField("ownerId", isEqualTo: uid)
             .getDocuments()
         
