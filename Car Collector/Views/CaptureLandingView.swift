@@ -148,10 +148,10 @@ struct CaptureLandingView: View {
             }
             // Location flow
             .fullScreenCover(isPresented: $showLocationCapture) {
-                CameraView(
+                PhotoCaptureView(
                     isPresented: $showLocationCapture,
-                    onCardSaved: { card in
-                        locationImage = card.image
+                    onPhotoCaptured: { image in
+                        locationImage = image
                         showLocationInfo = true
                     }
                 )

@@ -93,13 +93,11 @@ struct DriverCaptureLandingView: View {
                 }
             }
             .fullScreenCover(isPresented: $showCamera) {
-                CameraView(
+                PhotoCaptureView(
                     isPresented: $showCamera,
-                    onCardSaved: { card in
+                    onPhotoCaptured: { image in
                         // Pass the captured image back
-                        if let image = card.image {
-                            onDriverCaptured?(image, captureDriverPlusVehicle)
-                        }
+                        onDriverCaptured?(image, captureDriverPlusVehicle)
                         showCamera = false
                         dismiss()
                     }
