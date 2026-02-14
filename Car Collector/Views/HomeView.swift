@@ -213,6 +213,9 @@ struct HomeView: View {
                     )
                     .frame(height: 200)
                     .allowsHitTesting(false)
+                    .transaction { transaction in
+                        transaction.animation = nil // Appear instantly, no fade animation
+                    }
                 }
                 .ignoresSafeArea(edges: .bottom)
             }

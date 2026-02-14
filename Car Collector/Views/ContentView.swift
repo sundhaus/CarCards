@@ -67,6 +67,7 @@ struct ContentView: View {
                         .tag(3)
                 }
                 .toolbar(.hidden, for: .tabBar) // Hide native iOS tab bar
+                .animation(nil, value: selectedTab) // Disable tab transition animation
                 
                 // Level Header - show on main hub pages (not camera/detail views)
                 if !showCamera && !showCardDetail {
