@@ -2,15 +2,14 @@
 //  HotCardsCarousel.swift
 //  CarCardCollector
 //
-//  3D infinite swipe stack carousel showing cards with most heat globally
+//  3D horizontal scroll carousel with dynamic rotation based on position
+//  Based on: https://github.com/khanboy1989/ThreeDRotationEffectCarousel
 //
 
 import SwiftUI
 
 struct HotCardsCarousel: View {
     @StateObject private var hotCardsService = HotCardsService()
-    @State private var currentIndex = 0
-    @State private var dragOffset: CGFloat = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -28,7 +27,7 @@ struct HotCardsCarousel: View {
             } else if hotCardsService.hotCards.isEmpty {
                 emptyView
             } else {
-                cardStackView
+                carouselView
             }
         }
         .frame(maxWidth: .infinity)
@@ -45,160 +44,31 @@ struct HotCardsCarousel: View {
         }
     }
     
-    // MARK: - Carousel Wheel View (3D Rotating Carousel)
+    // MARK: - Carousel View (Horizontal Scroll with 3D Rotation)
     
-    private var cardStackView: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Show 5 positions for smooth transitions: -2, -1, 0, 1, 2
-                // But only -1, 0, 1 are visible (others are off-screen staging)
-                ForEach(-2...2, id: \.self) { offset in
-                    let cardIndex = getCardIndex(for: offset)
-                    
-                    if cardIndex >= 0 && cardIndex < hotCardsService.hotCards.count {
-                        let card = hotCardsService.hotCards[cardIndex]
-                        
-                        HotCardItem(card: card, position: offset == 0 ? 0 : 1)
-                            .frame(width: min(geometry.size.width - 100, 320))
-                            .offset(x: getCarouselOffsetX(for: offset), y: 0)
-                            .scaleEffect(getCarouselScale(for: offset))
+    private var carouselView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 20) {
+                ForEach(hotCardsService.hotCards) { card in
+                    GeometryReader { geometry in
+                        HotCardItem(card: card)
                             .rotation3DEffect(
-                                getCarousel3DRotation(for: offset),
+                                // Dynamic rotation based on card's horizontal position
+                                // Cards closer to screen center are flat, edges are rotated
+                                Angle(degrees: Double(geometry.frame(in: .global).minX - 50) / -20.0),
                                 axis: (x: 0, y: 1, z: 0),
-                                perspective: 0.3
+                                anchor: .center,
+                                anchorZ: 0.0,
+                                perspective: 1.0
                             )
-                            .opacity(getCarouselOpacity(for: offset))
-                            .zIndex(offset == 0 ? 10 : Double(5 - abs(offset)))
                     }
+                    .frame(width: 280, height: 340)
                 }
             }
-            .animation(.spring(response: 0.5, dampingFraction: 0.75), value: currentIndex)
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: dragOffset)
-            .frame(width: geometry.size.width, height: 300)
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        dragOffset = value.translation.width
-                    }
-                    .onEnded { value in
-                        handleCarouselSwipe(translation: value.translation.width)
-                    }
-            )
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
         }
-        .frame(height: 300)
-        .padding(.bottom, 12)
-    }
-    
-    
-    // MARK: - Carousel Position Calculations
-    
-    private func getCardIndex(for offset: Int) -> Int {
-        // Offset: -2, -1 (left cards), 0 (center card), 1, 2 (right cards)
-        let index = currentIndex + offset
-        let totalCards = hotCardsService.hotCards.count
-        
-        if index < 0 {
-            return index + totalCards
-        } else if index >= totalCards {
-            return index - totalCards
-        }
-        return index
-    }
-    
-    private func getCarouselOffsetX(for offset: Int) -> CGFloat {
-        // Base position for each card
-        let baseOffset: CGFloat
-        
-        switch offset {
-        case -2: // Far left (off-screen staging)
-            baseOffset = -500
-        case -1: // Left card
-            baseOffset = -220
-        case 0: // Center card
-            baseOffset = 0
-        case 1: // Right card
-            baseOffset = 220
-        case 2: // Far right (off-screen staging)
-            baseOffset = 500
-        default:
-            baseOffset = 0
-        }
-        
-        // Add drag influence - center card follows drag, side cards move opposite
-        if offset == 0 {
-            return baseOffset + (dragOffset * 0.8)
-        } else if abs(offset) == 1 {
-            // Visible side cards - parallax effect
-            return baseOffset - (dragOffset * 0.15)
-        } else {
-            // Staging cards - minimal movement
-            return baseOffset - (dragOffset * 0.05)
-        }
-    }
-    
-    private func getCarouselScale(for offset: Int) -> CGFloat {
-        if offset == 0 {
-            // Center card is full size
-            let dragScale = 1.0 - (abs(dragOffset) / 2000.0)
-            return max(0.9, dragScale)
-        } else if abs(offset) == 1 {
-            // Visible side cards are 75% size
-            return 0.75
-        } else {
-            // Staging cards are small
-            return 0.5
-        }
-    }
-    
-    private func getCarousel3DRotation(for offset: Int) -> Angle {
-        let dragInfluence = Double(dragOffset) / 10.0
-        
-        switch offset {
-        case -2: // Far left staging - rotated away more
-            return Angle(degrees: -75.0)
-        case -1: // Left card - rotate LEFT (away from center)
-            return Angle(degrees: -55.0 + dragInfluence)
-        case 0: // Center card - slight rotation based on drag
-            return Angle(degrees: Double(dragOffset) / 20.0)
-        case 1: // Right card - rotate RIGHT (away from center)
-            return Angle(degrees: 55.0 + dragInfluence)
-        case 2: // Far right staging - rotated away more
-            return Angle(degrees: 75.0)
-        default:
-            return Angle(degrees: 0)
-        }
-    }
-    
-    private func getCarouselOpacity(for offset: Int) -> Double {
-        if offset == 0 {
-            // Center card always visible
-            return 1.0
-        } else if abs(offset) == 1 {
-            // Visible side cards slightly faded
-            return 0.6
-        } else {
-            // Staging cards invisible (off-screen)
-            return 0
-        }
-    }
-    
-    // MARK: - Swipe Handling
-    
-    private func handleCarouselSwipe(translation: CGFloat) {
-        let threshold: CGFloat = 80
-        
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
-            if translation > threshold {
-                // Swiped right - go to previous card (infinite loop)
-                currentIndex = (currentIndex - 1 + hotCardsService.hotCards.count) % hotCardsService.hotCards.count
-            } else if translation < -threshold {
-                // Swiped left - go to next card (infinite loop)
-                currentIndex = (currentIndex + 1) % hotCardsService.hotCards.count
-            }
-            
-            // Reset drag offset
-            dragOffset = 0
-        }
+        .frame(height: 360)
     }
     
     // MARK: - Loading & Empty States
@@ -239,74 +109,51 @@ struct HotCardsCarousel: View {
 
 struct HotCardItem: View {
     let card: FriendActivity
-    let position: Int
     
     var body: some View {
         VStack(spacing: 12) {
-            // Card image with 3D shadow
-            ZStack {
-                // Shadow layer - cast below
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.6),
-                                Color.black.opacity(0.3),
-                                Color.clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .blur(radius: 15)
-                    .offset(x: 0, y: 25)
-                
-                // Card with image
-                cardImageView
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(16/9, contentMode: .fit)
-                    .clipped()
-                    .cornerRadius(12)
-                    .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 6)
-                    .overlay(
-                        // Custom frame border if present
-                        customFrameOverlay
-                    )
-            }
+            // Card image
+            cardImageView
+                .frame(width: 280)
+                .aspectRatio(16/9, contentMode: .fill)
+                .clipped()
+                .cornerRadius(12)
+                .overlay(
+                    // Custom frame border if present
+                    customFrameOverlay
+                )
             
-            // Heat info - ONLY show for front card
-            if position == 0 {
-                HStack(spacing: 8) {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.orange, .red],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+            // Heat info
+            HStack(spacing: 8) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.orange, .red],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
-                    
-                    Text("\(card.heatCount)")
-                        .font(.system(size: 18, weight: .bold))
+                    )
+                
+                Text("\(card.heatCount)")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(card.cardMake)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                         .foregroundStyle(.white)
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(card.cardMake)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
-                        Text("\(card.cardModel) '\(String(card.cardYear.suffix(2)))")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
+                    Text("\(card.cardModel) '\(String(card.cardYear.suffix(2)))")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
                 }
-                .padding(.horizontal, 4)
             }
+            .frame(width: 280)
+            .padding(.horizontal, 4)
         }
-        .padding(.horizontal, 20)
     }
     
     @ViewBuilder
