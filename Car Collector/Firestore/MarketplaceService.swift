@@ -28,6 +28,7 @@ struct CloudListing: Identifiable {
     var listingDate: Date
     var expirationDate: Date
     var status: ListingStatus
+    var customFrame: String?  // Custom border: "None", "White", "Black"
     
     enum ListingStatus: String, Codable {
         case active
@@ -57,6 +58,7 @@ struct CloudListing: Identifiable {
         self.listingDate = (data["listingDate"] as? Timestamp)?.dateValue() ?? Date()
         self.expirationDate = (data["expirationDate"] as? Timestamp)?.dateValue() ?? Date()
         self.status = ListingStatus(rawValue: data["status"] as? String ?? "active") ?? .active
+        self.customFrame = data["customFrame"] as? String
     }
     
     var dictionary: [String: Any] {
@@ -82,6 +84,9 @@ struct CloudListing: Identifiable {
         }
         if let bidderName = currentBidderUsername {
             dict["currentBidderUsername"] = bidderName
+        }
+        if let frame = customFrame {
+            dict["customFrame"] = frame
         }
         
         return dict
@@ -151,7 +156,7 @@ class MarketplaceService: ObservableObject {
         let listingDate = Date()
         let expirationDate = Calendar.current.date(byAdding: .hour, value: duration, to: listingDate) ?? listingDate
         
-        let data: [String: Any] = [
+        var data: [String: Any] = [
             "cardId": card.id,
             "sellerId": uid,
             "sellerUsername": profile.username,
@@ -167,6 +172,11 @@ class MarketplaceService: ObservableObject {
             "expirationDate": Timestamp(date: expirationDate),
             "status": "active"
         ]
+        
+        // Add customFrame if present
+        if let frame = card.customFrame {
+            data["customFrame"] = frame
+        }
         
         try await listingsCollection.document(listingId).setData(data)
         

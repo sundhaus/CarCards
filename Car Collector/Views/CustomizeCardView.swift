@@ -249,6 +249,19 @@ struct CustomizeCardView: View {
             updatedCard.customFrame = selectedFrame.rawValue
             savedCards[index] = updatedCard
             CardStorage.saveCards(savedCards)
+            
+            // Sync to Firebase
+            Task {
+                do {
+                    try await CardService.shared.updateCustomFrame(
+                        cardId: card.id,
+                        customFrame: selectedFrame.rawValue
+                    )
+                    print("✅ Synced custom frame to Firebase: \(selectedFrame.rawValue)")
+                } catch {
+                    print("❌ Failed to sync custom frame to Firebase: \(error)")
+                }
+            }
         }
     }
 }
