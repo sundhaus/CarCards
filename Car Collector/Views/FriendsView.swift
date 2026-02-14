@@ -410,59 +410,60 @@ struct FriendActivityCard: View {
                     }
                 } else {
                     // BACK OF CARD
-                    if isFetchingSpecs {
-                        // Loading specs
-                        ZStack {
-                            LinearGradient(
-                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            
-                            VStack(spacing: 12) {
-                                ProgressView()
-                                    .tint(.white)
-                                    .scaleEffect(1.5)
-                                Text("Loading specs...")
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.8))
+                    ZStack {
+                        if isFetchingSpecs {
+                            // Loading specs
+                            ZStack {
+                                LinearGradient(
+                                    colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                
+                                VStack(spacing: 12) {
+                                    ProgressView()
+                                        .tint(.white)
+                                        .scaleEffect(1.5)
+                                    Text("Loading specs...")
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.8))
+                                }
                             }
-                        }
-                        .frame(width: 360, height: 202.5)
-                        .cornerRadius(12)
-                    } else {
-                        // Card back with specs
-                        ZStack {
-                            LinearGradient(
-                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            
-                            VStack(spacing: 12) {
-                                Text("\(activity.cardMake) \(activity.cardModel)")
-                                    .font(.system(size: 20, weight: .bold))
-                                    .foregroundStyle(.white)
-                                    .lineLimit(1)
+                            .frame(width: 360, height: 202.5)
+                            .cornerRadius(12)
+                        } else {
+                            // Card back with specs
+                            ZStack {
+                                LinearGradient(
+                                    colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                                 
-                                Text(activity.cardYear)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.8))
-                                
-                                // Stats grid
-                                VStack(spacing: 8) {
-                                    HStack(spacing: 12) {
-                                        statItem(label: "HP", value: parseIntValue(fetchedSpecs?.horsepower))
-                                        statItem(label: "TRQ", value: parseIntValue(fetchedSpecs?.torque))
-                                    }
+                                VStack(spacing: 12) {
+                                    Text("\(activity.cardMake) \(activity.cardModel)")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
                                     
-                                    HStack(spacing: 12) {
-                                        statItem(label: "0-60", value: parseDoubleValue(fetchedSpecs?.zeroToSixty))
-                                        statItem(label: "TOP", value: parseIntValue(fetchedSpecs?.topSpeed))
-                                    }
+                                    Text(activity.cardYear)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(.white.opacity(0.8))
                                     
-                                    HStack(spacing: 12) {
-                                        statItem(label: "ENGINE", value: fetchedSpecs?.engine ?? "???", compact: true)
+                                    // Stats grid
+                                    VStack(spacing: 8) {
+                                        HStack(spacing: 12) {
+                                            statItem(label: "HP", value: parseIntValue(fetchedSpecs?.horsepower))
+                                            statItem(label: "TRQ", value: parseIntValue(fetchedSpecs?.torque))
+                                        }
+                                        
+                                        HStack(spacing: 12) {
+                                            statItem(label: "0-60", value: parseDoubleValue(fetchedSpecs?.zeroToSixty))
+                                            statItem(label: "TOP", value: parseIntValue(fetchedSpecs?.topSpeed))
+                                        }
+                                        
+                                        HStack(spacing: 12) {
+                                            statItem(label: "ENGINE", value: fetchedSpecs?.engine ?? "???", compact: true)
                                         statItem(label: "DRIVE", value: fetchedSpecs?.drivetrain ?? "???", compact: true)
                                     }
                                 }
@@ -476,6 +477,16 @@ struct FriendActivityCard: View {
                         }
                         .frame(width: 360, height: 202.5)
                         .cornerRadius(12)
+                    }
+                    
+                    // Custom frame/border overlay (on top of both front and back)
+                    if let frameName = activity.customFrame, frameName != "None" {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(
+                                frameName == "White" ? Color.white : Color.black,
+                                lineWidth: 6
+                            )
+                            .frame(width: 360, height: 202.5)
                     }
                 }
             }

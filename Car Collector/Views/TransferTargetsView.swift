@@ -164,21 +164,33 @@ struct ListingCardView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Car image
-            if let image = cardImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(.systemGray5))
-                    .frame(width: 80, height: 80)
-                    .overlay {
-                        Image(systemName: "car.fill")
-                            .foregroundStyle(.gray)
-                    }
+            // Car image with frame
+            ZStack {
+                if let image = cardImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 80, height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.systemGray5))
+                        .frame(width: 80, height: 80)
+                        .overlay {
+                            Image(systemName: "car.fill")
+                                .foregroundStyle(.gray)
+                        }
+                }
+                
+                // Custom frame/border overlay
+                if let frameName = listing.customFrame, frameName != "None" {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(
+                            frameName == "White" ? Color.white : Color.black,
+                            lineWidth: 2
+                        )
+                        .frame(width: 80, height: 80)
+                }
             }
             
             // Card details

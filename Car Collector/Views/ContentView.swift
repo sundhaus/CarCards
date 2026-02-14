@@ -838,6 +838,16 @@ struct CardDetailView: View {
                 .padding(.bottom, 20)
             }
             .frame(width: cardWidth, height: cardHeight)
+            
+            // Custom frame/border overlay
+            if let frameName = card.customFrame, frameName != "None" {
+                RoundedRectangle(cornerRadius: 15)
+                    .stroke(
+                        frameName == "White" ? Color.white : Color.black,
+                        lineWidth: 8
+                    )
+                    .frame(width: cardWidth, height: cardHeight)
+            }
         }
         .cornerRadius(15)
         .shadow(color: .black.opacity(0.5), radius: 20)

@@ -129,6 +129,17 @@ struct CardDetailsView: View {
                         .frame(height: 300)
                 }
             }
+            
+            // Custom frame/border overlay (on both front and back)
+            if let frameName = card.customFrame, frameName != "None" {
+                RoundedRectangle(cornerRadius: 15)
+                    .stroke(
+                        frameName == "White" ? Color.white : Color.black,
+                        lineWidth: 8
+                    )
+                    .frame(maxWidth: 500)
+                    .aspectRatio(16/9, contentMode: .fit)
+            }
         }
         .padding(.horizontal)
         .padding(.top, 20)

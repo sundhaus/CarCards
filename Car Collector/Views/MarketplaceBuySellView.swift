@@ -521,28 +521,40 @@ struct ListingCardRow: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // Load image from Firebase Storage URL
-            AsyncImage(url: URL(string: listing.imageURL)) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
+            // Load image from Firebase Storage URL with frame overlay
+            ZStack {
+                AsyncImage(url: URL(string: listing.imageURL)) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                            .frame(width: 360, height: 202.5)
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 360, height: 202.5)
+                            .clipped()
+                            .cornerRadius(12)
+                    case .failure:
+                        Image(systemName: "photo")
+                            .font(.largeTitle)
+                            .foregroundStyle(.gray)
+                            .frame(width: 360, height: 202.5)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+                
+                // Custom frame/border overlay
+                if let frameName = listing.customFrame, frameName != "None" {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(
+                            frameName == "White" ? Color.white : Color.black,
+                            lineWidth: 6
+                        )
                         .frame(width: 360, height: 202.5)
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 360, height: 202.5)
-                        .clipped()
-                        .cornerRadius(12)
-                case .failure:
-                    Image(systemName: "photo")
-                        .font(.largeTitle)
-                        .foregroundStyle(.gray)
-                        .frame(width: 360, height: 202.5)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                @unknown default:
-                    EmptyView()
                 }
             }
             
@@ -583,13 +595,25 @@ struct GarageCardRow: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            if let image = card.image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 360, height: 202.5)
-                    .clipped()
-                    .cornerRadius(12)
+            ZStack {
+                if let image = card.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 360, height: 202.5)
+                        .clipped()
+                        .cornerRadius(12)
+                }
+                
+                // Custom frame/border overlay
+                if let frameName = card.customFrame, frameName != "None" {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(
+                            frameName == "White" ? Color.white : Color.black,
+                            lineWidth: 6
+                        )
+                        .frame(width: 360, height: 202.5)
+                }
             }
             
             HStack {
