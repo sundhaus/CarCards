@@ -785,13 +785,13 @@ enum FriendsServiceError: LocalizedError {
             let cardId = cardDoc.documentID
             
             // Find activities for this card
-            let activitiesSnapshot = try await db.collection("friend_activities")
+            let activitiesSnapshot = try await Firestore.firestore().collection("friend_activities")
                 .whereField("cardId", isEqualTo: cardId)
                 .getDocuments()
             
             // Update each activity
             for activityDoc in activitiesSnapshot.documents {
-                try await db.collection("friend_activities").document(activityDoc.documentID).updateData([
+                try await Firestore.firestore().collection("friend_activities").document(activityDoc.documentID).updateData([
                     "customFrame": customFrame
                 ])
                 updateCount += 1
