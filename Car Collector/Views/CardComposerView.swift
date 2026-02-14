@@ -14,6 +14,15 @@ struct CardComposerView: View {
     let onRetake: () -> Void
     var captureType: CaptureType = .vehicle // Default to vehicle for backwards compatibility
     
+    init(image: UIImage, onSave: @escaping (UIImage, String, String, String, String, VehicleSpecs?) -> Void, onRetake: @escaping () -> Void, captureType: CaptureType = .vehicle) {
+        self.image = image
+        self.onSave = onSave
+        self.onRetake = onRetake
+        self.captureType = captureType
+        print("🎨 CardComposerView initialized with captureType: \(captureType)")
+        print("   shouldUseAI will be: \(captureType == .vehicle)")
+    }
+    
     @State private var scale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
@@ -181,9 +190,14 @@ struct CardComposerView: View {
                     }
                     
                     Button(action: {
+                        print("💾 Save button pressed")
+                        print("   captureType: \(captureType)")
+                        print("   shouldUseAI: \(shouldUseAI)")
                         if shouldUseAI {
+                            print("   → Calling saveWithAI()")
                             saveWithAI()
                         } else {
+                            print("   → Calling saveWithoutAI()")
                             saveWithoutAI()
                         }
                     }) {

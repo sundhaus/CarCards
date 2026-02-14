@@ -135,9 +135,12 @@ struct CaptureLandingView: View {
             .sheet(isPresented: $showDriverTypeSelector) {
                 DriverTypeSelectorView(
                     onSelect: { type in
+                        print("👤 Driver type selected: \(type)")
                         captureType = type
+                        print("   captureType set to: \(captureType)")
                         showDriverTypeSelector = false
                         showCamera = true
+                        print("   Opening camera with captureType: \(captureType)")
                     }
                 )
                 .presentationDetents([.height(300)])

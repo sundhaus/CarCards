@@ -7,9 +7,18 @@
 
 import Foundation
 
-enum CaptureType {
+enum CaptureType: CustomStringConvertible {
     case vehicle
     case driver
     case driverPlusVehicle
     case location
+    
+    var description: String {
+        switch self {
+        case .vehicle: return "vehicle"
+        case .driver: return "driver"
+        case .driverPlusVehicle: return "driverPlusVehicle"
+        case .location: return "location"
+        }
+    }
 }

@@ -341,6 +341,13 @@ struct CameraView: View {
     @State private var lastZoomFactor: CGFloat = 1.0
     @ObservedObject private var locationService = LocationService.shared
     
+    init(isPresented: Binding<Bool>, onCardSaved: @escaping (SavedCard) -> Void, captureType: CaptureType = .vehicle) {
+        self._isPresented = isPresented
+        self.onCardSaved = onCardSaved
+        self.captureType = captureType
+        print("📷 CameraView initialized with captureType: \(captureType)")
+    }
+    
     var body: some View {
         ZStack {
             if let image = camera.capturedImage {
