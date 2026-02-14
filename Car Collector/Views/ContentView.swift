@@ -85,13 +85,13 @@ struct ContentView: View {
                 if landscape {
                     // Side navigation (right side in landscape)
                     VStack(spacing: 0) {
-                        // Shop button (top in landscape)
+                        // Garage button (top in landscape)
                         Button(action: {
-                            selectedTab = 3
+                            selectedTab = 1
                         }) {
-                            Image(systemName: "bag")
+                            Image(systemName: "wrench.and.screwdriver")
                                 .font(.title2)
-                                .foregroundStyle(selectedTab == 3 ? .blue : .gray)
+                                .foregroundStyle(selectedTab == 1 ? .blue : .gray)
                                 .frame(maxHeight: .infinity)
                                 .padding(.horizontal, 8)
                         }
@@ -122,13 +122,13 @@ struct ContentView: View {
                                 .padding(.horizontal, 8)
                         }
                         
-                        // Garage button (bottom in landscape)
+                        // Shop button (bottom in landscape)
                         Button(action: {
-                            selectedTab = 1
+                            selectedTab = 3
                         }) {
-                            Image(systemName: "wrench.and.screwdriver")
+                            Image(systemName: "bag")
                                 .font(.title2)
-                                .foregroundStyle(selectedTab == 1 ? .blue : .gray)
+                                .foregroundStyle(selectedTab == 3 ? .blue : .gray)
                                 .frame(maxHeight: .infinity)
                                 .padding(.horizontal, 8)
                         }
@@ -165,13 +165,13 @@ struct ContentView: View {
                         
                         // Hub bar with camera button overlay
                         HStack(spacing: 0) {
-                            // Garage button (left in portrait)
+                            // Shop button (left in portrait)
                             Button(action: {
-                                selectedTab = 1
+                                selectedTab = 3
                             }) {
-                                Image(systemName: "wrench.and.screwdriver")
+                                Image(systemName: "bag")
                                     .font(.title2)
-                                    .foregroundStyle(selectedTab == 1 ? .blue : .gray)
+                                    .foregroundStyle(selectedTab == 3 ? .blue : .gray)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 8)
                             }
@@ -202,13 +202,13 @@ struct ContentView: View {
                                     .padding(.vertical, 8)
                             }
                             
-                            // Shop button (right in portrait)
+                            // Garage button (right in portrait)
                             Button(action: {
-                                selectedTab = 3
+                                selectedTab = 1
                             }) {
-                                Image(systemName: "bag")
+                                Image(systemName: "wrench.and.screwdriver")
                                     .font(.title2)
-                                    .foregroundStyle(selectedTab == 3 ? .blue : .gray)
+                                    .foregroundStyle(selectedTab == 1 ? .blue : .gray)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 8)
                             }
