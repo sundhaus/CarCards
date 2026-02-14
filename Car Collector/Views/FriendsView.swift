@@ -490,6 +490,7 @@ struct FriendActivityCard: View {
                     }
                 }
             }
+            }  // Close main card preview ZStack
             .padding(.horizontal)
             .task {
                 await loadCardImage()
