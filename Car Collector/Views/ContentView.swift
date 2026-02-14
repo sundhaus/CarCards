@@ -99,12 +99,17 @@ struct ContentView: View {
                             // Garage button (top in landscape)
                             Button(action: {
                                 selectedTab = 1
+                                print("🔧 Garage button tapped, selectedTab = \(selectedTab)")
                             }) {
+                                let isActive = selectedTab == 1
                                 Image(systemName: "wrench.and.screwdriver")
                                     .font(.title2)
-                                    .foregroundStyle(selectedTab == 1 ? .blue : .gray)
+                                    .foregroundStyle(isActive ? Color.blue : Color.gray)
                                     .frame(maxHeight: .infinity)
                                     .padding(.horizontal, 8)
+                            }
+                            .onChange(of: selectedTab) { oldValue, newValue in
+                                print("🔧 Garage button saw tab change: \(oldValue) → \(newValue), should be \(newValue == 1 ? "blue" : "gray")")
                             }
                             
                             // Marketplace button
