@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showCamera = false
+    @State private var showCaptureLanding = false // New capture landing
     @State private var savedCards: [SavedCard] = CardStorage.loadCards()
     @State private var showCardDetail = false
     @State private var selectedCard: SavedCard?
@@ -71,7 +72,7 @@ struct ContentView: View {
                 .animation(nil, value: selectedTab) // Disable tab transition animation
                 
                 // Level Header - show on main hub pages (not camera/detail views)
-                if !showCamera && !showCardDetail {
+                if !showCamera && !showCardDetail && !showCaptureLanding {
                     VStack {
                         LevelHeader(
                             levelSystem: levelSystem,
@@ -148,16 +149,11 @@ struct ContentView: View {
                     .cornerRadius(20)
                     .frame(width: 80)
                     .blur(radius: showCardDetail ? 10 : 0)
-                    .id("hub-\(selectedTab)") // Force refresh when tab changes
+                    .zIndex(1) // Ensure proper layering
                     .overlay(
-                        // Camera button overlaid on center
+                        // Capture button overlaid on center
                         Button(action: {
-                            // Lock to portrait before opening camera
-                            OrientationManager.lockOrientation(.portrait)
-                            // Small delay to allow rotation
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                showCamera = true
-                            }
+                            showCaptureLanding = true
                         }) {
                             Image(systemName: "camera.fill")
                                 .font(.title)
@@ -238,16 +234,10 @@ struct ContentView: View {
                         .cornerRadius(20)
                         .padding(.horizontal)
                         .blur(radius: showCardDetail ? 10 : 0)
-                        .id("hub-\(selectedTab)") // Force refresh when tab changes
                         .overlay(
-                            // Camera button overlaid on center
+                            // Capture button overlaid on center
                             Button(action: {
-                                // Lock to portrait before opening camera
-                                OrientationManager.lockOrientation(.portrait)
-                                // Small delay to allow rotation
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    showCamera = true
-                                }
+                                showCaptureLanding = true
                             }) {
                                 Image(systemName: "camera.fill")
                                     .font(.title)
@@ -285,6 +275,52 @@ struct ContentView: View {
                         totalCards: savedCards.count
                     )
                 }
+            }
+            .fullScreenCover(isPresented: $showCaptureLanding) {
+                CaptureLandingView(
+                    isLandscape: geometry.size.width > geometry.size.height,
+                    onCardSaved: { card in
+                        // Save locally
+                        savedCards.append(card)
+                        CardStorage.saveCards(savedCards)
+                        
+                        // Save to cloud
+                        if let image = card.image {
+                            Task {
+                                do {
+                                    let cloudCard = try await CardService.shared.saveCard(
+                                        image: image,
+                                        make: card.make,
+                                        model: card.model,
+                                        color: card.color,
+                                        year: card.year
+                                    )
+                                    
+                                    print("☁️ CloudCard created with ID: \(cloudCard.id)")
+                                    
+                                    // Update local card with Firebase ID
+                                    if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                        var updatedCard = savedCards[index]
+                                        updatedCard.firebaseId = cloudCard.id
+                                        savedCards[index] = updatedCard
+                                        CardStorage.saveCards(savedCards)
+                                        print("🔗 Linked local card \(card.id) to Firebase ID: \(cloudCard.id)")
+                                        print("✅ Card now has firebaseId - frame sync will work!")
+                                    } else {
+                                        print("❌ ERROR: Could not find card in savedCards array!")
+                                    }
+                                    
+                                    print("✅ Card saved to cloud with ID: \(cloudCard.id)")
+                                } catch {
+                                    print("❌ Cloud save failed: \(error)")
+                                }
+                            }
+                        }
+                        
+                        // Award XP for capturing a card
+                        levelSystem.addXP(10)
+                    }
+                )
             }
             .fullScreenCover(isPresented: $showCamera) {
                 CameraView(
@@ -574,7 +610,7 @@ struct GarageViewContent: View {
             LazyHGrid(rows: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
                 ForEach(savedCards) { card in
                     SavedCardView(card: card, isLargeSize: false)
-                        .frame(width: 260) // 30% bigger than 200
+                        .frame(width: 340) // Bigger than 260px - fills page better
                         .onTapGesture {
                             actionSheetCard = card
                             showActionSheet = true
@@ -582,6 +618,7 @@ struct GarageViewContent: View {
                 }
             }
             .padding()
+            .padding(.top, 80) // Space for level header in landscape
             .padding(.trailing, 100) // Space for side nav
         }
     }
