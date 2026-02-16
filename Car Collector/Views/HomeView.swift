@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  CarCardCollector
 //
-//  Home page view with new follower notification on Friends container
+//  Home page view with leaderboard and friends
 //
 
 import SwiftUI
@@ -14,43 +14,47 @@ struct HomeView: View {
     var totalCards: Int
     @State private var showTransferList = false
     @State private var showFriends = false
+    @State private var showLeaderboard = false
     @ObservedObject private var friendsService = FriendsService.shared
     
     var body: some View {
         NavigationStack {
             ZStack {
-                // Dark blue background
-                Color.appBackgroundSolid
+                // Background
+                Color.black
                     .ignoresSafeArea()
                 
                 ScrollView {
                     VStack(spacing: 16) {
-                        // Top row - Daily Challenge and Friends
+                        // Top row - Leaderboard and Friends
                         HStack(spacing: 16) {
-                            // Daily Challenge
-                            VStack(spacing: 12) {
-                                Image(systemName: "car.fill")
-                                    .font(.system(size: 50))
-                                    .foregroundStyle(.white)
-                                
-                                Text("Daily Challenge")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                
-                                Text("Coming Soon")
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.7))
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 200)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                            // Leaderboard - clickable
+                            Button(action: { showLeaderboard = true }) {
+                                VStack(spacing: 12) {
+                                    Image(systemName: "chart.bar.fill")
+                                        .font(.system(size: 50))
+                                        .foregroundStyle(.yellow)
+                                    
+                                    Text("Leaderboard")
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                    
+                                    Text("See Top Players")
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.7))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 200)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                                 )
-                            )
-                            .cornerRadius(16)
+                                .cornerRadius(16)
+                            }
+                            .buttonStyle(.plain)
                             
                             // Friends - with new follower notification
                             Button(action: { showFriends = true }) {
@@ -134,13 +138,14 @@ struct HomeView: View {
                                             Text("0")
                                                 .font(.system(size: 36, weight: .bold))
                                                 .foregroundStyle(.white)
-                                            Text("Items")
-                                                .font(.caption)
-                                                .foregroundStyle(.white.opacity(0.7))
+                                            
+                                            Text("Transfer List")
+                                                .font(.headline)
+                                                .foregroundStyle(.white)
                                         }
                                     }
+                                    .padding()
                                     .frame(maxWidth: .infinity)
-                                    .frame(height: 150)
                                     .background(
                                         UnevenRoundedRectangle(
                                             topLeadingRadius: 16,
@@ -158,7 +163,7 @@ struct HomeView: View {
                                     )
                                     
                                     // Stats bar - only bottom corners rounded
-                                    HStack {
+                                    HStack(spacing: 0) {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("Selling")
                                                 .font(.caption)
@@ -204,20 +209,17 @@ struct HomeView: View {
                 .padding(.trailing, isLandscape ? 100 : 0)
                 
                 // Bottom blur gradient behind hub (portrait mode)
-                if !isLandscape {
-                    VStack(spacing: 0) {
-                        Spacer()
-                        LinearGradient(
-                            colors: [.clear, .clear, .black.opacity(0.7), .black, .black],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 200)
-                        .allowsHitTesting(false)
-                    }
-                    .ignoresSafeArea(edges: .bottom)
-                    .transition(.identity) // No transition animation
+                VStack(spacing: 0) {
+                    Spacer()
+                    LinearGradient(
+                        colors: [.clear, .clear, .black.opacity(0.7), .black, .black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 200)
+                    .allowsHitTesting(false)
                 }
+                .ignoresSafeArea(edges: .bottom)
             }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
@@ -225,8 +227,10 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showFriends) {
                 FriendsView(isLandscape: isLandscape)
             }
+            .fullScreenCover(isPresented: $showLeaderboard) {
+                LeaderboardView(isLandscape: isLandscape)
+            }
             .toolbar(.hidden, for: .tabBar)
-            .transition(.identity) // Prevent transition animation
             .onAppear {
                 OrientationManager.lockOrientation(.portrait)
             }
