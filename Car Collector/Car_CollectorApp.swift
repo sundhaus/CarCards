@@ -51,8 +51,8 @@ struct CarCardCollectorApp: App {
     
     private var launchScreen: some View {
         ZStack {
-            // Blue background matching the logo
-            Color(red: 0.22, green: 0.47, blue: 0.76)
+            // Exact blue background matching the logo (#1F5AB5)
+            Color(red: 0.122, green: 0.353, blue: 0.710)
                 .ignoresSafeArea()
             
             VStack(spacing: 20) {
@@ -60,7 +60,7 @@ struct CarCardCollectorApp: App {
                 Image("AppLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 250, height: 250)
+                    .frame(width: 280, height: 280)
                 
                 // Loading indicator
                 ProgressView()
