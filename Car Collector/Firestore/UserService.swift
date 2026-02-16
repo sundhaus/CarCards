@@ -203,6 +203,88 @@ class UserService: ObservableObject {
         print("✅ Updated profile fields: \(fields.keys.joined(separator: ", "))")
     }
     
+    // MARK: - Update Username
+    
+    func updateUsername(uid: String, newUsername: String) async throws {
+        // Check if taken first
+        let taken = try await isUsernameTaken(newUsername)
+        if taken {
+            throw UserServiceError.usernameTaken
+        }
+        
+        // Remove old username reservation
+        if let oldUsername = currentProfile?.username {
+            try? await usernamesCollection.document(oldUsername.lowercased()).delete()
+        }
+        
+        // Reserve new username
+        try await usernamesCollection.document(newUsername.lowercased()).setData([
+            "uid": uid,
+            "username": newUsername,
+            "createdAt": FieldValue.serverTimestamp()
+        ])
+        
+        try await updateProfile(uid: uid, fields: ["username": newUsername])
+    }
+    
+    // MARK: - Sync Level/XP/Coins to Firestore
+    
+    func syncProgress(uid: String, level: Int, currentXP: Int, totalXP: Int, coins: Int) async throws {
+        try await updateProfile(uid: uid, fields: [
+            "level": level,
+            "currentXP": currentXP,
+            "totalXP": totalXP,
+            "coins": coins
+        ])
+    }
+    
+    // MARK: - Increment Card Count
+    
+    func incrementCardCount(uid: String) async throws {
+        try await usersCollection.document(uid).updateData([
+            "totalCardsCollected": FieldValue.increment(Int64(1))
+        ])
+    }
+    
+    // MARK: - Coin Management
+    
+    func addCoins(_ amount: Int) {
+        guard let uid = currentProfile?.id else { return }
+        
+        // Update local state immediately
+        currentProfile?.coins += amount
+        
+        // Sync to Firestore
+        Task {
+            try? await usersCollection.document(uid).updateData([
+                "coins": FieldValue.increment(Int64(amount))
+            ])
+        }
+    }
+    
+    func spendCoins(_ amount: Int) -> Bool {
+        guard let currentCoins = currentProfile?.coins, currentCoins >= amount else {
+            return false
+        }
+        guard let uid = currentProfile?.id else { return false }
+        
+        // Update local state immediately
+        currentProfile?.coins -= amount
+        
+        // Sync to Firestore
+        Task {
+            try? await usersCollection.document(uid).updateData([
+                "coins": FieldValue.increment(Int64(-amount))
+            ])
+        }
+        
+        return true
+    }
+    
+    var coins: Int {
+        currentProfile?.coins ?? 0
+    }
+    
     // MARK: - Fetch Profile by UID
     
     func fetchProfile(uid: String) async throws -> UserProfile? {
