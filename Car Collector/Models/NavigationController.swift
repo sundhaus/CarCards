@@ -18,31 +18,27 @@ class NavigationController: ObservableObject {
     
     // Triggers to signal pop to root
     @Published var popToRootTrigger: Int = 0
-    @Published var activeTab: Int = 0
     
     private init() {}
     
-    // Call this when a hub button is tapped
+    // Call this when a hub button is tapped - ALWAYS resets to root
     func resetToRoot(tab: Int) {
-        // If already on the tab, pop to root
-        if activeTab == tab {
-            switch tab {
-            case 0:
-                homeNavigationPath = NavigationPath()
-            case 1:
-                garageNavigationPath = NavigationPath()
-            case 2:
-                marketplaceNavigationPath = NavigationPath()
-            case 3:
-                shopNavigationPath = NavigationPath()
-            default:
-                break
-            }
-            popToRootTrigger += 1
+        // Always clear the navigation path for the tapped tab
+        switch tab {
+        case 0:
+            homeNavigationPath = NavigationPath()
+        case 1:
+            garageNavigationPath = NavigationPath()
+        case 2:
+            marketplaceNavigationPath = NavigationPath()
+        case 3:
+            shopNavigationPath = NavigationPath()
+        default:
+            break
         }
         
-        // Update active tab
-        activeTab = tab
+        popToRootTrigger += 1
+        print("🔄 Reset navigation for tab \(tab)")
     }
     
     // Reset all navigation paths (useful for logout/reset)
