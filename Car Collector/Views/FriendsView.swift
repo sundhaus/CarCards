@@ -42,8 +42,7 @@ struct FriendsView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
+        ZStack {
                 // Dark blue background
                 Color.appBackgroundSolid
                     .ignoresSafeArea()
@@ -210,7 +209,6 @@ struct FriendsView: View {
             .onAppear {
                 startListeners()
             }
-        }
     }
     
     private func startListeners() {
