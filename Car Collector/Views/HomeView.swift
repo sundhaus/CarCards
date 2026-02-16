@@ -238,6 +238,14 @@ struct HomeView: View {
             .onDisappear {
                 OrientationManager.unlockOrientation()
             }
+            .onChange(of: navigationController.homeNavigationPath) { oldValue, newValue in
+                // When navigation path is cleared, reset all boolean states
+                if newValue.isEmpty {
+                    showTransferList = false
+                    showFriends = false
+                    showLeaderboard = false
+                }
+            }
         }
     }
 }
