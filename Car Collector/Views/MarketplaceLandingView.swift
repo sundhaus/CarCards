@@ -14,9 +14,10 @@ struct MarketplaceLandingView: View {
     @State private var showBuySell = false
     @State private var showTransferList = false
     @State private var showTransferTargets = false
+    @ObservedObject private var navigationController = NavigationController.shared
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationController.marketplaceNavigationPath) {
             ZStack {
                 // Background gradient
                 LinearGradient(

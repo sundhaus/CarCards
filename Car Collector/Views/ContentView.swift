@@ -19,6 +19,7 @@ struct ContentView: View {
     @StateObject private var levelSystem = LevelSystem()
     @State private var deviceOrientation = UIDevice.current.orientation
     @State private var showProfile = false
+    @StateObject private var navigationController = NavigationController.shared
     
     var body: some View {
         GeometryReader { geometry in
@@ -98,6 +99,7 @@ struct ContentView: View {
                         VStack(spacing: 0) {
                             // Garage button (top in landscape)
                             Button(action: {
+                                navigationController.resetToRoot(tab: 1)
                                 selectedTab = 1
                                 print("🔧 Garage button tapped, selectedTab = \(selectedTab)")
                             }) {
@@ -114,6 +116,7 @@ struct ContentView: View {
                             
                             // Marketplace button
                             Button(action: {
+                                navigationController.resetToRoot(tab: 2)
                                 selectedTab = 2
                             }) {
                                 Image(systemName: "chart.line.uptrend.xyaxis")
@@ -129,6 +132,7 @@ struct ContentView: View {
                             
                             // Home button
                             Button(action: {
+                                navigationController.resetToRoot(tab: 0)
                                 selectedTab = 0
                             }) {
                                 Image(systemName: "house")
@@ -140,6 +144,7 @@ struct ContentView: View {
                             
                             // Shop button (bottom in landscape)
                             Button(action: {
+                                navigationController.resetToRoot(tab: 3)
                                 selectedTab = 3
                             }) {
                                 Image(systemName: "bag")
@@ -188,6 +193,7 @@ struct ContentView: View {
                             HStack(spacing: 0) {
                                 // Shop button (left in portrait)
                                 Button(action: {
+                                    navigationController.resetToRoot(tab: 3)
                                     selectedTab = 3
                                 }) {
                                     Image(systemName: "bag")
@@ -199,6 +205,7 @@ struct ContentView: View {
                                 
                                 // Home button
                                 Button(action: {
+                                    navigationController.resetToRoot(tab: 0)
                                     selectedTab = 0
                                 }) {
                                     Image(systemName: "house")
@@ -214,6 +221,7 @@ struct ContentView: View {
                                 
                                 // Marketplace button
                                 Button(action: {
+                                    navigationController.resetToRoot(tab: 2)
                                     selectedTab = 2
                                 }) {
                                     Image(systemName: "chart.line.uptrend.xyaxis")
@@ -225,6 +233,7 @@ struct ContentView: View {
                                 
                                 // Garage button (right in portrait)
                                 Button(action: {
+                                    navigationController.resetToRoot(tab: 1)
                                     selectedTab = 1
                                 }) {
                                     Image(systemName: "wrench.and.screwdriver")

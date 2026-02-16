@@ -16,9 +16,10 @@ struct HomeView: View {
     @State private var showFriends = false
     @State private var showLeaderboard = false
     @ObservedObject private var friendsService = FriendsService.shared
+    @ObservedObject private var navigationController = NavigationController.shared
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationController.homeNavigationPath) {
             ZStack {
                 // Background
                 Color.black
