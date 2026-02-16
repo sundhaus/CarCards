@@ -181,6 +181,9 @@ struct LeaderboardView: View {
 
 struct CardsLeaderboard: View {
     let entries: [LeaderboardEntry]
+    @State private var selectedUserId: String?
+    @State private var selectedUsername: String?
+    @State private var showProfile = false
     
     var body: some View {
         ScrollView {
@@ -200,16 +203,30 @@ struct CardsLeaderboard: View {
             } else {
                 VStack(spacing: 12) {
                     ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        LeaderboardRow(
-                            rank: index + 1,
-                            username: entry.username,
-                            value: "\(entry.value)",
-                            suffix: entry.value == 1 ? "card" : "cards",
-                            isCurrentUser: entry.isCurrentUser
-                        )
+                        Button(action: {
+                            // Don't navigate if it's the current user
+                            guard !entry.isCurrentUser else { return }
+                            selectedUserId = entry.id
+                            selectedUsername = entry.username
+                            showProfile = true
+                        }) {
+                            LeaderboardRow(
+                                rank: index + 1,
+                                username: entry.username,
+                                value: "\(entry.value)",
+                                suffix: entry.value == 1 ? "card" : "cards",
+                                isCurrentUser: entry.isCurrentUser
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding()
+            }
+        }
+        .navigationDestination(isPresented: $showProfile) {
+            if let userId = selectedUserId, let username = selectedUsername {
+                UserProfileView(userId: userId, username: username)
             }
         }
     }
@@ -219,6 +236,9 @@ struct CardsLeaderboard: View {
 
 struct HeatLeaderboard: View {
     let entries: [LeaderboardEntry]
+    @State private var selectedUserId: String?
+    @State private var selectedUsername: String?
+    @State private var showProfile = false
     
     var body: some View {
         ScrollView {
@@ -238,16 +258,30 @@ struct HeatLeaderboard: View {
             } else {
                 VStack(spacing: 12) {
                     ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        LeaderboardRow(
-                            rank: index + 1,
-                            username: entry.username,
-                            value: "\(entry.value)",
-                            suffix: "🔥",
-                            isCurrentUser: entry.isCurrentUser
-                        )
+                        Button(action: {
+                            // Don't navigate if it's the current user
+                            guard !entry.isCurrentUser else { return }
+                            selectedUserId = entry.id
+                            selectedUsername = entry.username
+                            showProfile = true
+                        }) {
+                            LeaderboardRow(
+                                rank: index + 1,
+                                username: entry.username,
+                                value: "\(entry.value)",
+                                suffix: "🔥",
+                                isCurrentUser: entry.isCurrentUser
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding()
+            }
+        }
+        .navigationDestination(isPresented: $showProfile) {
+            if let userId = selectedUserId, let username = selectedUsername {
+                UserProfileView(userId: userId, username: username)
             }
         }
     }
@@ -257,6 +291,9 @@ struct HeatLeaderboard: View {
 
 struct EarningsLeaderboard: View {
     let entries: [LeaderboardEntry]
+    @State private var selectedUserId: String?
+    @State private var selectedUsername: String?
+    @State private var showProfile = false
     
     var body: some View {
         ScrollView {
@@ -276,16 +313,30 @@ struct EarningsLeaderboard: View {
             } else {
                 VStack(spacing: 12) {
                     ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        LeaderboardRow(
-                            rank: index + 1,
-                            username: entry.username,
-                            value: "\(entry.value)",
-                            suffix: "coins",
-                            isCurrentUser: entry.isCurrentUser
-                        )
+                        Button(action: {
+                            // Don't navigate if it's the current user
+                            guard !entry.isCurrentUser else { return }
+                            selectedUserId = entry.id
+                            selectedUsername = entry.username
+                            showProfile = true
+                        }) {
+                            LeaderboardRow(
+                                rank: index + 1,
+                                username: entry.username,
+                                value: "\(entry.value)",
+                                suffix: "coins",
+                                isCurrentUser: entry.isCurrentUser
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding()
+            }
+        }
+        .navigationDestination(isPresented: $showProfile) {
+            if let userId = selectedUserId, let username = selectedUsername {
+                UserProfileView(userId: userId, username: username)
             }
         }
     }
@@ -335,6 +386,13 @@ struct LeaderboardRow: View {
                     .foregroundStyle(.primary)
                 
                 Text(suffix)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            // Chevron for other users
+            if !isCurrentUser {
+                Image(systemName: "chevron.right")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
