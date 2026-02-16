@@ -51,16 +51,21 @@ struct CarCardCollectorApp: App {
     
     private var launchScreen: some View {
         ZStack {
-            Color(red: 0.05, green: 0.08, blue: 0.15)
+            // Blue background matching the logo
+            Color(red: 0.22, green: 0.47, blue: 0.76)
                 .ignoresSafeArea()
             
-            VStack(spacing: 16) {
-                Image(systemName: "car.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.blue)
+            VStack(spacing: 20) {
+                // App Logo
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 250, height: 250)
                 
+                // Loading indicator
                 ProgressView()
                     .tint(.white)
+                    .scaleEffect(1.2)
             }
         }
         .onAppear {
