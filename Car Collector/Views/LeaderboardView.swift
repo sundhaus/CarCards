@@ -26,32 +26,31 @@ struct LeaderboardView: View {
                         Color.clear
                             .frame(height: 60)
                         
-                        HStack(spacing: 0) {
+                        HStack(spacing: 4) {
                             // Cards Collected Tab
                             Button(action: {
                                 selectedTab = 0
                             }) {
                                 Text("Cards")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(.system(size: 16, weight: .bold))
                                     .foregroundStyle(selectedTab == 0 ? .primary : .secondary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
+                                    .padding(.horizontal, 8)
                                     .background(
-                                        GeometryReader { geo in
-                                            VStack(spacing: 0) {
-                                                if selectedTab == 0 {
-                                                    UnevenRoundedRectangle(
-                                                        topLeadingRadius: 12,
-                                                        topTrailingRadius: 12
-                                                    )
-                                                    .fill(.white)
-                                                } else {
-                                                    UnevenRoundedRectangle(
-                                                        topLeadingRadius: 12,
-                                                        topTrailingRadius: 12
-                                                    )
-                                                    .fill(Color(.systemGray5))
-                                                }
+                                        VStack(spacing: 0) {
+                                            if selectedTab == 0 {
+                                                UnevenRoundedRectangle(
+                                                    topLeadingRadius: 12,
+                                                    topTrailingRadius: 12
+                                                )
+                                                .fill(.white)
+                                            } else {
+                                                UnevenRoundedRectangle(
+                                                    topLeadingRadius: 12,
+                                                    topTrailingRadius: 12
+                                                )
+                                                .fill(Color(.systemGray5))
                                             }
                                         }
                                     )
@@ -70,26 +69,25 @@ struct LeaderboardView: View {
                                 selectedTab = 1
                             }) {
                                 Text("Heat")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(.system(size: 16, weight: .bold))
                                     .foregroundStyle(selectedTab == 1 ? .primary : .secondary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
+                                    .padding(.horizontal, 8)
                                     .background(
-                                        GeometryReader { geo in
-                                            VStack(spacing: 0) {
-                                                if selectedTab == 1 {
-                                                    UnevenRoundedRectangle(
-                                                        topLeadingRadius: 12,
-                                                        topTrailingRadius: 12
-                                                    )
-                                                    .fill(.white)
-                                                } else {
-                                                    UnevenRoundedRectangle(
-                                                        topLeadingRadius: 12,
-                                                        topTrailingRadius: 12
-                                                    )
-                                                    .fill(Color(.systemGray5))
-                                                }
+                                        VStack(spacing: 0) {
+                                            if selectedTab == 1 {
+                                                UnevenRoundedRectangle(
+                                                    topLeadingRadius: 12,
+                                                    topTrailingRadius: 12
+                                                )
+                                                .fill(.white)
+                                            } else {
+                                                UnevenRoundedRectangle(
+                                                    topLeadingRadius: 12,
+                                                    topTrailingRadius: 12
+                                                )
+                                                .fill(Color(.systemGray5))
                                             }
                                         }
                                     )
@@ -108,32 +106,31 @@ struct LeaderboardView: View {
                                 selectedTab = 2
                             }) {
                                 Text("Earnings")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(.system(size: 16, weight: .bold))
                                     .foregroundStyle(selectedTab == 2 ? .primary : .secondary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
+                                    .padding(.horizontal, 8)
                                     .background(
-                                        GeometryReader { geo in
-                                            VStack(spacing: 0) {
-                                                if selectedTab == 2 {
-                                                    UnevenRoundedRectangle(
-                                                        topLeadingRadius: 12,
-                                                        topTrailingRadius: 12
-                                                    )
-                                                    .fill(.white)
-                                                } else {
-                                                    UnevenRoundedRectangle(
-                                                        topLeadingRadius: 12,
-                                                        topTrailingRadius: 12
-                                                    )
-                                                    .fill(Color(.systemGray5))
-                                                }
+                                        VStack(spacing: 0) {
+                                            if selectedTab == 2 {
+                                                UnevenRoundedRectangle(
+                                                    topLeadingRadius: 12,
+                                                    topTrailingRadius: 12
+                                                )
+                                                .fill(.white)
+                                            } else {
+                                                UnevenRoundedRectangle(
+                                                    topLeadingRadius: 12,
+                                                    topTrailingRadius: 12
+                                                )
+                                                .fill(Color(.systemGray5))
                                             }
                                         }
                                     )
                             }
                         }
-                        .padding(.horizontal)
+                        .padding(.horizontal, 12)
                     }
                     
                     // Content area - white background extending to bottom
