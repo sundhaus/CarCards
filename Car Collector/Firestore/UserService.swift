@@ -7,6 +7,71 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseStorage
+
+// Firestore user profile model
+struct UserProfile: Codable, Identifiable {
+    var id: String  // Firebase uid
+    var username: String
+    var level: Int
+    var currentXP: Int
+    var totalXP: Int
+    var coins: Int
+    var totalCardsCollected: Int
+    var createdAt: Date
+    var linkedAccount: Bool
+    var profilePictureURL: String?
+    
+    // Firestore document → UserProfile
+    init?(document: DocumentSnapshot) {
+        guard let data = document.data() else { return nil }
+        
+        self.id = document.documentID
+        self.username = data["username"] as? String ?? "Unknown"
+        self.level = data["level"] as? Int ?? 1
+        self.currentXP = data["currentXP"] as? Int ?? 0
+        self.totalXP = data["totalXP"] as? Int ?? 0
+        self.coins = data["coins"] as? Int ?? 0
+        self.totalCardsCollected = data["totalCardsCollected"] as? Int ?? 0
+        self.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+        self.linkedAccount = data["linkedAccount"] as? Bool ?? false
+        self.profilePictureURL = data["profilePictureURL"] as? String
+    }
+    
+    // New user default
+    init(uid: String, username: String) {
+        self.id = uid
+        self.username = username
+        self.level = 1
+        self.currentXP = 0
+        self.totalXP = 0
+        self.coins = 0
+        self.totalCardsCollected = 0
+        self.createdAt = Date()
+        self.linkedAccount = false
+        self.profilePictureURL = nil
+    }
+    
+    // Convert to Firestore dictionary
+    var dictionary: [String: Any] {
+        var dict: [String: Any] = [
+            "username": username,
+            "level": level,
+            "currentXP": currentXP,
+            "totalXP": totalXP,
+            "coins": coins,
+            "totalCardsCollected": totalCardsCollected,
+            "createdAt": Timestamp(date: createdAt),
+            "linkedAccount": linkedAccount
+        ]
+        
+        if let url = profilePictureURL {
+            dict["profilePictureURL"] = url
+        }
+        
+        return dict
+    }
+}
 
 class UserService: ObservableObject {
     static let shared = UserService()
