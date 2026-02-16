@@ -982,14 +982,16 @@ struct TabButton: View {
     }
 }
 
-// Search users view
+// Search users view — live search as you type
 struct SearchUsersView: View {
     @Binding var isShowing: Bool
     @State private var searchQuery = ""
     @State private var searchResults: [FriendProfile] = []
     @State private var isSearching = false
+    @State private var hasSearched = false
     @State private var errorMessage: String?
     @State private var successMessage: String?
+    @State private var searchTask: Task<Void, Never>?
     
     var body: some View {
         ZStack {
@@ -1035,16 +1037,22 @@ struct SearchUsersView: View {
                         .onChange(of: searchQuery) { _, newValue in
                             if newValue.isEmpty {
                                 searchResults = []
+                                hasSearched = false
+                                searchTask?.cancel()
+                                isSearching = false
+                            } else {
+                                performDebouncedSearch()
                             }
                         }
-                        .onSubmit {
-                            performSearch()
-                        }
                     
-                    if !searchQuery.isEmpty {
+                    if isSearching {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else if !searchQuery.isEmpty {
                         Button(action: {
                             searchQuery = ""
                             searchResults = []
+                            hasSearched = false
                         }) {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(.secondary)
@@ -1056,31 +1064,6 @@ struct SearchUsersView: View {
                 .cornerRadius(12)
                 .padding(.horizontal)
                 .padding(.bottom, 8)
-                
-                // Search button
-                Button(action: {
-                    performSearch()
-                }) {
-                    HStack {
-                        if isSearching {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Image(systemName: "magnifyingglass")
-                            Text("Search")
-                        }
-                    }
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(searchQuery.isEmpty ? Color.gray : Color.blue)
-                    .cornerRadius(12)
-                }
-                .disabled(searchQuery.isEmpty || isSearching)
-                .padding(.horizontal)
-                .padding(.bottom)
                 
                 // Messages
                 if let errorMessage = errorMessage {
@@ -1104,7 +1087,18 @@ struct SearchUsersView: View {
                 // Search results
                 ScrollView {
                     VStack(spacing: 0) {
-                        if searchResults.isEmpty && !searchQuery.isEmpty && !isSearching {
+                        if searchQuery.isEmpty {
+                            // Idle state
+                            VStack(spacing: 12) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 40))
+                                    .foregroundStyle(.gray.opacity(0.5))
+                                Text("Type a username to search")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 60)
+                        } else if searchResults.isEmpty && hasSearched && !isSearching {
                             VStack(spacing: 12) {
                                 Image(systemName: "person.fill.questionmark")
                                     .font(.system(size: 40))
@@ -1140,27 +1134,48 @@ struct SearchUsersView: View {
         .transition(.opacity)
     }
     
-    private func performSearch() {
-        guard !searchQuery.isEmpty else { return }
+    // MARK: - Debounced Search
+    
+    private func performDebouncedSearch() {
+        // Cancel previous search
+        searchTask?.cancel()
+        
+        let query = searchQuery.trimmingCharacters(in: .whitespaces)
+        guard query.count >= 2 else {
+            searchResults = []
+            hasSearched = false
+            isSearching = false
+            return
+        }
         
         isSearching = true
         errorMessage = nil
         
-        Task {
+        searchTask = Task {
+            // Debounce: wait 300ms so we don't fire on every keystroke
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            
+            guard !Task.isCancelled else { return }
+            
             do {
-                let results = try await UserService.shared.searchUsers(query: searchQuery)
+                let results = try await UserService.shared.searchUsers(query: query)
+                
+                guard !Task.isCancelled else { return }
                 
                 await MainActor.run {
                     searchResults = results.map { FriendProfile(profile: $0) }
+                    hasSearched = true
                     isSearching = false
                     
                     // Update follow status for results
                     updateFollowStatus()
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     isSearching = false
+                    hasSearched = true
                 }
             }
         }
@@ -1200,9 +1215,12 @@ struct SearchUsersView: View {
                         searchResults[index].isFriend = searchResults[index].followsMe
                     }
                     
-                    // Clear message after 2 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        successMessage = nil
+                    // Clear success message after delay
+                    Task {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        await MainActor.run {
+                            successMessage = nil
+                        }
                     }
                 }
             } catch {
@@ -1219,17 +1237,9 @@ struct SearchUsersView: View {
                 try await FriendsService.shared.unfollowUser(userId: user.id)
                 
                 await MainActor.run {
-                    successMessage = "Unfollowed \(user.username)"
-                    
-                    // Update local state
                     if let index = searchResults.firstIndex(where: { $0.id == user.id }) {
                         searchResults[index].isFollowing = false
                         searchResults[index].isFriend = false
-                    }
-                    
-                    // Clear message after 2 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        successMessage = nil
                     }
                 }
             } catch {
@@ -1240,6 +1250,7 @@ struct SearchUsersView: View {
         }
     }
 }
+
 
 // Individual follow row
 struct FollowRow: View {

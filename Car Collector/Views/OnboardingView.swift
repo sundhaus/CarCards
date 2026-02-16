@@ -4,6 +4,7 @@
 //
 //  First-launch username picker with silent anonymous auth
 //  No login screen — just pick a name and play
+//  Real-time username availability checking
 //
 
 import SwiftUI
@@ -14,13 +15,20 @@ struct OnboardingView: View {
     
     @State private var username = ""
     @State private var isChecking = false
+    @State private var isAvailable: Bool? = nil  // nil = not checked yet
     @State private var errorMessage: String?
     @State private var isCreating = false
     @State private var animateIn = false
+    @State private var checkTask: Task<Void, Never>?
     
     private var isValid: Bool {
         let trimmed = username.trimmingCharacters(in: .whitespaces)
         return trimmed.count >= 3 && trimmed.count <= 20
+    }
+    
+    /// Can only proceed if username is valid AND confirmed available
+    private var canProceed: Bool {
+        isValid && isAvailable == true && !isChecking
     }
     
     var body: some View {
@@ -69,30 +77,67 @@ struct OnboardingView: View {
                         .foregroundStyle(.white.opacity(0.8))
                     
                     VStack(spacing: 8) {
-                        TextField("", text: $username, prompt: Text("Enter username").foregroundStyle(.white.opacity(0.4)))
-                            .font(.system(size: 22, weight: .medium))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .padding(.vertical, 16)
-                            .padding(.horizontal, 24)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(.white.opacity(0.1))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(.white.opacity(0.2), lineWidth: 1)
-                                    )
-                            )
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .onChange(of: username) { _, _ in
-                                errorMessage = nil
+                        HStack {
+                            TextField("", text: $username, prompt: Text("Enter username").foregroundStyle(.white.opacity(0.4)))
+                                .font(.system(size: 22, weight: .medium))
+                                .foregroundStyle(.white)
+                                .multilineTextAlignment(.center)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .onChange(of: username) { _, _ in
+                                    errorMessage = nil
+                                    isAvailable = nil
+                                    checkUsernameDebounced()
+                                }
+                            
+                            // Availability indicator
+                            if isValid {
+                                if isChecking {
+                                    ProgressView()
+                                        .tint(.white.opacity(0.6))
+                                        .scaleEffect(0.8)
+                                } else if let available = isAvailable {
+                                    Image(systemName: available ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                        .foregroundStyle(available ? .green : .red)
+                                        .font(.title3)
+                                        .transition(.scale.combined(with: .opacity))
+                                }
                             }
+                        }
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.white.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(availabilityBorderColor, lineWidth: 1)
+                                )
+                        )
                         
-                        // Character count
-                        Text("\(username.count)/20")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.4))
+                        // Status text
+                        HStack {
+                            // Availability message
+                            if isValid {
+                                if isChecking {
+                                    Text("Checking availability...")
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                } else if let available = isAvailable {
+                                    Text(available ? "Username available!" : "Username already taken")
+                                        .font(.caption)
+                                        .foregroundStyle(available ? .green : .red)
+                                        .transition(.opacity)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            // Character count
+                            Text("\(username.count)/20")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.4))
+                        }
                         
                         // Error message
                         if let error = errorMessage {
@@ -126,13 +171,13 @@ struct OnboardingView: View {
                     .background(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(
-                                isValid
+                                canProceed
                                     ? LinearGradient(colors: [.blue, .cyan], startPoint: .leading, endPoint: .trailing)
                                     : LinearGradient(colors: [.gray.opacity(0.3), .gray.opacity(0.3)], startPoint: .leading, endPoint: .trailing)
                             )
                     )
                 }
-                .disabled(!isValid || isCreating)
+                .disabled(!canProceed || isCreating)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 60)
                 .opacity(animateIn ? 1.0 : 0.0)
@@ -145,10 +190,69 @@ struct OnboardingView: View {
         }
     }
     
+    // MARK: - Border Color Based on Availability
+    
+    private var availabilityBorderColor: Color {
+        guard isValid else {
+            return .white.opacity(0.2)
+        }
+        if isChecking {
+            return .white.opacity(0.3)
+        }
+        if let available = isAvailable {
+            return available ? .green.opacity(0.5) : .red.opacity(0.5)
+        }
+        return .white.opacity(0.2)
+    }
+    
+    // MARK: - Debounced Username Check
+    
+    private func checkUsernameDebounced() {
+        // Cancel any in-flight check
+        checkTask?.cancel()
+        isAvailable = nil
+        
+        let trimmed = username.trimmingCharacters(in: .whitespaces)
+        
+        guard trimmed.count >= 3 else {
+            isChecking = false
+            return
+        }
+        
+        isChecking = true
+        
+        checkTask = Task {
+            // Debounce: wait 400ms before checking
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            
+            guard !Task.isCancelled else { return }
+            
+            do {
+                let taken = try await UserService.shared.isUsernameTaken(trimmed)
+                
+                guard !Task.isCancelled else { return }
+                
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isAvailable = !taken
+                        isChecking = false
+                    }
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    isChecking = false
+                }
+            }
+        }
+    }
+    
+    // MARK: - Create Account
+    
     private func createAccount() {
         let trimmed = username.trimmingCharacters(in: .whitespaces)
         
-        guard isValid else { return }
+        guard canProceed else { return }
         
         isCreating = true
         errorMessage = nil
@@ -162,17 +266,18 @@ struct OnboardingView: View {
                     throw FirebaseError.notAuthenticated
                 }
                 
-                // 2. Check if username is taken
+                // 2. Double-check username is still available (race condition guard)
                 let taken = try await UserService.shared.isUsernameTaken(trimmed)
                 if taken {
                     await MainActor.run {
-                        errorMessage = "Username already taken"
+                        errorMessage = "Username was just taken — try another"
+                        isAvailable = false
                         isCreating = false
                     }
                     return
                 }
                 
-                // 3. Create user profile in Firestore
+                // 3. Create user profile + reserve username atomically
                 try await UserService.shared.createProfile(uid: uid, username: trimmed)
                 
                 // 4. Mark onboarding complete locally
