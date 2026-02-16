@@ -246,6 +246,13 @@ struct HomeView: View {
                     showLeaderboard = false
                 }
             }
+            .onChange(of: navigationController.popToRootTrigger) { oldValue, newValue in
+                // Direct trigger from navigation controller - always reset
+                showTransferList = false
+                showFriends = false
+                showLeaderboard = false
+                print("🏠 HomeView: Reset all navigation booleans from trigger")
+            }
         }
     }
 }

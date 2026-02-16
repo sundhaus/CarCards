@@ -117,6 +117,13 @@ struct MarketplaceLandingView: View {
                 showTransferTargets = false
             }
         }
+        .onChange(of: navigationController.popToRootTrigger) { oldValue, newValue in
+            // Direct trigger from navigation controller - always reset
+            showBuySell = false
+            showTransferList = false
+            showTransferTargets = false
+            print("🏪 MarketplaceLandingView: Reset all navigation booleans from trigger")
+        }
     }
 }
 
