@@ -326,31 +326,33 @@ struct ExploreCardItem: View {
                 .padding(.top, 10)
                 .padding(.bottom, 6)
                 
-                // Car image area (center)
-                Group {
-                    if let image = cardImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else if isLoadingImage {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.3))
-                            .overlay(
-                                ProgressView()
-                                    .tint(.gray)
-                            )
-                    } else {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.3))
-                            .overlay(
-                                Image(systemName: "car.fill")
-                                    .font(.system(size: 30))
-                                    .foregroundStyle(.gray.opacity(0.4))
-                            )
+                // Car image area (center) - uses GeometryReader for fixed space
+                GeometryReader { geo in
+                    Group {
+                        if let image = cardImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geo.size.width, height: geo.size.height)
+                        } else if isLoadingImage {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    ProgressView()
+                                        .tint(.gray)
+                                )
+                        } else {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: 30))
+                                        .foregroundStyle(.gray.opacity(0.4))
+                                )
+                        }
                     }
+                    .clipped()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
                 
                 // Bottom bar - Username
                 HStack {
@@ -369,11 +371,12 @@ struct ExploreCardItem: View {
                 .background(Color.white.opacity(0.4))
             }
             
-            // Black border (like your sketch)
+            // Black border - overlays everything at top layer
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(Color.black, lineWidth: 3)
         }
-        .frame(width: cardWidth, height: height)
+        .frame(width: cardWidth, height: height) // Fixed frame
+        .clipped() // Clip content to frame
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
         .onAppear {
             loadImage()
