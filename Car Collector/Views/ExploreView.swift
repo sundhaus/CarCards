@@ -83,7 +83,7 @@ struct ExploreView: View {
     
     private var categoryScrollView: some View {
         ScrollView(.vertical, showsIndicators: true) {
-            VStack(spacing: 24) {
+            VStack(spacing: 16) {
                 // Featured row first (if we have featured cards)
                 if !exploreService.featuredCards.isEmpty {
                     FeaturedRow(cards: exploreService.featuredCards)
@@ -152,9 +152,6 @@ struct FeaturedRow: View {
                 CategoryDetailView(category: nil, initialCards: cards)
             } label: {
                 HStack(spacing: 8) {
-                    Text("🌟")
-                        .font(.title2)
-                    
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Featured")
                             .font(.headline)
@@ -185,7 +182,7 @@ struct FeaturedRow: View {
                         NavigationLink {
                             UserProfileView(userId: card.userId, username: card.username)
                         } label: {
-                            ExploreCardItem(card: card, height: 220)
+                            ExploreCardItem(card: card, height: 140)
                         }
                         .buttonStyle(.plain)
                     }
@@ -209,9 +206,6 @@ struct CategoryRow: View {
                 CategoryDetailView(category: category, initialCards: cards)
             } label: {
                 HStack(spacing: 8) {
-                    Text(category.emoji)
-                        .font(.title2)
-                    
                     VStack(alignment: .leading, spacing: 2) {
                         Text(category.rawValue)
                             .font(.headline)
@@ -239,7 +233,7 @@ struct CategoryRow: View {
                         NavigationLink {
                             UserProfileView(userId: card.userId, username: card.username)
                         } label: {
-                            ExploreCardItem(card: card, height: 220)
+                            ExploreCardItem(card: card, height: 140)
                         }
                         .buttonStyle(.plain)
                     }
