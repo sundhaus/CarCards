@@ -10,6 +10,7 @@ import SwiftUI
 
 struct FeaturedCollectionsContainer: View {
     let action: () -> Void
+    @StateObject private var hotCardsService = HotCardsService()
     
     var body: some View {
         Button(action: action) {
@@ -49,7 +50,7 @@ struct FeaturedCollectionsContainer: View {
                 .font(.system(size: 14))
                 .foregroundStyle(.white.opacity(0.7))
             
-            Text(HotCardsService.shared.timeUntilNextRefresh)
+            Text(hotCardsService.timeUntilNextRefresh)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white.opacity(0.7))
         }
