@@ -284,6 +284,74 @@ struct UnifiedCardDetailView: View {
         return specs.horsepower != "N/A" && specs.torque != "N/A"
     }
     
+    // Fetch specs if vehicle card doesn't have them
+    private func fetchSpecsIfNeeded() async {
+        // Only fetch for vehicle cards
+        guard case .vehicle(let vehicleCard) = card else { return }
+        
+        // Don't fetch if we already have specs
+        guard vehicleCard.specs == nil else {
+            print("✅ Specs already exist for \(vehicleCard.make) \(vehicleCard.model)")
+            cardSpecs = vehicleCard.specs
+            return
+        }
+        
+        await MainActor.run {
+            isFetchingSpecs = true
+        }
+        
+        print("🔍 Fetching specs for \(vehicleCard.make) \(vehicleCard.model) \(vehicleCard.year)")
+        
+        do {
+            // Use VehicleIDService - it handles Firestore caching
+            let vehicleService = VehicleIdentificationService()
+            let specs = try await vehicleService.fetchSpecs(
+                make: vehicleCard.make,
+                model: vehicleCard.model,
+                year: vehicleCard.year
+            )
+            
+            // Create updated card with specs
+            let updatedVehicleCard = SavedCard(
+                id: vehicleCard.id,
+                image: vehicleCard.image ?? UIImage(),
+                make: vehicleCard.make,
+                model: vehicleCard.model,
+                color: vehicleCard.color,
+                year: vehicleCard.year,
+                specs: specs,
+                capturedBy: vehicleCard.capturedBy,
+                capturedLocation: vehicleCard.capturedLocation,
+                previousOwners: vehicleCard.previousOwners,
+                customFrame: vehicleCard.customFrame,
+                firebaseId: vehicleCard.firebaseId
+            )
+            
+            // Save updated card to storage
+            var allCards = CardStorage.loadCards()
+            if let index = allCards.firstIndex(where: { $0.id == vehicleCard.id }) {
+                allCards[index] = updatedVehicleCard
+                CardStorage.saveCards(allCards)
+                print("💾 Saved specs to card storage")
+            }
+            
+            await MainActor.run {
+                cardSpecs = specs
+                isFetchingSpecs = false
+                // Notify parent to reload
+                onCardUpdated(.vehicle(updatedVehicleCard))
+            }
+            
+            print("✅ Successfully fetched and saved specs")
+            
+        } catch {
+            print("❌ Failed to fetch specs: \(error)")
+            await MainActor.run {
+                isFetchingSpecs = false
+            }
+        }
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             let isDeviceLandscape = geometry.size.width > geometry.size.height
@@ -332,7 +400,7 @@ struct UnifiedCardDetailView: View {
                         Spacer()
                         
                         // Flip hint (only for vehicles with specs)
-                        if case .vehicle(let vehicleCard) = card, specsAreComplete(vehicleCard.specs) {
+                        if case .vehicle = card, specsAreComplete(cardSpecs) {
                             Text("Tap card to flip")
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.7))
@@ -350,9 +418,9 @@ struct UnifiedCardDetailView: View {
         }
         .transition(.opacity)
         .onAppear {
-            // Load specs if vehicle card
-            if case .vehicle(let vehicleCard) = card {
-                cardSpecs = vehicleCard.specs
+            // Fetch specs if needed (will load existing or fetch new)
+            Task {
+                await fetchSpecsIfNeeded()
             }
         }
     }
@@ -396,8 +464,8 @@ struct UnifiedCardDetailView: View {
             }
         }
         .onTapGesture {
-            // Only flip for vehicles with specs
-            if case .vehicle(let vehicleCard) = card, specsAreComplete(vehicleCard.specs) {
+            // Only flip for vehicles with complete specs
+            if case .vehicle = card, specsAreComplete(cardSpecs) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     flipDegrees += 180
                     // Toggle flip state at 90 degrees (midpoint)
