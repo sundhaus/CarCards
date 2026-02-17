@@ -127,65 +127,6 @@ struct MarketplaceLandingView: View {
     }
 }
 
-// Navigation Button Component
-struct NavigationButton: View {
-    let title: String
-    let subtitle: String
-    let icon: String
-    let gradient: [Color]
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 16) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: gradient,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 60, height: 60)
-                    
-                    Image(systemName: icon)
-                        .font(.system(size: 26))
-                        .foregroundStyle(.white)
-                }
-                
-                // Text
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                    
-                    Text(subtitle)
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.7))
-                }
-                
-                Spacer()
-                
-                // Arrow
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.1))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
-        }
-    }
-}
-
 // Custom corner radius extension
 extension View {
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {

@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  CarCardCollector
 //
-//  Home page view with leaderboard and friends
+//  Home page with consistent NavigationButton design
 //
 
 import SwiftUI
@@ -21,211 +21,63 @@ struct HomeView: View {
     
     var body: some View {
         NavigationStack(path: $navigationController.homeNavigationPath) {
-            ZStack {
-                // Background
-                Color.black
-                    .ignoresSafeArea()
-                
-                ScrollView {
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Level header
+                    homeHeader
+                    
+                    // All navigation buttons with consistent design
                     VStack(spacing: 16) {
-                        // Top row - Leaderboard and Friends
-                        HStack(spacing: 16) {
-                            // Leaderboard - clickable
-                            Button(action: { showLeaderboard = true }) {
-                                VStack(spacing: 12) {
-                                    Image(systemName: "chart.bar.fill")
-                                        .font(.system(size: 50))
-                                        .foregroundStyle(.yellow)
-                                    
-                                    Text("Leaderboard")
-                                        .font(.headline)
-                                        .foregroundStyle(.white)
-                                    
-                                    Text("See Top Players")
-                                        .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.7))
-                                }
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 200)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .cornerRadius(16)
-                            }
-                            .buttonStyle(.plain)
-                            
-                            // Friends - with new follower notification
-                            Button(action: { showFriends = true }) {
-                                VStack(spacing: 12) {
-                                    Image(systemName: "person.2.fill")
-                                        .font(.system(size: 50))
-                                        .foregroundStyle(.blue)
-                                    
-                                    Text("Friends")
-                                        .font(.headline)
-                                        .foregroundStyle(.white)
-                                    
-                                    // New follower notification
-                                    if friendsService.newFollowersCount > 0 {
-                                        Text("+\(friendsService.newFollowersCount) New Follower\(friendsService.newFollowersCount == 1 ? "" : "s")")
-                                            .font(.caption)
-                                            .fontWeight(.semibold)
-                                            .foregroundStyle(.green)
-                                    } else {
-                                        Text("See Activity")
-                                            .font(.caption)
-                                            .foregroundStyle(.white.opacity(0.7))
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 200)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .cornerRadius(16)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.horizontal)
+                        // Leaderboard
+                        NavigationButton(
+                            title: "Leaderboard",
+                            subtitle: "See Top Players",
+                            icon: "chart.bar.fill",
+                            gradient: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
+                            action: { showLeaderboard = true }
+                        )
                         
-                        // Featured Collections - Hot Cards Carousel (tap to open Explore)
+                        // Friends
+                        NavigationButton(
+                            title: "Friends",
+                            subtitle: friendsService.newFollowersCount > 0 ? "+\(friendsService.newFollowersCount) New Follower\(friendsService.newFollowersCount == 1 ? "" : "s")" : "See Activity",
+                            icon: "person.2.fill",
+                            gradient: friendsService.newFollowersCount > 0 ? [Color.green, Color.teal] : [Color.blue, Color.cyan],
+                            action: { showFriends = true }
+                        )
+                        
+                        // Featured Collections - Hot Cards
                         Button(action: { showExplore = true }) {
                             HotCardsCarousel()
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal)
                         
-                        // Bottom row - Sets and Transfer List
-                        HStack(spacing: 16) {
-                            // Sets
-                            VStack(spacing: 12) {
-                                Image(systemName: "square.stack.3d.up.fill")
-                                    .font(.system(size: 50))
-                                    .foregroundStyle(.white)
-                                
-                                Text("Sets")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                
-                                Text("Coming Soon")
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.7))
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 200)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .cornerRadius(16)
-                            
-                            // Transfer List - clickable with stats bar
-                            Button(action: { showTransferList = true }) {
-                                VStack(spacing: 0) {
-                                    // Main content area - only top corners rounded
-                                    VStack(spacing: 12) {
-                                        Image(systemName: "doc.text.fill")
-                                            .font(.system(size: 50))
-                                            .foregroundStyle(.white)
-                                        
-                                        VStack(spacing: 2) {
-                                            Text("0")
-                                                .font(.system(size: 36, weight: .bold))
-                                                .foregroundStyle(.white)
-                                            
-                                            Text("Transfer List")
-                                                .font(.headline)
-                                                .foregroundStyle(.white)
-                                        }
-                                    }
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(
-                                        UnevenRoundedRectangle(
-                                            topLeadingRadius: 16,
-                                            bottomLeadingRadius: 0,
-                                            bottomTrailingRadius: 0,
-                                            topTrailingRadius: 16
-                                        )
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                    )
-                                    
-                                    // Stats bar - only bottom corners rounded
-                                    HStack(spacing: 0) {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Selling")
-                                                .font(.caption)
-                                                .foregroundStyle(.white.opacity(0.6))
-                                            Text("0")
-                                                .font(.subheadline)
-                                                .foregroundStyle(.white)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        VStack(alignment: .trailing, spacing: 2) {
-                                            Text("Sold")
-                                                .font(.caption)
-                                                .foregroundStyle(.white.opacity(0.6))
-                                            Text("0")
-                                                .font(.subheadline)
-                                                .foregroundStyle(.white)
-                                        }
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        UnevenRoundedRectangle(
-                                            topLeadingRadius: 0,
-                                            bottomLeadingRadius: 16,
-                                            bottomTrailingRadius: 16,
-                                            topTrailingRadius: 0
-                                        )
-                                        .fill(Color(red: 0.15, green: 0.2, blue: 0.3))
-                                    )
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.horizontal)
+                        // Sets (Coming Soon)
+                        NavigationButton(
+                            title: "Sets",
+                            subtitle: "Coming Soon",
+                            icon: "square.stack.3d.up.fill",
+                            gradient: [Color.purple, Color.pink],
+                            action: {}
+                        )
+                        .disabled(true)
+                        .opacity(0.6)
+                        
+                        // Transfer List
+                        NavigationButton(
+                            title: "Transfer List",
+                            subtitle: "Manage Your Listings",
+                            icon: "doc.text.fill",
+                            gradient: [Color.orange, Color.red],
+                            action: { showTransferList = true }
+                        )
                     }
-                    .padding(.top, 16)
+                    .padding(.horizontal)
                     .padding(.bottom, isLandscape ? 20 : 100)
                 }
-                .ignoresSafeArea(edges: .bottom)
-                .padding(.trailing, isLandscape ? 100 : 0)
-                
-                // Bottom blur gradient behind hub (portrait mode)
-                VStack(spacing: 0) {
-                    Spacer()
-                    LinearGradient(
-                        colors: [.clear, .clear, .black.opacity(0.7), .black, .black],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 200)
-                    .allowsHitTesting(false)
-                }
-                .ignoresSafeArea(edges: .bottom)
+                .padding(.top, isLandscape ? 20 : 0)
             }
+            .background(Color.appBackgroundSolid.ignoresSafeArea())
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
             }
@@ -238,15 +90,7 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $showLeaderboard) {
                 LeaderboardView(isLandscape: isLandscape)
             }
-            .toolbar(.hidden, for: .tabBar)
-            .onAppear {
-                OrientationManager.lockOrientation(.portrait)
-            }
-            .onDisappear {
-                OrientationManager.unlockOrientation()
-            }
             .onChange(of: navigationController.homeNavigationPath) { oldValue, newValue in
-                // When navigation path is cleared, reset all boolean states
                 if newValue.isEmpty {
                     showTransferList = false
                     showFriends = false
@@ -255,17 +99,67 @@ struct HomeView: View {
                 }
             }
             .onChange(of: navigationController.popToRootTrigger) { oldValue, newValue in
-                // Direct trigger from navigation controller - always reset
                 showTransferList = false
                 showFriends = false
                 showLeaderboard = false
                 showExplore = false
                 print("🏠 HomeView: Reset all navigation booleans from trigger")
             }
+            .toolbar(.hidden, for: .tabBar)
         }
+    }
+    
+    private var homeHeader: some View {
+        HStack(spacing: 16) {
+            Button(action: { showProfile = true }) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.white)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("LEVEL \(levelSystem.currentLevel)")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white.opacity(0.7))
+                
+                HStack(spacing: 4) {
+                    Text("\(levelSystem.currentXP)")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("/ \(levelSystem.xpForNextLevel)")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("XP")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
+            
+            Spacer()
+            
+            HStack(spacing: 12) {
+                Image(systemName: "bitcoinsign.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(.yellow)
+                
+                Text("\(UserService.shared.currentProfile?.coins ?? 0)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
+        .padding(.horizontal)
+        .padding(.top, isLandscape ? 8 : 16)
     }
 }
 
 #Preview {
-    HomeView(showProfile: .constant(false), levelSystem: LevelSystem(), totalCards: 0)
+    HomeView(
+        showProfile: .constant(false),
+        levelSystem: LevelSystem(),
+        totalCards: 10
+    )
 }
