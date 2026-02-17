@@ -348,7 +348,43 @@ class VehicleIdentificationService: ObservableObject {
                         let jsonData = try JSONSerialization.data(withJSONObject: data)
                         let decoder = JSONDecoder()
                         decoder.dateDecodingStrategy = .iso8601
-                        let cached = try decoder.decode(VehicleSpecs.self, from: jsonData)
+                        var cached = try decoder.decode(VehicleSpecs.self, from: jsonData)
+                        
+                        // If cached specs don't have category, fetch it now
+                        if cached.category == nil {
+                            print("⚠️ Cached specs missing category - fetching category now")
+                            if let category = try? await fetchCategory(make: make, model: model, year: year) {
+                                // Update cached specs with category
+                                cached = VehicleSpecs(
+                                    engine: cached.engine,
+                                    horsepower: cached.horsepower,
+                                    torque: cached.torque,
+                                    zeroToSixty: cached.zeroToSixty,
+                                    topSpeed: cached.topSpeed,
+                                    transmission: cached.transmission,
+                                    drivetrain: cached.drivetrain,
+                                    description: cached.description,
+                                    fetchedAt: cached.fetchedAt,
+                                    fetchedBy: cached.fetchedBy,
+                                    category: category
+                                )
+                                
+                                // Update Firestore with category
+                                Task {
+                                    do {
+                                        let encoder = JSONEncoder()
+                                        encoder.dateEncodingStrategy = .iso8601
+                                        let jsonData = try encoder.encode(cached)
+                                        let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] ?? [:]
+                                        try await docRef.setData(json)
+                                        print("✅ Updated Firestore specs with category: \(category.rawValue)")
+                                    } catch {
+                                        print("⚠️ Failed to update category in Firestore: \(error)")
+                                    }
+                                }
+                            }
+                        }
+                        
                         print("✅ Successfully decoded specs from Firestore!")
                         return cached
                     } catch {
@@ -369,7 +405,7 @@ class VehicleIdentificationService: ObservableObject {
         
         let prompt = """
         Return specs for \(year) \(make) \(model) as JSON:
-        {"engine":"","horsepower":"","torque":"","zeroToSixty":"","topSpeed":"","transmission":"","drivetrain":"","description":"","category":""}
+        {"engine":"","horsepower":"","torque":"","zeroToSixty":"","topSpeed":"","transmission":"","drivetrain":"","description":""}
         
         - engine: engine type (e.g. "2.5L I4", "5.0L V8")
         - horsepower: HP (e.g. "300 hp")
@@ -379,9 +415,6 @@ class VehicleIdentificationService: ObservableObject {
         - transmission: (e.g. "6-speed manual", "8-speed auto")
         - drivetrain: RWD/FWD/AWD/4WD
         - description: Write a punchy 2-3 sentence summary that captures this car's character and appeal. Focus on what makes it special, its performance personality, and key strengths. Write in an engaging, FIFA Ultimate Team card style.
-        - category: Choose ONE category that best fits this vehicle. Must be exactly one of these values:
-          "Hypercar", "Supercar", "Sports Car", "Muscle", "Track", "Off-Road", "Rally", "SUV", "Truck", "Van", 
-          "Luxury", "Sedan", "Coupe", "Convertible", "Wagon", "Electric", "Hybrid", "Classic", "Concept", "Hatchback"
         
         Use "N/A" if unknown. No markdown.
         """
@@ -392,6 +425,10 @@ class VehicleIdentificationService: ObservableObject {
         }
         
         var specs = try parseSpecs(text)
+        
+        // Fetch category separately for reliability
+        print("🎯 Fetching category for \(make) \(model)")
+        let category = try? await fetchCategory(make: make, model: model, year: year)
         
         // Add metadata
         let uid = FirebaseManager.shared.currentUserId
@@ -406,8 +443,10 @@ class VehicleIdentificationService: ObservableObject {
             description: specs.description,
             fetchedAt: Date(),
             fetchedBy: uid,
-            category: specs.category
+            category: category
         )
+        
+        print("✅ Specs created with category: \(category?.rawValue ?? "none")")
         
         // Save to Firestore for ALL users
         Task {
@@ -427,6 +466,59 @@ class VehicleIdentificationService: ObservableObject {
         }
         
         return specs
+    }
+    
+    // MARK: - Fetch Category (dedicated AI call)
+    
+    private func fetchCategory(make: String, model: String, year: String) async throws -> VehicleCategory {
+        print("🎯 Fetching category for \(year) \(make) \(model)")
+        
+        let prompt = """
+        Categorize this vehicle: \(year) \(make) \(model)
+        
+        Return ONLY the category name from this exact list (copy it exactly):
+        Hypercar, Supercar, Sports Car, Muscle, Track, Off-Road, Rally, SUV, Truck, Van, Luxury, Sedan, Coupe, Convertible, Wagon, Electric, Hybrid, Classic, Concept, Hatchback
+        
+        Rules:
+        - Hypercar: $1M+ supercars (Bugatti, Koenigsegg, Pagani)
+        - Supercar: High-performance sports cars (Ferrari, Lamborghini, McLaren)
+        - Sports Car: Driver-focused performance (Porsche 911, Corvette, Miata)
+        - Muscle: American V8 power (Mustang, Camaro, Challenger)
+        - Track: Race-focused (GT3, Cup cars, track specials)
+        - Electric: Battery EVs (Tesla, Rivian, Taycan)
+        - Hybrid: Gas+Electric (Prius, NSX, 918)
+        - Classic: Pre-2000 collectibles
+        - Luxury: Premium brands (Mercedes S-Class, BMW 7-Series)
+        - SUV: Sport utility vehicles
+        - Truck: Pickup trucks
+        
+        Respond with ONLY the category name, nothing else.
+        """
+        
+        let response = try await self.model.generateContent(prompt)
+        guard let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            throw VehicleIDError.apiError("No category response")
+        }
+        
+        print("🤖 AI returned category: '\(text)'")
+        
+        // Try to parse the category
+        if let category = VehicleCategory(rawValue: text) {
+            print("✅ Successfully parsed category: \(category.rawValue)")
+            return category
+        }
+        
+        // If exact match fails, try to find a match (case-insensitive)
+        let lowercased = text.lowercased()
+        for category in VehicleCategory.allCases {
+            if category.rawValue.lowercased() == lowercased {
+                print("✅ Matched category (case-insensitive): \(category.rawValue)")
+                return category
+            }
+        }
+        
+        print("⚠️ Could not parse category '\(text)' - defaulting to Sports Car")
+        return .sportsCar // Default fallback
     }
     
     private func parseSpecs(_ text: String) throws -> VehicleSpecs {
@@ -451,21 +543,6 @@ class VehicleIdentificationService: ObservableObject {
         // Parse the basic fields
         let dict = try JSONSerialization.jsonObject(with: data) as? [String: String] ?? [:]
         
-        print("🔍 AI Response JSON: \(dict)")
-        
-        // Parse category if present
-        let category: VehicleCategory?
-        if let categoryString = dict["category"], categoryString != "N/A", !categoryString.isEmpty {
-            print("📋 Category string from AI: '\(categoryString)'")
-            category = VehicleCategory(rawValue: categoryString)
-            if category == nil {
-                print("⚠️ Could not parse category '\(categoryString)' - not a valid VehicleCategory")
-            }
-        } else {
-            print("⚠️ No category in AI response or it was 'N/A'")
-            category = nil
-        }
-        
         let specs = VehicleSpecs(
             engine: dict["engine"] ?? "N/A",
             horsepower: dict["horsepower"] ?? "N/A",
@@ -474,11 +551,10 @@ class VehicleIdentificationService: ObservableObject {
             topSpeed: dict["topSpeed"] ?? "N/A",
             transmission: dict["transmission"] ?? "N/A",
             drivetrain: dict["drivetrain"] ?? "N/A",
-            description: dict["description"] ?? "",
-            category: category
+            description: dict["description"] ?? ""
         )
         
-        print("✅ Parsed specs from AI (category: \(category?.rawValue ?? "none"))")
+        print("✅ Parsed specs from AI")
         return specs
     }
     
