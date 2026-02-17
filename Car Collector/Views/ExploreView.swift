@@ -25,7 +25,7 @@ struct ExploreView: View {
                 
                 if exploreService.isLoading {
                     loadingView
-                } else if exploreService.cardsByCategory.isEmpty {
+                } else if exploreService.featuredCards.isEmpty && exploreService.cardsByCategory.isEmpty {
                     emptyView
                 } else {
                     categoryScrollView
@@ -35,6 +35,10 @@ struct ExploreView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
+            print("\n📱 EXPLORE VIEW: onAppear triggered")
+            print("   isLoading: \(exploreService.isLoading)")
+            print("   featuredCards.count: \(exploreService.featuredCards.count)")
+            print("   cardsByCategory.count: \(exploreService.cardsByCategory.count)")
             exploreService.fetchAllCategories()
         }
     }
@@ -170,6 +174,9 @@ struct FeaturedRow: View {
                 .padding(.horizontal)
             }
             .buttonStyle(.plain)
+            .onAppear {
+                print("🌟 FEATURED ROW: Rendering with \(cards.count) cards")
+            }
             
             // Horizontal scrolling cards
             ScrollView(.horizontal, showsIndicators: false) {
