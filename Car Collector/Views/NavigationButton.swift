@@ -38,22 +38,28 @@ struct NavigationButton: View {
                 // Title and subtitle
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     
                     Text(subtitle)
-                        .font(.system(size: 14))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.7))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 
-                Spacer()
+                Spacer(minLength: 8)
                 
                 // Chevron arrow
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.5))
             }
-            .padding(20)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+            .frame(height: 92)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.white.opacity(0.1))

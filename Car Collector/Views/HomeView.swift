@@ -31,7 +31,7 @@ struct HomeView: View {
                         // Leaderboard
                         NavigationButton(
                             title: "Leaderboard",
-                            subtitle: "See Top Players",
+                            subtitle: "Top Players",
                             icon: "chart.bar.fill",
                             gradient: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
                             action: { showLeaderboard = true }
@@ -40,7 +40,7 @@ struct HomeView: View {
                         // Friends
                         NavigationButton(
                             title: "Friends",
-                            subtitle: friendsService.newFollowersCount > 0 ? "+\(friendsService.newFollowersCount) New" : "See Activity",
+                            subtitle: friendsService.newFollowersCount > 0 ? "+\(friendsService.newFollowersCount) New" : "Activity",
                             icon: "person.2.fill",
                             gradient: friendsService.newFollowersCount > 0 ? [Color.green, Color.teal] : [Color.blue, Color.cyan],
                             action: { showFriends = true }
@@ -71,7 +71,7 @@ struct HomeView: View {
                         // Transfer List
                         NavigationButton(
                             title: "Transfer List",
-                            subtitle: "Manage Listings",
+                            subtitle: "Your Listings",
                             icon: "doc.text.fill",
                             gradient: [Color.orange, Color.red],
                             action: { showTransferList = true }
