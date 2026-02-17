@@ -27,6 +27,7 @@ class ExploreService: ObservableObject {
     // Fetch top cards for all categories
     func fetchAllCategories() {
         isLoading = true
+        print("\n🔍 EXPLORE: Starting to fetch all categories")
         
         var tempCardsByCategory: [VehicleCategory: [FriendActivity]] = [:]
         let group = DispatchGroup()
@@ -34,8 +35,15 @@ class ExploreService: ObservableObject {
         // Fetch featured cards
         group.enter()
         fetchFeaturedCards { cards in
+            print("🌟 FEATURED: Got \(cards.count) cards")
+            if cards.isEmpty {
+                print("   ⚠️ Featured is empty!")
+            } else {
+                cards.prefix(3).forEach { card in
+                    print("   - \(card.cardMake) \(card.cardModel) (heat: \(card.heatCount))")
+                }
+            }
             self.featuredCards = cards
-            print("🌟 Featured: \(cards.count) cards")
             group.leave()
         }
         
@@ -46,7 +54,12 @@ class ExploreService: ObservableObject {
             fetchCategoryCards(category: category, limit: cardsPerCategory) { cards in
                 if !cards.isEmpty {
                     tempCardsByCategory[category] = cards
-                    print("🎯 \(category.rawValue): \(cards.count) cards")
+                    print("🎯 \(category.rawValue): Got \(cards.count) cards")
+                    cards.prefix(2).forEach { card in
+                        print("   - \(card.cardMake) \(card.cardModel)")
+                    }
+                } else {
+                    print("❌ \(category.rawValue): EMPTY")
                 }
                 group.leave()
             }
@@ -55,29 +68,39 @@ class ExploreService: ObservableObject {
         group.notify(queue: .main) {
             self.cardsByCategory = tempCardsByCategory
             self.isLoading = false
-            print("✅ Loaded explore cards for \(tempCardsByCategory.count) categories + featured")
+            print("\n✅ EXPLORE: Finished loading")
+            print("   📊 Featured: \(self.featuredCards.count) cards")
+            print("   📊 Categories with cards: \(tempCardsByCategory.count)")
+            print("   📊 Total cards: \(tempCardsByCategory.values.reduce(0) { $0 + $1.count })")
         }
     }
     
     // Fetch top cards for a specific category (ordered by heat)
     func fetchCategoryCards(category: VehicleCategory, limit: Int, completion: @escaping ([FriendActivity]) -> Void) {
+        print("   🔎 Querying category: \(category.rawValue)")
+        
         db.collection("friend_activities")
             .whereField("category", isEqualTo: category.rawValue)
             .order(by: "heatCount", descending: true)
             .limit(to: limit)
             .getDocuments { snapshot, error in
                 if let error = error {
-                    print("❌ Error fetching \(category.rawValue): \(error.localizedDescription)")
+                    print("   ❌ Query error for \(category.rawValue): \(error.localizedDescription)")
                     completion([])
                     return
                 }
                 
                 guard let documents = snapshot?.documents else {
+                    print("   ❌ No snapshot for \(category.rawValue)")
                     completion([])
                     return
                 }
                 
+                print("   📄 Got \(documents.count) documents for \(category.rawValue)")
+                
                 let activities = documents.compactMap { FriendActivity(document: $0) }
+                print("   ✅ Parsed \(activities.count) activities for \(category.rawValue)")
+                
                 completion(activities)
             }
     }
@@ -115,22 +138,35 @@ class ExploreService: ObservableObject {
     
     // Fetch featured cards (top cards by heat, any category)
     private func fetchFeaturedCards(completion: @escaping ([FriendActivity]) -> Void) {
+        print("   🔎 Querying Featured (top 10 by heat)")
+        
         db.collection("friend_activities")
             .order(by: "heatCount", descending: true)
             .limit(to: cardsPerCategory)
             .getDocuments { snapshot, error in
                 if let error = error {
-                    print("❌ Error fetching featured: \(error.localizedDescription)")
+                    print("   ❌ Featured query error: \(error.localizedDescription)")
                     completion([])
                     return
                 }
                 
                 guard let documents = snapshot?.documents else {
+                    print("   ❌ No snapshot for Featured")
                     completion([])
                     return
                 }
                 
-                let activities = documents.compactMap { FriendActivity(document: $0) }
+                print("   📄 Got \(documents.count) documents for Featured")
+                
+                let activities = documents.compactMap { doc -> FriendActivity? in
+                    let activity = FriendActivity(document: doc)
+                    if let act = activity {
+                        print("      - \(act.cardMake) \(act.cardModel) (heat: \(act.heatCount))")
+                    }
+                    return activity
+                }
+                print("   ✅ Parsed \(activities.count) featured activities")
+                
                 completion(activities)
             }
     }

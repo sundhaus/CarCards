@@ -50,6 +50,7 @@ struct FriendActivity: Identifiable {
     var heatedBy: [String]
     var heatCount: Int
     var customFrame: String?
+    var category: String?  // NEW: For Explore page categorization
     
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -67,6 +68,7 @@ struct FriendActivity: Identifiable {
         self.heatedBy = data["heatedBy"] as? [String] ?? []
         self.heatCount = data["heatCount"] as? Int ?? 0
         self.customFrame = data["customFrame"] as? String
+        self.category = data["category"] as? String  // NEW: Read category from Firebase
     }
     
     var dictionary: [String: Any] {
@@ -86,6 +88,10 @@ struct FriendActivity: Identifiable {
         
         if let customFrame = customFrame {
             dict["customFrame"] = customFrame
+        }
+        
+        if let category = category {
+            dict["category"] = category
         }
         
         return dict
