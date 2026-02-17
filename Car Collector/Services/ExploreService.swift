@@ -2,7 +2,8 @@
 //  ExploreService.swift
 //  CarCardCollector
 //
-//  Service for Explore page - refreshes every 3 hours at 12pm, 3pm, 6pm, 9pm EST
+//  Service for Explore page - refreshes every 3 hours
+//  Refresh times: 12am, 3am, 6am, 9am, 12pm, 3pm, 6pm, 9pm EST
 //  Shows random cards from each category (only cards with complete specs)
 //
 
@@ -28,7 +29,7 @@ class ExploreService: ObservableObject {
         startCountdownTimer()
     }
     
-    // Calculate next refresh time (12pm, 3pm, 6pm, 9pm EST)
+    // Calculate next refresh time (every 3 hours: 0, 3, 6, 9, 12, 15, 18, 21)
     private func nextRefreshTime() -> Date {
         let calendar = Calendar.current
         let estTimeZone = TimeZone(identifier: "America/New_York")!
@@ -37,21 +38,22 @@ class ExploreService: ObservableObject {
         var components = calendar.dateComponents(in: estTimeZone, from: Date())
         let currentHour = components.hour ?? 0
         
-        // Refresh hours in EST: 12, 15, 18, 21 (12pm, 3pm, 6pm, 9pm)
+        // Refresh hours in EST: every 3 hours (0, 3, 6, 9, 12, 15, 18, 21)
         let refreshHours = [0, 3, 6, 9, 12, 15, 18, 21]
         
         // Find next refresh hour
-        var nextHour = refreshHours.first { $0 > currentHour } ?? refreshHours[0]
-        
-        // If no hour found today, use first hour tomorrow
-        if nextHour <= currentHour {
-            nextHour = refreshHours[0]
+        if let nextHour = refreshHours.first(where: { $0 > currentHour }) {
+            // Found a refresh hour later today
+            components.hour = nextHour
+            components.minute = 0
+            components.second = 0
+        } else {
+            // No more refresh hours today, go to first hour tomorrow (midnight)
+            components.hour = 0
+            components.minute = 0
+            components.second = 0
             components.day! += 1
         }
-        
-        components.hour = nextHour
-        components.minute = 0
-        components.second = 0
         
         return calendar.date(from: components) ?? Date()
     }

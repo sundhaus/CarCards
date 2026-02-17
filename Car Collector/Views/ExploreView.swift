@@ -3,7 +3,7 @@
 //  CarCardCollector
 //
 //  Explore page showing cards grouped by category
-//  Refreshes every 3 hours at 12pm, 3pm, 6pm, 9pm EST
+//  Refreshes every 3 hours at 12am, 3am, 6am, 9am, 12pm, 3pm, 6pm, 9pm EST
 //
 
 import SwiftUI

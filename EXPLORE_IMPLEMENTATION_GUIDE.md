@@ -1,7 +1,7 @@
 # Explore Feature Implementation Guide
 
 ## Overview
-This feature adds an "Explore" page that shows cards grouped by vehicle category (Hypercar, SUV, Track, etc.). Cards are shown randomly and refresh every 3 hours at 12pm, 3pm, 6pm, and 9pm EST. Only cards with complete specs appear in Explore.
+This feature adds an "Explore" page that shows cards grouped by vehicle category (Hypercar, SUV, Track, etc.). Cards are shown randomly and refresh every 3 hours at 12am, 3am, 6am, 9am, 12pm, 3pm, 6pm, and 9pm EST. Only cards with complete specs appear in Explore.
 
 ---
 
@@ -41,7 +41,7 @@ Cards must have category + basic specs to appear in Explore.
 Location: `Car Collector/Services/ExploreService.swift`
 
 **Features:**
-- Refreshes every 3 hours at: 12pm, 3pm, 6pm, 9pm EST
+- Refreshes every 3 hours at: 12am, 3am, 6am, 9am, 12pm, 3pm, 6pm, 9pm EST
 - Countdown timer showing time until next refresh
 - Fetches 20 random cards per category
 - Only shows cards with complete specs (category + HP + torque)
@@ -279,20 +279,26 @@ Fields:
    - Can view their full collection
    
 5. **Refresh Schedule:**
-   - 12:00 PM EST → New random cards
+   - 12:00 AM EST (midnight) → New random cards
+   - 3:00 AM EST → New random cards
+   - 6:00 AM EST → New random cards
+   - 9:00 AM EST → New random cards
+   - 12:00 PM EST (noon) → New random cards
    - 3:00 PM EST → New random cards
    - 6:00 PM EST → New random cards
    - 9:00 PM EST → New random cards
-   - (Repeats daily)
+   - (Repeats every 3 hours, 24/7)
 
 ---
 
 ## Technical Notes
 
-**Why 3-hour refresh?**
+**Why every 3 hours?**
 - Creates anticipation (users check back periodically)
 - Reduces server load vs continuous updates
 - Fixed times create predictable "drop" moments
+- 8 refreshes per day (every 3 hours around the clock)
+- Covers all time zones with regular updates
 
 **Why only cards with specs?**
 - Ensures quality content in Explore
