@@ -285,13 +285,14 @@ struct CardComposerView: View {
                 model: data.model,
                 generation: data.generation,
                 onWrongVehicle: {
-                    // User tapped "Not My Vehicle" - fetch alternatives but keep preview open
+                    // User tapped "Not My Vehicle" - dismiss preview and immediately show alternatives
                     print("🚫 User rejected vehicle identification")
-                    print("🔍 Fetching alternatives (keeping preview open)...")
+                    print("📱 Dismissing preview to show alternatives...")
+                    previewData = nil  // Dismiss preview immediately
+                    // Fetch alternatives - sheet will show right away
                     Task {
                         await fetchAlternativeVehicles()
                     }
-                    // Note: Preview will stay open, alternatives will show as sheet on top
                 }
             )
         }
