@@ -676,11 +676,6 @@ class FriendsService: ObservableObject {
         
         print("✅ Updated category for \(snapshot.documents.count) activities")
     }
-            }
-        }
-        
-        print("✅ Updated customFrame for \(snapshot.documents.count) activities with cardId: \(cardId)")
-    }
     
     // MARK: - Get Follow Stats for User Profile
     
