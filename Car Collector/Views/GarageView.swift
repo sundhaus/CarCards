@@ -38,6 +38,17 @@ struct GarageView: View {
                         
                         Spacer()
                         
+                        // Refresh specs button (backfill categories)
+                        Button(action: {
+                            Task {
+                                await refreshAllSpecs()
+                            }
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.title3)
+                                .foregroundStyle(.green)
+                        }
+                        
                         Button(action: {
                             cardsPerRow = cardsPerRow == 1 ? 2 : 1
                         }) {
@@ -204,6 +215,81 @@ struct GarageView: View {
         print("💰 Sold card for 250 coins")
     }
     
+    // Refresh specs and categories for all vehicle cards
+    private func refreshAllSpecs() async {
+        print("🔄 Starting bulk specs refresh for all cards")
+        
+        var vehicleCards = CardStorage.loadCards()
+        let vehicleService = VehicleIdentificationService()
+        var updatedCount = 0
+        
+        for (index, card) in vehicleCards.enumerated() {
+            // Skip if card already has complete specs with category
+            if let specs = card.specs, specs.category != nil {
+                print("⏭️ Skipping \(card.make) \(card.model) - already has category")
+                continue
+            }
+            
+            print("📥 Fetching specs for \(card.make) \(card.model) (\(index + 1)/\(vehicleCards.count))")
+            
+            do {
+                let specs = try await vehicleService.fetchSpecs(
+                    make: card.make,
+                    model: card.model,
+                    year: card.year
+                )
+                
+                // Update card with specs
+                let updatedCard = SavedCard(
+                    id: card.id,
+                    image: card.image ?? UIImage(),
+                    make: card.make,
+                    model: card.model,
+                    color: card.color,
+                    year: card.year,
+                    specs: specs,
+                    capturedBy: card.capturedBy,
+                    capturedLocation: card.capturedLocation,
+                    previousOwners: card.previousOwners,
+                    customFrame: card.customFrame,
+                    firebaseId: card.firebaseId
+                )
+                
+                vehicleCards[index] = updatedCard
+                updatedCount += 1
+                
+                // Update category in friend_activities
+                if let firebaseId = card.firebaseId, let category = specs.category {
+                    do {
+                        try await FriendsService.shared.updateActivityCategory(
+                            cardId: firebaseId,
+                            category: category
+                        )
+                        print("✅ Updated category in Firebase for \(card.make) \(card.model)")
+                    } catch {
+                        print("⚠️ Failed to update Firebase category: \(error)")
+                    }
+                }
+                
+                // Small delay to avoid rate limiting
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                
+            } catch {
+                print("❌ Failed to fetch specs for \(card.make) \(card.model): \(error)")
+            }
+        }
+        
+        // Save all updated cards
+        CardStorage.saveCards(vehicleCards)
+        
+        // Reload garage
+        await MainActor.run {
+            loadAllCards()
+        }
+        
+        print("✅ Bulk refresh complete: Updated \(updatedCount) cards")
+    }
+    
     // MARK: - Portrait Paged View
     
     private var portraitPagedView: some View {
@@ -333,6 +419,20 @@ struct UnifiedCardDetailView: View {
                 allCards[index] = updatedVehicleCard
                 CardStorage.saveCards(allCards)
                 print("💾 Saved specs to card storage")
+            }
+            
+            // Update category in friend_activities if card has firebaseId and specs have category
+            if let firebaseId = vehicleCard.firebaseId, let category = specs.category {
+                print("📤 Updating category in friend_activities")
+                do {
+                    try await FriendsService.shared.updateActivityCategory(
+                        cardId: firebaseId,
+                        category: category
+                    )
+                    print("✅ Updated category in friend_activities")
+                } catch {
+                    print("⚠️ Failed to update category in friend_activities: \(error)")
+                }
             }
             
             await MainActor.run {

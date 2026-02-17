@@ -560,7 +560,7 @@ class FriendsService: ObservableObject {
     
     // MARK: - Post Activity (when user adds a card)
     
-    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, customFrame: String? = nil) async throws {
+    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, customFrame: String? = nil, category: VehicleCategory? = nil) async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
         }
@@ -572,6 +572,7 @@ class FriendsService: ObservableObject {
         print("📝 Creating activity for card:")
         print("   CardId: \(cardId)")
         print("   CustomFrame: \(customFrame ?? "none")")
+        print("   Category: \(category?.rawValue ?? "none")")
         
         // Check if activity already exists for this card
         let existingActivity = try await activitiesCollection
@@ -603,6 +604,13 @@ class FriendsService: ObservableObject {
             print("   ✅ Including customFrame in activity: \(customFrame)")
         } else {
             print("   ⚠️  No customFrame - activity will have no frame")
+        }
+        
+        if let category = category {
+            data["category"] = category.rawValue
+            print("   ✅ Including category in activity: \(category.rawValue)")
+        } else {
+            print("   ⚠️  No category - will not appear in Explore until specs are added")
         }
         
         try await activitiesCollection.document(activityId).setData(data)
@@ -638,6 +646,36 @@ class FriendsService: ObservableObject {
                     "customFrame": FieldValue.delete()
                 ])
                 print("   ✅ Removed customFrame")
+            }
+        }
+        
+        print("✅ Updated customFrame for \(snapshot.documents.count) activities")
+    }
+    
+    // MARK: - Update Activity Category
+    
+    /// Update category for all activities with a specific cardId
+    func updateActivityCategory(cardId: String, category: VehicleCategory) async throws {
+        print("🔍 Searching for activities with cardId: \(cardId) to add category")
+        
+        // Find all activities for this card
+        let snapshot = try await activitiesCollection
+            .whereField("cardId", isEqualTo: cardId)
+            .getDocuments()
+        
+        print("📊 Found \(snapshot.documents.count) activities to update with category")
+        
+        // Update each activity
+        for document in snapshot.documents {
+            print("   ⬆️ Updating activity \(document.documentID) with category: \(category.rawValue)")
+            try await activitiesCollection.document(document.documentID).updateData([
+                "category": category.rawValue
+            ])
+            print("   ✅ Set category to: \(category.rawValue)")
+        }
+        
+        print("✅ Updated category for \(snapshot.documents.count) activities")
+    }
             }
         }
         
