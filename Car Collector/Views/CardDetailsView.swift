@@ -592,106 +592,99 @@ struct CardDetailsFrontView: View {
     let card: SavedCard
     
     var body: some View {
-        GeometryReader { geometry in
-            let maxWidth = min(geometry.size.width, 500)
-            let cardHeight = maxWidth / (16/9)
-            
-            ZStack {
-                // Card background with gradient
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.85, green: 0.85, blue: 0.88),
-                                Color(red: 0.75, green: 0.75, blue: 0.78)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+        ZStack {
+            // Card background with gradient
+            RoundedRectangle(cornerRadius: 12)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.85, blue: 0.88),
+                            Color(red: 0.75, green: 0.75, blue: 0.78)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
-                
-                VStack(spacing: 0) {
-                    // Top bar - GEN badge + Car name
-                    HStack(spacing: 12) {
-                        // GEN badge
-                        VStack(spacing: 2) {
-                            Text("GEN")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.black.opacity(0.6))
-                            Text("\(cardLevel)")
-                                .font(.system(size: 18, weight: .black))
-                                .foregroundStyle(.black)
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.1), radius: 2)
-                        )
-                        
-                        // Car name
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(card.make.uppercased())
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.black.opacity(0.7))
-                                .lineLimit(1)
-                            
-                            Text(card.model)
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.black)
-                                .lineLimit(1)
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 10)
-                    
-                    // Car image area (center)
-                    GeometryReader { geo in
-                        Group {
-                            if let image = card.image {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: geo.size.width, height: geo.size.height)
-                            } else {
-                                Rectangle()
-                                    .fill(Color.white.opacity(0.3))
-                                    .overlay(
-                                        Image(systemName: "car.fill")
-                                            .font(.system(size: 50))
-                                            .foregroundStyle(.gray.opacity(0.4))
-                                    )
-                            }
-                        }
-                        .clipped()
-                    }
-                    
-                    // Bottom bar - Year
-                    HStack {
-                        Spacer()
-                        
-                        Text(card.year)
-                            .font(.system(size: 12, weight: .semibold))
+                )
+            
+            VStack(spacing: 0) {
+                // Top bar - GEN badge + Car name
+                HStack(spacing: 12) {
+                    // GEN badge
+                    VStack(spacing: 2) {
+                        Text("GEN")
+                            .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(.black.opacity(0.6))
+                        Text("\(cardLevel)")
+                            .font(.system(size: 18, weight: .black))
+                            .foregroundStyle(.black)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.4))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white)
+                            .shadow(color: .black.opacity(0.1), radius: 2)
+                    )
+                    
+                    // Car name
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(card.make.uppercased())
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.black.opacity(0.7))
+                            .lineLimit(1)
+                        
+                        Text(card.model)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(.black)
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 10)
+                
+                // Car image area (center)
+                GeometryReader { geo in
+                    Group {
+                        if let image = card.image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geo.size.width, height: geo.size.height)
+                        } else {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: 50))
+                                        .foregroundStyle(.gray.opacity(0.4))
+                                )
+                        }
+                    }
+                    .clipped()
                 }
                 
-                // Black border overlay
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.black, lineWidth: 3)
+                // Bottom bar - Year
+                HStack {
+                    Spacer()
+                    
+                    Text(card.year)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.black.opacity(0.6))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.4))
             }
-            .frame(width: maxWidth, height: cardHeight)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+            
+            // Black border overlay
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.black, lineWidth: 3)
         }
         .aspectRatio(16/9, contentMode: .fit)
+        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
     }
     
     // Calculate card level based on category rarity
