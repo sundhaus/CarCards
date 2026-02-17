@@ -79,28 +79,10 @@ class ExploreService: ObservableObject {
     func fetchCategoryCards(category: VehicleCategory, limit: Int, completion: @escaping ([FriendActivity]) -> Void) {
         print("   🔎 Querying category: \(category.rawValue)")
         
-        // First, check if ANY documents exist with this category (debug) - force server read
+        // Simple query - just filter by category, NO ordering in Firebase
         db.collection("friend_activities")
             .whereField("category", isEqualTo: category.rawValue)
-            .limit(to: 3)
-            .getDocuments(source: .server) { snapshot, error in
-                if let documents = snapshot?.documents, !documents.isEmpty {
-                    print("   🔍 DEBUG: Found \(documents.count) docs with category '\(category.rawValue)' (no heatCount filter)")
-                    documents.forEach { doc in
-                        let data = doc.data()
-                        print("      - \(data["cardMake"] ?? "") \(data["cardModel"] ?? "") (heat: \(data["heatCount"] ?? 0))")
-                    }
-                } else {
-                    print("   ⚠️ DEBUG: NO documents found with category '\(category.rawValue)' at all!")
-                }
-            }
-        
-        // Now do the actual query with heatCount ordering - force server read
-        db.collection("friend_activities")
-            .whereField("category", isEqualTo: category.rawValue)
-            .order(by: "heatCount", descending: true)
-            .limit(to: limit)
-            .getDocuments(source: .server) { snapshot, error in
+            .getDocuments { snapshot, error in
                 if let error = error {
                     print("   ❌ Query error for \(category.rawValue): \(error.localizedDescription)")
                     completion([])
@@ -113,12 +95,19 @@ class ExploreService: ObservableObject {
                     return
                 }
                 
-                print("   📄 Got \(documents.count) documents for \(category.rawValue) (from SERVER)")
+                print("   📄 Got \(documents.count) documents for \(category.rawValue)")
                 
+                // Parse all activities
                 let activities = documents.compactMap { FriendActivity(document: $0) }
                 print("   ✅ Parsed \(activities.count) activities for \(category.rawValue)")
                 
-                completion(activities)
+                // Sort by heat in memory and take top N
+                let sorted = activities.sorted { $0.heatCount > $1.heatCount }
+                let topCards = Array(sorted.prefix(limit))
+                
+                print("   🔥 Returning top \(topCards.count) cards by heat")
+                
+                completion(topCards)
             }
     }
     
@@ -126,7 +115,6 @@ class ExploreService: ObservableObject {
     func fetchCategoryCardsPaginated(category: VehicleCategory, startAfter: DocumentSnapshot?, limit: Int, completion: @escaping ([FriendActivity], DocumentSnapshot?) -> Void) {
         var query = db.collection("friend_activities")
             .whereField("category", isEqualTo: category.rawValue)
-            .order(by: "heatCount", descending: true)
             .limit(to: limit)
         
         // If we have a starting point, start after it
@@ -155,11 +143,10 @@ class ExploreService: ObservableObject {
     
     // Fetch featured cards (top cards by heat, any category)
     private func fetchFeaturedCards(completion: @escaping ([FriendActivity]) -> Void) {
-        print("   🔎 Querying Featured (top 10 by heat)")
+        print("   🔎 Querying Featured (all cards, will sort by heat)")
         
+        // Get ALL cards, sort by heat in memory
         db.collection("friend_activities")
-            .order(by: "heatCount", descending: true)
-            .limit(to: cardsPerCategory)
             .getDocuments { snapshot, error in
                 if let error = error {
                     print("   ❌ Featured query error: \(error.localizedDescription)")
@@ -173,26 +160,28 @@ class ExploreService: ObservableObject {
                     return
                 }
                 
-                print("   📄 Got \(documents.count) documents for Featured")
+                print("   📄 Got \(documents.count) total documents")
                 
-                let activities = documents.compactMap { doc -> FriendActivity? in
-                    let activity = FriendActivity(document: doc)
-                    if let act = activity {
-                        print("      - \(act.cardMake) \(act.cardModel) (heat: \(act.heatCount))")
-                    }
-                    return activity
+                // Parse all
+                let activities = documents.compactMap { FriendActivity(document: $0) }
+                
+                // Sort by heat and take top N
+                let sorted = activities.sorted { $0.heatCount > $1.heatCount }
+                let featured = Array(sorted.prefix(self.cardsPerCategory))
+                
+                print("   ✅ Returning top \(featured.count) by heat")
+                featured.prefix(3).forEach { card in
+                    print("      - \(card.cardMake) \(card.cardModel) (heat: \(card.heatCount))")
                 }
-                print("   ✅ Parsed \(activities.count) featured activities")
                 
-                completion(activities)
+                completion(featured)
             }
     }
     
     // Fetch paginated featured cards
     func fetchFeaturedCardsPaginated(startAfter: DocumentSnapshot?, limit: Int, completion: @escaping ([FriendActivity], DocumentSnapshot?) -> Void) {
         var query = db.collection("friend_activities")
-            .order(by: "heatCount", descending: true)
-            .limit(to: limit)
+            .limit(to: limit * 2) // Get more to sort in memory
         
         if let lastDoc = startAfter {
             query = query.start(afterDocument: lastDoc)
@@ -210,10 +199,14 @@ class ExploreService: ObservableObject {
                 return
             }
             
+            // Parse and sort by heat
             let activities = documents.compactMap { FriendActivity(document: $0) }
+            let sorted = activities.sorted { $0.heatCount > $1.heatCount }
+            let topCards = Array(sorted.prefix(limit))
+            
             let lastDocument = documents.last
             
-            completion(activities, lastDocument)
+            completion(topCards, lastDocument)
         }
     }
 }
