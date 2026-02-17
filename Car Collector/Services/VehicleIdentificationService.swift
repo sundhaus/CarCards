@@ -53,14 +53,22 @@ struct VehicleSpecs: Codable {
     let transmission: String
     let drivetrain: String
     let description: String
+    let category: VehicleCategory?  // Optional category for Explore page
     
     // Metadata
     let fetchedAt: Date
     let fetchedBy: String?  // Optional user ID who contributed this
     
+    // Coding keys for custom decoder
+    enum CodingKeys: String, CodingKey {
+        case engine, horsepower, torque, zeroToSixty, topSpeed
+        case transmission, drivetrain, description, category
+        case fetchedAt, fetchedBy
+    }
+    
     init(engine: String, horsepower: String, torque: String, zeroToSixty: String,
          topSpeed: String, transmission: String, drivetrain: String, description: String,
-         fetchedAt: Date = Date(), fetchedBy: String? = nil) {
+         fetchedAt: Date = Date(), fetchedBy: String? = nil, category: VehicleCategory? = nil) {
         self.engine = engine
         self.horsepower = horsepower
         self.torque = torque
@@ -71,6 +79,26 @@ struct VehicleSpecs: Codable {
         self.description = description
         self.fetchedAt = fetchedAt
         self.fetchedBy = fetchedBy
+        self.category = category
+    }
+    
+    // Custom decoder for backward compatibility (handles missing category field)
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        engine = try container.decode(String.self, forKey: .engine)
+        horsepower = try container.decode(String.self, forKey: .horsepower)
+        torque = try container.decode(String.self, forKey: .torque)
+        zeroToSixty = try container.decode(String.self, forKey: .zeroToSixty)
+        topSpeed = try container.decode(String.self, forKey: .topSpeed)
+        transmission = try container.decode(String.self, forKey: .transmission)
+        drivetrain = try container.decode(String.self, forKey: .drivetrain)
+        description = try container.decode(String.self, forKey: .description)
+        fetchedAt = try container.decode(Date.self, forKey: .fetchedAt)
+        fetchedBy = try container.decodeIfPresent(String.self, forKey: .fetchedBy)
+        
+        // NEW: category is optional for backward compatibility
+        category = try container.decodeIfPresent(VehicleCategory.self, forKey: .category)
     }
 }
 
@@ -322,7 +350,7 @@ class VehicleIdentificationService: ObservableObject {
         
         let prompt = """
         Return specs for \(year) \(make) \(model) as JSON:
-        {"engine":"","horsepower":"","torque":"","zeroToSixty":"","topSpeed":"","transmission":"","drivetrain":"","description":""}
+        {"engine":"","horsepower":"","torque":"","zeroToSixty":"","topSpeed":"","transmission":"","drivetrain":"","description":"","category":""}
         
         - engine: engine type (e.g. "2.5L I4", "5.0L V8")
         - horsepower: HP (e.g. "300 hp")
@@ -332,6 +360,7 @@ class VehicleIdentificationService: ObservableObject {
         - transmission: (e.g. "6-speed manual", "8-speed auto")
         - drivetrain: RWD/FWD/AWD/4WD
         - description: Write a punchy 2-3 sentence summary that captures this car's character and appeal. Focus on what makes it special, its performance personality, and key strengths. Write in an engaging, FIFA Ultimate Team card style.
+        - category: Choose ONE of these categories that best fits this vehicle: "sports_car", "luxury", "suv", "truck", "electric", "classic", "muscle", "exotic", "economy", "off_road"
         
         Use "N/A" if unknown. No markdown.
         """
@@ -355,7 +384,8 @@ class VehicleIdentificationService: ObservableObject {
             drivetrain: specs.drivetrain,
             description: specs.description,
             fetchedAt: Date(),
-            fetchedBy: uid
+            fetchedBy: uid,
+            category: specs.category
         )
         
         // Save to Firestore for ALL users
@@ -400,6 +430,14 @@ class VehicleIdentificationService: ObservableObject {
         // Parse the basic fields
         let dict = try JSONSerialization.jsonObject(with: data) as? [String: String] ?? [:]
         
+        // Parse category if present
+        let category: VehicleCategory?
+        if let categoryString = dict["category"], categoryString != "N/A", !categoryString.isEmpty {
+            category = VehicleCategory(rawValue: categoryString)
+        } else {
+            category = nil
+        }
+        
         let specs = VehicleSpecs(
             engine: dict["engine"] ?? "N/A",
             horsepower: dict["horsepower"] ?? "N/A",
@@ -408,10 +446,11 @@ class VehicleIdentificationService: ObservableObject {
             topSpeed: dict["topSpeed"] ?? "N/A",
             transmission: dict["transmission"] ?? "N/A",
             drivetrain: dict["drivetrain"] ?? "N/A",
-            description: dict["description"] ?? ""
+            description: dict["description"] ?? "",
+            category: category
         )
         
-        print("✅ Parsed specs from AI")
+        print("✅ Parsed specs from AI (category: \(category?.rawValue ?? "none"))")
         return specs
     }
     
