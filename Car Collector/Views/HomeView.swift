@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  CarCardCollector
 //
-//  Home page with grid layout and NavigationButton styling
+//  Home page with container grid layout
 //
 
 import SwiftUI
@@ -23,24 +23,22 @@ struct HomeView: View {
         NavigationStack(path: $navigationController.homeNavigationPath) {
             ScrollView {
                 VStack(spacing: 16) {
-                    // Level header
+                    // Simplified Level header (no redundant info)
                     homeHeader
                     
                     // Top row - Leaderboard and Friends
                     HStack(spacing: 16) {
                         // Leaderboard
-                        NavigationButton(
+                        HomeContainer(
                             title: "Leaderboard",
-                            subtitle: "Top Players",
                             icon: "chart.bar.fill",
                             gradient: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
                             action: { showLeaderboard = true }
                         )
                         
                         // Friends
-                        NavigationButton(
+                        HomeContainer(
                             title: "Friends",
-                            subtitle: friendsService.newFollowersCount > 0 ? "+\(friendsService.newFollowersCount) New" : "Activity",
                             icon: "person.2.fill",
                             gradient: friendsService.newFollowersCount > 0 ? [Color.green, Color.teal] : [Color.blue, Color.cyan],
                             action: { showFriends = true }
@@ -48,30 +46,25 @@ struct HomeView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Featured Collections - Hot Cards Carousel (tap to open Explore)
-                    Button(action: { showExplore = true }) {
-                        HotCardsCarousel()
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal)
+                    // Featured Collections with title/timer header
+                    FeaturedCollectionsContainer(action: { showExplore = true })
+                        .padding(.horizontal)
                     
                     // Bottom row - Sets and Transfer List
                     HStack(spacing: 16) {
                         // Sets (Coming Soon)
-                        NavigationButton(
+                        HomeContainer(
                             title: "Sets",
-                            subtitle: "Coming Soon",
                             icon: "square.stack.3d.up.fill",
                             gradient: [Color.purple, Color.pink],
-                            action: {}
+                            action: {},
+                            disabled: true
                         )
-                        .disabled(true)
                         .opacity(0.6)
                         
                         // Transfer List
-                        NavigationButton(
+                        HomeContainer(
                             title: "Transfer List",
-                            subtitle: "Your Listings",
                             icon: "doc.text.fill",
                             gradient: [Color.orange, Color.red],
                             action: { showTransferList = true }
@@ -116,12 +109,14 @@ struct HomeView: View {
     
     private var homeHeader: some View {
         HStack(spacing: 16) {
+            // Profile button
             Button(action: { showProfile = true }) {
                 Image(systemName: "person.crop.circle.fill")
                     .font(.system(size: 40))
                     .foregroundStyle(.white)
             }
             
+            // Level and XP progress
             VStack(alignment: .leading, spacing: 4) {
                 Text("LEVEL \(levelSystem.level)")
                     .font(.caption)
@@ -132,10 +127,7 @@ struct HomeView: View {
                     Text("\(levelSystem.currentXP)")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("/ \(levelSystem.xpForNextLevel)")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.5))
-                    Text("XP")
+                    Text("/ \(levelSystem.xpForNextLevel) XP")
                         .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -143,12 +135,13 @@ struct HomeView: View {
             
             Spacer()
             
-            HStack(spacing: 12) {
+            // Coins
+            HStack(spacing: 8) {
                 Image(systemName: "bitcoinsign.circle.fill")
                     .font(.system(size: 24))
                     .foregroundStyle(.yellow)
                 
-                Text("\(UserService.shared.currentProfile?.coins ?? 0)")
+                Text("\(levelSystem.coins)")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(.white)
             }
