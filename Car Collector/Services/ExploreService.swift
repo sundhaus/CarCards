@@ -79,11 +79,28 @@ class ExploreService: ObservableObject {
     func fetchCategoryCards(category: VehicleCategory, limit: Int, completion: @escaping ([FriendActivity]) -> Void) {
         print("   🔎 Querying category: \(category.rawValue)")
         
+        // First, check if ANY documents exist with this category (debug) - force server read
+        db.collection("friend_activities")
+            .whereField("category", isEqualTo: category.rawValue)
+            .limit(to: 3)
+            .getDocuments(source: .server) { snapshot, error in
+                if let documents = snapshot?.documents, !documents.isEmpty {
+                    print("   🔍 DEBUG: Found \(documents.count) docs with category '\(category.rawValue)' (no heatCount filter)")
+                    documents.forEach { doc in
+                        let data = doc.data()
+                        print("      - \(data["cardMake"] ?? "") \(data["cardModel"] ?? "") (heat: \(data["heatCount"] ?? 0))")
+                    }
+                } else {
+                    print("   ⚠️ DEBUG: NO documents found with category '\(category.rawValue)' at all!")
+                }
+            }
+        
+        // Now do the actual query with heatCount ordering - force server read
         db.collection("friend_activities")
             .whereField("category", isEqualTo: category.rawValue)
             .order(by: "heatCount", descending: true)
             .limit(to: limit)
-            .getDocuments { snapshot, error in
+            .getDocuments(source: .server) { snapshot, error in
                 if let error = error {
                     print("   ❌ Query error for \(category.rawValue): \(error.localizedDescription)")
                     completion([])
@@ -96,7 +113,7 @@ class ExploreService: ObservableObject {
                     return
                 }
                 
-                print("   📄 Got \(documents.count) documents for \(category.rawValue)")
+                print("   📄 Got \(documents.count) documents for \(category.rawValue) (from SERVER)")
                 
                 let activities = documents.compactMap { FriendActivity(document: $0) }
                 print("   ✅ Parsed \(activities.count) activities for \(category.rawValue)")
