@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var showTransferList = false
     @State private var showFriends = false
     @State private var showLeaderboard = false
+    @State private var showExplore = false
     @ObservedObject private var friendsService = FriendsService.shared
     @ObservedObject private var navigationController = NavigationController.shared
     
@@ -95,9 +96,12 @@ struct HomeView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Featured Collections - Hot Cards Carousel
-                        HotCardsCarousel()
-                            .padding(.horizontal)
+                        // Featured Collections - Hot Cards Carousel (tap to open Explore)
+                        Button(action: { showExplore = true }) {
+                            HotCardsCarousel()
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal)
                         
                         // Bottom row - Sets and Transfer List
                         HStack(spacing: 16) {
@@ -228,6 +232,9 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showFriends) {
                 FriendsView(isLandscape: isLandscape)
             }
+            .navigationDestination(isPresented: $showExplore) {
+                ExploreView(isLandscape: isLandscape)
+            }
             .fullScreenCover(isPresented: $showLeaderboard) {
                 LeaderboardView(isLandscape: isLandscape)
             }
@@ -244,6 +251,7 @@ struct HomeView: View {
                     showTransferList = false
                     showFriends = false
                     showLeaderboard = false
+                    showExplore = false
                 }
             }
             .onChange(of: navigationController.popToRootTrigger) { oldValue, newValue in
@@ -251,6 +259,7 @@ struct HomeView: View {
                 showTransferList = false
                 showFriends = false
                 showLeaderboard = false
+                showExplore = false
                 print("🏠 HomeView: Reset all navigation booleans from trigger")
             }
         }
