@@ -70,7 +70,7 @@ struct HomeView: View {
                     .padding(.horizontal)
                     .padding(.bottom, isLandscape ? 20 : 100)
                 }
-                .padding(.top, isLandscape ? 20 : 0)
+                .padding(.top, isLandscape ? 20 : 16)
             }
             .background(Color.appBackgroundSolid.ignoresSafeArea())
             .navigationDestination(isPresented: $showTransferList) {

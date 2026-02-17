@@ -17,7 +17,7 @@ struct HomeContainer: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 Spacer()
                 
                 // Gradient icon circle
@@ -37,9 +37,7 @@ struct HomeContainer: View {
                         .foregroundStyle(.white)
                 }
                 
-                Spacer()
-                
-                // Title
+                // Title - closer to icon, farther from bottom
                 Text(title)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
@@ -47,7 +45,8 @@ struct HomeContainer: View {
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.8)
                     .padding(.horizontal, 8)
-                    .padding(.bottom, 8)
+                    .padding(.top, 4)
+                    .padding(.bottom, 16)
             }
             .frame(maxWidth: .infinity)
             .frame(height: 140)
