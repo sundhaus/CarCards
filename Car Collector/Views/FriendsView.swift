@@ -293,96 +293,44 @@ struct FriendActivityCard: View {
             // Card preview with tap to flip, double-tap to heat
             ZStack {
                 if !isFlipped {
-                    // FRONT OF CARD
+                    // FRONT OF CARD - FIFA Style
                     ZStack {
-                        // Custom frame/border
-                        if let frameName = activity.customFrame, frameName != "None" {
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(
-                                    frameName == "White" ? Color.white : Color.black,
-                                    lineWidth: 6
+                        FIFACardView(card: activity, height: 202.5)
+                        
+                        // Floating flame animation overlay
+                        if showFloatingFlame {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 80))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.orange, .red],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
                                 )
-                                .frame(width: 360, height: 202.5)
+                                .shadow(color: .black.opacity(0.3), radius: 10)
+                                .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
+                                .opacity(showFloatingFlame ? 1.0 : 0.0)
+                                .transition(.scale.combined(with: .opacity))
                         }
                         
-                        if let image = cardImage {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 360, height: 202.5)
-                                .clipped()
-                                .cornerRadius(12)
-                                .overlay(
-                                ZStack {
-                                    // Floating flame animation
-                                    if showFloatingFlame {
-                                        Image(systemName: "flame.fill")
-                                            .font(.system(size: 80))
-                                            .foregroundStyle(
-                                                LinearGradient(
-                                                    colors: [.orange, .red],
-                                                    startPoint: .top,
-                                                    endPoint: .bottom
-                                                )
-                                            )
-                                            .shadow(color: .black.opacity(0.3), radius: 10)
-                                            .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
-                                            .opacity(showFloatingFlame ? 1.0 : 0.0)
-                                            .transition(.scale.combined(with: .opacity))
-                                    }
-                                    
-                                    // Tap hint
-                                    VStack {
-                                        Spacer()
-                                        HStack {
-                                            Spacer()
-                                            Text("Tap for specs")
-                                                .font(.system(size: 11, weight: .semibold))
-                                                .foregroundStyle(.white)
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                                .background(Color.black.opacity(0.6))
-                                                .cornerRadius(6)
-                                                .padding(8)
-                                        }
-                                    }
-                                }
-                            )
-                        } else {
-                            // Placeholder while loading
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color(red: 0.2, green: 0.25, blue: 0.35), Color(red: 0.15, green: 0.2, blue: 0.3)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                
-                                if isLoadingImage {
-                                    ProgressView()
-                                        .tint(.white)
-                                } else {
-                                    VStack(spacing: 8) {
-                                        Image(systemName: "car.fill")
-                                            .font(.system(size: 40))
-                                            .foregroundStyle(.white.opacity(0.6))
-                                        
-                                        VStack(spacing: 4) {
-                                            Text("\(activity.cardMake) \(activity.cardModel)")
-                                                .font(.headline)
-                                                .foregroundStyle(.white)
-                                            Text(activity.cardYear)
-                                                .font(.subheadline)
-                                                .foregroundStyle(.white.opacity(0.8))
-                                        }
-                                    }
-                                }
+                        // Tap hint overlay
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Text("Tap for specs")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.black.opacity(0.6))
+                                    .cornerRadius(6)
+                                    .padding(8)
                             }
-                            .frame(width: 360, height: 202.5)
                         }
                     }
+                    .frame(width: 360, height: 202.5)
                     .onTapGesture {
                         // Single tap to flip/unflip
                         if isFlipped {
@@ -482,22 +430,15 @@ struct FriendActivityCard: View {
                                         .foregroundStyle(.white.opacity(0.6))
                                 }
                                 .padding(.vertical, 12)
+                                
+                                // Black border overlay
+                                RoundedRectangle(cornerRadius: 12)
+                                    .strokeBorder(Color.black, lineWidth: 3)
                             }
                             .frame(width: 360, height: 202.5)
                             .cornerRadius(12)
                     }
-                    
-                    // Custom frame/border overlay (on top of both front and back)
-                    if let frameName = activity.customFrame, frameName != "None" {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(
-                                frameName == "White" ? Color.white : Color.black,
-                                lineWidth: 6
-                            )
-                            .frame(width: 360, height: 202.5)
-                    }
                 }
-            }
             }  // Close main card preview ZStack
             .padding(.horizontal)
             .task {

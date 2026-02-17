@@ -110,14 +110,9 @@ struct CardDetailsView: View {
     private var cardDisplayView: some View {
         ZStack {
             if !showCardBack {
-                if let image = card.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: 500)
-                        .cornerRadius(15)
-                        .shadow(color: .black.opacity(0.3), radius: 10)
-                }
+                // Front of card - FIFA style
+                CardDetailsFrontView(card: card)
+                    .frame(maxWidth: 500)
             } else {
                 if isFetchingSpecs {
                     specsLoadingView
@@ -128,17 +123,6 @@ struct CardDetailsView: View {
                         .frame(maxWidth: 500)
                         .frame(height: 300)
                 }
-            }
-            
-            // Custom frame/border overlay (on both front and back)
-            if let frameName = card.customFrame, frameName != "None" {
-                RoundedRectangle(cornerRadius: 15)
-                    .stroke(
-                        frameName == "White" ? Color.white : Color.black,
-                        lineWidth: 8
-                    )
-                    .frame(maxWidth: 500)
-                    .aspectRatio(16/9, contentMode: .fit)
             }
         }
         .padding(.horizontal)
@@ -436,6 +420,10 @@ struct CardDetailsView: View {
                 compactStatsGrid
             }
             .padding()
+            
+            // Black border overlay
+            RoundedRectangle(cornerRadius: 15)
+                .strokeBorder(Color.black, lineWidth: 3)
         }
         .cornerRadius(15)
     }
@@ -595,5 +583,134 @@ struct CardDetailsView: View {
     private func quickSell() {
         userService.addCoins(250)
         onDismiss()
+    }
+}
+
+// MARK: - Card Details Front View
+
+struct CardDetailsFrontView: View {
+    let card: SavedCard
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let maxWidth = min(geometry.size.width, 500)
+            let cardHeight = maxWidth / (16/9)
+            
+            ZStack {
+                // Card background with gradient
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.85, green: 0.85, blue: 0.88),
+                                Color(red: 0.75, green: 0.75, blue: 0.78)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                
+                VStack(spacing: 0) {
+                    // Top bar - GEN badge + Car name
+                    HStack(spacing: 12) {
+                        // GEN badge
+                        VStack(spacing: 2) {
+                            Text("GEN")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.black.opacity(0.6))
+                            Text("\(cardLevel)")
+                                .font(.system(size: 18, weight: .black))
+                                .foregroundStyle(.black)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white)
+                                .shadow(color: .black.opacity(0.1), radius: 2)
+                        )
+                        
+                        // Car name
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(card.make.uppercased())
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.black.opacity(0.7))
+                                .lineLimit(1)
+                            
+                            Text(card.model)
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(.black)
+                                .lineLimit(1)
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 10)
+                    
+                    // Car image area (center)
+                    GeometryReader { geo in
+                        Group {
+                            if let image = card.image {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: geo.size.width, height: geo.size.height)
+                            } else {
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.3))
+                                    .overlay(
+                                        Image(systemName: "car.fill")
+                                            .font(.system(size: 50))
+                                            .foregroundStyle(.gray.opacity(0.4))
+                                    )
+                            }
+                        }
+                        .clipped()
+                    }
+                    
+                    // Bottom bar - Year
+                    HStack {
+                        Spacer()
+                        
+                        Text(card.year)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.black.opacity(0.6))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(0.4))
+                }
+                
+                // Black border overlay
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.black, lineWidth: 3)
+            }
+            .frame(width: maxWidth, height: cardHeight)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+        }
+        .aspectRatio(16/9, contentMode: .fit)
+    }
+    
+    // Calculate card level based on category rarity
+    private var cardLevel: Int {
+        guard let category = card.specs?.category else { return 1 }
+        
+        switch category {
+        case .hypercar: return 10
+        case .supercar: return 9
+        case .track: return 8
+        case .sportsCar: return 7
+        case .muscle: return 6
+        case .rally: return 5
+        case .electric, .hybrid: return 5
+        case .luxury: return 4
+        case .classic, .concept: return 6
+        case .coupe, .convertible: return 4
+        case .offRoad, .suv, .truck: return 3
+        case .sedan, .wagon, .hatchback, .van: return 2
+        }
     }
 }

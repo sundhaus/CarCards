@@ -208,87 +208,9 @@ struct CategoryDetailView: View {
 
 struct CategoryCardItem: View {
     let card: FriendActivity
-    @State private var cardImage: UIImage?
-    @State private var isLoadingImage = false
     
     var body: some View {
-        VStack(spacing: 8) {
-            // Card image
-            Group {
-                if let image = cardImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else if isLoadingImage {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .overlay(ProgressView().tint(.white))
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.system(size: 30))
-                                .foregroundStyle(.white.opacity(0.5))
-                        )
-                }
-            }
-            .frame(height: 100)
-            .clipped()
-            .cornerRadius(10)
-            
-            // Car info
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(card.cardMake) \(card.cardModel)")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                
-                HStack(spacing: 6) {
-                    Text("by \(card.username)")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.6))
-                        .lineLimit(1)
-                    
-                    Spacer()
-                    
-                    if card.heatCount > 0 {
-                        HStack(spacing: 2) {
-                            Image(systemName: "flame.fill")
-                                .font(.system(size: 10))
-                            Text("\(card.heatCount)")
-                                .font(.caption2)
-                        }
-                        .foregroundStyle(.orange)
-                    }
-                }
-            }
-        }
-        .onAppear {
-            loadImage()
-        }
-    }
-    
-    private func loadImage() {
-        guard !isLoadingImage, cardImage == nil else { return }
-        isLoadingImage = true
-        
-        guard let url = URL(string: card.imageURL) else {
-            isLoadingImage = false
-            return
-        }
-        
-        URLSession.shared.dataTask(with: url) { data, _, error in
-            guard let data = data, let image = UIImage(data: data) else {
-                DispatchQueue.main.async { isLoadingImage = false }
-                return
-            }
-            DispatchQueue.main.async {
-                cardImage = image
-                isLoadingImage = false
-            }
-        }.resume()
+        FIFACardView(card: card, height: 140)
     }
 }
 

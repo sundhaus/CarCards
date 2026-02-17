@@ -418,40 +418,94 @@ struct UserCardView: View {
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = true
     
+    private var cardHeight: CGFloat { isLargeSize ? 202.5 : 100 }
+    private var cardWidth: CGFloat { cardHeight * (16/9) }
+    
     var body: some View {
         ZStack {
-            if isLoadingImage {
-                Rectangle()
-                    .fill(Color(.systemGray5))
-                    .frame(width: isLargeSize ? 360 : 175, height: isLargeSize ? 202.5 : 98.4)
-                    .overlay {
-                        ProgressView()
+            // Card background with gradient
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.85, blue: 0.88),
+                            Color(red: 0.75, green: 0.75, blue: 0.78)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            
+            VStack(spacing: 0) {
+                // Top bar - Car name
+                HStack(spacing: isLargeSize ? 8 : 4) {
+                    // Car name
+                    VStack(alignment: .leading, spacing: isLargeSize ? 2 : 1) {
+                        Text(card.make.uppercased())
+                            .font(.system(size: isLargeSize ? 10 : 7, weight: .semibold))
+                            .foregroundStyle(.black.opacity(0.7))
+                            .lineLimit(1)
+                        
+                        Text(card.model)
+                            .font(.system(size: isLargeSize ? 13 : 9, weight: .bold))
+                            .foregroundStyle(.black)
+                            .lineLimit(1)
                     }
-            } else if let image = cardImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: isLargeSize ? 360 : 175, height: isLargeSize ? 202.5 : 98.4)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, isLargeSize ? 12 : 8)
+                .padding(.top, isLargeSize ? 10 : 6)
+                .padding(.bottom, isLargeSize ? 6 : 4)
+                
+                // Car image area (center)
+                GeometryReader { geo in
+                    Group {
+                        if isLoadingImage {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    ProgressView()
+                                        .tint(.gray)
+                                )
+                        } else if let image = cardImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geo.size.width, height: geo.size.height)
+                        } else {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: isLargeSize ? 30 : 20))
+                                        .foregroundStyle(.gray.opacity(0.4))
+                                )
+                        }
+                    }
                     .clipped()
+                }
+                
+                // Bottom bar - Year
+                HStack {
+                    Spacer()
+                    
+                    Text(card.year)
+                        .font(.system(size: isLargeSize ? 9 : 7, weight: .semibold))
+                        .foregroundStyle(.black.opacity(0.6))
+                }
+                .padding(.horizontal, isLargeSize ? 12 : 8)
+                .padding(.vertical, isLargeSize ? 6 : 4)
+                .background(Color.white.opacity(0.4))
             }
             
-            // Card overlay with make/model
-            VStack {
-                Spacer()
-                Text("\(card.make) \(card.model)")
-                    .font(isLargeSize ? .headline : .caption)
-                    .foregroundStyle(.white)
-                    .padding(isLargeSize ? 10 : 6)
-                    .frame(maxWidth: .infinity)
-                    .background(.black.opacity(0.6))
-            }
-            .frame(width: isLargeSize ? 360 : 175, height: isLargeSize ? 202.5 : 98.4)
+            // Black border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 3)
         }
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(.gray.opacity(0.3), lineWidth: 1)
-        )
+        .frame(width: cardWidth, height: cardHeight)
+        .clipped()
+        .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
         .task {
             await loadCardImage()
         }

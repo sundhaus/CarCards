@@ -521,42 +521,8 @@ struct ListingCardRow: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // Load image from Firebase Storage URL with frame overlay
-            ZStack {
-                AsyncImage(url: URL(string: listing.imageURL)) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                            .frame(width: 360, height: 202.5)
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 360, height: 202.5)
-                            .clipped()
-                            .cornerRadius(12)
-                    case .failure:
-                        Image(systemName: "photo")
-                            .font(.largeTitle)
-                            .foregroundStyle(.gray)
-                            .frame(width: 360, height: 202.5)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                    @unknown default:
-                        EmptyView()
-                    }
-                }
-                
-                // Custom frame/border overlay
-                if let frameName = listing.customFrame, frameName != "None" {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(
-                            frameName == "White" ? Color.white : Color.black,
-                            lineWidth: 6
-                        )
-                        .frame(width: 360, height: 202.5)
-                }
-            }
+            // FIFA-style card
+            MarketplaceFIFACard(listing: listing)
             
             HStack(spacing: 20) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -633,6 +599,154 @@ struct GarageCardRow: View {
         .padding(.vertical, 8)
         .background(.white)
         .cornerRadius(12)
+    }
+}
+
+// MARK: - Marketplace FIFA Card
+
+struct MarketplaceFIFACard: View {
+    let listing: CloudListing
+    @State private var cardImage: UIImage?
+    @State private var isLoadingImage = false
+    
+    private let cardHeight: CGFloat = 202.5
+    private var cardWidth: CGFloat { cardHeight * (16/9) }
+    
+    var body: some View {
+        ZStack {
+            // Card background with gradient
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.85, blue: 0.88),
+                            Color(red: 0.75, green: 0.75, blue: 0.78)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            
+            VStack(spacing: 0) {
+                // Top bar - Car name
+                HStack(spacing: 8) {
+                    // "FOR SALE" badge
+                    VStack(spacing: 2) {
+                        Text("FOR")
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(.black.opacity(0.6))
+                        Text("SALE")
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundStyle(.black)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color.yellow)
+                            .shadow(color: .black.opacity(0.1), radius: 2)
+                    )
+                    
+                    // Car name
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(listing.make.uppercased())
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.black.opacity(0.7))
+                            .lineLimit(1)
+                        
+                        Text(listing.model)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.black)
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+                .padding(.bottom, 6)
+                
+                // Car image area (center)
+                GeometryReader { geo in
+                    Group {
+                        if let image = cardImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geo.size.width, height: geo.size.height)
+                        } else if isLoadingImage {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    ProgressView()
+                                        .tint(.gray)
+                                )
+                        } else {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: 30))
+                                        .foregroundStyle(.gray.opacity(0.4))
+                                )
+                        }
+                    }
+                    .clipped()
+                }
+                
+                // Bottom bar - Seller
+                HStack {
+                    Text("@\(listing.sellerUsername)")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(.black.opacity(0.5))
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    Text(listing.year)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.black.opacity(0.6))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(0.4))
+            }
+            
+            // Black border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 3)
+        }
+        .frame(width: cardWidth, height: cardHeight)
+        .clipped()
+        .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
+        .onAppear {
+            loadImage()
+        }
+    }
+    
+    private func loadImage() {
+        guard !isLoadingImage, cardImage == nil else { return }
+        
+        isLoadingImage = true
+        
+        guard let url = URL(string: listing.imageURL) else {
+            isLoadingImage = false
+            return
+        }
+        
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            guard let data = data, let image = UIImage(data: data) else {
+                DispatchQueue.main.async {
+                    isLoadingImage = false
+                }
+                return
+            }
+            
+            DispatchQueue.main.async {
+                cardImage = image
+                isLoadingImage = false
+            }
+        }.resume()
     }
 }
 
