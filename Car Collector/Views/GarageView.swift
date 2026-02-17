@@ -806,6 +806,26 @@ struct VehicleCardView: View {
     private var cardHeight: CGFloat { isLargeSize ? 195.75 : 100 }
     private var cardWidth: CGFloat { cardHeight * (16/9) }
     
+    // Calculate card level based on category rarity
+    private var cardLevel: Int {
+        guard let category = card.specs?.category else { return 1 }
+        
+        switch category {
+        case .hypercar: return 10
+        case .supercar: return 9
+        case .track: return 8
+        case .sportsCar: return 7
+        case .muscle: return 6
+        case .rally: return 5
+        case .electric, .hybrid: return 5
+        case .luxury: return 4
+        case .classic, .concept: return 6
+        case .coupe, .convertible: return 4
+        case .offRoad, .suv, .truck: return 3
+        case .sedan, .wagon, .hatchback, .van: return 2
+        }
+    }
+    
     var body: some View {
         ZStack {
             // Card background with gradient
@@ -829,7 +849,7 @@ struct VehicleCardView: View {
                         Text("GEN")
                             .font(.system(size: isLargeSize ? 8 : 6, weight: .bold))
                             .foregroundStyle(.black.opacity(0.6))
-                        Text("\(LevelSystem.calculateLevel(for: card.id))")
+                        Text("\(cardLevel)")
                             .font(.system(size: isLargeSize ? 14 : 10, weight: .black))
                             .foregroundStyle(.black)
                     }
