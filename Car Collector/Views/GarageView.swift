@@ -284,7 +284,7 @@ struct UnifiedCardDetailView: View {
         return specs.horsepower != "N/A" && specs.torque != "N/A"
     }
     
-    // Fetch specs if vehicle card doesn't have them
+    // Fetch specs if vehicle card doesn't have them, then auto-flip
     private func fetchSpecsIfNeeded() async {
         // Only fetch for vehicle cards
         guard case .vehicle(let vehicleCard) = card else { return }
@@ -340,9 +340,17 @@ struct UnifiedCardDetailView: View {
                 isFetchingSpecs = false
                 // Notify parent to reload
                 onCardUpdated(.vehicle(updatedVehicleCard))
+                
+                // Auto-flip to show the specs
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    flipDegrees += 180
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isFlipped.toggle()
+                    }
+                }
             }
             
-            print("✅ Successfully fetched and saved specs")
+            print("✅ Successfully fetched and saved specs, auto-flipping card")
             
         } catch {
             print("❌ Failed to fetch specs: \(error)")
@@ -399,28 +407,60 @@ struct UnifiedCardDetailView: View {
                         
                         Spacer()
                         
-                        // Flip hint (only for vehicles with specs)
-                        if case .vehicle = card, specsAreComplete(cardSpecs) {
-                            Text("Tap card to flip")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.7))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(.black.opacity(0.6))
-                                .cornerRadius(20)
-                                .padding(.trailing, 20)
+                        // Flip hint (only for vehicles)
+                        if case .vehicle = card, !isFetchingSpecs {
+                            if specsAreComplete(cardSpecs) {
+                                Text("Tap card to flip")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.7))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(.black.opacity(0.6))
+                                    .cornerRadius(20)
+                                    .padding(.trailing, 20)
+                            } else {
+                                Text("Tap to load stats")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.7))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(.black.opacity(0.6))
+                                    .cornerRadius(20)
+                                    .padding(.trailing, 20)
+                            }
                         }
                     }
                     
                     Spacer()
                 }
+                
+                // Loading overlay - show while fetching specs
+                if isFetchingSpecs {
+                    ZStack {
+                        Color.black.opacity(0.8)
+                            .ignoresSafeArea()
+                        
+                        VStack(spacing: 20) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
+                            
+                            Text("Loading Stats...")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                        }
+                        .padding(40)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(20)
+                    }
+                }
             }
         }
         .transition(.opacity)
         .onAppear {
-            // Fetch specs if needed (will load existing or fetch new)
-            Task {
-                await fetchSpecsIfNeeded()
+            // Load existing specs if vehicle card has them
+            if case .vehicle(let vehicleCard) = card {
+                cardSpecs = vehicleCard.specs
             }
         }
     }
@@ -464,14 +504,24 @@ struct UnifiedCardDetailView: View {
             }
         }
         .onTapGesture {
-            // Only flip for vehicles with complete specs
-            if case .vehicle = card, specsAreComplete(cardSpecs) {
+            // Ignore taps while fetching
+            guard !isFetchingSpecs else { return }
+            
+            // Only handle taps for vehicle cards
+            guard case .vehicle = card else { return }
+            
+            // If specs already loaded - flip immediately
+            if specsAreComplete(cardSpecs) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     flipDegrees += 180
-                    // Toggle flip state at 90 degrees (midpoint)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         isFlipped.toggle()
                     }
+                }
+            } else {
+                // No specs yet - fetch them (will auto-flip when done)
+                Task {
+                    await fetchSpecsIfNeeded()
                 }
             }
         }
