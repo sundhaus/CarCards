@@ -23,9 +23,6 @@ struct HomeView: View {
         NavigationStack(path: $navigationController.homeNavigationPath) {
             ScrollView {
                 VStack(spacing: 16) {
-                    // Simplified Level header (no redundant info)
-                    homeHeader
-                    
                     // Top row - Leaderboard and Friends
                     HStack(spacing: 16) {
                         // Leaderboard
@@ -105,52 +102,6 @@ struct HomeView: View {
             }
             .toolbar(.hidden, for: .tabBar)
         }
-    }
-    
-    private var homeHeader: some View {
-        HStack(spacing: 16) {
-            // Profile button
-            Button(action: { showProfile = true }) {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(.white)
-            }
-            
-            // Level and XP progress
-            VStack(alignment: .leading, spacing: 4) {
-                Text("LEVEL \(levelSystem.level)")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white.opacity(0.7))
-                
-                HStack(spacing: 4) {
-                    Text("\(levelSystem.currentXP)")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text("/ \(levelSystem.xpForNextLevel) XP")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-            }
-            
-            Spacer()
-            
-            // Coins
-            HStack(spacing: 8) {
-                Image(systemName: "bitcoinsign.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(.yellow)
-                
-                Text("\(levelSystem.coins)")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(16)
-        .padding(.horizontal)
-        .padding(.top, isLandscape ? 8 : 16)
     }
 }
 
