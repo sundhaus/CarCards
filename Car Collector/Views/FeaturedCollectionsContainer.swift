@@ -13,49 +13,66 @@ struct FeaturedCollectionsContainer: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 0) {
-                // Header with title and timer
-                HStack {
-                    Text("Featured Collections")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.white)
-                    
-                    Spacer()
-                    
-                    // Timer from HotCardsService
-                    HStack(spacing: 6) {
-                        Image(systemName: "clock.fill")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.white.opacity(0.7))
-                        
-                        Text(HotCardsService.shared.timeUntilNextRefresh)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.15))
-                    .cornerRadius(20)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 12)
-                
-                // Carousel content
-                HotCardsCarousel()
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 12)
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.1))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
+            containerContent
         }
         .buttonStyle(.plain)
+    }
+    
+    // Break down into separate computed property
+    private var containerContent: some View {
+        VStack(spacing: 0) {
+            headerSection
+            carouselSection
+        }
+        .background(containerBackground)
+        .overlay(containerBorder)
+    }
+    
+    private var headerSection: some View {
+        HStack {
+            Text("Featured Collections")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.white)
+            
+            Spacer()
+            
+            timerBadge
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 12)
+    }
+    
+    private var timerBadge: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(.white.opacity(0.7))
+            
+            Text(HotCardsService.shared.timeUntilNextRefresh)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.15))
+        .cornerRadius(20)
+    }
+    
+    private var carouselSection: some View {
+        HotCardsCarousel()
+            .padding(.horizontal, 8)
+            .padding(.bottom, 12)
+    }
+    
+    private var containerBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color.white.opacity(0.1))
+    }
+    
+    private var containerBorder: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .stroke(Color.white.opacity(0.2), lineWidth: 1)
     }
 }
 
