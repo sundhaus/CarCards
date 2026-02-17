@@ -16,12 +16,6 @@ struct CarCardCollectorApp: App {
     @State private var showOnboarding = false
     @State private var isReady = false
     
-    init() {
-        // FirebaseApp.configure() is called by FirebaseManager.configure() below
-        // Set up Firestore settings
-        FirebaseManager.configure()
-    }
-    
     var body: some Scene {
         WindowGroup {
             rootView

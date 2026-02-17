@@ -13,8 +13,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     static var orientationLock: UIInterfaceOrientationMask = [.portrait, .landscapeRight]
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        // Firebase is configured in Car_CollectorApp.init() via FirebaseManager.configure()
-        // This method just needs to exist to satisfy UIApplicationDelegate protocol
+        // ✅ Configure Firebase FIRST - before any Firebase services are accessed
+        // This must happen before FirebaseManager.shared is initialized
+        FirebaseManager.configure()
         return true
     }
     
