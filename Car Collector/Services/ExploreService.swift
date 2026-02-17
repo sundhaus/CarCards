@@ -113,10 +113,9 @@ class ExploreService: ObservableObject {
         }
     }
     
-    // Fetch featured cards (cards that have been featured at any point)
+    // Fetch featured cards (top cards by heat, any category)
     private func fetchFeaturedCards(completion: @escaping ([FriendActivity]) -> Void) {
         db.collection("friend_activities")
-            .whereField("isFeatured", isEqualTo: true)
             .order(by: "heatCount", descending: true)
             .limit(to: cardsPerCategory)
             .getDocuments { snapshot, error in
@@ -139,7 +138,6 @@ class ExploreService: ObservableObject {
     // Fetch paginated featured cards
     func fetchFeaturedCardsPaginated(startAfter: DocumentSnapshot?, limit: Int, completion: @escaping ([FriendActivity], DocumentSnapshot?) -> Void) {
         var query = db.collection("friend_activities")
-            .whereField("isFeatured", isEqualTo: true)
             .order(by: "heatCount", descending: true)
             .limit(to: limit)
         

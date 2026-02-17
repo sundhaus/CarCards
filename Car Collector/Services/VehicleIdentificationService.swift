@@ -348,7 +348,61 @@ class VehicleIdentificationService: ObservableObject {
                         let jsonData = try JSONSerialization.data(withJSONObject: data)
                         let decoder = JSONDecoder()
                         decoder.dateDecodingStrategy = .iso8601
-                        let cached = try decoder.decode(VehicleSpecs.self, from: jsonData)
+                        var cached = try decoder.decode(VehicleSpecs.self, from: jsonData)
+                        
+                        // If cached specs don't have category, fetch and update
+                        if cached.category == nil {
+                            print("⚠️ Cached specs missing category - fetching from AI now")
+                            
+                            // Fetch category from AI
+                            let categoryPrompt = """
+                            Categorize: \(year) \(make) \(model)
+                            
+                            Return ONLY ONE category from this list (copy exactly):
+                            Hypercar, Supercar, Sports Car, Muscle, Track, Off-Road, Rally, SUV, Truck, Van, Luxury, Sedan, Coupe, Convertible, Wagon, Electric, Hybrid, Classic, Concept, Hatchback
+                            
+                            Just the category name, nothing else.
+                            """
+                            
+                            if let categoryResponse = try? await self.model.generateContent(categoryPrompt),
+                               let categoryText = categoryResponse.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+                               let category = VehicleCategory(rawValue: categoryText) {
+                                
+                                print("✅ Fetched category: \(category.rawValue)")
+                                
+                                // Update cached specs with category
+                                cached = VehicleSpecs(
+                                    engine: cached.engine,
+                                    horsepower: cached.horsepower,
+                                    torque: cached.torque,
+                                    zeroToSixty: cached.zeroToSixty,
+                                    topSpeed: cached.topSpeed,
+                                    transmission: cached.transmission,
+                                    drivetrain: cached.drivetrain,
+                                    description: cached.description,
+                                    fetchedAt: cached.fetchedAt,
+                                    fetchedBy: cached.fetchedBy,
+                                    category: category
+                                )
+                                
+                                // Update Firestore with category
+                                Task {
+                                    do {
+                                        let encoder = JSONEncoder()
+                                        encoder.dateEncodingStrategy = .iso8601
+                                        let jsonData = try encoder.encode(cached)
+                                        let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] ?? [:]
+                                        try await docRef.setData(json, merge: true)
+                                        print("✅ Updated Firestore with category: \(category.rawValue)")
+                                    } catch {
+                                        print("⚠️ Failed to update Firestore: \(error)")
+                                    }
+                                }
+                            } else {
+                                print("⚠️ Could not fetch category for cached specs")
+                            }
+                        }
+                        
                         print("✅ Successfully decoded specs from Firestore!")
                         print("✅ Category: \(cached.category?.rawValue ?? "none")")
                         return cached
