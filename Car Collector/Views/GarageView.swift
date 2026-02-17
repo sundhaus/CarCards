@@ -276,7 +276,13 @@ struct UnifiedCardDetailView: View {
     @State private var isFlipped = false
     @State private var flipDegrees: Double = 0
     @State private var isFetchingSpecs = false
-    @State private var cardSpecs: CarSpecs?
+    @State private var cardSpecs: VehicleSpecs?
+    
+    // Helper to check if specs are complete
+    private func specsAreComplete(_ specs: VehicleSpecs?) -> Bool {
+        guard let specs = specs else { return false }
+        return specs.horsepower != "N/A" && specs.torque != "N/A"
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -326,7 +332,7 @@ struct UnifiedCardDetailView: View {
                         Spacer()
                         
                         // Flip hint (only for vehicles with specs)
-                        if case .vehicle(let vehicleCard) = card, vehicleCard.specs.isComplete {
+                        if case .vehicle(let vehicleCard) = card, specsAreComplete(vehicleCard.specs) {
                             Text("Tap card to flip")
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.7))
@@ -391,7 +397,7 @@ struct UnifiedCardDetailView: View {
         }
         .onTapGesture {
             // Only flip for vehicles with specs
-            if case .vehicle(let vehicleCard) = card, vehicleCard.specs.isComplete {
+            if case .vehicle(let vehicleCard) = card, specsAreComplete(vehicleCard.specs) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     flipDegrees += 180
                     // Toggle flip state at 90 degrees (midpoint)
@@ -409,7 +415,7 @@ struct CardBackView: View {
     let make: String
     let model: String
     let year: String
-    let specs: CarSpecs
+    let specs: VehicleSpecs
     
     var body: some View {
         ZStack {
@@ -442,13 +448,13 @@ struct CardBackView: View {
                     HStack(spacing: 20) {
                         statItem(
                             label: "HP",
-                            value: specs.horsepower != nil ? "\(specs.horsepower!)" : "???",
-                            highlight: specs.horsepower != nil
+                            value: specs.horsepower,
+                            highlight: specs.horsepower != "N/A"
                         )
                         statItem(
                             label: "TORQUE",
-                            value: specs.torque != nil ? "\(specs.torque!) lb-ft" : "???",
-                            highlight: specs.torque != nil
+                            value: specs.torque,
+                            highlight: specs.torque != "N/A"
                         )
                     }
                     
@@ -456,13 +462,13 @@ struct CardBackView: View {
                     HStack(spacing: 20) {
                         statItem(
                             label: "0-60",
-                            value: specs.zeroToSixty != nil ? "\(String(format: "%.1f", specs.zeroToSixty!))s" : "???",
-                            highlight: specs.zeroToSixty != nil
+                            value: specs.zeroToSixty,
+                            highlight: specs.zeroToSixty != "N/A"
                         )
                         statItem(
                             label: "TOP SPEED",
-                            value: specs.topSpeed != nil ? "\(specs.topSpeed!) mph" : "???",
-                            highlight: specs.topSpeed != nil
+                            value: specs.topSpeed,
+                            highlight: specs.topSpeed != "N/A"
                         )
                     }
                     
@@ -470,27 +476,19 @@ struct CardBackView: View {
                     HStack(spacing: 20) {
                         statItem(
                             label: "ENGINE",
-                            value: specs.engineType ?? "???",
-                            highlight: specs.engineType != nil
+                            value: specs.engine,
+                            highlight: specs.engine != "N/A"
                         )
                         statItem(
                             label: "DRIVE",
-                            value: specs.drivetrain ?? "???",
-                            highlight: specs.drivetrain != nil
+                            value: specs.drivetrain,
+                            highlight: specs.drivetrain != "N/A"
                         )
                     }
                 }
                 .padding(.horizontal, 24)
                 
                 Spacer()
-                
-                // Footer
-                if !specs.isComplete {
-                    Text("Some specs unavailable")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.5))
-                        .padding(.bottom, 12)
-                }
             }
         }
         .cornerRadius(15)
@@ -507,6 +505,8 @@ struct CardBackView: View {
             Text(value)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(highlight ? .white : .white.opacity(0.4))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
             Text(label)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.7))

@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  CarCardCollector
 //
-//  Home page with consistent NavigationButton design
+//  Home page with grid layout and NavigationButton styling
 //
 
 import SwiftUI
@@ -26,8 +26,8 @@ struct HomeView: View {
                     // Level header
                     homeHeader
                     
-                    // All navigation buttons with consistent design
-                    VStack(spacing: 16) {
+                    // Top row - Leaderboard and Friends
+                    HStack(spacing: 16) {
                         // Leaderboard
                         NavigationButton(
                             title: "Leaderboard",
@@ -40,18 +40,23 @@ struct HomeView: View {
                         // Friends
                         NavigationButton(
                             title: "Friends",
-                            subtitle: friendsService.newFollowersCount > 0 ? "+\(friendsService.newFollowersCount) New Follower\(friendsService.newFollowersCount == 1 ? "" : "s")" : "See Activity",
+                            subtitle: friendsService.newFollowersCount > 0 ? "+\(friendsService.newFollowersCount) New" : "See Activity",
                             icon: "person.2.fill",
                             gradient: friendsService.newFollowersCount > 0 ? [Color.green, Color.teal] : [Color.blue, Color.cyan],
                             action: { showFriends = true }
                         )
-                        
-                        // Featured Collections - Hot Cards
-                        Button(action: { showExplore = true }) {
-                            HotCardsCarousel()
-                        }
-                        .buttonStyle(.plain)
-                        
+                    }
+                    .padding(.horizontal)
+                    
+                    // Featured Collections - Hot Cards Carousel (tap to open Explore)
+                    Button(action: { showExplore = true }) {
+                        HotCardsCarousel()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal)
+                    
+                    // Bottom row - Sets and Transfer List
+                    HStack(spacing: 16) {
                         // Sets (Coming Soon)
                         NavigationButton(
                             title: "Sets",
@@ -66,7 +71,7 @@ struct HomeView: View {
                         // Transfer List
                         NavigationButton(
                             title: "Transfer List",
-                            subtitle: "Manage Your Listings",
+                            subtitle: "Manage Listings",
                             icon: "doc.text.fill",
                             gradient: [Color.orange, Color.red],
                             action: { showTransferList = true }
