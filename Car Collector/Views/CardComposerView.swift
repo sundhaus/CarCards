@@ -285,9 +285,10 @@ struct CardComposerView: View {
                 model: data.model,
                 generation: data.generation,
                 onWrongVehicle: {
-                    // User tapped "Not My Vehicle" - dismiss preview and immediately show alternatives
+                    // User tapped "Not My Vehicle" - dismiss preview and show alternatives
                     print("🚫 User rejected vehicle identification")
                     print("📱 Dismissing preview to show alternatives...")
+                    dataToSave = nil  // Clear saved data so onDismiss doesn't save
                     previewData = nil  // Dismiss preview immediately
                     // Fetch alternatives - sheet will show right away
                     Task {
@@ -312,20 +313,25 @@ struct CardComposerView: View {
                     // User selected an alternative
                     print("✅ User selected: \(vehicle.make) \(vehicle.model)")
                     showAlternatives = false
-                    previewData = nil
                     
                     // Create preview with selected vehicle
                     let finalImage = renderFinalCard()
-                    previewData = PreviewData(
+                    let data = PreviewData(
                         cardImage: finalImage,
                         make: vehicle.make,
                         model: vehicle.model,
                         generation: vehicle.generation
                     )
+                    
+                    // Store for saving when preview dismisses
+                    dataToSave = data
+                    previewData = data
                 },
                 onCancel: {
                     print("❌ User cancelled alternative selection")
                     showAlternatives = false
+                    // Let user retake photo since none of the options were correct
+                    onRetake()
                 }
             )
             .presentationDetents([.medium, .large])
