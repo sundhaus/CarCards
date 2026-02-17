@@ -76,13 +76,6 @@ struct CategoryMigrationView: View {
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
-                            
-                            // Time estimate
-                            if migrationService.isRunning {
-                                Text(migrationService.estimatedTimeRemaining)
-                                    .font(.caption)
-                                    .foregroundStyle(.blue)
-                            }
                         }
                         .padding()
                         .background(Color(.systemBackground))
