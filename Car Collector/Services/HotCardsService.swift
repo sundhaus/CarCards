@@ -5,7 +5,7 @@
 //  Service to fetch cards with the most heat (likes) globally
 //  - Shows top 20 most liked cards from ALL users
 //  - Updates in real-time as likes change (snapshot listener)
-//  - Full refresh every 24 hours to reset timestamp
+//  - Full refresh twice daily at 12:00 PM and 12:00 AM EST
 //  - Cards can move in/out of top 20 as other cards get more likes
 //
 
@@ -15,36 +15,116 @@ import FirebaseFirestore
 class HotCardsService: ObservableObject {
     @Published var hotCards: [FriendActivity] = []
     @Published var isLoading = false
+    @Published var timeUntilNextRefresh: String = ""
     
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
+    private var countdownTimer: Timer?
     
     // UserDefaults key for last refresh timestamp
     private let lastRefreshKey = "hotCardsLastRefresh"
     
-    // 5 minutes in seconds (instead of 24 hours - likes change frequently)
-    private let refreshInterval: TimeInterval = 5 * 60
+    init() {
+        startCountdownTimer()
+    }
+    
+    // Calculate next refresh time (noon or midnight EST)
+    private func nextRefreshTime() -> Date {
+        let calendar = Calendar.current
+        var estTimeZone = TimeZone(identifier: "America/New_York")!
+        
+        // Get current time in EST
+        var components = calendar.dateComponents(in: estTimeZone, from: Date())
+        
+        // Determine if we should refresh at next noon or midnight
+        let currentHour = components.hour ?? 0
+        
+        if currentHour < 12 {
+            // Before noon - next refresh is noon today
+            components.hour = 12
+            components.minute = 0
+            components.second = 0
+        } else {
+            // After noon - next refresh is midnight tonight
+            components.hour = 0
+            components.minute = 0
+            components.second = 0
+            // Add one day
+            if let date = calendar.date(from: components) {
+                return calendar.date(byAdding: .day, value: 1, to: date) ?? Date()
+            }
+        }
+        
+        return calendar.date(from: components) ?? Date()
+    }
+    
+    // Format countdown string
+    private func formatCountdown(seconds: TimeInterval) -> String {
+        let hours = Int(seconds) / 3600
+        let minutes = (Int(seconds) % 3600) / 60
+        let secs = Int(seconds) % 60
+        
+        if hours > 0 {
+            return String(format: "%dh %02dm", hours, minutes)
+        } else if minutes > 0 {
+            return String(format: "%dm %02ds", minutes, secs)
+        } else {
+            return String(format: "%ds", secs)
+        }
+    }
+    
+    // Start countdown timer (updates every second)
+    private func startCountdownTimer() {
+        countdownTimer?.invalidate()
+        
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            
+            let nextRefresh = self.nextRefreshTime()
+            let timeRemaining = nextRefresh.timeIntervalSince(Date())
+            
+            if timeRemaining <= 0 {
+                // Time for refresh!
+                self.timeUntilNextRefresh = "Refreshing..."
+                self.forceRefresh()
+            } else {
+                self.timeUntilNextRefresh = self.formatCountdown(seconds: timeRemaining)
+            }
+        }
+        
+        // Trigger immediate update
+        countdownTimer?.fire()
+    }
+    
+    // Check if we should refresh based on noon/midnight EST schedule
+    private func shouldRefresh() -> Bool {
+        guard let lastRefresh = UserDefaults.standard.object(forKey: lastRefreshKey) as? Date else {
+            return true // Never refreshed
+        }
+        
+        let nextRefresh = nextRefreshTime()
+        
+        // If last refresh was before the most recent noon/midnight, we should refresh
+        return lastRefresh < nextRefresh
+    }
     
     // Check if cards need refresh and fetch if needed
-    func fetchHotCardsIfNeeded(limit: Int = 10) {
-        // Always refresh if we have no cards OR if 5 minutes passed
+    func fetchHotCardsIfNeeded(limit: Int = 20) {
+        // Always refresh if we have no cards OR if it's time for scheduled refresh
         if hotCards.isEmpty || shouldRefresh() {
             if hotCards.isEmpty {
                 print("🔄 No hot cards loaded - fetching fresh data")
             } else {
-                print("🔄 5 minutes passed - refreshing hot cards")
+                print("🔄 Scheduled refresh time - refreshing hot cards")
             }
             fetchHotCards(limit: limit, updateTimestamp: true)
         } else {
-            let lastRefresh = UserDefaults.standard.object(forKey: lastRefreshKey) as? Date ?? Date()
-            let timeUntilRefresh = refreshInterval - Date().timeIntervalSince(lastRefresh)
-            let minutesUntilRefresh = Int(timeUntilRefresh / 60)
-            print("⏱️ Hot cards still fresh - next refresh in ~\(minutesUntilRefresh) minutes")
+            print("⏱️ Hot cards still fresh - next refresh at \(nextRefreshTime())")
         }
     }
     
-    // Force refresh (call this to reset the 5-minute timer)
-    func forceRefresh(limit: Int = 10) {
+    // Force refresh (call this to trigger immediate refresh)
+    func forceRefresh(limit: Int = 20) {
         print("🔄 Force refreshing hot cards")
         fetchHotCards(limit: limit, updateTimestamp: true)
     }
@@ -55,19 +135,8 @@ class HotCardsService: ObservableObject {
         print("🔄 Reset hot cards refresh timer")
     }
     
-    // Check if 5 minutes have passed since last refresh
-    private func shouldRefresh() -> Bool {
-        guard let lastRefresh = UserDefaults.standard.object(forKey: lastRefreshKey) as? Date else {
-            // Never refreshed before
-            return true
-        }
-        
-        let timeSinceRefresh = Date().timeIntervalSince(lastRefresh)
-        return timeSinceRefresh >= refreshInterval
-    }
-    
     // Fetch top cards with most heat from all users
-    private func fetchHotCards(limit: Int = 10, updateTimestamp: Bool = true) {
+    private func fetchHotCards(limit: Int = 20, updateTimestamp: Bool = true) {
         isLoading = true
         
         // Update timestamp if requested
@@ -121,8 +190,9 @@ class HotCardsService: ObservableObject {
             }
     }
     
-    // Clean up listener
+    // Clean up listener and timer
     deinit {
         listener?.remove()
+        countdownTimer?.invalidate()
     }
 }

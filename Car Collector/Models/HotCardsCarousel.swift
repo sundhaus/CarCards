@@ -14,14 +14,37 @@ struct HotCardsCarousel: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
-            Text("Featured Collections")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
+            // Header with countdown
+            HStack {
+                Text("Featured Collections")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                // Countdown timer
+                if !hotCardsService.timeUntilNextRefresh.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.7))
+                        
+                        Text(hotCardsService.timeUntilNextRefresh)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.white.opacity(0.7))
+                            .monospacedDigit() // Fixed-width digits for smooth countdown
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(8)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
             
             if hotCardsService.isLoading {
                 loadingView
