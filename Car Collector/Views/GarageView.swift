@@ -434,25 +434,11 @@ struct UnifiedCardDetailView: View {
                     Spacer()
                 }
                 
-                // Loading overlay - show while fetching specs
+                // Loading overlay - just spinner
                 if isFetchingSpecs {
-                    ZStack {
-                        Color.black.opacity(0.8)
-                            .ignoresSafeArea()
-                        
-                        VStack(spacing: 20) {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                                .tint(.white)
-                            
-                            Text("Loading Stats...")
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                        }
-                        .padding(40)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(20)
-                    }
+                    ProgressView()
+                        .scaleEffect(2.0)
+                        .tint(.white)
                 }
             }
         }
