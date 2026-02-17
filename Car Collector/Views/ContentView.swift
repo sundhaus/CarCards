@@ -38,16 +38,10 @@ struct ContentView: View {
                     .transition(.identity) // No transition animation
                     .tag(0)
                     
-                    // Garage Tab
-                    GarageViewWrapper(
-                        savedCards: $savedCards,
-                        isLandscape: landscape,
-                        showCardDetail: $showCardDetail,
-                        selectedCard: $selectedCard,
-                        forceOrientationUpdate: $forceOrientationUpdate
-                    )
-                    .padding(.top, landscape ? 0 : 60) // Only add padding in portrait
-                    .tag(1)
+                    // Garage Tab - Shows all card types (vehicles, drivers, locations)
+                    GarageView()
+                        .padding(.top, landscape ? 0 : 60)
+                        .tag(1)
                     
                     // Marketplace Tab
                     MarketplaceLandingView(
