@@ -1,5 +1,15 @@
 # Explore Feature Implementation Guide
 
+## ⚠️ IMPORTANT - Existing Cards
+
+**Question:** Will category labeling only work with newly added cards?
+
+**Answer:** Yes, by default only new cards will get categories. BUT we've included a **Category Migration Tool** that can backfill categories for all existing cards using AI.
+
+**See "Backward Compatibility - Existing Cards" section below for the migration solution.**
+
+---
+
 ## Overview
 This feature adds an "Explore" page that shows cards grouped by vehicle category (Hypercar, SUV, Track, etc.). Cards are shown randomly and refresh every 3 hours at 12am, 3am, 6am, 9am, 12pm, 3pm, 6pm, and 9pm EST. Only cards with complete specs appear in Explore.
 
@@ -216,6 +226,112 @@ private func convertToCarSpecs(_ vehicleSpecs: VehicleSpecs) -> CarSpecs {
 
 ---
 
+## Backward Compatibility - Existing Cards
+
+### The Problem
+
+**Yes, category labeling will only work with newly added cards by default.** Existing cards in Firestore won't have the `category` field and won't appear in Explore.
+
+### The Solution - Category Migration
+
+We've created a migration system to backfill categories for all existing cards.
+
+#### Files for Migration:
+
+**1. CategoryMigrationService.swift (New Service)**
+Location: `Car Collector/Services/CategoryMigrationService.swift`
+
+**Features:**
+- Scans all friend_activities in Firestore
+- Uses AI to determine category for each card
+- Updates Firestore documents with category field
+- Skips cards that already have categories
+- Shows progress (processed, categorized, skipped)
+- Includes rate limiting to avoid API throttling
+
+**2. CategoryMigrationView.swift (New Admin View)**
+Location: `Car Collector/Views/CategoryMigrationView.swift`
+
+**Features:**
+- Clean UI to run migration
+- Progress bar and statistics
+- Time estimate
+- Can be added to Settings or as hidden admin tool
+
+### How to Use Migration:
+
+**Option A: Add to Settings**
+Add a button in your Settings/Profile view:
+
+```swift
+// In ProfileView or SettingsView
+Button("Run Category Migration") {
+    showMigration = true
+}
+.sheet(isPresented: $showMigration) {
+    CategoryMigrationView()
+}
+```
+
+**Option B: Hidden Admin Access**
+Add a hidden gesture in HomeView:
+
+```swift
+// In HomeView, add to the header or logo
+Text("Explore")
+    .onTapGesture(count: 5) { // 5 taps
+        showMigration = true
+    }
+```
+
+**Option C: Run Once Programmatically**
+In your App struct or root view:
+
+```swift
+.task {
+    // Run migration on first launch after update
+    if !UserDefaults.standard.bool(forKey: "categoryMigrationDone") {
+        let service = CategoryMigrationService()
+        await service.migrateMissingCategories()
+        UserDefaults.standard.set(true, forKey: "categoryMigrationDone")
+    }
+}
+```
+
+### Migration Process:
+
+1. **Scans all cards** in friend_activities collection
+2. **For each card without a category:**
+   - Gets make, model, year
+   - Asks AI to categorize it
+   - Updates Firestore with category
+3. **Skips cards that:**
+   - Already have a category
+   - Missing required data (make/model/year)
+4. **Shows progress:**
+   - Total cards
+   - Processed count
+   - Categorized count
+   - Skipped count
+   - Time estimate
+
+### Performance:
+
+- **Speed:** ~0.5 seconds per card (AI call + small delay)
+- **100 cards:** ~1 minute
+- **1000 cards:** ~8-10 minutes
+- **Rate limiting:** Built-in 0.5s delay between calls
+
+### Important Notes:
+
+✅ **Safe to run multiple times** - Skips already-categorized cards
+✅ **Non-destructive** - Only adds category field, doesn't change existing data
+✅ **Incremental** - Can be stopped and resumed (skips already-done cards)
+⚠️ **Requires AI quota** - Each uncategorized card uses one AI call
+⚠️ **Takes time** - For large databases, consider running during off-peak hours
+
+---
+
 ## Firestore Structure Changes
 
 ### friend_activities Collection
@@ -242,12 +358,13 @@ Fields:
 
 ## Testing Checklist
 
+**Core Features:**
 - [ ] VehicleCategory enum compiles with all 20 categories
 - [ ] CarSpecs includes category field
 - [ ] AI prompt returns valid category in specs
 - [ ] ExploreService fetches cards by category
 - [ ] ExploreService countdown timer works
-- [ ] ExploreService refreshes at 12pm, 3pm, 6pm, 9pm EST
+- [ ] ExploreService refreshes at 12am, 3am, 6am, 9am, 12pm, 3pm, 6pm, 9pm EST
 - [ ] ExploreView displays category rows
 - [ ] Cards without specs don't appear in Explore
 - [ ] Tapping Featured Collections opens Explore
@@ -255,6 +372,16 @@ Fields:
 - [ ] Empty state shows when no cards have specs
 - [ ] Loading state shows during fetch
 - [ ] Navigation back works correctly
+
+**Migration (for existing cards):**
+- [ ] CategoryMigrationService compiles
+- [ ] CategoryMigrationView displays correctly
+- [ ] Can run migration from UI
+- [ ] Progress updates during migration
+- [ ] AI correctly categorizes sample cards
+- [ ] Firestore updates with categories
+- [ ] Cards already with categories are skipped
+- [ ] After migration, existing cards appear in Explore
 
 ---
 
