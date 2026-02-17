@@ -47,6 +47,7 @@ struct HomeContainer: View {
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.8)
                     .padding(.horizontal, 8)
+                    .padding(.bottom, 8)
             }
             .frame(maxWidth: .infinity)
             .frame(height: 140)
