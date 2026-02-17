@@ -28,7 +28,30 @@ struct GarageView: View {
                 Color.appBackgroundSolid
                     .ignoresSafeArea()
                 
-                VStack {
+                VStack(spacing: 0) {
+                    // Custom header with title and toggle on same line
+                    HStack {
+                        Text("GARAGE")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            cardsPerRow = cardsPerRow == 1 ? 2 : 1
+                        }) {
+                            Image(systemName: cardsPerRow == 1 ? "square.grid.2x2" : "rectangle")
+                                .font(.title3)
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, isLandscape ? 20 : 8)
+                    .padding(.bottom, 8)
+                    .background(.ultraThinMaterial)
+                    
+                    // Content
                     if allCards.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "car.fill")
@@ -37,7 +60,7 @@ struct GarageView: View {
                             Text("Your collection will appear here")
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.top, 100)
+                        .frame(maxHeight: .infinity)
                     } else {
                         if isLandscape {
                             // Landscape: Continuous horizontal scroll
@@ -76,17 +99,6 @@ struct GarageView: View {
                             loadAllCards()
                         }
                     )
-                }
-            }
-            .navigationTitle("GARAGE")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        cardsPerRow = cardsPerRow == 1 ? 2 : 1
-                    }) {
-                        Image(systemName: cardsPerRow == 1 ? "square.grid.2x2" : "rectangle")
-                            .foregroundStyle(.blue)
-                    }
                 }
             }
             .onAppear {
@@ -216,7 +228,7 @@ struct GarageView: View {
                             }
                         }
                         .padding()
-                        .padding(.top, 20)
+                        .padding(.top, 8) // Reduced padding since header is compact now
                         
                         Spacer()
                     }
@@ -245,7 +257,7 @@ struct GarageView: View {
                 }
             }
             .padding()
-            .padding(.top, 80)
+            .padding(.top, 60) // Adjusted for compact header
             .padding(.trailing, 100)
         }
     }
@@ -264,6 +276,7 @@ struct UnifiedCardDetailView: View {
     @State private var isFlipped = false
     @State private var flipDegrees: Double = 0
     @State private var isFetchingSpecs = false
+    @State private var cardSpecs: CarSpecs?
     
     var body: some View {
         GeometryReader { geometry in
@@ -274,9 +287,7 @@ struct UnifiedCardDetailView: View {
                 Color.black.opacity(0.7)
                     .ignoresSafeArea()
                     .onTapGesture {
-                        withAnimation {
-                            isShowing = false
-                        }
+                        // Don't dismiss on tap - only X button dismisses
                     }
                 
                 // Card container
@@ -313,6 +324,18 @@ struct UnifiedCardDetailView: View {
                         .padding(20)
                         
                         Spacer()
+                        
+                        // Flip hint (only for vehicles with specs)
+                        if case .vehicle(let vehicleCard) = card, vehicleCard.specs.isComplete {
+                            Text("Tap card to flip")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.7))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(.black.opacity(0.6))
+                                .cornerRadius(20)
+                                .padding(.trailing, 20)
+                        }
                     }
                     
                     Spacer()
@@ -320,22 +343,178 @@ struct UnifiedCardDetailView: View {
             }
         }
         .transition(.opacity)
+        .onAppear {
+            // Load specs if vehicle card
+            if case .vehicle(let vehicleCard) = card {
+                cardSpecs = vehicleCard.specs
+            }
+        }
     }
     
     private func cardContent(geometry: GeometryProxy, rotated: Bool) -> some View {
         let cardWidth: CGFloat = rotated ? geometry.size.height * 0.8 : geometry.size.width * 0.8
         let cardHeight: CGFloat = cardWidth / 16 * 9
         
-        return VStack {
-            if let image = card.image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
+        return ZStack {
+            // Front side - card image
+            if !isFlipped {
+                if let image = card.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: cardWidth, height: cardHeight)
+                        .cornerRadius(15)
+                        .shadow(radius: 10)
+                        .rotation3DEffect(
+                            .degrees(flipDegrees),
+                            axis: (x: 0, y: 1, z: 0)
+                        )
+                }
+            }
+            
+            // Back side - stats (only for vehicles)
+            if isFlipped {
+                if case .vehicle(let vehicleCard) = card, let specs = cardSpecs {
+                    CardBackView(
+                        make: vehicleCard.make,
+                        model: vehicleCard.model,
+                        year: vehicleCard.year,
+                        specs: specs
+                    )
                     .frame(width: cardWidth, height: cardHeight)
-                    .cornerRadius(15)
-                    .shadow(radius: 10)
+                    .rotation3DEffect(
+                        .degrees(flipDegrees),
+                        axis: (x: 0, y: 1, z: 0)
+                    )
+                }
             }
         }
+        .onTapGesture {
+            // Only flip for vehicles with specs
+            if case .vehicle(let vehicleCard) = card, vehicleCard.specs.isComplete {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    flipDegrees += 180
+                    // Toggle flip state at 90 degrees (midpoint)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isFlipped.toggle()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Card back view with specs
+struct CardBackView: View {
+    let make: String
+    let model: String
+    let year: String
+    let specs: CarSpecs
+    
+    var body: some View {
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            
+            VStack(spacing: 16) {
+                // Header
+                VStack(spacing: 4) {
+                    Text("\(make) \(model)")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                    
+                    Text(year)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                .padding(.top, 20)
+                
+                Spacer()
+                
+                // Specs grid
+                VStack(spacing: 12) {
+                    // Row 1: Power stats
+                    HStack(spacing: 20) {
+                        statItem(
+                            label: "HP",
+                            value: specs.horsepower != nil ? "\(specs.horsepower!)" : "???",
+                            highlight: specs.horsepower != nil
+                        )
+                        statItem(
+                            label: "TORQUE",
+                            value: specs.torque != nil ? "\(specs.torque!) lb-ft" : "???",
+                            highlight: specs.torque != nil
+                        )
+                    }
+                    
+                    // Row 2: Performance stats
+                    HStack(spacing: 20) {
+                        statItem(
+                            label: "0-60",
+                            value: specs.zeroToSixty != nil ? "\(String(format: "%.1f", specs.zeroToSixty!))s" : "???",
+                            highlight: specs.zeroToSixty != nil
+                        )
+                        statItem(
+                            label: "TOP SPEED",
+                            value: specs.topSpeed != nil ? "\(specs.topSpeed!) mph" : "???",
+                            highlight: specs.topSpeed != nil
+                        )
+                    }
+                    
+                    // Row 3: Details
+                    HStack(spacing: 20) {
+                        statItem(
+                            label: "ENGINE",
+                            value: specs.engineType ?? "???",
+                            highlight: specs.engineType != nil
+                        )
+                        statItem(
+                            label: "DRIVE",
+                            value: specs.drivetrain ?? "???",
+                            highlight: specs.drivetrain != nil
+                        )
+                    }
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+                
+                // Footer
+                if !specs.isComplete {
+                    Text("Some specs unavailable")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .padding(.bottom, 12)
+                }
+            }
+        }
+        .cornerRadius(15)
+        .shadow(radius: 10)
+        .rotation3DEffect(
+            .degrees(180),
+            axis: (x: 0, y: 1, z: 0)
+        )
+    }
+    
+    // Helper view for stat items
+    private func statItem(label: String, value: String, highlight: Bool) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(highlight ? .white : .white.opacity(0.4))
+            Text(label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(highlight ? Color.white.opacity(0.15) : Color.clear)
+        .cornerRadius(8)
     }
 }
 
