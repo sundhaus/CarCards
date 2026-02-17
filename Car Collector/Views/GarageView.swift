@@ -750,6 +750,10 @@ struct CardBackView: View {
                 
                 Spacer()
             }
+            
+            // Black border overlay (matching front)
+            RoundedRectangle(cornerRadius: 15)
+                .strokeBorder(Color.black, lineWidth: 3)
         }
         .cornerRadius(15)
         .shadow(radius: 10)
@@ -785,14 +789,128 @@ struct UnifiedCardView: View {
     let isLargeSize: Bool
     
     var body: some View {
+        // Use FIFA-style for vehicle cards, simple for others
+        if case .vehicle(let vehicleCard) = card {
+            VehicleCardView(card: vehicleCard, isLargeSize: isLargeSize)
+        } else {
+            SimpleCardView(card: card, isLargeSize: isLargeSize)
+        }
+    }
+}
+
+// FIFA-style card for vehicles
+struct VehicleCardView: View {
+    let card: SavedCard
+    let isLargeSize: Bool
+    
+    private var cardHeight: CGFloat { isLargeSize ? 195.75 : 100 }
+    private var cardWidth: CGFloat { cardHeight * (16/9) }
+    
+    var body: some View {
         ZStack {
-            // Custom frame/border (only for vehicle cards)
-            if let frameName = card.customFrame, frameName != "None" {
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(frameName == "White" ? Color.white : Color.black, lineWidth: isLargeSize ? 6 : 3)
-                    .frame(width: isLargeSize ? 360 : 175, height: isLargeSize ? 202.5 : 98.4)
+            // Card background with gradient
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.85, blue: 0.88),
+                            Color(red: 0.75, green: 0.75, blue: 0.78)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            
+            VStack(spacing: 0) {
+                // Top bar - GEN badge + Car name
+                HStack(spacing: isLargeSize ? 8 : 4) {
+                    // GEN badge
+                    VStack(spacing: isLargeSize ? 2 : 1) {
+                        Text("GEN")
+                            .font(.system(size: isLargeSize ? 8 : 6, weight: .bold))
+                            .foregroundStyle(.black.opacity(0.6))
+                        Text("\(LevelSystem.calculateLevel(for: card.id))")
+                            .font(.system(size: isLargeSize ? 14 : 10, weight: .black))
+                            .foregroundStyle(.black)
+                    }
+                    .padding(.horizontal, isLargeSize ? 10 : 6)
+                    .padding(.vertical, isLargeSize ? 4 : 3)
+                    .background(
+                        RoundedRectangle(cornerRadius: isLargeSize ? 6 : 4)
+                            .fill(Color.white)
+                            .shadow(color: .black.opacity(0.1), radius: 2)
+                    )
+                    
+                    // Car name
+                    VStack(alignment: .leading, spacing: isLargeSize ? 2 : 1) {
+                        Text(card.make.uppercased())
+                            .font(.system(size: isLargeSize ? 10 : 7, weight: .semibold))
+                            .foregroundStyle(.black.opacity(0.7))
+                            .lineLimit(1)
+                        
+                        Text(card.model)
+                            .font(.system(size: isLargeSize ? 13 : 9, weight: .bold))
+                            .foregroundStyle(.black)
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, isLargeSize ? 12 : 8)
+                .padding(.top, isLargeSize ? 10 : 6)
+                .padding(.bottom, isLargeSize ? 6 : 4)
+                
+                // Car image area (center)
+                GeometryReader { geo in
+                    Group {
+                        if let image = card.image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geo.size.width, height: geo.size.height)
+                        } else {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: isLargeSize ? 30 : 20))
+                                        .foregroundStyle(.gray.opacity(0.4))
+                                )
+                        }
+                    }
+                    .clipped()
+                }
+                
+                // Bottom bar - Year
+                HStack {
+                    Spacer()
+                    
+                    Text(card.year)
+                        .font(.system(size: isLargeSize ? 9 : 7, weight: .semibold))
+                        .foregroundStyle(.black.opacity(0.6))
+                }
+                .padding(.horizontal, isLargeSize ? 12 : 8)
+                .padding(.vertical, isLargeSize ? 6 : 4)
+                .background(Color.white.opacity(0.4))
             }
             
+            // Black border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 3)
+        }
+        .frame(width: cardWidth, height: cardHeight)
+        .clipped()
+        .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
+    }
+}
+
+// Simple card for drivers/locations
+struct SimpleCardView: View {
+    let card: AnyCard
+    let isLargeSize: Bool
+    
+    var body: some View {
+        ZStack {
             // Card image
             if let image = card.image {
                 Image(uiImage: image)
@@ -838,20 +956,20 @@ struct UnifiedCardView: View {
                 .background(.black.opacity(0.6))
             }
             .frame(width: isLargeSize ? 348 : 169, height: isLargeSize ? 195.75 : 92.4)
+            
+            // Black border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 3)
         }
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(.gray.opacity(0.3), lineWidth: 1)
-        )
+        .cornerRadius(8)
+        .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
     }
     
     private var typeColor: Color {
-        switch card.cardType {
-        case "Vehicle": return .blue
-        case "Driver": return .purple
-        case "Location": return .green
-        default: return .gray
+        switch card {
+        case .driver: return .purple
+        case .location: return .green
+        default: return .blue
         }
     }
 }

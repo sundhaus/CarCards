@@ -50,7 +50,7 @@ struct HotCardsCarousel: View {
                                     .blur(radius: getBlurRadius(for: cardGeometry, screenWidth: geometry.size.width))
                                     .scaleEffect(getScale(for: cardGeometry, screenWidth: geometry.size.width))
                             }
-                            .frame(width: 280, height: 170)
+                            .frame(width: 280, height: 157.5)
                             .id(item.id)
                         }
                     }
@@ -219,69 +219,114 @@ struct HotCardsCarousel: View {
 struct HotCardItem: View {
     let card: FriendActivity
     
+    // Fixed dimensions for carousel
+    private let cardHeight: CGFloat = 157.5
+    private var cardWidth: CGFloat { cardHeight * (16/9) }
+    
     var body: some View {
-        // Card with proper format
         ZStack {
-            // Custom frame/border
-            if let frameName = card.customFrame, frameName != "None" {
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(frameName == "White" ? Color.white : Color.black, lineWidth: 6)
-                    .frame(width: 280, height: 157.5)
-            }
+            // Card background with gradient
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.85, blue: 0.88),
+                            Color(red: 0.75, green: 0.75, blue: 0.78)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
             
-            // Card image
-            cardImageView
-                .frame(width: 268, height: 150.75)
-                .clipped()
-            
-            // Heat counter on top-left corner
-            VStack {
-                HStack {
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 14))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.orange, .red],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                        
-                        Text("\(card.heatCount)")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
+            VStack(spacing: 0) {
+                // Top bar - GEN badge + Car name
+                HStack(spacing: 6) {
+                    // GEN badge (top-left)
+                    VStack(spacing: 1) {
+                        Text("GEN")
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(.black.opacity(0.6))
+                        Text("\(card.level)")
+                            .font(.system(size: 12, weight: .black))
+                            .foregroundStyle(.black)
                     }
                     .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.black.opacity(0.7))
-                    .cornerRadius(8)
-                    .padding(8)
+                    .padding(.vertical, 3)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color.white)
+                            .shadow(color: .black.opacity(0.1), radius: 2)
+                    )
+                    
+                    // Car name
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(card.cardMake.uppercased())
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(.black.opacity(0.7))
+                            .lineLimit(1)
+                        
+                        Text(card.cardModel)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.black)
+                            .lineLimit(1)
+                    }
                     
                     Spacer()
+                    
+                    // Heat indicator
+                    if card.heatCount > 0 {
+                        HStack(spacing: 2) {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.orange)
+                            Text("\(card.heatCount)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.orange)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(Color.white.opacity(0.9))
+                        )
+                    }
                 }
-                Spacer()
+                .padding(.horizontal, 10)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+                
+                // Car image area (center)
+                GeometryReader { geo in
+                    cardImageView
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .clipped()
+                }
+                
+                // Bottom bar - Username
+                HStack {
+                    Text("@\(card.username)")
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundStyle(.black.opacity(0.5))
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    Text(card.cardYear)
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundStyle(.black.opacity(0.6))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color.white.opacity(0.4))
             }
-            .frame(width: 268, height: 150.75)
             
-            // Card text overlay at bottom
-            VStack {
-                Spacer()
-                Text("\(card.cardMake) \(card.cardModel)")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .frame(maxWidth: .infinity)
-                    .background(.black.opacity(0.6))
-            }
-            .frame(width: 268, height: 150.75)
+            // Black border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 3)
         }
-        .frame(width: 280, height: 157.5)
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(.gray.opacity(0.3), lineWidth: 1)
-        )
+        .frame(width: cardWidth, height: cardHeight)
+        .clipped()
+        .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 3)
     }
     
     @ViewBuilder
@@ -308,16 +353,16 @@ struct HotCardItem: View {
     
     private func placeholderView(isLoading: Bool) -> some View {
         Rectangle()
-            .fill(Color.gray.opacity(0.3))
+            .fill(Color.white.opacity(0.3))
             .overlay(
                 Group {
                     if isLoading {
                         ProgressView()
-                            .tint(.white)
+                            .tint(.gray)
                     } else {
-                        Image(systemName: "photo")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.white.opacity(0.5))
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 30))
+                            .foregroundStyle(.gray.opacity(0.4))
                     }
                 }
             )
