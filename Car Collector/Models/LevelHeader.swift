@@ -108,8 +108,8 @@ struct LevelHeader: View {
                 ZStack {
                     // Background circle for ring
                     Circle()
-                        .stroke(Color(.systemGray5), lineWidth: 4)
-                        .frame(width: 52, height: 52)
+                        .stroke(Color(.systemGray5), lineWidth: 3)
+                        .frame(width: 48, height: 48)
                     
                     // Progress ring (fills clockwise)
                     Circle()
@@ -120,9 +120,9 @@ struct LevelHeader: View {
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
                         )
-                        .frame(width: 52, height: 52)
+                        .frame(width: 48, height: 48)
                         .rotationEffect(.degrees(-90)) // Start at top
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: levelSystem.progress)
                     
@@ -131,7 +131,7 @@ struct LevelHeader: View {
                         Image(uiImage: profileImage)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                             .clipShape(Circle())
                     } else {
                         Circle()
@@ -142,10 +142,10 @@ struct LevelHeader: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                             .overlay {
                                 Image(systemName: "person.fill")
-                                    .font(.system(size: 20))
+                                    .font(.system(size: 18))
                                     .foregroundStyle(.white)
                             }
                     }
@@ -158,8 +158,9 @@ struct LevelHeader: View {
                     .lineLimit(1)
                 
                 // Level badge to the right of username
-                levelBadge(size: 28)
+                levelBadge(size: 26)
             }
+            .padding(.bottom, 4)
         }
         .buttonStyle(.plain)
         .task {
@@ -187,8 +188,8 @@ struct LevelHeader: View {
                 ZStack {
                     // Background circle for ring
                     Circle()
-                        .stroke(Color(.systemGray5), lineWidth: 4)
-                        .frame(width: 52, height: 52)
+                        .stroke(Color(.systemGray5), lineWidth: 3)
+                        .frame(width: 48, height: 48)
                     
                     // Progress ring (fills clockwise)
                     Circle()
@@ -199,9 +200,9 @@ struct LevelHeader: View {
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
                         )
-                        .frame(width: 52, height: 52)
+                        .frame(width: 48, height: 48)
                         .rotationEffect(.degrees(-90)) // Start at top
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: levelSystem.progress)
                     
@@ -210,7 +211,7 @@ struct LevelHeader: View {
                         Image(uiImage: profileImage)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                             .clipShape(Circle())
                     } else {
                         Circle()
@@ -221,10 +222,10 @@ struct LevelHeader: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                             .overlay {
                                 Image(systemName: "person.fill")
-                                    .font(.system(size: 20))
+                                    .font(.system(size: 18))
                                     .foregroundStyle(.white)
                             }
                     }
@@ -237,7 +238,7 @@ struct LevelHeader: View {
                     .lineLimit(1)
                 
                 // Level badge to the right of username
-                levelBadge(size: 28)
+                levelBadge(size: 26)
             }
             .padding(8)
             .background(Color.headerBackground)

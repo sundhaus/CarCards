@@ -55,7 +55,7 @@ struct HotCardsCarousel: View {
                         }
                     }
                     .padding(.horizontal, (geometry.size.width - 280) / 2)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 8)
                 }
                 .scrollDisabled(true)  // Disable natural scrolling - only gesture control
                 .gesture(
