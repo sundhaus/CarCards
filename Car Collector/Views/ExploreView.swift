@@ -35,7 +35,7 @@ struct ExploreView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
-            exploreService.fetchCardsIfNeeded()
+            exploreService.fetchAllCategories()
         }
     }
     
@@ -58,19 +58,9 @@ struct ExploreView: View {
                 
                 Spacer()
                 
-                VStack(spacing: 2) {
-                    Text("Explore")
-                        .font(.title3)
-                        .fontWeight(.bold)
-                    
-                    // Countdown timer
-                    if !exploreService.timeUntilNextRefresh.isEmpty {
-                        Text("Next refresh: \(exploreService.timeUntilNextRefresh)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                }
+                Text("Explore")
+                    .font(.title3)
+                    .fontWeight(.bold)
                 
                 Spacer()
                 
@@ -90,6 +80,11 @@ struct ExploreView: View {
     private var categoryScrollView: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(spacing: 24) {
+                // Featured row first (if we have featured cards)
+                if !exploreService.featuredCards.isEmpty {
+                    FeaturedRow(cards: exploreService.featuredCards)
+                }
+                
                 // Show each category that has cards
                 ForEach(sortedCategories, id: \.self) { category in
                     if let cards = exploreService.cardsByCategory[category], !cards.isEmpty {
@@ -141,40 +136,40 @@ struct ExploreView: View {
     }
 }
 
-// MARK: - Category Row
+// MARK: - Featured Row
 
-struct CategoryRow: View {
-    let category: VehicleCategory
+struct FeaturedRow: View {
     let cards: [FriendActivity]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Category header
-            HStack(spacing: 8) {
-                Text(category.emoji)
-                    .font(.title2)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(category.rawValue)
-                        .font(.headline)
-                        .foregroundStyle(.white)
+            // Featured header (tappable to open full view)
+            NavigationLink {
+                CategoryDetailView(category: nil, initialCards: cards)
+            } label: {
+                HStack(spacing: 8) {
+                    Text("🌟")
+                        .font(.title2)
                     
-                    Text(category.description)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Featured")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        
+                        Text("Top picks from the community")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.white.opacity(0.5))
                 }
-                
-                Spacer()
-                
-                Text("\(cards.count)")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(8)
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
+            .buttonStyle(.plain)
             
             // Horizontal scrolling cards
             ScrollView(.horizontal, showsIndicators: false) {
@@ -183,7 +178,61 @@ struct CategoryRow: View {
                         NavigationLink {
                             UserProfileView(userId: card.userId, username: card.username)
                         } label: {
-                            ExploreCardItem(card: card)
+                            ExploreCardItem(card: card, height: 220)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+}
+
+// MARK: - Category Row
+
+struct CategoryRow: View {
+    let category: VehicleCategory
+    let cards: [FriendActivity]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Category header (tappable to open full view)
+            NavigationLink {
+                CategoryDetailView(category: category, initialCards: cards)
+            } label: {
+                HStack(spacing: 8) {
+                    Text(category.emoji)
+                        .font(.title2)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(category.rawValue)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        
+                        Text(category.description)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .padding(.horizontal)
+            }
+            .buttonStyle(.plain)
+            
+            // Horizontal scrolling cards
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(cards) { card in
+                        NavigationLink {
+                            UserProfileView(userId: card.userId, username: card.username)
+                        } label: {
+                            ExploreCardItem(card: card, height: 220)
                         }
                         .buttonStyle(.plain)
                     }
@@ -198,6 +247,7 @@ struct CategoryRow: View {
 
 struct ExploreCardItem: View {
     let card: FriendActivity
+    let height: CGFloat
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
     
@@ -226,7 +276,7 @@ struct ExploreCardItem: View {
                         )
                 }
             }
-            .frame(width: 200, height: 112.5)
+            .frame(width: height * (16/9), height: height)
             .clipped()
             .cornerRadius(10)
             .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
@@ -259,7 +309,7 @@ struct ExploreCardItem: View {
                     }
                 }
             }
-            .frame(width: 200)
+            .frame(width: height * (16/9))
         }
         .onAppear {
             loadImage()
