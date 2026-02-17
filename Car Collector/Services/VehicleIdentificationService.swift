@@ -100,6 +100,25 @@ struct VehicleSpecs: Codable {
         // NEW: category is optional for backward compatibility
         category = try container.decodeIfPresent(VehicleCategory.self, forKey: .category)
     }
+    
+    // Custom encoder to ensure category is included
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(engine, forKey: .engine)
+        try container.encode(horsepower, forKey: .horsepower)
+        try container.encode(torque, forKey: .torque)
+        try container.encode(zeroToSixty, forKey: .zeroToSixty)
+        try container.encode(topSpeed, forKey: .topSpeed)
+        try container.encode(transmission, forKey: .transmission)
+        try container.encode(drivetrain, forKey: .drivetrain)
+        try container.encode(description, forKey: .description)
+        try container.encode(fetchedAt, forKey: .fetchedAt)
+        try container.encodeIfPresent(fetchedBy, forKey: .fetchedBy)
+        try container.encodeIfPresent(category, forKey: .category)
+        
+        print("📝 Encoding specs with category: \(category?.rawValue ?? "none")")
+    }
 }
 
 /// Result wrapper
@@ -360,7 +379,9 @@ class VehicleIdentificationService: ObservableObject {
         - transmission: (e.g. "6-speed manual", "8-speed auto")
         - drivetrain: RWD/FWD/AWD/4WD
         - description: Write a punchy 2-3 sentence summary that captures this car's character and appeal. Focus on what makes it special, its performance personality, and key strengths. Write in an engaging, FIFA Ultimate Team card style.
-        - category: Choose ONE of these categories that best fits this vehicle: "sports_car", "luxury", "suv", "truck", "electric", "classic", "muscle", "exotic", "economy", "off_road"
+        - category: Choose ONE category that best fits this vehicle. Must be exactly one of these values:
+          "Hypercar", "Supercar", "Sports Car", "Muscle", "Track", "Off-Road", "Rally", "SUV", "Truck", "Van", 
+          "Luxury", "Sedan", "Coupe", "Convertible", "Wagon", "Electric", "Hybrid", "Classic", "Concept", "Hatchback"
         
         Use "N/A" if unknown. No markdown.
         """
@@ -430,11 +451,18 @@ class VehicleIdentificationService: ObservableObject {
         // Parse the basic fields
         let dict = try JSONSerialization.jsonObject(with: data) as? [String: String] ?? [:]
         
+        print("🔍 AI Response JSON: \(dict)")
+        
         // Parse category if present
         let category: VehicleCategory?
         if let categoryString = dict["category"], categoryString != "N/A", !categoryString.isEmpty {
+            print("📋 Category string from AI: '\(categoryString)'")
             category = VehicleCategory(rawValue: categoryString)
+            if category == nil {
+                print("⚠️ Could not parse category '\(categoryString)' - not a valid VehicleCategory")
+            }
         } else {
+            print("⚠️ No category in AI response or it was 'N/A'")
             category = nil
         }
         
