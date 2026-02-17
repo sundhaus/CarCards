@@ -38,6 +38,17 @@ struct GarageView: View {
                         
                         Spacer()
                         
+                        // Migration button (backfill categories to friend_activities)
+                        Button(action: {
+                            Task {
+                                await runMigration()
+                            }
+                        }) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.title3)
+                                .foregroundStyle(.purple)
+                        }
+                        
                         // Refresh specs button (backfill categories)
                         Button(action: {
                             Task {
@@ -323,6 +334,16 @@ struct GarageView: View {
         print("\n✅ Bulk refresh complete!")
         print("   📊 Specs fetched: \(updatedCount) cards")
         print("   🔥 friend_activities updated: \(categoryUpdates) cards")
+    }
+    
+    // Run migration to backfill ALL friend_activities with categories from vehicleSpecs
+    private func runMigration() async {
+        print("\n🚀 MIGRATION: Starting full friend_activities category backfill")
+        
+        let migrationService = CategoryMigrationService()
+        await migrationService.migrateMissingCategories()
+        
+        print("✅ MIGRATION: Complete! Check Explore page now.")
     }
     
     // MARK: - Portrait Paged View
