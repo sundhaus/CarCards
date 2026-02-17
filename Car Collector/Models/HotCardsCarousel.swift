@@ -50,12 +50,12 @@ struct HotCardsCarousel: View {
                                     .blur(radius: getBlurRadius(for: cardGeometry, screenWidth: geometry.size.width))
                                     .scaleEffect(getScale(for: cardGeometry, screenWidth: geometry.size.width))
                             }
-                            .frame(width: 280, height: 220)
+                            .frame(width: 280, height: 170)
                             .id(item.id)
                         }
                     }
                     .padding(.horizontal, (geometry.size.width - 280) / 2)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 4)
                 }
                 .scrollDisabled(true)  // Disable natural scrolling - only gesture control
                 .gesture(
@@ -79,7 +79,7 @@ struct HotCardsCarousel: View {
                 }
             }
         }
-        .frame(height: 240)
+        .frame(height: 190)
     }
     
     // MARK: - Swipe Direction Handler
@@ -192,7 +192,7 @@ struct HotCardsCarousel: View {
                 .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 250)
+        .frame(height: 190)
     }
     
     private var emptyView: some View {
@@ -210,7 +210,7 @@ struct HotCardsCarousel: View {
                 .foregroundStyle(.white.opacity(0.6))
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 250)
+        .frame(height: 190)
     }
 }
 
@@ -220,65 +220,68 @@ struct HotCardItem: View {
     let card: FriendActivity
     
     var body: some View {
-        VStack(spacing: 12) {
-            // Card with proper format
-            ZStack {
-                // Custom frame/border
-                if let frameName = card.customFrame, frameName != "None" {
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(frameName == "White" ? Color.white : Color.black, lineWidth: 6)
-                        .frame(width: 280, height: 157.5)
-                }
-                
-                // Card image
-                cardImageView
-                    .frame(width: 268, height: 150.75)
-                    .clipped()
-                
-                // Card text overlay at bottom
-                VStack {
-                    Spacer()
-                    Text("\(card.cardMake) \(card.cardModel)")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .padding(10)
-                        .frame(maxWidth: .infinity)
-                        .background(.black.opacity(0.6))
-                }
-                .frame(width: 268, height: 150.75)
-            }
-            .frame(width: 280, height: 157.5)
-            .cornerRadius(10)
-            .overlay(
+        // Card with proper format
+        ZStack {
+            // Custom frame/border
+            if let frameName = card.customFrame, frameName != "None" {
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(.gray.opacity(0.3), lineWidth: 1)
-            )
-            
-            // Heat info below card
-            HStack(spacing: 8) {
-                Image(systemName: "flame.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.orange, .red],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                
-                Text("\(card.heatCount)")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
-                
-                Spacer()
-                
-                Text("'\(String(card.cardYear.suffix(2)))")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .stroke(frameName == "White" ? Color.white : Color.black, lineWidth: 6)
+                    .frame(width: 280, height: 157.5)
             }
-            .frame(width: 280)
-            .padding(.horizontal, 4)
+            
+            // Card image
+            cardImageView
+                .frame(width: 268, height: 150.75)
+                .clipped()
+            
+            // Heat counter on top-left corner
+            VStack {
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.orange, .red],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                        
+                        Text("\(card.heatCount)")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.7))
+                    .cornerRadius(8)
+                    .padding(8)
+                    
+                    Spacer()
+                }
+                Spacer()
+            }
+            .frame(width: 268, height: 150.75)
+            
+            // Card text overlay at bottom
+            VStack {
+                Spacer()
+                Text("\(card.cardMake) \(card.cardModel)")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .padding(10)
+                    .frame(maxWidth: .infinity)
+                    .background(.black.opacity(0.6))
+            }
+            .frame(width: 268, height: 150.75)
         }
+        .frame(width: 280, height: 157.5)
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(.gray.opacity(0.3), lineWidth: 1)
+        )
     }
     
     @ViewBuilder
