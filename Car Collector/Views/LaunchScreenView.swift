@@ -10,8 +10,8 @@ import SwiftUI
 struct LaunchScreenView: View {
     var body: some View {
         ZStack {
-            // Exact blue background matching the logo (#1F5AB5)
-            Color(red: 0.122, green: 0.353, blue: 0.710)
+            // Exact blue background matching the logo (#4F84C7)
+            Color(red: 0.310, green: 0.521, blue: 0.784)
                 .ignoresSafeArea()
             
             // Logo image
