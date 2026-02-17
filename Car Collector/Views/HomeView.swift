@@ -118,7 +118,7 @@ struct HomeView: View {
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text("LEVEL \(levelSystem.currentLevel)")
+                Text("LEVEL \(levelSystem.level)")
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white.opacity(0.7))
