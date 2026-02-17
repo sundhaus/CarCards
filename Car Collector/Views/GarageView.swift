@@ -222,60 +222,93 @@ struct GarageView: View {
         var vehicleCards = CardStorage.loadCards()
         let vehicleService = VehicleIdentificationService()
         var updatedCount = 0
+        var categoryUpdates = 0
         
         for (index, card) in vehicleCards.enumerated() {
-            // Skip if card already has complete specs with category
-            if let specs = card.specs, specs.category != nil {
-                print("⏭️ Skipping \(card.make) \(card.model) - already has category")
-                continue
-            }
+            print("\n📋 Card \(index + 1)/\(vehicleCards.count): \(card.make) \(card.model)")
+            print("   Has firebaseId: \(card.firebaseId != nil ? "✅" : "❌")")
+            print("   Has specs: \(card.specs != nil ? "✅" : "❌")")
+            print("   Has category: \(card.specs?.category != nil ? "✅ \(card.specs!.category!.rawValue)" : "❌")")
             
-            print("📥 Fetching specs for \(card.make) \(card.model) (\(index + 1)/\(vehicleCards.count))")
+            // Fetch specs if missing or missing category
+            let needsSpecsFetch = card.specs == nil || card.specs?.category == nil
             
-            do {
-                let specs = try await vehicleService.fetchSpecs(
-                    make: card.make,
-                    model: card.model,
-                    year: card.year
-                )
+            if needsSpecsFetch {
+                print("📥 Fetching specs for \(card.make) \(card.model)")
                 
-                // Update card with specs
-                let updatedCard = SavedCard(
-                    id: card.id,
-                    image: card.image ?? UIImage(),
-                    make: card.make,
-                    model: card.model,
-                    color: card.color,
-                    year: card.year,
-                    specs: specs,
-                    capturedBy: card.capturedBy,
-                    capturedLocation: card.capturedLocation,
-                    previousOwners: card.previousOwners,
-                    customFrame: card.customFrame,
-                    firebaseId: card.firebaseId
-                )
+                do {
+                    let specs = try await vehicleService.fetchSpecs(
+                        make: card.make,
+                        model: card.model,
+                        year: card.year
+                    )
+                    
+                    print("   ✅ Got specs with category: \(specs.category?.rawValue ?? "NONE!")")
+                    
+                    // Update card with specs
+                    let updatedCard = SavedCard(
+                        id: card.id,
+                        image: card.image ?? UIImage(),
+                        make: card.make,
+                        model: card.model,
+                        color: card.color,
+                        year: card.year,
+                        specs: specs,
+                        capturedBy: card.capturedBy,
+                        capturedLocation: card.capturedLocation,
+                        previousOwners: card.previousOwners,
+                        customFrame: card.customFrame,
+                        firebaseId: card.firebaseId
+                    )
+                    
+                    vehicleCards[index] = updatedCard
+                    updatedCount += 1
+                    
+                    // Update category in friend_activities if we have both firebaseId and category
+                    if let firebaseId = card.firebaseId {
+                        if let category = specs.category {
+                            print("   📤 Updating friend_activities with category: \(category.rawValue)")
+                            do {
+                                try await FriendsService.shared.updateActivityCategory(
+                                    cardId: firebaseId,
+                                    category: category
+                                )
+                                categoryUpdates += 1
+                                print("   ✅ Updated category in friend_activities")
+                            } catch {
+                                print("   ❌ Failed to update friend_activities: \(error)")
+                            }
+                        } else {
+                            print("   ⚠️ Specs returned but no category!")
+                        }
+                    } else {
+                        print("   ⚠️ Card has no firebaseId - can't update friend_activities")
+                        print("   💡 This card was saved before cloud sync was enabled")
+                    }
+                    
+                    // Small delay to avoid rate limiting
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                    
+                } catch {
+                    print("   ❌ Failed to fetch specs: \(error)")
+                }
+            } else {
+                print("   ⏭️ Skipping - already has specs with category")
                 
-                vehicleCards[index] = updatedCard
-                updatedCount += 1
-                
-                // Update category in friend_activities
-                if let firebaseId = card.firebaseId, let category = specs.category {
+                // Even if we skip fetching, check if friend_activities needs updating
+                if let firebaseId = card.firebaseId, let category = card.specs?.category {
+                    print("   🔍 Checking if friend_activities has category...")
                     do {
                         try await FriendsService.shared.updateActivityCategory(
                             cardId: firebaseId,
                             category: category
                         )
-                        print("✅ Updated category in Firebase for \(card.make) \(card.model)")
+                        categoryUpdates += 1
+                        print("   ✅ Ensured category in friend_activities")
                     } catch {
-                        print("⚠️ Failed to update Firebase category: \(error)")
+                        print("   ⚠️ Friend_activities update skipped or failed: \(error)")
                     }
                 }
-                
-                // Small delay to avoid rate limiting
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-                
-            } catch {
-                print("❌ Failed to fetch specs for \(card.make) \(card.model): \(error)")
             }
         }
         
@@ -287,7 +320,9 @@ struct GarageView: View {
             loadAllCards()
         }
         
-        print("✅ Bulk refresh complete: Updated \(updatedCount) cards")
+        print("\n✅ Bulk refresh complete!")
+        print("   📊 Specs fetched: \(updatedCount) cards")
+        print("   🔥 friend_activities updated: \(categoryUpdates) cards")
     }
     
     // MARK: - Portrait Paged View
