@@ -439,7 +439,8 @@ struct FriendActivityCard: View {
                             .cornerRadius(12)
                     }
                 }
-            }  // Close if/else for !isFlipped
+            }  // Close else (back card)
+            }  // Close outer ZStack (line 294)
             .padding(.horizontal)
             .task {
                 await loadCardImage()
@@ -454,7 +455,6 @@ struct FriendActivityCard: View {
                     loadHeatState()
                 }
             }
-            }  // Close main card preview ZStack
             
             // Engagement buttons - Heat system
             HStack(spacing: 20) {
