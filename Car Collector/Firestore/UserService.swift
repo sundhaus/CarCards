@@ -73,6 +73,7 @@ struct UserProfile: Codable, Identifiable {
     }
 }
 
+@MainActor
 class UserService: ObservableObject {
     static let shared = UserService()
     

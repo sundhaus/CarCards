@@ -145,7 +145,7 @@ class CategoryMigrationService: ObservableObject {
         """
         
         do {
-            let response = try await model.generateContent(prompt)
+            let response = try await self.model.generateContent(prompt)
             guard let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines) else {
                 return nil
             }

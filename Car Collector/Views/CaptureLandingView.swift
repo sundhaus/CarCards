@@ -205,7 +205,7 @@ struct CaptureLandingView: View {
                                     CardStorage.saveDriverCards(localCards)
                                     
                                     // Award XP
-                                    await levelSystem.addXP(10)
+                                    levelSystem.addXP(10)
                                     
                                     print("✅ Driver card saved successfully")
                                     
@@ -260,7 +260,7 @@ struct CaptureLandingView: View {
                                     CardStorage.saveLocationCards(localCards)
                                     
                                     // Award XP
-                                    await levelSystem.addXP(10)
+                                    levelSystem.addXP(10)
                                     
                                     print("✅ Location card saved successfully")
                                     

@@ -31,7 +31,7 @@ class HotCardsService: ObservableObject {
     // Calculate next refresh time (noon or midnight EST)
     private func nextRefreshTime() -> Date {
         let calendar = Calendar.current
-        var estTimeZone = TimeZone(identifier: "America/New_York")!
+        let estTimeZone = TimeZone(identifier: "America/New_York")!
         
         // Get current time in EST
         var components = calendar.dateComponents(in: estTimeZone, from: Date())
