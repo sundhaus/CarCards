@@ -13,11 +13,11 @@ struct GarageView: View {
     @State private var allCards: [AnyCard] = []
     @State private var cardsPerRow = 2 // 1 or 2
     @State private var currentPage = 0
-    @State private var showActionSheet = false
-    @State private var actionSheetCard: AnyCard?
     @State private var showCardDetail = false
     @State private var selectedCard: AnyCard?
     @State private var showCustomize = false
+    @State private var showContextMenu = false
+    @State private var contextMenuCard: AnyCard?
     
     var body: some View {
         NavigationStack {
@@ -86,7 +86,26 @@ struct GarageView: View {
                         portraitPagedView
                     }
                 }
-                .blur(radius: showCardDetail ? 10 : 0)
+                .blur(radius: (showCardDetail || showContextMenu) ? 10 : 0)
+                
+                // Context menu overlay
+                if showContextMenu, let card = contextMenuCard {
+                    CardContextMenuOverlay(
+                        card: card,
+                        isShowing: $showContextMenu,
+                        onCustomize: {
+                            showContextMenu = false
+                            selectedCard = card
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                showCustomize = true
+                            }
+                        },
+                        onQuickSell: {
+                            showContextMenu = false
+                            quickSellCard(card)
+                        }
+                    )
+                }
                 
                 // Full screen card detail overlay
                 if showCardDetail, let card = selectedCard {
@@ -119,30 +138,6 @@ struct GarageView: View {
                         loadAllCards()
                     }
                 )
-            }
-            .confirmationDialog("Card Options", isPresented: $showActionSheet, presenting: actionSheetCard) { card in
-                Button("View Full Screen") {
-                    selectedCard = card
-                    withAnimation {
-                        showCardDetail = true
-                    }
-                }
-                
-                // Customize only for vehicle cards
-                if case .vehicle = card {
-                    Button("Customize") {
-                        selectedCard = card
-                        showCustomize = true
-                    }
-                }
-                
-                Button("Quick Sell - 250 coins") {
-                    quickSellCard(card)
-                }
-                
-                Button("Cancel", role: .cancel) {}
-            } message: { card in
-                Text(card.displayTitle)
             }
             .fullScreenCover(isPresented: $showCustomize) {
                 if let card = selectedCard, case .vehicle(let vehicleCard) = card {
@@ -345,8 +340,18 @@ struct GarageView: View {
                             ForEach(pageCards) { card in
                                 UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
                                     .onTapGesture {
-                                        actionSheetCard = card
-                                        showActionSheet = true
+                                        selectedCard = card
+                                        withAnimation {
+                                            showCardDetail = true
+                                        }
+                                    }
+                                    .onLongPressGesture(minimumDuration: 0.5) {
+                                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                        impactFeedback.impactOccurred()
+                                        contextMenuCard = card
+                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                            showContextMenu = true
+                                        }
                                     }
                             }
                         }
@@ -362,6 +367,119 @@ struct GarageView: View {
             .tabViewStyle(.page)
             .indexViewStyle(.page(backgroundDisplayMode: .always))
             .padding(.bottom, 20)
+        }
+    }
+}
+
+// MARK: - Card Context Menu Overlay
+
+struct CardContextMenuOverlay: View {
+    let card: AnyCard
+    @Binding var isShowing: Bool
+    let onCustomize: () -> Void
+    let onQuickSell: () -> Void
+    
+    @State private var menuVisible = false
+    
+    private var isVehicle: Bool {
+        if case .vehicle = card { return true }
+        return false
+    }
+    
+    var body: some View {
+        ZStack {
+            // Dimmed background - tap to dismiss
+            Color.black.opacity(0.6)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    dismissMenu()
+                }
+            
+            // Card + menu row
+            HStack(spacing: 16) {
+                // Card preview
+                UnifiedCardView(card: card, isLargeSize: false)
+                    .frame(width: 200)
+                    .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                
+                // Menu options sliding in from right
+                VStack(spacing: 12) {
+                    if isVehicle {
+                        contextMenuButton(
+                            icon: "paintbrush.fill",
+                            label: "Customize",
+                            color: .blue
+                        ) {
+                            onCustomize()
+                        }
+                    }
+                    
+                    contextMenuButton(
+                        icon: "dollarsign.circle.fill",
+                        label: "Quick Sell",
+                        subtitle: "250 coins",
+                        color: .orange
+                    ) {
+                        onQuickSell()
+                    }
+                    
+                    contextMenuButton(
+                        icon: "xmark.circle.fill",
+                        label: "Cancel",
+                        color: .gray
+                    ) {
+                        dismissMenu()
+                    }
+                }
+                .offset(x: menuVisible ? 0 : 80)
+                .opacity(menuVisible ? 1 : 0)
+            }
+        }
+        .transition(.opacity)
+        .onAppear {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                menuVisible = true
+            }
+        }
+    }
+    
+    private func contextMenuButton(
+        icon: String,
+        label: String,
+        subtitle: String? = nil,
+        color: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 28))
+                    .foregroundStyle(color)
+                    .frame(width: 60, height: 60)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                
+                Text(label)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+        }
+    }
+    
+    private func dismissMenu() {
+        withAnimation(.easeIn(duration: 0.2)) {
+            menuVisible = false
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation {
+                isShowing = false
+            }
         }
     }
 }
