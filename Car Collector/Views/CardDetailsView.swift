@@ -112,7 +112,6 @@ struct CardDetailsView: View {
             if !showCardBack {
                 // Front of card - FIFA style
                 CardDetailsFrontView(card: card)
-                    .frame(maxWidth: 500)
             } else {
                 if isFetchingSpecs {
                     specsLoadingView
@@ -683,6 +682,7 @@ struct CardDetailsFrontView: View {
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(Color.black, lineWidth: 3)
         }
+        .frame(maxWidth: 500)
         .aspectRatio(16/9, contentMode: .fit)
         .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
     }
