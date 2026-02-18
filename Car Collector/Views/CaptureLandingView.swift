@@ -10,6 +10,7 @@ import SwiftUI
 struct CaptureLandingView: View {
     var isLandscape: Bool = false
     var levelSystem: LevelSystem
+    @Binding var selectedTab: Int
     var onCardSaved: ((SavedCard) -> Void)? = nil
     @State private var showCamera = false
     @State private var captureType: CaptureType = .vehicle
@@ -27,8 +28,6 @@ struct CaptureLandingView: View {
     
     // Services
     @ObservedObject private var locationService = LocationService.shared
-    
-    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {
@@ -100,27 +99,6 @@ struct CaptureLandingView: View {
                 }
                 .padding(.bottom, isLandscape ? 0 : 80)
                 .padding(.trailing, isLandscape ? 100 : 0)
-                
-                // Close button
-                VStack {
-                    HStack {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
-                                .background(Color.headerBackground)
-                                .clipShape(Circle())
-                        }
-                        .padding(20)
-                        
-                        Spacer()
-                    }
-                    Spacer()
-                }
             }
             // Camera for all capture types
             .fullScreenCover(isPresented: $showCamera) {
@@ -131,7 +109,7 @@ struct CaptureLandingView: View {
                         if captureType == .vehicle {
                             onCardSaved?(card)
                             showCamera = false
-                            dismiss()
+                            selectedTab = 4
                         } else {
                             // Driver or Location - save image and show form
                             capturedImage = card.image
@@ -294,7 +272,7 @@ struct CaptureLandingView: View {
                         showWrongVehicleButton: false // Hide "Not your vehicle" button
                     )
                     .onDisappear {
-                        dismiss() // Dismiss CaptureLandingView when preview is dismissed
+                        selectedTab = 4 // Dismiss CaptureLandingView when preview is dismissed
                     }
                 }
             }
@@ -303,5 +281,5 @@ struct CaptureLandingView: View {
 }
 
 #Preview {
-    CaptureLandingView(levelSystem: LevelSystem())
+    CaptureLandingView(levelSystem: LevelSystem(), selectedTab: .constant(2))
 }

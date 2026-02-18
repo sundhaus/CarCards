@@ -8,9 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedTab = 0
+    @State private var selectedTab = 1 // Start on Home
     @State private var showCamera = false
-    @State private var showCaptureLanding = false // New capture landing
     @State private var savedCards: [SavedCard] = CardStorage.loadCards()
     @State private var showCardDetail = false
     @State private var selectedCard: SavedCard?
@@ -27,7 +26,12 @@ struct ContentView: View {
             
             ZStack {
                 TabView(selection: $selectedTab) {
-                    // Home Tab
+                    // Tab 0: Shop
+                    ShopView(isLandscape: landscape)
+                        .ignoresSafeArea(.all)
+                        .tag(0)
+                    
+                    // Tab 1: Home
                     HomeView(
                         isLandscape: landscape,
                         showProfile: $showProfile,
@@ -35,39 +39,74 @@ struct ContentView: View {
                         totalCards: savedCards.count
                     )
                     .padding(.top, 60)
-                    .transition(.identity) // No transition animation
-                    .tag(0)
+                    .tag(1)
                     
-                    // Garage Tab - Shows all card types (vehicles, drivers, locations)
-                    GarageView()
-                        .padding(.top, landscape ? 0 : 60)
-                        .tag(1)
+                    // Tab 2: Capture (solid page)
+                    CaptureLandingView(
+                        isLandscape: landscape,
+                        levelSystem: levelSystem,
+                        selectedTab: $selectedTab,
+                        onCardSaved: { card in
+                            // Save locally
+                            savedCards.append(card)
+                            CardStorage.saveCards(savedCards)
+                            
+                            // Save to cloud
+                            if let image = card.image {
+                                Task {
+                                    do {
+                                        let cloudCard = try await CardService.shared.saveCard(
+                                            image: image,
+                                            make: card.make,
+                                            model: card.model,
+                                            color: card.color,
+                                            year: card.year
+                                        )
+                                        
+                                        // Update local card with Firebase ID
+                                        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                            var updatedCard = savedCards[index]
+                                            updatedCard.firebaseId = cloudCard.id
+                                            savedCards[index] = updatedCard
+                                            CardStorage.saveCards(savedCards)
+                                            print("🔗 Linked local card to Firebase ID: \(cloudCard.id)")
+                                        }
+                                    } catch {
+                                        print("❌ Cloud save failed: \(error)")
+                                    }
+                                }
+                            }
+                            
+                            // Award XP for capturing a card
+                            levelSystem.addXP(10)
+                        }
+                    )
+                    .tag(2)
                     
-                    // Marketplace Tab
+                    // Tab 3: Marketplace
                     MarketplaceLandingView(
                         isLandscape: landscape,
                         savedCards: savedCards,
                         onCardListed: { card in
-                            // Remove card from local savedCards when listed
                             if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
                                 savedCards.remove(at: index)
                                 CardStorage.saveCards(savedCards)
                             }
                         }
                     )
-                        .padding(.top, 60)
-                        .tag(2)
+                    .padding(.top, 60)
+                    .tag(3)
                     
-                    // Shop Tab
-                    ShopView(isLandscape: landscape)
-                        .ignoresSafeArea(.all) // Extend to full screen
-                        .tag(3)
+                    // Tab 4: Garage
+                    GarageView()
+                        .padding(.top, landscape ? 0 : 60)
+                        .tag(4)
                 }
-                .toolbar(.hidden, for: .tabBar) // Hide native iOS tab bar
-                .animation(nil, value: selectedTab) // Disable tab transition animation
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .toolbar(.hidden, for: .tabBar)
                 
                 // Level Header - show on main hub pages (not camera/detail views)
-                if !showCamera && !showCardDetail && !showCaptureLanding {
+                if !showCamera && !showCardDetail && selectedTab != 2 {
                     VStack {
                         LevelHeader(
                             levelSystem: levelSystem,
@@ -93,11 +132,10 @@ struct ContentView: View {
                         VStack(spacing: 0) {
                             // Garage button (top in landscape)
                             Button(action: {
-                                navigationController.resetToRoot(tab: 1)
-                                selectedTab = 1
-                                print("🔧 Garage button tapped, selectedTab = \(selectedTab)")
+                                navigationController.resetToRoot(tab: 4)
+                                selectedTab = 4
                             }) {
-                                let isActive = selectedTab == 1
+                                let isActive = selectedTab == 4
                                 Image(systemName: "wrench.and.screwdriver")
                                     .font(.title2)
                                     .foregroundStyle(isActive ? Color.blue : Color.gray)
@@ -105,17 +143,17 @@ struct ContentView: View {
                                     .padding(.horizontal, 8)
                             }
                             .onChange(of: selectedTab) { oldValue, newValue in
-                                print("🔧 Garage button saw tab change: \(oldValue) → \(newValue), should be \(newValue == 1 ? "blue" : "gray")")
+                                print("🔧 Garage button saw tab change: \(oldValue) → \(newValue)")
                             }
                             
                             // Marketplace button
                             Button(action: {
-                                navigationController.resetToRoot(tab: 2)
-                                selectedTab = 2
+                                navigationController.resetToRoot(tab: 3)
+                                selectedTab = 3
                             }) {
                                 Image(systemName: "chart.line.uptrend.xyaxis")
                                     .font(.title2)
-                                    .foregroundStyle(selectedTab == 2 ? .blue : .gray)
+                                    .foregroundStyle(selectedTab == 3 ? .blue : .gray)
                                     .frame(maxHeight: .infinity)
                                     .padding(.horizontal, 8)
                             }
@@ -126,24 +164,24 @@ struct ContentView: View {
                             
                             // Home button
                             Button(action: {
-                                navigationController.resetToRoot(tab: 0)
-                                selectedTab = 0
+                                navigationController.resetToRoot(tab: 1)
+                                selectedTab = 1
                             }) {
                                 Image(systemName: "house")
                                     .font(.title2)
-                                    .foregroundStyle(selectedTab == 0 ? .blue : .gray)
+                                    .foregroundStyle(selectedTab == 1 ? .blue : .gray)
                                     .frame(maxHeight: .infinity)
                                     .padding(.horizontal, 8)
                             }
                             
                             // Shop button (bottom in landscape)
                             Button(action: {
-                                navigationController.resetToRoot(tab: 3)
-                                selectedTab = 3
+                                navigationController.resetToRoot(tab: 0)
+                                selectedTab = 0
                             }) {
                                 Image(systemName: "bag")
                                     .font(.title2)
-                                    .foregroundStyle(selectedTab == 3 ? .blue : .gray)
+                                    .foregroundStyle(selectedTab == 0 ? .blue : .gray)
                                     .frame(maxHeight: .infinity)
                                     .padding(.horizontal, 8)
                             }
@@ -157,7 +195,7 @@ struct ContentView: View {
                     .overlay(
                         // Capture button overlaid on center
                         Button(action: {
-                            showCaptureLanding = true
+                            selectedTab = 2
                         }) {
                             Image(systemName: "camera.fill")
                                 .font(.title)
@@ -187,24 +225,24 @@ struct ContentView: View {
                             HStack(spacing: 0) {
                                 // Shop button (left in portrait)
                                 Button(action: {
-                                    navigationController.resetToRoot(tab: 3)
-                                    selectedTab = 3
+                                    navigationController.resetToRoot(tab: 0)
+                                    selectedTab = 0
                                 }) {
                                     Image(systemName: "bag")
                                         .font(.title2)
-                                        .foregroundStyle(selectedTab == 3 ? .blue : .gray)
+                                        .foregroundStyle(selectedTab == 0 ? .blue : .gray)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 8)
                                 }
                                 
                                 // Home button
                                 Button(action: {
-                                    navigationController.resetToRoot(tab: 0)
-                                    selectedTab = 0
+                                    navigationController.resetToRoot(tab: 1)
+                                    selectedTab = 1
                                 }) {
                                     Image(systemName: "house")
                                         .font(.title2)
-                                        .foregroundStyle(selectedTab == 0 ? .blue : .gray)
+                                        .foregroundStyle(selectedTab == 1 ? .blue : .gray)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 8)
                                 }
@@ -215,24 +253,24 @@ struct ContentView: View {
                                 
                                 // Marketplace button
                                 Button(action: {
-                                    navigationController.resetToRoot(tab: 2)
-                                    selectedTab = 2
+                                    navigationController.resetToRoot(tab: 3)
+                                    selectedTab = 3
                                 }) {
                                     Image(systemName: "chart.line.uptrend.xyaxis")
                                         .font(.title2)
-                                        .foregroundStyle(selectedTab == 2 ? .blue : .gray)
+                                        .foregroundStyle(selectedTab == 3 ? .blue : .gray)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 8)
                                 }
                                 
                                 // Garage button (right in portrait)
                                 Button(action: {
-                                    navigationController.resetToRoot(tab: 1)
-                                    selectedTab = 1
+                                    navigationController.resetToRoot(tab: 4)
+                                    selectedTab = 4
                                 }) {
                                     Image(systemName: "wrench.and.screwdriver")
                                         .font(.title2)
-                                        .foregroundStyle(selectedTab == 1 ? .blue : .gray)
+                                        .foregroundStyle(selectedTab == 4 ? .blue : .gray)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 8)
                                 }
@@ -245,7 +283,7 @@ struct ContentView: View {
                         .overlay(
                             // Capture button overlaid on center
                             Button(action: {
-                                showCaptureLanding = true
+                                selectedTab = 2
                             }) {
                                 Image(systemName: "camera.fill")
                                     .font(.title)
@@ -283,53 +321,6 @@ struct ContentView: View {
                         totalCards: savedCards.count
                     )
                 }
-            }
-            .fullScreenCover(isPresented: $showCaptureLanding) {
-                CaptureLandingView(
-                    isLandscape: geometry.size.width > geometry.size.height,
-                    levelSystem: levelSystem,
-                    onCardSaved: { card in
-                        // Save locally
-                        savedCards.append(card)
-                        CardStorage.saveCards(savedCards)
-                        
-                        // Save to cloud
-                        if let image = card.image {
-                            Task {
-                                do {
-                                    let cloudCard = try await CardService.shared.saveCard(
-                                        image: image,
-                                        make: card.make,
-                                        model: card.model,
-                                        color: card.color,
-                                        year: card.year
-                                    )
-                                    
-                                    print("☁️ CloudCard created with ID: \(cloudCard.id)")
-                                    
-                                    // Update local card with Firebase ID
-                                    if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                        var updatedCard = savedCards[index]
-                                        updatedCard.firebaseId = cloudCard.id
-                                        savedCards[index] = updatedCard
-                                        CardStorage.saveCards(savedCards)
-                                        print("🔗 Linked local card \(card.id) to Firebase ID: \(cloudCard.id)")
-                                        print("✅ Card now has firebaseId - frame sync will work!")
-                                    } else {
-                                        print("❌ ERROR: Could not find card in savedCards array!")
-                                    }
-                                    
-                                    print("✅ Card saved to cloud with ID: \(cloudCard.id)")
-                                } catch {
-                                    print("❌ Cloud save failed: \(error)")
-                                }
-                            }
-                        }
-                        
-                        // Award XP for capturing a card
-                        levelSystem.addXP(10)
-                    }
-                )
             }
             .fullScreenCover(isPresented: $showCamera) {
                 CameraView(
@@ -378,11 +369,7 @@ struct ContentView: View {
                         showCamera = false
                         
                         // Return to appropriate orientation for current tab
-                        if selectedTab == 1 {
-                            OrientationManager.unlockOrientation()
-                        } else {
-                            OrientationManager.lockToPortrait()
-                        }
+                        OrientationManager.lockToPortrait()
                     }
                 )
             }
@@ -394,12 +381,7 @@ struct ContentView: View {
                 OrientationManager.lockToPortrait()
             }
             .onAppear {
-                // Set initial orientation based on starting tab
-                if selectedTab == 1 {
-                    OrientationManager.unlockOrientation()
-                } else {
-                    OrientationManager.lockToPortrait()
-                }
+                OrientationManager.lockToPortrait()
             }
         }
     }
@@ -408,39 +390,39 @@ struct ContentView: View {
     
     private func getIndicatorOffsetPortrait() -> CGFloat {
         // Calculate horizontal offset for portrait bottom nav
-        // Layout: Shop(3) | Home(0) | [Camera] | Market(2) | Garage(1)
+        // Layout: Shop(0) | Home(1) | [Camera=2] | Market(3) | Garage(4)
         let screenWidth = UIScreen.main.bounds.width
         let buttonWidth = (screenWidth - 32 - 70) / 4 // Subtract padding and camera space, divide by 4 buttons
         
         switch selectedTab {
-        case 3: // Shop (far left)
+        case 0: // Shop (far left)
             return -buttonWidth * 1.5 - 35
-        case 0: // Home (left of center)
+        case 1: // Home (left of center)
             return -buttonWidth * 0.5 - 35
-        case 2: // Marketplace (right of center)
+        case 3: // Marketplace (right of center)
             return buttonWidth * 0.5 + 35
-        case 1: // Garage (far right)
+        case 4: // Garage (far right)
             return buttonWidth * 1.5 + 35
-        default:
+        default: // Capture (2) - hide indicator
             return 0
         }
     }
     
     private func getIndicatorOffsetLandscape() -> CGFloat {
         // Calculate vertical offset for landscape side nav
-        // Layout (top to bottom): Garage(1) | Market(2) | [Camera] | Home(0) | Shop(3)
+        // Layout (top to bottom): Garage(4) | Market(3) | [Camera=2] | Home(1) | Shop(0)
         let buttonHeight: CGFloat = 60 // Approximate height per button
         
         switch selectedTab {
-        case 1: // Garage (top)
+        case 4: // Garage (top)
             return -buttonHeight * 1.5
-        case 2: // Marketplace (second from top)
+        case 3: // Marketplace (second from top)
             return -buttonHeight * 0.5
-        case 0: // Home (second from bottom)
+        case 1: // Home (second from bottom)
             return buttonHeight * 0.5
-        case 3: // Shop (bottom)
+        case 0: // Shop (bottom)
             return buttonHeight * 1.5
-        default:
+        default: // Capture (2) - hide indicator
             return 0
         }
     }
