@@ -627,7 +627,7 @@ struct UnifiedCardDetailView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: cardWidth, height: cardHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
+                        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.05))
                         .shadow(radius: 10)
                         .rotation3DEffect(
                             .degrees(flipDegrees),
@@ -771,7 +771,7 @@ struct CardBackView: View {
                     .allowsHitTesting(false)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.05))
         .shadow(radius: 10)
         .rotation3DEffect(
             .degrees(180),
@@ -845,7 +845,7 @@ struct VehicleCardView: View {
     var body: some View {
         ZStack {
             // Card background with gradient
-            RoundedRectangle(cornerRadius: cardHeight * 0.04)
+            RoundedRectangle(cornerRadius: cardHeight * 0.05)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -919,7 +919,7 @@ struct VehicleCardView: View {
             }
         }
         .frame(width: cardWidth, height: cardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.05))
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
     }
 }
@@ -986,7 +986,7 @@ struct SimpleCardView: View {
                     .allowsHitTesting(false)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: (isLargeSize ? 195.75 : 92.4) * 0.04))
+        .clipShape(RoundedRectangle(cornerRadius: (isLargeSize ? 195.75 : 92.4) * 0.05))
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
     }
     
