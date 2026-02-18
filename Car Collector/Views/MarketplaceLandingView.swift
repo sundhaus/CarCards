@@ -19,9 +19,6 @@ struct MarketplaceLandingView: View {
     var body: some View {
         NavigationStack(path: $navigationController.marketplaceNavigationPath) {
             ZStack {
-                // Light background
-                AppBackground()
-                
                 VStack(spacing: 0) {
                     // Header
                     VStack(spacing: 8) {
@@ -81,6 +78,7 @@ struct MarketplaceLandingView: View {
                 .padding(.bottom, isLandscape ? 0 : 80)
                 .padding(.trailing, isLandscape ? 100 : 0)
             }
+            .background { AppBackground() }
             .navigationDestination(isPresented: $showBuySell) {
                 MarketplaceBuySellView(
                     isLandscape: isLandscape,

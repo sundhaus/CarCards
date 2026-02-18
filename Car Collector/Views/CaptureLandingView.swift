@@ -32,9 +32,6 @@ struct CaptureLandingView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                AppBackground()
-                
                 VStack(spacing: 0) {
                     // Header
                     VStack(spacing: 8) {
@@ -99,6 +96,7 @@ struct CaptureLandingView: View {
                 .padding(.bottom, isLandscape ? 0 : 80)
                 .padding(.trailing, isLandscape ? 100 : 0)
             }
+            .background { AppBackground() }
             // Camera for all capture types
             .fullScreenCover(isPresented: $showCamera) {
                 CameraView(

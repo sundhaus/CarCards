@@ -22,9 +22,6 @@ struct GarageView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background with spline
-                AppBackground()
-                
                 VStack(spacing: 0) {
                     // Custom header with title and toggle on same line
                     HStack {
@@ -118,6 +115,7 @@ struct GarageView: View {
                     )
                 }
             }
+            .background { AppBackground() }
             .onAppear {
                 OrientationManager.lockOrientation(.portrait)
                 loadAllCards()

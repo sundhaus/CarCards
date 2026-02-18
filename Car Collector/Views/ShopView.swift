@@ -11,25 +11,22 @@ struct ShopView: View {
     var isLandscape: Bool = false
     
     var body: some View {
-        ZStack {
-            // Background with spline
-            AppBackground()
-            
-            VStack {
-                Spacer()
-                Image(systemName: "bag.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.green)
-                Text("Shop")
-                    .font(.title)
-                    .fontWeight(.semibold)
-                    .padding(.top, 8)
-                Text("Coming soon")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
+        VStack {
+            Spacer()
+            Image(systemName: "bag.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.green)
+            Text("Shop")
+                .font(.title)
+                .fontWeight(.semibold)
+                .padding(.top, 8)
+            Text("Coming soon")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background { AppBackground() }
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
         }
