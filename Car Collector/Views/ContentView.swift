@@ -39,7 +39,7 @@ struct ContentView: View {
                     .tag(0)
                     
                     // Garage Tab - Shows all card types (vehicles, drivers, locations)
-                    GarageView(isLandscape: landscape)
+                    GarageView()
                         .padding(.top, landscape ? 0 : 60)
                         .tag(1)
                     

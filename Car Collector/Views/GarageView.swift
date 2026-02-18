@@ -9,7 +9,6 @@
 import SwiftUI
 
 struct GarageView: View {
-    var isLandscape: Bool = false
     @State private var showCamera = false
     @State private var allCards: [AnyCard] = []
     @State private var cardsPerRow = 2 // 1 or 2
@@ -19,7 +18,6 @@ struct GarageView: View {
     @State private var showCardDetail = false
     @State private var selectedCard: AnyCard?
     @State private var showCustomize = false
-    @State private var forceOrientationUpdate = false
     
     var body: some View {
         NavigationStack {
@@ -69,7 +67,7 @@ struct GarageView: View {
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.top, isLandscape ? 20 : 8)
+                    .padding(.top, 8)
                     .padding(.bottom, 8)
                     .background(.ultraThinMaterial)
                     
@@ -84,38 +82,17 @@ struct GarageView: View {
                         }
                         .frame(maxHeight: .infinity)
                     } else {
-                        if isLandscape {
-                            // Landscape: Continuous horizontal scroll
-                            landscapeScrollView
-                        } else {
-                            // Portrait: Paged vertical scroll
-                            portraitPagedView
-                        }
+                        // Portrait: Paged vertical scroll
+                        portraitPagedView
                     }
                 }
                 .blur(radius: showCardDetail ? 10 : 0)
-                
-                // Landscape blur gradient on right side
-                if isLandscape {
-                    HStack(spacing: 0) {
-                        Spacer()
-                        LinearGradient(
-                            colors: [.clear, .clear, .black.opacity(0.7), .black, .black],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .frame(width: 200)
-                        .allowsHitTesting(false)
-                    }
-                    .ignoresSafeArea()
-                }
                 
                 // Full screen card detail overlay
                 if showCardDetail, let card = selectedCard {
                     UnifiedCardDetailView(
                         card: card,
                         isShowing: $showCardDetail,
-                        forceOrientationUpdate: $forceOrientationUpdate,
                         onCardUpdated: { updatedCard in
                             // Refresh cards after update
                             loadAllCards()
@@ -124,7 +101,11 @@ struct GarageView: View {
                 }
             }
             .onAppear {
+                OrientationManager.lockOrientation(.portrait)
                 loadAllCards()
+            }
+            .onDisappear {
+                OrientationManager.unlockOrientation()
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CardSaved"))) { _ in
                 print("📬 Garage received card saved notification")
@@ -383,26 +364,6 @@ struct GarageView: View {
             .padding(.bottom, 20)
         }
     }
-    
-    // MARK: - Landscape Scroll View
-    
-    private var landscapeScrollView: some View {
-        ScrollView(.horizontal, showsIndicators: true) {
-            LazyHGrid(rows: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
-                ForEach(allCards) { card in
-                    UnifiedCardView(card: card, isLargeSize: false)
-                        .frame(width: 340)
-                        .onTapGesture {
-                            actionSheetCard = card
-                            showActionSheet = true
-                        }
-                }
-            }
-            .padding()
-            .padding(.top, 60) // Adjusted for compact header
-            .padding(.trailing, 100)
-        }
-    }
 }
 
 // MARK: - Unified Card Detail View
@@ -410,10 +371,7 @@ struct GarageView: View {
 struct UnifiedCardDetailView: View {
     let card: AnyCard
     @Binding var isShowing: Bool
-    @Binding var forceOrientationUpdate: Bool
     let onCardUpdated: (AnyCard) -> Void
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    @Environment(\.verticalSizeClass) var verticalSizeClass
     
     @State private var isFlipped = false
     @State private var flipDegrees: Double = 0
@@ -518,8 +476,6 @@ struct UnifiedCardDetailView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            let isDeviceLandscape = geometry.size.width > geometry.size.height
-            
             ZStack {
                 // Dimmed background
                 Color.black.opacity(0.7)
@@ -528,20 +484,15 @@ struct UnifiedCardDetailView: View {
                         // Don't dismiss on tap - only X button dismisses
                     }
                 
-                // Card container
-                Group {
-                    if isDeviceLandscape {
-                        cardContent(geometry: geometry, rotated: false)
-                    } else {
-                        VStack {
-                            Spacer()
-                            cardContent(geometry: geometry, rotated: true)
-                                .rotationEffect(.degrees(90))
-                            Spacer()
-                        }
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                    }
+                // Card container - portrait mode: rotate card landscape
+                VStack {
+                    Spacer()
+                    cardContent(screenSize: geometry.size)
+                        .rotationEffect(.degrees(90))
+                        .cardTilt()
+                    Spacer()
                 }
+                .frame(width: geometry.size.width, height: geometry.size.height)
                 
                 // X button
                 VStack {
@@ -607,8 +558,9 @@ struct UnifiedCardDetailView: View {
         }
     }
     
-    private func cardContent(geometry: GeometryProxy, rotated: Bool) -> some View {
-        let cardWidth: CGFloat = rotated ? geometry.size.height * 0.8 : geometry.size.width * 0.8
+    private func cardContent(screenSize: CGSize) -> some View {
+        // Portrait: use screen height for width (card is rotated 90°)
+        let cardWidth: CGFloat = screenSize.height * 0.8
         let cardHeight: CGFloat = cardWidth / 16 * 9
         
         return ZStack {
@@ -920,7 +872,7 @@ struct VehicleCardView: View {
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
-        .cardTilt()
+
     }
 }
 
@@ -988,7 +940,7 @@ struct SimpleCardView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: (isLargeSize ? 195.75 : 92.4) * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
-        .cardTilt()
+
     }
     
     private var typeColor: Color {

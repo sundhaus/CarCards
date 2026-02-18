@@ -497,7 +497,6 @@ struct UserCardView: View {
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
-        .cardTilt()
         .task {
             await loadCardImage()
         }
