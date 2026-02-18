@@ -96,12 +96,12 @@ struct CustomizeCardView: View {
                                 let shadowColor: Color = selectedFrame == .white ? .black.opacity(0.8) : .white.opacity(0.6)
                                 
                                 Text(card.make.uppercased())
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.custom("Futura-Light", size: 14))
                                     .foregroundStyle(textColor)
                                     .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
                                 
                                 Text(card.model)
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.custom("Futura-Bold", size: 14))
                                     .foregroundStyle(textColor)
                                     .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
                                     .lineLimit(1)

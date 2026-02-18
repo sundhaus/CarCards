@@ -810,8 +810,7 @@ struct CardDetailView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(card.make) \(card.model)")
-                            .font(.title2)
-                            .fontWeight(.bold)
+                            .font(.custom("Futura-Bold", size: 22))
                             .foregroundStyle(.white)
                         Text(card.year)
                             .font(.subheadline)
@@ -861,7 +860,7 @@ struct CardDetailView: View {
                 // Header
                 VStack(spacing: 4) {
                     Text("\(currentCard.make) \(currentCard.model)")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.custom("Futura-Bold", size: 24))
                         .foregroundStyle(.white)
                     
                     Text(currentCard.year)

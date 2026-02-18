@@ -106,7 +106,7 @@ struct UniversalCardView: View {
     private var carNameText: some View {
         HStack(spacing: 6) {
             Text(cardData.make.uppercased())
-                .font(.system(size: height * 0.08, weight: .semibold))
+                .font(.custom("Futura-Light", size: height * 0.08))
                 .foregroundStyle(config.textColor)
                 .shadow(
                     color: config.textShadow.color,
@@ -116,7 +116,7 @@ struct UniversalCardView: View {
                 )
             
             Text(cardData.model)
-                .font(.system(size: height * 0.08, weight: .bold))
+                .font(.custom("Futura-Bold", size: height * 0.08))
                 .foregroundStyle(config.textColor)
                 .shadow(
                     color: config.textShadow.color,

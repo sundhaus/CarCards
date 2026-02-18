@@ -388,7 +388,7 @@ struct FriendActivityCard: View {
                                 
                                 VStack(spacing: 12) {
                                     Text("\(activity.cardMake) \(activity.cardModel)")
-                                        .font(.system(size: 20, weight: .bold))
+                                        .font(.custom("Futura-Bold", size: 20))
                                         .foregroundStyle(.white)
                                         .lineLimit(1)
                                     

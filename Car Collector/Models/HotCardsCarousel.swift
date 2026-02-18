@@ -258,12 +258,12 @@ struct HotCardItem: View {
                     HStack(spacing: 4) {
                         let config = CardBorderConfig.forFrame(card.customFrame)
                         Text(card.cardMake.uppercased())
-                            .font(.system(size: cardHeight * 0.08, weight: .semibold))
+                            .font(.custom("Futura-Light", size: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         
                         Text(card.cardModel)
-                            .font(.system(size: cardHeight * 0.08, weight: .bold))
+                            .font(.custom("Futura-Bold", size: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             .lineLimit(1)

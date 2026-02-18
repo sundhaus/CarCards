@@ -702,8 +702,7 @@ struct CardBackView: View {
                 // Header
                 VStack(spacing: 4) {
                     Text("\(make) \(model)")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.custom("Futura-Bold", size: 22))
                         .foregroundStyle(.white)
                     
                     Text(year)
@@ -891,7 +890,7 @@ struct VehicleCardView: View {
                     HStack(spacing: isLargeSize ? 6 : 3) {
                         let config = CardBorderConfig.forFrame(card.customFrame)
                         Text(card.make.uppercased())
-                            .font(.system(size: cardHeight * 0.08, weight: .semibold))
+                            .font(.custom("Futura-Light", size: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(
                                 color: config.textShadow.color,
@@ -901,7 +900,7 @@ struct VehicleCardView: View {
                             )
                         
                         Text(card.model)
-                            .font(.system(size: cardHeight * 0.08, weight: .bold))
+                            .font(.custom("Futura-Bold", size: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(
                                 color: config.textShadow.color,
