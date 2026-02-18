@@ -849,82 +849,53 @@ struct VehicleCardView: View {
                     )
                 )
             
-            VStack(spacing: 0) {
-                // Top bar - GEN badge + Car name
-                HStack(spacing: isLargeSize ? 8 : 4) {
-                    // GEN badge
-                    VStack(spacing: isLargeSize ? 2 : 1) {
-                        Text("GEN")
-                            .font(.system(size: isLargeSize ? 8 : 6, weight: .bold))
-                            .foregroundStyle(.black.opacity(0.6))
-                        Text("\(cardLevel)")
-                            .font(.system(size: isLargeSize ? 14 : 10, weight: .black))
-                            .foregroundStyle(.black)
-                    }
-                    .padding(.horizontal, isLargeSize ? 10 : 6)
-                    .padding(.vertical, isLargeSize ? 4 : 3)
-                    .background(
-                        RoundedRectangle(cornerRadius: isLargeSize ? 6 : 4)
-                            .fill(Color.white)
-                            .shadow(color: .black.opacity(0.1), radius: 2)
-                    )
-                    
-                    // Car name
-                    VStack(alignment: .leading, spacing: isLargeSize ? 2 : 1) {
+            // Car image - full bleed
+            Group {
+                if let image = card.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.3))
+                        .overlay(
+                            Image(systemName: "car.fill")
+                                .font(.system(size: isLargeSize ? 30 : 20))
+                                .foregroundStyle(.gray.opacity(0.4))
+                        )
+                }
+            }
+            .frame(width: cardWidth, height: cardHeight)
+            .clipped()
+            
+            // Border PNG overlay
+            Image("Border_Def_Blk")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: cardWidth, height: cardHeight)
+                .allowsHitTesting(false)
+            
+            // Car name overlay - top left, horizontal
+            VStack {
+                HStack {
+                    HStack(spacing: isLargeSize ? 6 : 3) {
                         Text(card.make.uppercased())
-                            .font(.system(size: isLargeSize ? 10 : 7, weight: .semibold))
-                            .foregroundStyle(.black.opacity(0.7))
-                            .lineLimit(1)
+                            .font(.system(size: cardHeight * 0.08, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                         
                         Text(card.model)
-                            .font(.system(size: isLargeSize ? 13 : 9, weight: .bold))
-                            .foregroundStyle(.black)
+                            .font(.system(size: cardHeight * 0.08, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                             .lineLimit(1)
                     }
-                    
+                    .padding(.top, cardHeight * 0.08)
+                    .padding(.leading, cardHeight * 0.08)
                     Spacer()
                 }
-                .padding(.horizontal, isLargeSize ? 12 : 8)
-                .padding(.top, isLargeSize ? 10 : 6)
-                .padding(.bottom, isLargeSize ? 6 : 4)
-                
-                // Car image area (center)
-                GeometryReader { geo in
-                    Group {
-                        if let image = card.image {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: geo.size.width, height: geo.size.height)
-                        } else {
-                            Rectangle()
-                                .fill(Color.white.opacity(0.3))
-                                .overlay(
-                                    Image(systemName: "car.fill")
-                                        .font(.system(size: isLargeSize ? 30 : 20))
-                                        .foregroundStyle(.gray.opacity(0.4))
-                                )
-                        }
-                    }
-                    .clipped()
-                }
-                
-                // Bottom bar - Year
-                HStack {
-                    Spacer()
-                    
-                    Text(card.year)
-                        .font(.system(size: isLargeSize ? 9 : 7, weight: .semibold))
-                        .foregroundStyle(.black.opacity(0.6))
-                }
-                .padding(.horizontal, isLargeSize ? 12 : 8)
-                .padding(.vertical, isLargeSize ? 6 : 4)
-                .background(Color.white.opacity(0.4))
+                Spacer()
             }
-            
-            // Black border overlay
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 3)
         }
         .frame(width: cardWidth, height: cardHeight)
         .clipped()

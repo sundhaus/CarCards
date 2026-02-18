@@ -607,82 +607,53 @@ struct SellTabCardView: View {
                     )
                 )
             
-            VStack(spacing: 0) {
-                // Top bar - GEN badge + Car name
-                HStack(spacing: 8) {
-                    // GEN badge
-                    VStack(spacing: 2) {
-                        Text("GEN")
-                            .font(.system(size: 7, weight: .bold))
-                            .foregroundStyle(.black.opacity(0.6))
-                        Text("\(cardLevel)")
-                            .font(.system(size: 14, weight: .black))
-                            .foregroundStyle(.black)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white)
-                            .shadow(color: .black.opacity(0.1), radius: 2)
-                    )
-                    
-                    // Car name
-                    VStack(alignment: .leading, spacing: 2) {
+            // Car image - full bleed
+            Group {
+                if let image = card.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.3))
+                        .overlay(
+                            Image(systemName: "car.fill")
+                                .font(.system(size: cardHeight * 0.3))
+                                .foregroundStyle(.gray.opacity(0.4))
+                        )
+                }
+            }
+            .frame(width: cardWidth, height: cardHeight)
+            .clipped()
+            
+            // Border PNG overlay
+            Image("Border_Def_Blk")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: cardWidth, height: cardHeight)
+                .allowsHitTesting(false)
+            
+            // Car name overlay - top left, horizontal
+            VStack {
+                HStack {
+                    HStack(spacing: 6) {
                         Text(card.make.uppercased())
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.black.opacity(0.7))
-                            .lineLimit(1)
+                            .font(.system(size: cardHeight * 0.08, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                         
                         Text(card.model)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.black)
+                            .font(.system(size: cardHeight * 0.08, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                             .lineLimit(1)
                     }
-                    
+                    .padding(.top, cardHeight * 0.08)
+                    .padding(.leading, cardHeight * 0.08)
                     Spacer()
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-                
-                // Car image area (center)
-                GeometryReader { geo in
-                    Group {
-                        if let image = card.image {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: geo.size.width, height: geo.size.height)
-                        } else {
-                            Rectangle()
-                                .fill(Color.white.opacity(0.3))
-                                .overlay(
-                                    Image(systemName: "car.fill")
-                                        .font(.system(size: 30))
-                                        .foregroundStyle(.gray.opacity(0.4))
-                                )
-                        }
-                    }
-                    .clipped()
-                }
-                
-                // Bottom bar - Year
-                HStack {
-                    Spacer()
-                    
-                    Text(card.year)
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.black.opacity(0.6))
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.4))
+                Spacer()
             }
-            
-            // Black border overlay
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 3)
         }
         .frame(width: cardWidth, height: cardHeight)
         .clipped()
@@ -736,10 +707,66 @@ struct MarketplaceFIFACard: View {
                     )
                 )
             
-            VStack(spacing: 0) {
-                // Top bar - Car name
-                HStack(spacing: 8) {
-                    // "FOR SALE" badge
+            // Car image - full bleed
+            Group {
+                if let image = cardImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else if isLoadingImage {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.3))
+                        .overlay(
+                            ProgressView()
+                                .tint(.gray)
+                        )
+                } else {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.3))
+                        .overlay(
+                            Image(systemName: "car.fill")
+                                .font(.system(size: cardHeight * 0.3))
+                                .foregroundStyle(.gray.opacity(0.4))
+                        )
+                }
+            }
+            .frame(width: cardWidth, height: cardHeight)
+            .clipped()
+            
+            // Border PNG overlay
+            Image("Border_Def_Blk")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: cardWidth, height: cardHeight)
+                .allowsHitTesting(false)
+            
+            // Car name overlay - top left, horizontal
+            VStack {
+                HStack {
+                    HStack(spacing: 6) {
+                        Text(listing.make.uppercased())
+                            .font(.system(size: cardHeight * 0.08, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                        
+                        Text(listing.model)
+                            .font(.system(size: cardHeight * 0.08, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                            .lineLimit(1)
+                    }
+                    .padding(.top, cardHeight * 0.08)
+                    .padding(.leading, cardHeight * 0.08)
+                    Spacer()
+                }
+                Spacer()
+            }
+            
+            // "FOR SALE" badge - bottom right
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
                     VStack(spacing: 2) {
                         Text("FOR")
                             .font(.system(size: 7, weight: .bold))
@@ -755,75 +782,10 @@ struct MarketplaceFIFACard: View {
                             .fill(Color.yellow)
                             .shadow(color: .black.opacity(0.1), radius: 2)
                     )
-                    
-                    // Car name
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(listing.make.uppercased())
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.black.opacity(0.7))
-                            .lineLimit(1)
-                        
-                        Text(listing.model)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.black)
-                            .lineLimit(1)
-                    }
-                    
-                    Spacer()
+                    .padding(.bottom, cardHeight * 0.08)
+                    .padding(.trailing, cardHeight * 0.08)
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-                
-                // Car image area (center)
-                GeometryReader { geo in
-                    Group {
-                        if let image = cardImage {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: geo.size.width, height: geo.size.height)
-                        } else if isLoadingImage {
-                            Rectangle()
-                                .fill(Color.white.opacity(0.3))
-                                .overlay(
-                                    ProgressView()
-                                        .tint(.gray)
-                                )
-                        } else {
-                            Rectangle()
-                                .fill(Color.white.opacity(0.3))
-                                .overlay(
-                                    Image(systemName: "car.fill")
-                                        .font(.system(size: 30))
-                                        .foregroundStyle(.gray.opacity(0.4))
-                                )
-                        }
-                    }
-                    .clipped()
-                }
-                
-                // Bottom bar - Seller
-                HStack {
-                    Text("@\(listing.sellerUsername)")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(.black.opacity(0.5))
-                        .lineLimit(1)
-                    
-                    Spacer()
-                    
-                    Text(listing.year)
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.black.opacity(0.6))
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.4))
             }
-            
-            // Black border overlay
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 3)
         }
         .frame(width: cardWidth, height: cardHeight)
         .clipped()
