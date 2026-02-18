@@ -595,7 +595,7 @@ struct SellTabCardView: View {
     var body: some View {
         ZStack {
             // Card background with gradient
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: cardHeight * 0.04)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -659,7 +659,7 @@ struct SellTabCardView: View {
             }
         }
         .frame(width: cardWidth, height: cardHeight)
-        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
     }
     
@@ -698,7 +698,7 @@ struct MarketplaceFIFACard: View {
     var body: some View {
         ZStack {
             // Card background with gradient
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: cardHeight * 0.04)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -794,7 +794,7 @@ struct MarketplaceFIFACard: View {
             }
         }
         .frame(width: cardWidth, height: cardHeight)
-        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
         .onAppear {
             loadImage()

@@ -428,7 +428,7 @@ struct CardDetailsView: View {
                     .allowsHitTesting(false)
             }
         }
-        .cornerRadius(15)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
     
     private var compactStatsGrid: some View {
@@ -482,7 +482,7 @@ struct CardDetailsView: View {
                     .foregroundStyle(.white.opacity(0.8))
             }
         }
-        .cornerRadius(15)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
     
     private func statItem(label: String, value: String, compact: Bool = false) -> some View {
@@ -600,7 +600,7 @@ struct CardDetailsFrontView: View {
             
             ZStack {
                 // Card background with gradient
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: cardHeight * 0.04)
                     .fill(
                         LinearGradient(
                             colors: [
@@ -664,7 +664,7 @@ struct CardDetailsFrontView: View {
                 }
             }
             .frame(width: geometry.size.width, height: cardHeight)
-            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
             .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
         }
         .frame(maxWidth: 500)

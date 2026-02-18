@@ -23,7 +23,6 @@ struct UniversalCardView: View {
             cardImageView
                 .frame(width: width, height: height)
                 .clipped()
-                .cornerRadius(8)
             
             // PNG Border overlay (if specified)
             if let borderImage = config.borderImageName {
@@ -43,6 +42,7 @@ struct UniversalCardView: View {
             }
         }
         .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: height * 0.04))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
     }
     

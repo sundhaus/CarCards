@@ -69,25 +69,23 @@ struct CustomizeCardView: View {
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 320, height: 180)
                             .clipped()
-                            .cornerRadius(12)
                     } else {
                         Rectangle()
                             .fill(Color.gray.opacity(0.3))
                             .frame(width: 320, height: 180)
-                            .cornerRadius(12)
                     }
                     
                     // Border PNG overlay based on selection
                     if selectedFrame == .white {
                         Image("Border_Def_Wht")
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
+                            .aspectRatio(contentMode: .fill)
                             .frame(width: 320, height: 180)
                             .allowsHitTesting(false)
                     } else if selectedFrame == .black {
                         Image("Border_Def_Blk")
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
+                            .aspectRatio(contentMode: .fill)
                             .frame(width: 320, height: 180)
                             .allowsHitTesting(false)
                     }
@@ -118,6 +116,7 @@ struct CustomizeCardView: View {
                     }
                     .frame(width: 320, height: 180)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 180 * 0.04))
                 .animation(.spring(response: 0.3), value: selectedFrame)
                 
                 Spacer()

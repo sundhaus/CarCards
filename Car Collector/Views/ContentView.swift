@@ -787,21 +787,21 @@ struct CardDetailView: View {
     // Front view of the card
     private func cardFrontView(cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
         ZStack {
-            // PNG border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: cardWidth, height: cardHeight)
-                    .allowsHitTesting(false)
-            }
-            
             if let image = card.image {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: cardWidth, height: cardHeight)
                     .clipped()
+            }
+            
+            // PNG border overlay based on customFrame (on top of image)
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: cardWidth, height: cardHeight)
+                    .allowsHitTesting(false)
             }
             
             // Card info overlay at bottom
@@ -841,7 +841,7 @@ struct CardDetailView: View {
             }
             .frame(width: cardWidth, height: cardHeight)
         }
-        .cornerRadius(15)
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
         .shadow(color: .black.opacity(0.5), radius: 20)
     }
     
@@ -941,7 +941,7 @@ struct CardDetailView: View {
                     .allowsHitTesting(false)
             }
         }
-        .cornerRadius(15)
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
         .shadow(color: .black.opacity(0.5), radius: 20)
     }
     
