@@ -32,9 +32,8 @@ struct CaptureLandingView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background gradient
-                Color.appBackgroundSolid
-                    .ignoresSafeArea()
+                // Background
+                AppBackground()
                 
                 VStack(spacing: 0) {
                     // Header

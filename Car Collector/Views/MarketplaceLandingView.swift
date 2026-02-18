@@ -20,8 +20,7 @@ struct MarketplaceLandingView: View {
         NavigationStack(path: $navigationController.marketplaceNavigationPath) {
             ZStack {
                 // Light background
-                Color.appBackgroundSolid
-                    .ignoresSafeArea()
+                AppBackground()
                 
                 VStack(spacing: 0) {
                     // Header

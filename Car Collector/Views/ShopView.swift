@@ -12,9 +12,8 @@ struct ShopView: View {
     
     var body: some View {
         ZStack {
-            // Dark blue background - extends full screen
-            Color.appBackgroundSolid
-                .ignoresSafeArea()
+            // Background with spline
+            AppBackground()
             
             VStack {
                 Spacer()

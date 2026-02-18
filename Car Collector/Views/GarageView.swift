@@ -22,9 +22,8 @@ struct GarageView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Dark blue background
-                Color.appBackgroundSolid
-                    .ignoresSafeArea()
+                // Background with spline
+                AppBackground()
                 
                 VStack(spacing: 0) {
                     // Custom header with title and toggle on same line

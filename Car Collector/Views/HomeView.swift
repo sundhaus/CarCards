@@ -72,7 +72,9 @@ struct HomeView: View {
                 }
                 .padding(.top, isLandscape ? 20 : 16)
             }
-            .background(Color.appBackgroundSolid.ignoresSafeArea())
+            .background {
+                AppBackground()
+            }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
             }
