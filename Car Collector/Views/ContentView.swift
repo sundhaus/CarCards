@@ -18,92 +18,87 @@ struct ContentView: View {
     @State private var showProfile = false
     
     var body: some View {
-        ZStack {
-            TabView(selection: $selectedTab) {
-                // Home Tab
-                Tab("Home", systemImage: "house", value: 1) {
-                    HomeView(
-                        isLandscape: false,
-                        showProfile: $showProfile,
-                        levelSystem: levelSystem,
-                        totalCards: savedCards.count
-                    )
-                    .padding(.top, 50)
-                }
-                
-                // Shop Tab
-                Tab("Shop", systemImage: "bag", value: 0) {
-                    ShopView(isLandscape: false)
-                }
-                
-                // Capture Tab (center)
-                Tab("Capture", systemImage: "camera.fill", value: 2) {
-                    CaptureLandingView(
-                        isLandscape: false,
-                        levelSystem: levelSystem,
-                        selectedTab: $selectedTab,
-                        onCardSaved: { card in
-                            // Save locally
-                            savedCards.append(card)
-                            CardStorage.saveCards(savedCards)
-                            
-                            // Save to cloud
-                            if let image = card.image {
-                                Task {
-                                    do {
-                                        let cloudCard = try await CardService.shared.saveCard(
-                                            image: image,
-                                            make: card.make,
-                                            model: card.model,
-                                            color: card.color,
-                                            year: card.year
-                                        )
-                                        
-                                        // Update local card with Firebase ID
-                                        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                            var updatedCard = savedCards[index]
-                                            updatedCard.firebaseId = cloudCard.id
-                                            savedCards[index] = updatedCard
-                                            CardStorage.saveCards(savedCards)
-                                            print("🔗 Linked local card to Firebase ID: \(cloudCard.id)")
-                                        }
-                                    } catch {
-                                        print("❌ Cloud save failed: \(error)")
+        TabView(selection: $selectedTab) {
+            // Home Tab
+            Tab("Home", systemImage: "house", value: 1) {
+                HomeView(
+                    isLandscape: false,
+                    showProfile: $showProfile,
+                    levelSystem: levelSystem,
+                    totalCards: savedCards.count
+                )
+                .padding(.top, 50)
+            }
+            
+            // Shop Tab
+            Tab("Shop", systemImage: "bag", value: 0) {
+                ShopView(isLandscape: false)
+            }
+            
+            // Capture Tab (center)
+            Tab("Capture", systemImage: "camera.fill", value: 2) {
+                CaptureLandingView(
+                    isLandscape: false,
+                    levelSystem: levelSystem,
+                    selectedTab: $selectedTab,
+                    onCardSaved: { card in
+                        savedCards.append(card)
+                        CardStorage.saveCards(savedCards)
+                        
+                        if let image = card.image {
+                            Task {
+                                do {
+                                    let cloudCard = try await CardService.shared.saveCard(
+                                        image: image,
+                                        make: card.make,
+                                        model: card.model,
+                                        color: card.color,
+                                        year: card.year
+                                    )
+                                    
+                                    if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                        var updatedCard = savedCards[index]
+                                        updatedCard.firebaseId = cloudCard.id
+                                        savedCards[index] = updatedCard
+                                        CardStorage.saveCards(savedCards)
+                                        print("🔗 Linked local card to Firebase ID: \(cloudCard.id)")
                                     }
+                                } catch {
+                                    print("❌ Cloud save failed: \(error)")
                                 }
                             }
-                            
-                            // Award XP for capturing a card
-                            levelSystem.addXP(10)
                         }
-                    )
-                    .padding(.top, 50)
-                }
-                
-                // Marketplace Tab
-                Tab("Market", systemImage: "chart.line.uptrend.xyaxis", value: 3) {
-                    MarketplaceLandingView(
-                        isLandscape: false,
-                        savedCards: savedCards,
-                        onCardListed: { card in
-                            if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                savedCards.remove(at: index)
-                                CardStorage.saveCards(savedCards)
-                            }
-                        }
-                    )
-                    .padding(.top, 50)
-                }
-                
-                // Garage Tab
-                Tab("Garage", systemImage: "wrench.and.screwdriver", value: 4) {
-                    GarageView()
-                        .padding(.top, 50)
-                }
+                        
+                        levelSystem.addXP(10)
+                    }
+                )
+                .padding(.top, 50)
             }
-            .tabBarMinimizeBehavior(.onScrollDown)
             
-            // Level Header overlay
+            // Marketplace Tab
+            Tab("Market", systemImage: "chart.line.uptrend.xyaxis", value: 3) {
+                MarketplaceLandingView(
+                    isLandscape: false,
+                    savedCards: savedCards,
+                    onCardListed: { card in
+                        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                            savedCards.remove(at: index)
+                            CardStorage.saveCards(savedCards)
+                        }
+                    }
+                )
+                .padding(.top, 50)
+            }
+            
+            // Garage Tab
+            Tab("Garage", systemImage: "wrench.and.screwdriver", value: 4) {
+                GarageView()
+                    .padding(.top, 50)
+            }
+        }
+        .tabBarMinimizeBehavior(.onScrollDown)
+        .overlay {
+            // Level Header
             if !showCamera && !showCardDetail {
                 VStack {
                     LevelHeader(
@@ -115,8 +110,9 @@ struct ContentView: View {
                     Spacer()
                 }
             }
-            
-            // Card detail overlay - appears above everything
+        }
+        .overlay {
+            // Card detail overlay
             if showCardDetail, let card = selectedCard {
                 CardDetailView(
                     card: card,
@@ -130,7 +126,8 @@ struct ContentView: View {
                     }
                 )
             }
-            
+        }
+        .overlay {
             // Profile popup
             if showProfile {
                 ProfileView(
