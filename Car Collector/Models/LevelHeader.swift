@@ -87,11 +87,12 @@ struct LevelHeader: View {
                 .padding(.bottom, 16)
             }
             .frame(height: 60)
-            .background(
+            .background {
                 Rectangle()
-                    .fill(.ultraThinMaterial)
+                    .fill(.clear)
+                    .glassEffect(.regular, in: .rect)
                     .ignoresSafeArea(edges: .top)
-            )
+            }
             .frame(maxWidth: .infinity)
         }
     }
@@ -241,8 +242,7 @@ struct LevelHeader: View {
                 levelBadge(size: 26)
             }
             .padding(8)
-            .background(.ultraThinMaterial)
-            .cornerRadius(12)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .task {
@@ -332,10 +332,7 @@ struct LevelHeader: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(.systemGray6))
-        )
+        .glassEffect(.regular, in: .capsule)
     }
     
     // Load profile picture

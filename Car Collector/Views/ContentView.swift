@@ -19,6 +19,11 @@ struct ContentView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
+            // Shop Tab
+            Tab("Shop", systemImage: "bag", value: 0) {
+                ShopView(isLandscape: false)
+            }
+            
             // Home Tab
             Tab("Home", systemImage: "house", value: 1) {
                 HomeView(
@@ -28,11 +33,6 @@ struct ContentView: View {
                     totalCards: savedCards.count
                 )
                 .padding(.top, 50)
-            }
-            
-            // Shop Tab
-            Tab("Shop", systemImage: "bag", value: 0) {
-                ShopView(isLandscape: false)
             }
             
             // Capture Tab (center)
@@ -96,7 +96,7 @@ struct ContentView: View {
                     .padding(.top, 50)
             }
         }
-        // .tabBarMinimizeBehavior(.onScrollDown) // Re-enable once tab bar confirmed visible
+        .tabBarMinimizeBehavior(.onScrollDown)
         .overlay {
             // Level Header
             if !showCamera && !showCardDetail {
