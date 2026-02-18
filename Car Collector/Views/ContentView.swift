@@ -546,7 +546,7 @@ struct GarageViewContent: View {
         }
         .fullScreenCover(isPresented: $showCustomize) {
             if let card = selectedCard {
-                CustomizeCardView(card: card, savedCards: $savedCards)
+                CustomizeCardView(card: card)
             }
         }
     }
@@ -841,7 +841,7 @@ struct CardDetailView: View {
             }
             .frame(width: cardWidth, height: cardHeight)
         }
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.05))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.06))
         .shadow(color: .black.opacity(0.5), radius: 20)
     }
     
@@ -941,7 +941,7 @@ struct CardDetailView: View {
                     .allowsHitTesting(false)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.05))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.06))
         .shadow(color: .black.opacity(0.5), radius: 20)
     }
     

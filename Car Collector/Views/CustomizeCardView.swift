@@ -8,7 +8,6 @@
 import SwiftUI
 
 enum CardFrame: String, CaseIterable {
-    case none = "None"
     case white = "White"
     case black = "Black"
     
@@ -18,9 +17,8 @@ enum CardFrame: String, CaseIterable {
 struct CustomizeCardView: View {
     let card: SavedCard
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedFrame: CardFrame = .none
+    @State private var selectedFrame: CardFrame = .white
     @State private var selectedTab = 0 // 0: Border, 1: Stickers, 2: Effects
-    @Binding var savedCards: [SavedCard]
     
     var body: some View {
         ZStack {
@@ -82,7 +80,7 @@ struct CustomizeCardView: View {
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 320, height: 180)
                             .allowsHitTesting(false)
-                    } else if selectedFrame == .black {
+                    } else {
                         Image("Border_Def_Blk")
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -116,7 +114,7 @@ struct CustomizeCardView: View {
                     }
                     .frame(width: 320, height: 180)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 180 * 0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 180 * 0.06))
                 .animation(.spring(response: 0.3), value: selectedFrame)
                 
                 Spacer()
@@ -156,15 +154,13 @@ struct CustomizeCardView: View {
             // Set initial frame from customFrame value
             if let currentFrame = card.customFrame {
                 switch currentFrame {
-                case "Border_Def_Wht", "White":
-                    selectedFrame = .white
                 case "Border_Def_Blk", "Black":
                     selectedFrame = .black
                 default:
-                    selectedFrame = .none
+                    selectedFrame = .white
                 }
             } else {
-                selectedFrame = .none
+                selectedFrame = .white
             }
         }
         .onDisappear {
@@ -206,9 +202,6 @@ struct CustomizeCardView: View {
                 .padding(.top, 20)
             
             HStack(spacing: 30) {
-                // None option
-                borderColorOption(frame: .none, label: "None")
-                
                 // White option
                 borderColorOption(frame: .white, label: "White")
                 
@@ -237,14 +230,10 @@ struct CustomizeCardView: View {
                         Circle()
                             .stroke(Color.white, lineWidth: 4)
                             .frame(width: 50, height: 50)
-                    } else if frame == .black {
+                    } else {
                         Circle()
                             .stroke(Color.black, lineWidth: 4)
                             .frame(width: 50, height: 50)
-                    } else {
-                        Image(systemName: "circle.slash")
-                            .font(.title2)
-                            .foregroundStyle(.white.opacity(0.6))
                     }
                     
                     // Selected indicator
@@ -281,14 +270,13 @@ struct CustomizeCardView: View {
     // MARK: - Helper Functions
     
     private func saveFrameSelection() {
+        // Load current cards from storage
+        var savedCards = CardStorage.loadCards()
+        
         if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-            var updatedCard = savedCards[index]
-            
             // Map CardFrame enum to actual PNG border names
-            let customFrameValue: String? = {
+            let customFrameValue: String = {
                 switch selectedFrame {
-                case .none:
-                    return nil
                 case .white:
                     return "Border_Def_Wht"
                 case .black:
@@ -296,33 +284,27 @@ struct CustomizeCardView: View {
                 }
             }()
             
-            updatedCard.customFrame = customFrameValue
-            savedCards[index] = updatedCard
+            savedCards[index].customFrame = customFrameValue
             CardStorage.saveCards(savedCards)
             
-            print("💾 Saving frame: \(customFrameValue ?? "None")")
-            print("🆔 Card local ID: \(card.id)")
-            print("🔥 Card firebaseId: \(card.firebaseId ?? "NIL - THIS IS THE PROBLEM!")")
+            print("💾 Saved frame: \(customFrameValue) for card: \(card.make) \(card.model)")
             
             // Sync to Firebase (use firebaseId if available)
             if let firebaseId = card.firebaseId {
                 Task {
                     do {
-                        print("📤 Syncing to Firebase with ID: \(firebaseId)")
                         try await CardService.shared.updateCustomFrame(
                             cardId: firebaseId,
                             customFrame: customFrameValue
                         )
-                        print("✅ Synced custom frame to Firebase: \(customFrameValue ?? "None")")
+                        print("✅ Synced custom frame to Firebase")
                     } catch {
                         print("❌ Failed to sync custom frame to Firebase: \(error)")
                     }
                 }
-            } else {
-                print("⚠️ ⚠️ ⚠️ Card has no firebaseId - frame only saved locally!")
-                print("⚠️ This card was saved BEFORE the firebaseId fix")
-                print("⚠️ Take a NEW photo to test cross-device sync")
             }
+        } else {
+            print("❌ Could not find card in storage to save frame")
         }
     }
 }
@@ -335,7 +317,6 @@ struct CustomizeCardView: View {
             model: "Supra",
             color: "Red",
             year: "1998"
-        ),
-        savedCards: .constant([])
+        )
     )
 }
