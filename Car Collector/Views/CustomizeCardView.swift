@@ -114,7 +114,7 @@ struct CustomizeCardView: View {
                     }
                     .frame(width: 320, height: 180)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 180 * 0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 180 * 0.08))
                 .animation(.spring(response: 0.3), value: selectedFrame)
                 
                 Spacer()

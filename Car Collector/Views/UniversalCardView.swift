@@ -42,7 +42,7 @@ struct UniversalCardView: View {
             }
         }
         .frame(width: width, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: height * 0.06))
+        .clipShape(RoundedRectangle(cornerRadius: height * 0.08))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
     }
     

@@ -424,7 +424,7 @@ struct UserCardView: View {
     var body: some View {
         ZStack {
             // Card background with gradient
-            RoundedRectangle(cornerRadius: cardHeight * 0.06)
+            RoundedRectangle(cornerRadius: cardHeight * 0.08)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -495,7 +495,7 @@ struct UserCardView: View {
             }
         }
         .frame(width: cardWidth, height: cardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.06))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.08))
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
         .task {
             await loadCardImage()
