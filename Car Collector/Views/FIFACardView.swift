@@ -2,8 +2,8 @@
 //  FIFACardView.swift
 //  CarCardCollector
 //
-//  Reusable card component for displaying FriendActivity cards
-//  Cleaner design with full-bleed image and car name overlay
+//  Card component for FriendActivity cards
+//  Uses PNG border overlay system
 //
 
 import SwiftUI
@@ -15,41 +15,51 @@ struct FIFACardView: View {
     @State private var isLoadingImage = false
     
     private var cardWidth: CGFloat { height * (16/9) }
+    private var config: CardBorderConfig {
+        CardBorderConfig.forFrame(card.customFrame)
+    }
     
     var body: some View {
         ZStack {
-            // Card background with gradient
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.85, green: 0.85, blue: 0.88),
-                            Color(red: 0.75, green: 0.75, blue: 0.78)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            
-            // Car image - full bleed
+            // Base card image
             cardImageView
                 .frame(width: cardWidth, height: height)
                 .clipped()
+                .cornerRadius(8)
             
-            // Car name overlay - top right
+            // PNG Border overlay
+            if let borderImage = config.borderImageName {
+                Image(borderImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: cardWidth, height: height)
+                    .allowsHitTesting(false)
+            }
+            
+            // Car name - top right
             VStack {
                 HStack {
                     Spacer()
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(card.cardMake.uppercased())
                             .font(.system(size: height * 0.08, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                            .foregroundStyle(config.textColor)
+                            .shadow(
+                                color: config.textShadow.color,
+                                radius: config.textShadow.radius,
+                                x: config.textShadow.x,
+                                y: config.textShadow.y
+                            )
                         
                         Text(card.cardModel)
                             .font(.system(size: height * 0.11, weight: .bold))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                            .foregroundStyle(config.textColor)
+                            .shadow(
+                                color: config.textShadow.color,
+                                radius: config.textShadow.radius,
+                                x: config.textShadow.x,
+                                y: config.textShadow.y
+                            )
                             .lineLimit(1)
                     }
                     .padding(.top, height * 0.08)
@@ -58,7 +68,7 @@ struct FIFACardView: View {
                 Spacer()
             }
             
-            // Heat indicator - bottom right if has heat
+            // Heat indicator - bottom right
             if card.heatCount > 0 {
                 VStack {
                     Spacer()
@@ -77,13 +87,8 @@ struct FIFACardView: View {
                     }
                 }
             }
-            
-            // Thicker black border overlay
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 5)
         }
         .frame(width: cardWidth, height: height)
-        .clipped()
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
         .onAppear {
             loadImage()
