@@ -55,9 +55,9 @@ struct HotCardsCarousel: View {
                         }
                     }
                     .padding(.horizontal, (geometry.size.width - 280) / 2)
-                    .padding(.vertical, 4)
                 }
-                .scrollDisabled(true)  // Disable natural scrolling - only gesture control
+                .frame(height: 157.5)
+                .scrollDisabled(true)
                 .gesture(
                     DragGesture(minimumDistance: 20)
                         .onChanged { value in
@@ -79,7 +79,7 @@ struct HotCardsCarousel: View {
                 }
             }
         }
-        .frame(height: 190)
+        .frame(height: 170)
     }
     
     // MARK: - Swipe Direction Handler
@@ -185,14 +185,13 @@ struct HotCardsCarousel: View {
     private var loadingView: some View {
         VStack {
             ProgressView()
-                .tint(.white)
             Text("Loading hot cards...")
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.secondary)
                 .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 190)
+        .frame(height: 170)
     }
     
     private var emptyView: some View {
@@ -203,14 +202,14 @@ struct HotCardsCarousel: View {
             
             Text("No hot cards yet")
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.primary.opacity(0.8))
             
             Text("Be the first to get some heat!")
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 190)
+        .frame(height: 170)
     }
 }
 
