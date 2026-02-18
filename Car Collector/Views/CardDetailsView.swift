@@ -429,6 +429,7 @@ struct CardDetailsView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 300 * 0.09))
+        .cardTilt()
     }
     
     private var compactStatsGrid: some View {
@@ -666,6 +667,7 @@ struct CardDetailsFrontView: View {
             .frame(width: geometry.size.width, height: cardHeight)
             .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
             .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+            .cardTilt()
         }
         .frame(maxWidth: 500)
         .aspectRatio(16/9, contentMode: .fit)

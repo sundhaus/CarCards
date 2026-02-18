@@ -661,6 +661,7 @@ struct SellTabCardView: View {
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
+        .cardTilt()
     }
     
     // Calculate card level based on category rarity
@@ -796,6 +797,7 @@ struct MarketplaceFIFACard: View {
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
+        .cardTilt()
         .onAppear {
             loadImage()
         }

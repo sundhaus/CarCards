@@ -920,6 +920,7 @@ struct VehicleCardView: View {
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
+        .cardTilt()
     }
 }
 
@@ -987,6 +988,7 @@ struct SimpleCardView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: (isLargeSize ? 195.75 : 92.4) * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
+        .cardTilt()
     }
     
     private var typeColor: Color {

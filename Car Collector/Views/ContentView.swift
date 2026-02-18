@@ -842,6 +842,7 @@ struct CardDetailView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: .black.opacity(0.5), radius: 20)
+        .cardTilt()
     }
     
     // Back view of the card
@@ -942,6 +943,7 @@ struct CardDetailView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: .black.opacity(0.5), radius: 20)
+        .cardTilt()
     }
     
     // MARK: - Stat Item View
