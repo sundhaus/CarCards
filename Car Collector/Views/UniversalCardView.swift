@@ -31,6 +31,7 @@ struct UniversalCardView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: width, height: height)
+                    .blendMode(.screen) // Makes black transparent
                     .allowsHitTesting(false)
             }
             
