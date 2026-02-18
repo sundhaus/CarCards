@@ -48,9 +48,9 @@ extension CardBorderConfig {
     static let defaultBlack = CardBorderConfig(
         borderImageName: "Border_Def_Blk",
         textPosition: .topLeft,
-        textColor: .white,
+        textColor: .black,
         textShadow: Shadow(
-            color: .black.opacity(0.8),
+            color: .white.opacity(0.6),
             radius: 3,
             x: 0,
             y: 2
@@ -62,9 +62,9 @@ extension CardBorderConfig {
     static let defaultWhite = CardBorderConfig(
         borderImageName: "Border_Def_Wht",
         textPosition: .topLeft,
-        textColor: .black,
+        textColor: .white,
         textShadow: Shadow(
-            color: .white.opacity(0.8),
+            color: .black.opacity(0.8),
             radius: 3,
             x: 0,
             y: 2

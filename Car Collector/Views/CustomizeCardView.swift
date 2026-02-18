@@ -96,8 +96,8 @@ struct CustomizeCardView: View {
                     VStack {
                         HStack {
                             HStack(spacing: 4) {
-                                let textColor: Color = selectedFrame == .white ? .black : .white
-                                let shadowColor: Color = selectedFrame == .white ? .white.opacity(0.8) : .black.opacity(0.8)
+                                let textColor: Color = selectedFrame == .white ? .white : .black
+                                let shadowColor: Color = selectedFrame == .white ? .black.opacity(0.8) : .white.opacity(0.6)
                                 
                                 Text(card.make.uppercased())
                                     .font(.system(size: 14, weight: .semibold))
