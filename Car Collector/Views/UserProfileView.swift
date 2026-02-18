@@ -462,24 +462,29 @@ struct UserCardView: View {
             .frame(width: cardWidth, height: cardHeight)
             .clipped()
             
-            // Programmatic border overlay
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 5)
-                .allowsHitTesting(false)
+            // PNG border overlay based on customFrame
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: cardWidth, height: cardHeight)
+                    .allowsHitTesting(false)
+            }
             
             // Car name overlay - top left, horizontal
             VStack {
                 HStack {
                     HStack(spacing: isLargeSize ? 6 : 3) {
+                        let config = CardBorderConfig.forFrame(card.customFrame)
                         Text(card.make.uppercased())
                             .font(.system(size: cardHeight * 0.08, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         
                         Text(card.model)
                             .font(.system(size: cardHeight * 0.08, weight: .bold))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             .lineLimit(1)
                     }
                     .padding(.top, cardHeight * 0.08)

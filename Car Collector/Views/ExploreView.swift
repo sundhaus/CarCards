@@ -274,26 +274,29 @@ struct ExploreCardItem: View {
                 .frame(width: cardWidth, height: height)
                 .clipped()
             
-            // Border PNG overlay
-            Image("Border_Def_Blk")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: cardWidth, height: height)
-                .allowsHitTesting(false)
+            // Border PNG overlay based on customFrame
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: cardWidth, height: height)
+                    .allowsHitTesting(false)
+            }
             
             // Car name overlay - top left, horizontal
             VStack {
                 HStack {
                     HStack(spacing: 6) {
+                        let config = CardBorderConfig.forFrame(card.customFrame)
                         Text(card.cardMake.uppercased())
                             .font(.system(size: height * 0.08, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         
                         Text(card.cardModel)
                             .font(.system(size: height * 0.08, weight: .bold))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             .lineLimit(1)
                     }
                     .padding(.top, height * 0.08)

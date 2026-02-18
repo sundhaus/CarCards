@@ -431,9 +431,13 @@ struct FriendActivityCard: View {
                                 }
                                 .padding(.vertical, 12)
                                 
-                                // Black border overlay
-                                RoundedRectangle(cornerRadius: 12)
-                                    .strokeBorder(Color.black, lineWidth: 3)
+                                // PNG border overlay based on customFrame
+                                if let borderImageName = CardBorderConfig.forFrame(activity.customFrame).borderImageName {
+                                    Image(borderImageName)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .allowsHitTesting(false)
+                                }
                             }
                             .frame(width: 360, height: 202.5)
                             .cornerRadius(12)

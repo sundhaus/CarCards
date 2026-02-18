@@ -643,7 +643,8 @@ struct UnifiedCardDetailView: View {
                         make: vehicleCard.make,
                         model: vehicleCard.model,
                         year: vehicleCard.year,
-                        specs: specs
+                        specs: specs,
+                        customFrame: vehicleCard.customFrame
                     )
                     .frame(width: cardWidth, height: cardHeight)
                     .rotation3DEffect(
@@ -684,6 +685,7 @@ struct CardBackView: View {
     let model: String
     let year: String
     let specs: VehicleSpecs
+    var customFrame: String? = nil
     
     var body: some View {
         ZStack {
@@ -759,9 +761,13 @@ struct CardBackView: View {
                 Spacer()
             }
             
-            // Black border overlay (matching front)
-            RoundedRectangle(cornerRadius: 15)
-                .strokeBorder(Color.black, lineWidth: 5)
+            // PNG border overlay based on customFrame
+            if let borderImageName = CardBorderConfig.forFrame(customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .allowsHitTesting(false)
+            }
         }
         .cornerRadius(15)
         .shadow(radius: 10)
@@ -969,9 +975,14 @@ struct SimpleCardView: View {
             }
             .frame(width: isLargeSize ? 348 : 169, height: isLargeSize ? 195.75 : 92.4)
             
-            // Black border overlay
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 5)
+            // PNG border overlay based on customFrame
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: isLargeSize ? 348 : 169, height: isLargeSize ? 195.75 : 92.4)
+                    .allowsHitTesting(false)
+            }
         }
         .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)

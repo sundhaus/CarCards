@@ -787,14 +787,13 @@ struct CardDetailView: View {
     // Front view of the card
     private func cardFrontView(cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
         ZStack {
-            // Custom frame/border
-            if let frameName = card.customFrame, frameName != "None" {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(
-                        frameName == "White" ? Color.white : Color.black,
-                        lineWidth: 8
-                    )
+            // PNG border overlay based on customFrame
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: cardWidth, height: cardHeight)
+                    .allowsHitTesting(false)
             }
             
             if let image = card.image {
@@ -933,14 +932,13 @@ struct CardDetailView: View {
             }
             .frame(width: cardWidth, height: cardHeight)
             
-            // Custom frame/border overlay
-            if let frameName = card.customFrame, frameName != "None" {
-                RoundedRectangle(cornerRadius: 15)
-                    .stroke(
-                        frameName == "White" ? Color.white : Color.black,
-                        lineWidth: 8
-                    )
+            // PNG border overlay based on customFrame
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: cardWidth, height: cardHeight)
+                    .allowsHitTesting(false)
             }
         }
         .cornerRadius(15)

@@ -199,14 +199,14 @@ struct TransferListingCard: View {
                             }
                     }
                     
-                    // Custom frame/border overlay
-                    if let frameName = listing.customFrame, frameName != "None" {
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(
-                                frameName == "White" ? Color.white : Color.black,
-                                lineWidth: 2
-                            )
+                    // PNG border overlay based on customFrame
+                    if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
+                        Image(borderImageName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
                             .frame(width: 80, height: 80)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .allowsHitTesting(false)
                     }
                 }
                 
