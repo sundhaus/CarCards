@@ -10,21 +10,28 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab = 1 // Start on Home
     @State private var showCamera = false
-    @State private var savedCards: [SavedCard] = CardStorage.loadCards()
+    @State private var savedCards: [SavedCard] = []
     @State private var showCardDetail = false
     @State private var selectedCard: SavedCard?
     @State private var forceOrientationUpdate = false
     @StateObject private var levelSystem = LevelSystem()
     @State private var showProfile = false
     
+    // Track which tabs have been visited (for lazy loading)
+    @State private var visitedTabs: Set<Int> = [1] // Home is pre-loaded
+    
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Shop Tab
+            // Shop Tab - lazy
             Tab("Shop", systemImage: "bag", value: 0) {
-                ShopView(isLandscape: false)
+                if visitedTabs.contains(0) {
+                    ShopView(isLandscape: false)
+                } else {
+                    Color.clear
+                }
             }
             
-            // Home Tab
+            // Home Tab - always loaded (start tab)
             Tab("Home", systemImage: "house", value: 1) {
                 HomeView(
                     isLandscape: false,
@@ -35,65 +42,77 @@ struct ContentView: View {
                 .padding(.top, 50)
             }
             
-            // Capture Tab (center)
+            // Capture Tab - pre-loaded for fast access
             Tab("Capture", systemImage: "camera.fill", value: 2) {
-                CaptureLandingView(
-                    isLandscape: false,
-                    levelSystem: levelSystem,
-                    selectedTab: $selectedTab,
-                    onCardSaved: { card in
-                        savedCards.append(card)
-                        CardStorage.saveCards(savedCards)
-                        
-                        if let image = card.image {
-                            Task {
-                                do {
-                                    let cloudCard = try await CardService.shared.saveCard(
-                                        image: image,
-                                        make: card.make,
-                                        model: card.model,
-                                        color: card.color,
-                                        year: card.year
-                                    )
-                                    
-                                    if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                        var updatedCard = savedCards[index]
-                                        updatedCard.firebaseId = cloudCard.id
-                                        savedCards[index] = updatedCard
-                                        CardStorage.saveCards(savedCards)
-                                        print("🔗 Linked local card to Firebase ID: \(cloudCard.id)")
+                if visitedTabs.contains(2) {
+                    CaptureLandingView(
+                        isLandscape: false,
+                        levelSystem: levelSystem,
+                        selectedTab: $selectedTab,
+                        onCardSaved: { card in
+                            savedCards.append(card)
+                            CardStorage.saveCards(savedCards)
+                            
+                            if let image = card.image {
+                                Task {
+                                    do {
+                                        let cloudCard = try await CardService.shared.saveCard(
+                                            image: image,
+                                            make: card.make,
+                                            model: card.model,
+                                            color: card.color,
+                                            year: card.year
+                                        )
+                                        
+                                        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                            var updatedCard = savedCards[index]
+                                            updatedCard.firebaseId = cloudCard.id
+                                            savedCards[index] = updatedCard
+                                            CardStorage.saveCards(savedCards)
+                                            print("🔗 Linked local card to Firebase ID: \(cloudCard.id)")
+                                        }
+                                    } catch {
+                                        print("❌ Cloud save failed: \(error)")
                                     }
-                                } catch {
-                                    print("❌ Cloud save failed: \(error)")
                                 }
                             }
+                            
+                            levelSystem.addXP(10)
                         }
-                        
-                        levelSystem.addXP(10)
-                    }
-                )
-                .padding(.top, 50)
+                    )
+                    .padding(.top, 50)
+                } else {
+                    Color.clear
+                }
             }
             
-            // Marketplace Tab
+            // Marketplace Tab - lazy
             Tab("Market", systemImage: "chart.line.uptrend.xyaxis", value: 3) {
-                MarketplaceLandingView(
-                    isLandscape: false,
-                    savedCards: savedCards,
-                    onCardListed: { card in
-                        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                            savedCards.remove(at: index)
-                            CardStorage.saveCards(savedCards)
+                if visitedTabs.contains(3) {
+                    MarketplaceLandingView(
+                        isLandscape: false,
+                        savedCards: savedCards,
+                        onCardListed: { card in
+                            if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                savedCards.remove(at: index)
+                                CardStorage.saveCards(savedCards)
+                            }
                         }
-                    }
-                )
-                .padding(.top, 50)
+                    )
+                    .padding(.top, 50)
+                } else {
+                    Color.clear
+                }
             }
             
-            // Garage Tab
+            // Garage Tab - lazy
             Tab("Garage", systemImage: "wrench.and.screwdriver", value: 4) {
-                GarageView()
-                    .padding(.top, 58)
+                if visitedTabs.contains(4) {
+                    GarageView()
+                        .padding(.top, 58)
+                } else {
+                    Color.clear
+                }
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
@@ -175,9 +194,21 @@ struct ContentView: View {
         }
         .onChange(of: selectedTab) { oldValue, newValue in
             OrientationManager.lockToPortrait()
+            // Mark tab as visited for lazy loading
+            if !visitedTabs.contains(newValue) {
+                visitedTabs.insert(newValue)
+            }
         }
         .onAppear {
             OrientationManager.lockToPortrait()
+            // Defer card loading off the init path
+            DispatchQueue.main.async {
+                savedCards = CardStorage.loadCards()
+            }
+            // Pre-warm Capture tab after a brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                visitedTabs.insert(2)
+            }
         }
     }
     

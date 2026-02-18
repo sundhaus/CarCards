@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HotCardsCarousel: View {
-    @StateObject private var hotCardsService = HotCardsService()
+    @ObservedObject private var hotCardsService = HotCardsService.shared
     @State private var currentIndex = 0
     @State private var isDragging = false
     

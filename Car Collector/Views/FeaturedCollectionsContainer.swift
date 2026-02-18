@@ -10,7 +10,7 @@ import SwiftUI
 
 struct FeaturedCollectionsContainer: View {
     let action: () -> Void
-    @StateObject private var hotCardsService = HotCardsService()
+    @ObservedObject private var hotCardsService = HotCardsService.shared
     
     var body: some View {
         Button(action: action) {

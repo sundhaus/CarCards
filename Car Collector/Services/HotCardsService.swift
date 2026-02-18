@@ -13,6 +13,8 @@ import SwiftUI
 import FirebaseFirestore
 
 class HotCardsService: ObservableObject {
+    static let shared = HotCardsService()
+    
     @Published var hotCards: [FriendActivity] = []
     @Published var isLoading = false
     @Published var timeUntilNextRefresh: String = ""
@@ -24,8 +26,10 @@ class HotCardsService: ObservableObject {
     // UserDefaults key for last refresh timestamp
     private let lastRefreshKey = "hotCardsLastRefresh"
     
+    private var timerStarted = false
+    
     init() {
-        startCountdownTimer()
+        // Timer deferred to first fetch to avoid startup cost
     }
     
     // Calculate next refresh time (noon or midnight EST)
@@ -110,6 +114,12 @@ class HotCardsService: ObservableObject {
     
     // Check if cards need refresh and fetch if needed
     func fetchHotCardsIfNeeded(limit: Int = 20) {
+        // Start countdown timer on first access
+        if !timerStarted {
+            timerStarted = true
+            startCountdownTimer()
+        }
+        
         // Always refresh if we have no cards OR if it's time for scheduled refresh
         if hotCards.isEmpty || shouldRefresh() {
             if hotCards.isEmpty {
