@@ -81,6 +81,7 @@ struct ContentView: View {
                             levelSystem.addXP(10)
                         }
                     )
+                    .padding(.top, 60)
                     .tag(2)
                     
                     // Tab 3: Marketplace
@@ -106,7 +107,7 @@ struct ContentView: View {
                 .toolbar(.hidden, for: .tabBar)
                 
                 // Level Header - show on main hub pages (not camera/detail views)
-                if !showCamera && !showCardDetail && selectedTab != 2 {
+                if !showCamera && !showCardDetail {
                     VStack {
                         LevelHeader(
                             levelSystem: levelSystem,
