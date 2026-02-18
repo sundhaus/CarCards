@@ -17,7 +17,7 @@ struct DriverTypeSelectorView: View {
             VStack(spacing: 8) {
                 Text("Choose Capture Type")
                     .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
             }
             .padding(.top, 30)
             .padding(.bottom, 20)

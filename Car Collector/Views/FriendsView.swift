@@ -90,7 +90,7 @@ struct FriendsView: View {
                                             
                                             Text("\(friendsService.newFollowersCount)")
                                                 .font(.system(size: 10, weight: .bold))
-                                                .foregroundStyle(.white)
+                                                .foregroundStyle(.primary)
                                         }
                                         .offset(x: 8, y: -8)
                                     }
@@ -129,7 +129,7 @@ struct FriendsView: View {
                                         }
                                         .font(.subheadline)
                                         .fontWeight(.medium)
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.primary)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 12)
                                         .background(.blue)
@@ -262,7 +262,7 @@ struct FriendActivityCard: View {
                     
                     Text("\(activity.level)")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 }
                 
                 // Tappable username
@@ -320,7 +320,7 @@ struct FriendActivityCard: View {
                                 Spacer()
                                 Text("Tap for specs")
                                     .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.primary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(Color.black.opacity(0.6))
@@ -388,7 +388,7 @@ struct FriendActivityCard: View {
                                 VStack(spacing: 12) {
                                     Text("\(activity.cardMake.uppercased()) \(activity.cardModel.uppercased())")
                                         .font(.custom("Futura-Bold", size: 20))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.primary)
                                         .lineLimit(1)
                                     
                                     Text(activity.cardYear)
@@ -426,7 +426,7 @@ struct FriendActivityCard: View {
                                     
                                     Text("Tap to flip back")
                                         .font(.system(size: 10))
-                                        .foregroundStyle(.white.opacity(0.6))
+                                        .foregroundStyle(.secondary)
                                 }
                                 .padding(.vertical, 12)
                                 
@@ -637,12 +637,12 @@ struct FriendActivityCard: View {
         HStack {
             Text(label)
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.secondary)
                 .frame(width: 45, alignment: .leading)
             
             Text(value)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
@@ -652,13 +652,13 @@ struct FriendActivityCard: View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.system(size: compact ? 14 : 18, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             
             Text(label)
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, compact ? 4 : 8)
@@ -834,7 +834,7 @@ struct FollowListPopup: View {
                     }
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(.blue)
@@ -906,7 +906,7 @@ struct TabButton: View {
                             
                             Text("\(notificationCount)")
                                 .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -1219,7 +1219,7 @@ struct FollowRow: View {
                     
                     Text("\(person.level)")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 }
                 
                 // Username and stats
@@ -1278,7 +1278,7 @@ struct SearchResultRow: View {
                         .overlay(
                             Text(String(user.username.prefix(1)).uppercased())
                                 .font(.headline)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                         )
                     
                     // Username and stats
@@ -1320,7 +1320,7 @@ struct SearchResultRow: View {
                     Text("Following")
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(.blue)

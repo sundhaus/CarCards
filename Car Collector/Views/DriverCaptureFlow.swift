@@ -132,7 +132,7 @@ struct DriverCaptureFlow: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
-                    .background(Color.headerBackground)
+                    .background(.ultraThinMaterial)
                     .clipShape(Circle())
             }
             .padding(20)
@@ -281,7 +281,7 @@ struct DriverInfoFormView: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
-                    .background(Color.headerBackground)
+                    .background(.ultraThinMaterial)
                     .clipShape(Circle())
             }
             .padding(20)

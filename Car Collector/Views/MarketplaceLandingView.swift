@@ -19,27 +19,20 @@ struct MarketplaceLandingView: View {
     var body: some View {
         NavigationStack(path: $navigationController.marketplaceNavigationPath) {
             ZStack {
-                // Background gradient
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.1, green: 0.1, blue: 0.2),
-                        Color(red: 0.05, green: 0.05, blue: 0.15)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                // Light background
+                Color.appBackgroundSolid
+                    .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Header
                     VStack(spacing: 8) {
                         Text("Marketplace")
                             .font(.system(size: 42, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         
                         Text("Trade & collect rare cards")
                             .font(.system(size: 16))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.top, 60)
                     .padding(.bottom, 30)

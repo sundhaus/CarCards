@@ -106,7 +106,7 @@ struct ExploreView: View {
                 .tint(.white)
             Text("Loading cars...")
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -154,18 +154,18 @@ struct FeaturedRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Featured")
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         
                         Text("Top picks from the community")
                             .font(.caption)
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.secondary)
                     }
                     
                     Spacer()
                     
                     Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal)
             }
@@ -208,18 +208,18 @@ struct CategoryRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(category.rawValue)
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         
                         Text(category.description)
                             .font(.caption)
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.secondary)
                     }
                     
                     Spacer()
                     
                     Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal)
             }

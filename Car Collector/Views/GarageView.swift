@@ -32,7 +32,7 @@ struct GarageView: View {
                         Text("GARAGE")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         
                         Spacer()
                         

@@ -49,7 +49,7 @@ struct DriverInfoFormSheet: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("First Name *")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.7))
+                                    .foregroundStyle(.secondary)
                                 
                                 TextField("Required", text: $firstName)
                                     .textFieldStyle(CustomTextFieldStyle())
@@ -58,7 +58,7 @@ struct DriverInfoFormSheet: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Last Name *")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.7))
+                                    .foregroundStyle(.secondary)
                                 
                                 TextField("Required", text: $lastName)
                                     .textFieldStyle(CustomTextFieldStyle())
@@ -67,7 +67,7 @@ struct DriverInfoFormSheet: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Nickname")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.7))
+                                    .foregroundStyle(.secondary)
                                 
                                 TextField("Optional", text: $nickname)
                                     .textFieldStyle(CustomTextFieldStyle())
@@ -78,7 +78,7 @@ struct DriverInfoFormSheet: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Vehicle Name")
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(.white.opacity(0.7))
+                                        .foregroundStyle(.secondary)
                                     
                                     TextField("Optional", text: $vehicleName)
                                         .textFieldStyle(CustomTextFieldStyle())
@@ -98,7 +98,7 @@ struct DriverInfoFormSheet: View {
                                 Text(signatureImage != nil ? "Signature Added" : "Add Signature")
                                     .font(.system(size: 16, weight: .semibold))
                             }
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(
@@ -120,7 +120,7 @@ struct DriverInfoFormSheet: View {
                         }) {
                             Text("Save Driver")
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 18)
                                 .background(

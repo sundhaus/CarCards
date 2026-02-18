@@ -43,7 +43,7 @@ struct LocationInfoFormSheet: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Location Name *")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.7))
+                                    .foregroundStyle(.secondary)
                                 
                                 TextField("Enter location name", text: $locationName)
                                     .textFieldStyle(CustomTextFieldStyle())
@@ -56,7 +56,7 @@ struct LocationInfoFormSheet: View {
                         }) {
                             Text("Save Location")
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 18)
                                 .background(

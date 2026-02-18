@@ -166,7 +166,7 @@ struct LocationInfoFormView: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
-                    .background(Color.headerBackground)
+                    .background(.ultraThinMaterial)
                     .clipShape(Circle())
             }
             .padding(20)

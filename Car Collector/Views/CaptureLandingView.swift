@@ -41,11 +41,11 @@ struct CaptureLandingView: View {
                     VStack(spacing: 8) {
                         Text("Capture")
                             .font(.system(size: 42, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         
                         Text("Choose what to capture")
                             .font(.system(size: 16))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.top, 20)
                     .padding(.bottom, 30)

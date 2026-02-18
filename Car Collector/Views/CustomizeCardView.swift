@@ -32,7 +32,7 @@ struct CustomizeCardView: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
                             .font(.title3)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                     }
                     
                     Spacer()
@@ -40,7 +40,7 @@ struct CustomizeCardView: View {
                     Text("Customize Card")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     
                     Spacer()
                     
@@ -199,7 +199,7 @@ struct CustomizeCardView: View {
         VStack(spacing: 20) {
             Text("Border Color")
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .padding(.top, 20)
             
             HStack(spacing: 30) {
@@ -258,13 +258,13 @@ struct CustomizeCardView: View {
         VStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 40))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.tertiary)
             Text(title)
                 .font(.headline)
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.tertiary)
             Text("Coming Soon")
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(.tertiary)
         }
     }
     

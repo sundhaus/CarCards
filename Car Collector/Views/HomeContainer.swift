@@ -37,10 +37,10 @@ struct HomeContainer: View {
                         .foregroundStyle(.white)
                 }
                 
-                // Title - closer to icon, farther from bottom
+                // Title
                 Text(title)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.8)
@@ -50,14 +50,7 @@ struct HomeContainer: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 140)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.1))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
+            .glassEffect(.regular, in: .rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)
         .disabled(disabled)

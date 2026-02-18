@@ -28,11 +28,11 @@ struct DriverCaptureLandingView: View {
                     VStack(spacing: 8) {
                         Text("Capture Driver")
                             .font(.system(size: 42, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         
                         Text("Choose capture type")
                             .font(.system(size: 16))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.top, 60)
                     .padding(.bottom, 30)
@@ -84,7 +84,7 @@ struct DriverCaptureLandingView: View {
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white)
                                 .frame(width: 44, height: 44)
-                                .background(Color.headerBackground)
+                                .background(.ultraThinMaterial)
                                 .clipShape(Circle())
                         }
                         .padding(20)

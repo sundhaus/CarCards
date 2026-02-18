@@ -25,15 +25,14 @@ struct FeaturedCollectionsContainer: View {
             headerSection
             carouselSection
         }
-        .background(containerBackground)
-        .overlay(containerBorder)
+        .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
     
     private var headerSection: some View {
         HStack {
             Text("Featured")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             
             Spacer()
             
@@ -48,15 +47,15 @@ struct FeaturedCollectionsContainer: View {
         HStack(spacing: 6) {
             Image(systemName: "clock.fill")
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.secondary)
             
             Text(hotCardsService.timeUntilNextRefresh)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Color.white.opacity(0.15))
+        .background(Color.primary.opacity(0.08))
         .cornerRadius(20)
     }
     
@@ -68,12 +67,11 @@ struct FeaturedCollectionsContainer: View {
     
     private var containerBackground: some View {
         RoundedRectangle(cornerRadius: 16)
-            .fill(Color.white.opacity(0.1))
+            .fill(.clear)
     }
     
     private var containerBorder: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+        EmptyView()
     }
 }
 
