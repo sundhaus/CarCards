@@ -105,7 +105,7 @@ struct SignatureView: View {
             cardImage.draw(at: .zero)
             
             // Draw signature
-            let signatureImage = canvas.drawing.image(from: canvas.bounds, scale: UIScreen.main.scale)
+            let signatureImage = canvas.drawing.image(from: canvas.bounds, scale: UITraitCollection.current.displayScale)
             signatureImage.draw(in: CGRect(origin: .zero, size: cardImage.size))
         }
     }
