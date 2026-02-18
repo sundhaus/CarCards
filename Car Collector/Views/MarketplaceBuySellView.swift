@@ -561,26 +561,8 @@ struct GarageCardRow: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            ZStack {
-                if let image = card.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 360, height: 202.5)
-                        .clipped()
-                        .cornerRadius(12)
-                }
-                
-                // Custom frame/border overlay
-                if let frameName = card.customFrame, frameName != "None" {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(
-                            frameName == "White" ? Color.white : Color.black,
-                            lineWidth: 6
-                        )
-                        .frame(width: 360, height: 202.5)
-                }
-            }
+            // FIFA-style card
+            SellTabCardView(card: card)
             
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -601,6 +583,133 @@ struct GarageCardRow: View {
         .cornerRadius(12)
     }
 }
+
+// MARK: - Sell Tab Card View
+
+struct SellTabCardView: View {
+    let card: SavedCard
+    
+    private let cardHeight: CGFloat = 202.5
+    private var cardWidth: CGFloat { cardHeight * (16/9) }
+    
+    var body: some View {
+        ZStack {
+            // Card background with gradient
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.85, blue: 0.88),
+                            Color(red: 0.75, green: 0.75, blue: 0.78)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            
+            VStack(spacing: 0) {
+                // Top bar - GEN badge + Car name
+                HStack(spacing: 8) {
+                    // GEN badge
+                    VStack(spacing: 2) {
+                        Text("GEN")
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(.black.opacity(0.6))
+                        Text("\(cardLevel)")
+                            .font(.system(size: 14, weight: .black))
+                            .foregroundStyle(.black)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white)
+                            .shadow(color: .black.opacity(0.1), radius: 2)
+                    )
+                    
+                    // Car name
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(card.make.uppercased())
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.black.opacity(0.7))
+                            .lineLimit(1)
+                        
+                        Text(card.model)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.black)
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+                .padding(.bottom, 6)
+                
+                // Car image area (center)
+                GeometryReader { geo in
+                    Group {
+                        if let image = card.image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geo.size.width, height: geo.size.height)
+                        } else {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .overlay(
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: 30))
+                                        .foregroundStyle(.gray.opacity(0.4))
+                                )
+                        }
+                    }
+                    .clipped()
+                }
+                
+                // Bottom bar - Year
+                HStack {
+                    Spacer()
+                    
+                    Text(card.year)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.black.opacity(0.6))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(0.4))
+            }
+            
+            // Black border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 3)
+        }
+        .frame(width: cardWidth, height: cardHeight)
+        .clipped()
+        .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
+    }
+    
+    // Calculate card level based on category rarity
+    private var cardLevel: Int {
+        guard let category = card.specs?.category else { return 1 }
+        
+        switch category {
+        case .hypercar: return 10
+        case .supercar: return 9
+        case .track: return 8
+        case .sportsCar: return 7
+        case .muscle: return 6
+        case .rally: return 5
+        case .electric, .hybrid: return 5
+        case .luxury: return 4
+        case .classic, .concept: return 6
+        case .coupe, .convertible: return 4
+        case .offRoad, .suv, .truck: return 3
+        case .sedan, .wagon, .hatchback, .van: return 2
+        }
+    }
+}
+
 
 // MARK: - Marketplace FIFA Card
 
