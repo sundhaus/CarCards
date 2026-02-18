@@ -63,7 +63,7 @@ struct GarageView: View {
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.top, 16)
+                    .padding(.top, 8)
                     .padding(.bottom, 8)
                     .background(.ultraThinMaterial)
                     
@@ -353,17 +353,17 @@ struct GarageView: View {
                                 }
                             }
                             .padding(.horizontal)
-                            .padding(.top, 8)
+                            .padding(.top, 16)
                             
                             Spacer()
                         }
-                        .padding(.bottom, 40) // Reserve space for page dots
+                        .padding(.bottom, 36)
                         .tag(pageIndex)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 
-                // Custom page indicator pinned below
+                // Liquid Glass page indicator
                 if totalPages > 1 {
                     HStack(spacing: 8) {
                         ForEach(0..<totalPages, id: \.self) { index in
@@ -372,8 +372,10 @@ struct GarageView: View {
                                 .frame(width: 8, height: 8)
                         }
                     }
-                    .padding(.top, 4)
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .glassEffect(.regular, in: .capsule)
+                    .padding(.bottom, 4)
                 }
             }
         }
