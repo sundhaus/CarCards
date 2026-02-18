@@ -54,14 +54,16 @@ class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         // Reverse geocode using MapKit (iOS 26 replacement for CLGeocoder)
         guard let request = MKReverseGeocodingRequest(location: location) else {
-            Task { @MainActor in
-                self.currentCity = "Unknown"
+            Task { @MainActor [weak self] in
+                self?.currentCity = "Unknown"
             }
             return
         }
         
-        request.getMapItems { items, error in
+        request.getMapItems { [weak self] items, error in
             Task { @MainActor in
+                guard let self else { return }
+                
                 if let error = error {
                     print("❌ Geocoding error: \(error)")
                     self.currentCity = "Unknown"
@@ -69,9 +71,8 @@ class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
                 }
                 
                 if let mapItem = items?.first {
-                    // MKMapItem.placemark is MKPlacemark (subclass of CLPlacemark)
-                    let placemark = mapItem.placemark
-                    let city = placemark.locality ?? placemark.administrativeArea ?? mapItem.name ?? "Unknown"
+                    // Use addressRepresentations for city name (iOS 26)
+                    let city = mapItem.addressRepresentations?.cityWithContext ?? mapItem.name ?? "Unknown"
                     self.currentCity = city
                     print("📍 Location: \(city)")
                 } else {
