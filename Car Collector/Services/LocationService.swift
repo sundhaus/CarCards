@@ -7,7 +7,6 @@
 
 import Foundation
 @preconcurrency import CoreLocation
-import MapKit
 
 class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = LocationService()
@@ -52,12 +51,11 @@ class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.first else { return }
         
-        // Reverse geocode to get city name using MapKit
+        // Reverse geocode to get city name
         Task { @MainActor in
             do {
-                let request = MKReverseGeocodingRequest(coordinate: location.coordinate)
-                let results = try await request.start()
-                if let placemark = results.first {
+                let placemarks = try await CLGeocoder().reverseGeocodeLocation(location)
+                if let placemark = placemarks.first {
                     let city = placemark.locality ?? placemark.administrativeArea ?? "Unknown"
                     self.currentCity = city
                     print("📍 Location: \(city)")
