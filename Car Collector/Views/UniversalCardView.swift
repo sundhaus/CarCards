@@ -104,7 +104,7 @@ struct UniversalCardView: View {
     }
     
     private var carNameText: some View {
-        VStack(alignment: config.textPosition == .topRight || config.textPosition == .bottomRight ? .trailing : .leading, spacing: 2) {
+        HStack(spacing: 6) {
             Text(cardData.make.uppercased())
                 .font(.system(size: height * 0.08, weight: .semibold))
                 .foregroundStyle(config.textColor)
@@ -116,7 +116,7 @@ struct UniversalCardView: View {
                 )
             
             Text(cardData.model)
-                .font(.system(size: height * 0.11, weight: .bold))
+                .font(.system(size: height * 0.08, weight: .bold))
                 .foregroundStyle(config.textColor)
                 .shadow(
                     color: config.textShadow.color,

@@ -47,7 +47,7 @@ extension CardBorderConfig {
     // Default black border - simple overlay
     static let defaultBlack = CardBorderConfig(
         borderImageName: "Border_Def_Blk",
-        textPosition: .topRight,
+        textPosition: .topLeft,
         textColor: .white,
         textShadow: Shadow(
             color: .black.opacity(0.8),
