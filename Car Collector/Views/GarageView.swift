@@ -612,9 +612,17 @@ struct UnifiedCardDetailView: View {
         let cardHeight: CGFloat = cardWidth / 16 * 9
         
         return ZStack {
-            // Front side - card image
+            // Front side - FIFA-style card
             if !isFlipped {
-                if let image = card.image {
+                if case .vehicle(let vehicleCard) = card {
+                    CardDetailsFrontView(card: vehicleCard)
+                        .frame(width: cardWidth, height: cardHeight)
+                        .rotation3DEffect(
+                            .degrees(flipDegrees),
+                            axis: (x: 0, y: 1, z: 0)
+                        )
+                } else if let image = card.image {
+                    // Driver/Location cards - just show image
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
