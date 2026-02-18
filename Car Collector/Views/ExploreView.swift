@@ -281,24 +281,24 @@ struct ExploreCardItem: View {
                 .frame(width: cardWidth, height: height)
                 .allowsHitTesting(false)
             
-            // Car name overlay - top right
+            // Car name overlay - top left, horizontal
             VStack {
                 HStack {
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
+                    HStack(spacing: 6) {
                         Text(card.cardMake.uppercased())
                             .font(.system(size: height * 0.08, weight: .semibold))
                             .foregroundStyle(.white)
                             .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                         
                         Text(card.cardModel)
-                            .font(.system(size: height * 0.11, weight: .bold))
+                            .font(.system(size: height * 0.08, weight: .bold))
                             .foregroundStyle(.white)
                             .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                             .lineLimit(1)
                     }
                     .padding(.top, height * 0.08)
-                    .padding(.trailing, height * 0.08)
+                    .padding(.leading, height * 0.08)
+                    Spacer()
                 }
                 Spacer()
             }

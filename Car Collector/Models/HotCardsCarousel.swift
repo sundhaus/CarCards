@@ -238,91 +238,59 @@ struct HotCardItem: View {
                     )
                 )
             
-            VStack(spacing: 0) {
-                // Top bar - GEN badge + Car name
-                HStack(spacing: 6) {
-                    // GEN badge (top-left)
-                    VStack(spacing: 1) {
-                        Text("GEN")
-                            .font(.system(size: 7, weight: .bold))
-                            .foregroundStyle(.black.opacity(0.6))
-                        Text("\(card.level)")
-                            .font(.system(size: 12, weight: .black))
-                            .foregroundStyle(.black)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(Color.white)
-                            .shadow(color: .black.opacity(0.1), radius: 2)
-                    )
-                    
-                    // Car name
-                    VStack(alignment: .leading, spacing: 1) {
+            // Car image - full bleed
+            cardImageView
+                .frame(width: cardWidth, height: cardHeight)
+                .clipped()
+            
+            // Border PNG overlay
+            Image("Border_Def_Blk")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: cardWidth, height: cardHeight)
+                .allowsHitTesting(false)
+            
+            // Car name overlay - top left, horizontal
+            VStack {
+                HStack {
+                    HStack(spacing: 4) {
                         Text(card.cardMake.uppercased())
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundStyle(.black.opacity(0.7))
-                            .lineLimit(1)
+                            .font(.system(size: cardHeight * 0.08, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                         
                         Text(card.cardModel)
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.black)
+                            .font(.system(size: cardHeight * 0.08, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                             .lineLimit(1)
                     }
-                    
+                    .padding(.top, cardHeight * 0.08)
+                    .padding(.leading, cardHeight * 0.08)
                     Spacer()
-                    
-                    // Heat indicator
-                    if card.heatCount > 0 {
-                        HStack(spacing: 2) {
-                            Image(systemName: "flame.fill")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.orange)
-                            Text("\(card.heatCount)")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.orange)
-                        }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(
-                            RoundedRectangle(cornerRadius: 5)
-                                .fill(Color.white.opacity(0.9))
-                        )
-                    }
                 }
-                .padding(.horizontal, 10)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
-                
-                // Car image area (center)
-                GeometryReader { geo in
-                    cardImageView
-                        .frame(width: geo.size.width, height: geo.size.height)
-                        .clipped()
-                }
-                
-                // Bottom bar - Username
-                HStack {
-                    Text("@\(card.username)")
-                        .font(.system(size: 8, weight: .medium))
-                        .foregroundStyle(.black.opacity(0.5))
-                        .lineLimit(1)
-                    
-                    Spacer()
-                    
-                    Text(card.cardYear)
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(.black.opacity(0.6))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Color.white.opacity(0.4))
+                Spacer()
             }
             
-            // Black border overlay
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 3)
+            // Heat indicator - bottom right if has heat
+            if card.heatCount > 0 {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        HStack(spacing: 3) {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: cardHeight * 0.09))
+                            Text("\(card.heatCount)")
+                                .font(.system(size: cardHeight * 0.09, weight: .bold))
+                        }
+                        .foregroundStyle(.orange)
+                        .shadow(color: .black.opacity(0.6), radius: 2)
+                        .padding(.bottom, cardHeight * 0.08)
+                        .padding(.trailing, cardHeight * 0.08)
+                    }
+                }
+            }
         }
         .frame(width: cardWidth, height: cardHeight)
         .clipped()
