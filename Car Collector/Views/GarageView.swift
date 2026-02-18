@@ -761,7 +761,7 @@ struct CardBackView: View {
             
             // Black border overlay (matching front)
             RoundedRectangle(cornerRadius: 15)
-                .strokeBorder(Color.black, lineWidth: 3)
+                .strokeBorder(Color.black, lineWidth: 5)
         }
         .cornerRadius(15)
         .shadow(radius: 10)
@@ -868,11 +868,9 @@ struct VehicleCardView: View {
             .frame(width: cardWidth, height: cardHeight)
             .clipped()
             
-            // Border PNG overlay
-            Image("Border_Def_Blk")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: cardWidth, height: cardHeight)
+            // Programmatic border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 5)
                 .allowsHitTesting(false)
             
             // Car name overlay - top left, horizontal
@@ -958,7 +956,7 @@ struct SimpleCardView: View {
             
             // Black border overlay
             RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 3)
+                .strokeBorder(Color.black, lineWidth: 5)
         }
         .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)

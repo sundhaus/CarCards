@@ -274,11 +274,9 @@ struct ExploreCardItem: View {
                 .frame(width: cardWidth, height: height)
                 .clipped()
             
-            // PNG Border overlay
-            Image("Border_Def_Blk")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: cardWidth, height: height)
+            // Programmatic border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 5)
                 .allowsHitTesting(false)
             
             // Car name overlay - top left, horizontal

@@ -626,11 +626,9 @@ struct SellTabCardView: View {
             .frame(width: cardWidth, height: cardHeight)
             .clipped()
             
-            // Border PNG overlay
-            Image("Border_Def_Blk")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: cardWidth, height: cardHeight)
+            // Programmatic border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 5)
                 .allowsHitTesting(false)
             
             // Car name overlay - top left, horizontal
@@ -733,11 +731,9 @@ struct MarketplaceFIFACard: View {
             .frame(width: cardWidth, height: cardHeight)
             .clipped()
             
-            // Border PNG overlay
-            Image("Border_Def_Blk")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: cardWidth, height: cardHeight)
+            // Programmatic border overlay
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.black, lineWidth: 5)
                 .allowsHitTesting(false)
             
             // Car name overlay - top left, horizontal
