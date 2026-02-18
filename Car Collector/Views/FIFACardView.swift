@@ -35,9 +35,10 @@ struct FIFACardView: View {
                 .frame(width: cardWidth, height: height)
                 .clipped()
             
-            // Programmatic border overlay
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.black, lineWidth: 5)
+            // Border PNG overlay
+            Image("Border_Def_Blk")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
                 .frame(width: cardWidth, height: height)
                 .allowsHitTesting(false)
             
