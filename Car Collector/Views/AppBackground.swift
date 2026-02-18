@@ -9,10 +9,12 @@
 import SwiftUI
 
 struct AppBackground: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
         ZStack {
-            // Bright white base
-            Color.white
+            // Adaptive base: white in light mode, space gray in dark
+            (colorScheme == .dark ? Color(white: 0.11) : Color.white)
                 .ignoresSafeArea()
             
             // Spline graphic - right side, shifted above midline

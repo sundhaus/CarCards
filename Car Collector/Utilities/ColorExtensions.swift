@@ -8,16 +8,24 @@
 import SwiftUI
 
 extension Color {
-    // Light background gradient
+    // Light background gradient (used where gradient is required)
     static let appBackground = LinearGradient(
-        colors: [.white, .white],
+        colors: [appBackgroundSolid, appBackgroundSolid],
         startPoint: .top,
         endPoint: .bottom
     )
     
-    // Solid light background
-    static let appBackgroundSolid = Color.white
+    // Solid background - adaptive
+    static let appBackgroundSolid = Color(UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(white: 0.11, alpha: 1)
+            : UIColor.white
+    })
     
-    // Header background - light with subtle transparency
-    static let headerBackground = Color(white: 0.92).opacity(0.85)
+    // Header background - adaptive with transparency
+    static let headerBackground = Color(UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(white: 0.15, alpha: 0.85)
+            : UIColor(white: 0.96, alpha: 0.85)
+    })
 }
