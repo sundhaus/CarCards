@@ -101,7 +101,7 @@ struct ContentView: View {
                         .padding(.top, 50)
                 }
             }
-            .modifier(TabBarMinimizeModifier())
+            .tabBarMinimizeBehavior(.onScrollDown)
             
             // Level Header overlay
             if !showCamera && !showCardDetail {
@@ -185,18 +185,6 @@ struct ContentView: View {
     }
     
     // Indicator offset functions removed - native Liquid Glass handles tab bar
-}
-
-// MARK: - Tab Bar Minimize Modifier (iOS 26+)
-
-struct TabBarMinimizeModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.tabBarMinimizeBehavior(.onScrollDown)
-        } else {
-            content
-        }
-    }
 }
 
 // Wrapper to pass savedCards to GarageView
