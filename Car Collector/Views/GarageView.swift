@@ -63,7 +63,7 @@ struct GarageView: View {
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.top, 8)
+                    .padding(.top, 16)
                     .padding(.bottom, 8)
                     .background(.ultraThinMaterial)
                     
@@ -325,44 +325,57 @@ struct GarageView: View {
             let cardsPerPage = cardsPerRow == 1 ? 5 : 10 // 5 cards (5x1) or 10 cards (5x2)
             let totalPages = Int(ceil(Double(allCards.count) / Double(cardsPerPage)))
             
-            TabView(selection: $currentPage) {
-                ForEach(0..<max(1, totalPages), id: \.self) { pageIndex in
-                    let startIndex = pageIndex * cardsPerPage
-                    let endIndex = min(startIndex + cardsPerPage, allCards.count)
-                    let pageCards = Array(allCards[startIndex..<endIndex])
-                    
-                    VStack {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
-                            ForEach(pageCards) { card in
-                                UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
-                                    .onTapGesture {
-                                        selectedCard = card
-                                        withAnimation {
-                                            showCardDetail = true
-                                        }
-                                    }
-                                    .onLongPressGesture(minimumDuration: 0.25) {
-                                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                                        impactFeedback.impactOccurred()
-                                        contextMenuCard = card
-                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                            showContextMenu = true
-                                        }
-                                    }
-                            }
-                        }
-                        .padding()
-                        .padding(.top, 8) // Reduced padding since header is compact now
+            VStack(spacing: 0) {
+                TabView(selection: $currentPage) {
+                    ForEach(0..<max(1, totalPages), id: \.self) { pageIndex in
+                        let startIndex = pageIndex * cardsPerPage
+                        let endIndex = min(startIndex + cardsPerPage, allCards.count)
+                        let pageCards = Array(allCards[startIndex..<endIndex])
                         
-                        Spacer()
+                        VStack {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
+                                ForEach(pageCards) { card in
+                                    UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
+                                        .onTapGesture {
+                                            selectedCard = card
+                                            withAnimation {
+                                                showCardDetail = true
+                                            }
+                                        }
+                                        .onLongPressGesture(minimumDuration: 0.25) {
+                                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                            impactFeedback.impactOccurred()
+                                            contextMenuCard = card
+                                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                                showContextMenu = true
+                                            }
+                                        }
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                            
+                            Spacer()
+                        }
+                        .padding(.bottom, 40) // Reserve space for page dots
+                        .tag(pageIndex)
                     }
-                    .padding(.bottom, 50)
-                    .tag(pageIndex)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                
+                // Custom page indicator pinned below
+                if totalPages > 1 {
+                    HStack(spacing: 8) {
+                        ForEach(0..<totalPages, id: \.self) { index in
+                            Circle()
+                                .fill(currentPage == index ? Color.primary : Color.primary.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                        }
+                    }
+                    .padding(.top, 4)
+                    .padding(.bottom, 8)
                 }
             }
-            .tabViewStyle(.page)
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .padding(.bottom, 20)
         }
     }
 }

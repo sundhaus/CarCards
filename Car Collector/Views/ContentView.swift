@@ -93,7 +93,7 @@ struct ContentView: View {
             // Garage Tab
             Tab("Garage", systemImage: "wrench.and.screwdriver", value: 4) {
                 GarageView()
-                    .padding(.top, 70)
+                    .padding(.top, 80)
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
