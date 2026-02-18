@@ -257,7 +257,7 @@ struct ExploreCardItem: View {
     var body: some View {
         ZStack {
             // Card background with gradient
-            RoundedRectangle(cornerRadius: height * 0.08)
+            RoundedRectangle(cornerRadius: height * 0.09)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -327,7 +327,7 @@ struct ExploreCardItem: View {
             }
         }
         .frame(width: cardWidth, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: height * 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: height * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
         .onAppear {
             loadImage()

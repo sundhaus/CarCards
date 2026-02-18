@@ -376,7 +376,7 @@ struct FriendActivityCard: View {
                                 }
                             }
                             .frame(width: 360, height: 202.5)
-                            .clipShape(RoundedRectangle(cornerRadius: 202.5 * 0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 202.5 * 0.09))
                         } else {
                             // Card back with specs
                             ZStack {
@@ -440,7 +440,7 @@ struct FriendActivityCard: View {
                                 }
                             }
                             .frame(width: 360, height: 202.5)
-                            .clipShape(RoundedRectangle(cornerRadius: 202.5 * 0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 202.5 * 0.09))
                     }
                 }
             }  // Close else (back card)

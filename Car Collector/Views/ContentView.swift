@@ -840,7 +840,7 @@ struct CardDetailView: View {
             }
             .frame(width: cardWidth, height: cardHeight)
         }
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: .black.opacity(0.5), radius: 20)
     }
     
@@ -940,7 +940,7 @@ struct CardDetailView: View {
                     .allowsHitTesting(false)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: .black.opacity(0.5), radius: 20)
     }
     

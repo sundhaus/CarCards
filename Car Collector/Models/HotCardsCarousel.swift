@@ -226,7 +226,7 @@ struct HotCardItem: View {
     var body: some View {
         ZStack {
             // Card background with gradient
-            RoundedRectangle(cornerRadius: cardHeight * 0.08)
+            RoundedRectangle(cornerRadius: cardHeight * 0.09)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -296,7 +296,7 @@ struct HotCardItem: View {
             }
         }
         .frame(width: cardWidth, height: cardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.08))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 3)
     }
     
