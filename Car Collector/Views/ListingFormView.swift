@@ -203,7 +203,6 @@ struct ListingFormView: View {
     
     ListingFormView(
         card: SavedCard(
-            id: UUID(),
             image: dummyImage,
             make: "Toyota",
             model: "Supra",
