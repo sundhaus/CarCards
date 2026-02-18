@@ -345,7 +345,7 @@ struct GarageView: View {
                                             showCardDetail = true
                                         }
                                     }
-                                    .onLongPressGesture(minimumDuration: 0.5) {
+                                    .onLongPressGesture(minimumDuration: 0.25) {
                                         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                                         impactFeedback.impactOccurred()
                                         contextMenuCard = card
