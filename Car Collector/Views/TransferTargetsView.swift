@@ -199,7 +199,7 @@ struct ListingCardView: View {
                     .font(.headline)
                     .lineLimit(1)
                 
-                Text(listing.model)
+                Text(listing.model.uppercased())
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

@@ -262,7 +262,7 @@ struct HotCardItem: View {
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         
-                        Text(card.cardModel)
+                        Text(card.cardModel.uppercased())
                             .font(.custom("Futura-Bold", size: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)

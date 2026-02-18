@@ -566,7 +566,7 @@ struct GarageCardRow: View {
             
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(card.make) \(card.model)")
+                    Text("\(card.make.uppercased()) \(card.model.uppercased())")
                         .font(.custom("Futura-Bold", size: 17))
                     Text(card.year)
                         .font(.caption)
@@ -645,7 +645,7 @@ struct SellTabCardView: View {
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         
-                        Text(card.model)
+                        Text(card.model.uppercased())
                             .font(.custom("Futura-Bold", size: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
@@ -755,7 +755,7 @@ struct MarketplaceFIFACard: View {
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         
-                        Text(listing.model)
+                        Text(listing.model.uppercased())
                             .font(.custom("Futura-Bold", size: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)

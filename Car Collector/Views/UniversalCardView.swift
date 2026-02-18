@@ -115,7 +115,7 @@ struct UniversalCardView: View {
                     y: config.textShadow.y
                 )
             
-            Text(cardData.model)
+            Text(cardData.model.uppercased())
                 .font(.custom("Futura-Bold", size: height * 0.08))
                 .foregroundStyle(config.textColor)
                 .shadow(

@@ -701,7 +701,7 @@ struct CardBackView: View {
             VStack(spacing: 16) {
                 // Header
                 VStack(spacing: 4) {
-                    Text("\(make) \(model)")
+                    Text("\(make.uppercased()) \(model.uppercased())")
                         .font(.custom("Futura-Bold", size: 22))
                         .foregroundStyle(.white)
                     
@@ -899,7 +899,7 @@ struct VehicleCardView: View {
                                 y: config.textShadow.y
                             )
                         
-                        Text(card.model)
+                        Text(card.model.uppercased())
                             .font(.custom("Futura-Bold", size: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(

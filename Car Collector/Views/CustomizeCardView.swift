@@ -100,7 +100,7 @@ struct CustomizeCardView: View {
                                     .foregroundStyle(textColor)
                                     .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
                                 
-                                Text(card.model)
+                                Text(card.model.uppercased())
                                     .font(.custom("Futura-Bold", size: 14))
                                     .foregroundStyle(textColor)
                                     .shadow(color: shadowColor, radius: 3, x: 0, y: 2)

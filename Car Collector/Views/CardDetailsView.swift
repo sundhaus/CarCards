@@ -397,7 +397,7 @@ struct CardDetailsView: View {
             )
             
             VStack(spacing: 12) {
-                Text("\(card.make) \(card.model)")
+                Text("\(card.make.uppercased()) \(card.model.uppercased())")
                     .font(.custom("Futura-Bold", size: 20))
                     .foregroundStyle(.white)
                 
@@ -650,7 +650,7 @@ struct CardDetailsFrontView: View {
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             
-                            Text(card.model)
+                            Text(card.model.uppercased())
                                 .font(.custom("Futura-Bold", size: cardHeight * 0.08))
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)

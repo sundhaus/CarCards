@@ -542,7 +542,7 @@ struct GarageViewContent: View {
             
             Button("Cancel", role: .cancel) {}
         } message: { card in
-            Text("\(card.make) \(card.model)")
+            Text("\(card.make.uppercased()) \(card.model.uppercased())")
         }
         .fullScreenCover(isPresented: $showCustomize) {
             if let card = selectedCard {
@@ -809,7 +809,7 @@ struct CardDetailView: View {
                 Spacer()
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(card.make) \(card.model)")
+                        Text("\(card.make.uppercased()) \(card.model.uppercased())")
                             .font(.custom("Futura-Bold", size: 22))
                             .foregroundStyle(.white)
                         Text(card.year)
@@ -859,7 +859,7 @@ struct CardDetailView: View {
             VStack(spacing: 0) {
                 // Header
                 VStack(spacing: 4) {
-                    Text("\(currentCard.make) \(currentCard.model)")
+                    Text("\(currentCard.make.uppercased()) \(currentCard.model.uppercased())")
                         .font(.custom("Futura-Bold", size: 24))
                         .foregroundStyle(.white)
                     
