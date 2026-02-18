@@ -7,6 +7,7 @@
 
 import Foundation
 @preconcurrency import CoreLocation
+import MapKit
 
 class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = LocationService()
@@ -51,18 +52,31 @@ class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.first else { return }
         
-        // Reverse geocode to get city name
-        Task { @MainActor in
-            do {
-                let placemarks = try await CLGeocoder().reverseGeocodeLocation(location)
-                if let placemark = placemarks.first {
-                    let city = placemark.locality ?? placemark.administrativeArea ?? "Unknown"
+        // Reverse geocode using MapKit (iOS 26 replacement for CLGeocoder)
+        guard let request = MKReverseGeocodingRequest(location: location) else {
+            Task { @MainActor in
+                self.currentCity = "Unknown"
+            }
+            return
+        }
+        
+        request.getMapItems { items, error in
+            Task { @MainActor in
+                if let error = error {
+                    print("❌ Geocoding error: \(error)")
+                    self.currentCity = "Unknown"
+                    return
+                }
+                
+                if let mapItem = items?.first {
+                    // MKMapItem.placemark is MKPlacemark (subclass of CLPlacemark)
+                    let placemark = mapItem.placemark
+                    let city = placemark.locality ?? placemark.administrativeArea ?? mapItem.name ?? "Unknown"
                     self.currentCity = city
                     print("📍 Location: \(city)")
+                } else {
+                    self.currentCity = "Unknown"
                 }
-            } catch {
-                print("❌ Geocoding error: \(error)")
-                self.currentCity = "Unknown"
             }
         }
     }
