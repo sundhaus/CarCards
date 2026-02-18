@@ -21,56 +21,56 @@ struct HomeView: View {
     
     var body: some View {
         NavigationStack(path: $navigationController.homeNavigationPath) {
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Top row - Leaderboard and Friends
-                    HStack(spacing: 16) {
-                        // Leaderboard
-                        HomeContainer(
-                            title: "Leaderboard",
-                            icon: "chart.bar.fill",
-                            gradient: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
-                            action: { showLeaderboard = true }
-                        )
-                        
-                        // Friends
-                        HomeContainer(
-                            title: "Friends",
-                            icon: "person.2.fill",
-                            gradient: friendsService.newFollowersCount > 0 ? [Color.green, Color.teal] : [Color.blue, Color.cyan],
-                            action: { showFriends = true }
-                        )
-                    }
-                    .padding(.horizontal)
+            VStack(spacing: 16) {
+                Spacer()
+                
+                // Top row - Leaderboard and Friends
+                HStack(spacing: 16) {
+                    // Leaderboard
+                    HomeContainer(
+                        title: "Leaderboard",
+                        icon: "chart.bar.fill",
+                        gradient: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
+                        action: { showLeaderboard = true }
+                    )
                     
-                    // Featured Collections with title/timer header
-                    FeaturedCollectionsContainer(action: { showExplore = true })
-                        .padding(.horizontal)
-                    
-                    // Bottom row - Sets and Transfer List
-                    HStack(spacing: 16) {
-                        // Sets (Coming Soon)
-                        HomeContainer(
-                            title: "Sets",
-                            icon: "square.stack.3d.up.fill",
-                            gradient: [Color.purple, Color.pink],
-                            action: {},
-                            disabled: true
-                        )
-                        .opacity(0.6)
-                        
-                        // Transfer List
-                        HomeContainer(
-                            title: "Transfer List",
-                            icon: "doc.text.fill",
-                            gradient: [Color.orange, Color.red],
-                            action: { showTransferList = true }
-                        )
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, isLandscape ? 20 : 100)
+                    // Friends
+                    HomeContainer(
+                        title: "Friends",
+                        icon: "person.2.fill",
+                        gradient: friendsService.newFollowersCount > 0 ? [Color.green, Color.teal] : [Color.blue, Color.cyan],
+                        action: { showFriends = true }
+                    )
                 }
-                .padding(.top, isLandscape ? 20 : 16)
+                .padding(.horizontal)
+                
+                // Featured Collections with title/timer header
+                FeaturedCollectionsContainer(action: { showExplore = true })
+                    .padding(.horizontal)
+                
+                // Bottom row - Sets and Transfer List
+                HStack(spacing: 16) {
+                    // Sets (Coming Soon)
+                    HomeContainer(
+                        title: "Sets",
+                        icon: "square.stack.3d.up.fill",
+                        gradient: [Color.purple, Color.pink],
+                        action: {},
+                        disabled: true
+                    )
+                    .opacity(0.6)
+                    
+                    // Transfer List
+                    HomeContainer(
+                        title: "Transfer List",
+                        icon: "doc.text.fill",
+                        gradient: [Color.orange, Color.red],
+                        action: { showTransferList = true }
+                    )
+                }
+                .padding(.horizontal)
+                
+                Spacer()
             }
             .background {
                 AppBackground()
