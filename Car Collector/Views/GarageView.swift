@@ -644,7 +644,8 @@ struct UnifiedCardDetailView: View {
                         model: vehicleCard.model,
                         year: vehicleCard.year,
                         specs: specs,
-                        customFrame: vehicleCard.customFrame
+                        customFrame: vehicleCard.customFrame,
+                        cardHeight: cardHeight
                     )
                     .frame(width: cardWidth, height: cardHeight)
                     .rotation3DEffect(
@@ -686,6 +687,7 @@ struct CardBackView: View {
     let year: String
     let specs: VehicleSpecs
     var customFrame: String? = nil
+    var cardHeight: CGFloat = 200
     
     var body: some View {
         ZStack {
@@ -769,7 +771,7 @@ struct CardBackView: View {
                     .allowsHitTesting(false)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.04))
         .shadow(radius: 10)
         .rotation3DEffect(
             .degrees(180),

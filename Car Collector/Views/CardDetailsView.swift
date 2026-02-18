@@ -428,7 +428,7 @@ struct CardDetailsView: View {
                     .allowsHitTesting(false)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 300 * 0.04))
     }
     
     private var compactStatsGrid: some View {
@@ -482,7 +482,7 @@ struct CardDetailsView: View {
                     .foregroundStyle(.white.opacity(0.8))
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 300 * 0.04))
     }
     
     private func statItem(label: String, value: String, compact: Bool = false) -> some View {
