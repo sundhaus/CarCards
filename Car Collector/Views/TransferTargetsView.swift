@@ -127,7 +127,6 @@ struct TransferTargetsView: View {
             .padding(.trailing, isLandscape ? 100 : 0)
         }
         .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             // Start listening to bids
             if let uid = FirebaseManager.shared.currentUserId {

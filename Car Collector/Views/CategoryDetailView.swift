@@ -41,7 +41,6 @@ struct CategoryDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             // Start with preloaded cards from Explore
             allCards = initialCards

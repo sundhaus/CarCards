@@ -205,7 +205,6 @@ struct FriendsView: View {
                 .ignoresSafeArea(edges: .bottom)
             }
             .navigationBarBackButtonHidden(true)
-            .toolbar(.hidden, for: .tabBar)
             .onAppear {
                 startListeners()
             }

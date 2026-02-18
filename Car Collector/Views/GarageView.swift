@@ -147,7 +147,6 @@ struct GarageView: View {
                         }
                 }
             }
-            .toolbar(.hidden, for: .tabBar)
         }
     }
     

@@ -96,7 +96,7 @@ struct ContentView: View {
                     .padding(.top, 50)
             }
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
+        // .tabBarMinimizeBehavior(.onScrollDown) // Re-enable once tab bar confirmed visible
         .overlay {
             // Level Header
             if !showCamera && !showCardDetail {

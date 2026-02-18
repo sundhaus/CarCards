@@ -100,7 +100,6 @@ struct HomeView: View {
                 showExplore = false
                 print("🏠 HomeView: Reset all navigation booleans from trigger")
             }
-            .toolbar(.hidden, for: .tabBar)
         }
     }
 }
