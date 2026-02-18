@@ -27,10 +27,11 @@ struct CarCardCollectorApp: App {
     
     @ViewBuilder
     private var rootView: some View {
-        if firebaseManager.isLoading {
-            launchScreen
-        } else if showOnboarding {
+        if showOnboarding {
             OnboardingView(onComplete: {
+                // Cache that onboarding is done and profile exists
+                UserDefaults.standard.set(true, forKey: "onboardingComplete")
+                UserDefaults.standard.set(true, forKey: "profileExists")
                 withAnimation {
                     showOnboarding = false
                     startServices()
@@ -45,18 +46,15 @@ struct CarCardCollectorApp: App {
     
     private var launchScreen: some View {
         ZStack {
-            // Exact blue background matching the logo (#4F84C7)
             Color(red: 0.310, green: 0.521, blue: 0.784)
                 .ignoresSafeArea()
             
             VStack(spacing: 20) {
-                // App Logo
                 Image("AppLogo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 280, height: 280)
                 
-                // Loading indicator
                 ProgressView()
                     .tint(.white)
                     .scaleEffect(1.2)
@@ -68,32 +66,58 @@ struct CarCardCollectorApp: App {
     }
     
     private func checkAuthState() async {
-        // Wait for Firebase auth to resolve
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        // Poll for auth listener to fire (typically < 100ms, no fixed delay)
+        var waitCount = 0
+        while firebaseManager.isLoading && waitCount < 40 {
+            try? await Task.sleep(nanoseconds: 25_000_000) // 25ms intervals
+            waitCount += 1
+        }
+        
+        // Safety: if still loading after 1s, force proceed
+        if firebaseManager.isLoading {
+            print("⚠️ Auth listener slow, checking cached state")
+        }
         
         if firebaseManager.isAuthenticated,
-           let uid = firebaseManager.currentUserId {
-            // Returning user Ã¢â‚¬â€ check if profile exists
-            do {
-                let exists = try await UserService.shared.profileExists(uid: uid)
-                if exists {
-                    startServices()
-                    withAnimation { isReady = true }
-                } else {
-                    // Auth exists but no profile (edge case)
-                    withAnimation { showOnboarding = true }
+           let _ = firebaseManager.currentUserId {
+            // Returning user — use cached flag to skip profileExists() network call
+            let hasProfile = UserDefaults.standard.bool(forKey: "profileExists")
+            
+            if hasProfile {
+                // FAST PATH: no network call, show UI immediately
+                startServices()
+                withAnimation { isReady = true }
+            } else {
+                // First time or cache miss — one-time server check
+                do {
+                    let exists = try await UserService.shared.profileExists(uid: firebaseManager.currentUserId!)
+                    if exists {
+                        UserDefaults.standard.set(true, forKey: "profileExists")
+                        startServices()
+                        withAnimation { isReady = true }
+                    } else {
+                        withAnimation { showOnboarding = true }
+                    }
+                } catch {
+                    print("❌ Auth check failed: \(error)")
+                    // Optimistic: if onboarding was done before, trust the cache
+                    let completedBefore = UserDefaults.standard.bool(forKey: "onboardingComplete")
+                    if completedBefore {
+                        UserDefaults.standard.set(true, forKey: "profileExists")
+                        startServices()
+                        withAnimation { isReady = true }
+                    } else {
+                        withAnimation { showOnboarding = true }
+                    }
                 }
-            } catch {
-                print("Ã¢ÂÅ’ Auth check failed: \(error)")
-                withAnimation { showOnboarding = true }
             }
         } else {
-            // First launch or signed out
+            // Not authenticated
             let completedBefore = UserDefaults.standard.bool(forKey: "onboardingComplete")
             if !completedBefore {
                 withAnimation { showOnboarding = true }
             } else {
-                // Had account but signed out Ã¢â‚¬â€ try re-auth
+                // Had account but signed out — try re-auth
                 do {
                     try await firebaseManager.signInAnonymously()
                     startServices()
@@ -108,16 +132,11 @@ struct CarCardCollectorApp: App {
     private func startServices() {
         guard let uid = firebaseManager.currentUserId else { return }
         
-        // Start real-time listeners
+        // Start real-time listeners immediately — no artificial delay
         UserService.shared.loadProfile(uid: uid)
         CardService.shared.listenToMyCards(uid: uid)
         
         isReady = true
-        
-        // Load cloud data into LevelSystem after a brief delay for profile to load
-        Task {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            // LevelSystem will be initialized in ContentView, sync happens via UserService
-        }
+        // LevelSystem syncs via UserService listener, no sleep needed
     }
 }
