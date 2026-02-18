@@ -246,7 +246,7 @@ struct HotCardItem: View {
             // Border PNG overlay
             Image("Border_Def_Blk")
                 .resizable()
-                .aspectRatio(contentMode: .fill)
+                .aspectRatio(contentMode: .fit)
                 .frame(width: cardWidth, height: cardHeight)
                 .allowsHitTesting(false)
             

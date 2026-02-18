@@ -277,7 +277,7 @@ struct ExploreCardItem: View {
             // PNG Border overlay
             Image("Border_Def_Blk")
                 .resizable()
-                .aspectRatio(contentMode: .fill)
+                .aspectRatio(contentMode: .fit)
                 .frame(width: cardWidth, height: height)
                 .allowsHitTesting(false)
             
