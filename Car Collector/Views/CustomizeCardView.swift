@@ -62,31 +62,61 @@ struct CustomizeCardView: View {
                 
                 // Card preview centered
                 ZStack {
-                    // Frame overlay - fixed position
-                    if selectedFrame != .none {
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(
-                                selectedFrame == .white ? Color.white : Color.black,
-                                lineWidth: 8
-                            )
-                            .frame(width: 320, height: 180)
-                            .shadow(color: .black.opacity(0.5), radius: 20)
-                    }
-                    
                     // Card image
                     if let image = card.image {
                         Image(uiImage: image)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 304, height: 171)
+                            .frame(width: 320, height: 180)
                             .clipped()
                             .cornerRadius(12)
                     } else {
                         Rectangle()
                             .fill(Color.gray.opacity(0.3))
-                            .frame(width: 304, height: 171)
+                            .frame(width: 320, height: 180)
                             .cornerRadius(12)
                     }
+                    
+                    // Border PNG overlay based on selection
+                    if selectedFrame == .white {
+                        Image("Border_Def_Wht")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 320, height: 180)
+                            .allowsHitTesting(false)
+                    } else if selectedFrame == .black {
+                        Image("Border_Def_Blk")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 320, height: 180)
+                            .allowsHitTesting(false)
+                    }
+                    
+                    // Car name overlay (preview)
+                    VStack {
+                        HStack {
+                            HStack(spacing: 4) {
+                                let textColor: Color = selectedFrame == .white ? .black : .white
+                                let shadowColor: Color = selectedFrame == .white ? .white.opacity(0.8) : .black.opacity(0.8)
+                                
+                                Text(card.make.uppercased())
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(textColor)
+                                    .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
+                                
+                                Text(card.model)
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(textColor)
+                                    .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
+                                    .lineLimit(1)
+                            }
+                            .padding(.top, 14)
+                            .padding(.leading, 14)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                    .frame(width: 320, height: 180)
                 }
                 .animation(.spring(response: 0.3), value: selectedFrame)
                 
@@ -124,10 +154,18 @@ struct CustomizeCardView: View {
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
             
-            // Set initial frame if card already has one
-            if let currentFrame = card.customFrame,
-               let frame = CardFrame.allCases.first(where: { $0.rawValue == currentFrame }) {
-                selectedFrame = frame
+            // Set initial frame from customFrame value
+            if let currentFrame = card.customFrame {
+                switch currentFrame {
+                case "Border_Def_Wht", "White":
+                    selectedFrame = .white
+                case "Border_Def_Blk", "Black":
+                    selectedFrame = .black
+                default:
+                    selectedFrame = .none
+                }
+            } else {
+                selectedFrame = .none
             }
         }
         .onDisappear {
@@ -246,11 +284,24 @@ struct CustomizeCardView: View {
     private func saveFrameSelection() {
         if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
             var updatedCard = savedCards[index]
-            updatedCard.customFrame = selectedFrame.rawValue
+            
+            // Map CardFrame enum to actual PNG border names
+            let customFrameValue: String? = {
+                switch selectedFrame {
+                case .none:
+                    return nil
+                case .white:
+                    return "Border_Def_Wht"
+                case .black:
+                    return "Border_Def_Blk"
+                }
+            }()
+            
+            updatedCard.customFrame = customFrameValue
             savedCards[index] = updatedCard
             CardStorage.saveCards(savedCards)
             
-            print("💾 Saving frame: \(selectedFrame.rawValue)")
+            print("💾 Saving frame: \(customFrameValue ?? "None")")
             print("🆔 Card local ID: \(card.id)")
             print("🔥 Card firebaseId: \(card.firebaseId ?? "NIL - THIS IS THE PROBLEM!")")
             
@@ -261,9 +312,9 @@ struct CustomizeCardView: View {
                         print("📤 Syncing to Firebase with ID: \(firebaseId)")
                         try await CardService.shared.updateCustomFrame(
                             cardId: firebaseId,
-                            customFrame: selectedFrame.rawValue
+                            customFrame: customFrameValue
                         )
-                        print("✅ Synced custom frame to Firebase: \(selectedFrame.rawValue)")
+                        print("✅ Synced custom frame to Firebase: \(customFrameValue ?? "None")")
                     } catch {
                         print("❌ Failed to sync custom frame to Firebase: \(error)")
                     }
