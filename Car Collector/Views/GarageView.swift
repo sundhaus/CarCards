@@ -63,9 +63,11 @@ struct GarageView: View {
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 8)
-                    .background(.ultraThinMaterial)
+                    .padding(.vertical, 10)
+                    .glassEffect(.regular, in: .rect)
+                    
+                    // Spacer between header and cards
+                    Spacer().frame(height: 8)
                     
                     // Content
                     if allCards.isEmpty {
@@ -353,7 +355,7 @@ struct GarageView: View {
                                 }
                             }
                             .padding(.horizontal)
-                            .padding(.top, 16)
+                            .padding(.top, 4)
                             
                             Spacer()
                         }
