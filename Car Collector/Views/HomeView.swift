@@ -95,11 +95,22 @@ struct HomeView: View {
                     showExplore = false
                 }
             }
+            .onChange(of: showFriends) { _, isFriendsOpen in
+                // Preserve Home tab while in friends feed (profiles are deep)
+                if isFriendsOpen {
+                    navigationController.preserveTab(1)
+                } else {
+                    navigationController.unpreserveTab(1)
+                }
+            }
             .onChange(of: navigationController.popToRootTrigger) { oldValue, newValue in
+                // Only reset if Home tab is not preserved
+                guard !navigationController.preservedTabs.contains(1) else { return }
                 showTransferList = false
                 showFriends = false
                 showLeaderboard = false
                 showExplore = false
+                navigationController.unpreserveTab(1)
                 print("🏠 HomeView: Reset all navigation booleans from trigger")
             }
         }

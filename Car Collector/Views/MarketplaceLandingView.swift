@@ -107,11 +107,21 @@ struct MarketplaceLandingView: View {
                 showTransferTargets = false
             }
         }
+        .onChange(of: showBuySell) { _, isBuySellOpen in
+            // Preserve Market tab while in buy/sell (listings are deep)
+            if isBuySellOpen {
+                navigationController.preserveTab(3)
+            } else {
+                navigationController.unpreserveTab(3)
+            }
+        }
         .onChange(of: navigationController.popToRootTrigger) { oldValue, newValue in
-            // Direct trigger from navigation controller - always reset
+            // Only reset if Market tab is not preserved
+            guard !navigationController.preservedTabs.contains(3) else { return }
             showBuySell = false
             showTransferList = false
             showTransferTargets = false
+            navigationController.unpreserveTab(3)
             print("🏪 MarketplaceLandingView: Reset all navigation booleans from trigger")
         }
     }

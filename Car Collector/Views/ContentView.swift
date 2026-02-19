@@ -199,7 +199,7 @@ struct ContentView: View {
             if !visitedTabs.contains(newValue) {
                 visitedTabs.insert(newValue)
             }
-            // Always reset to root when switching tabs
+            // Reset destination tab to landing (skips preserved tabs)
             navigationController.resetToRoot(tab: newValue)
         }
         .onAppear {
