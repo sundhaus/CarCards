@@ -21,6 +21,7 @@ struct CategoryDetailView: View {
     @State private var isLoadingMore = false
     @State private var hasMorePages = true
     @State private var fullScreenActivity: FriendActivity? = nil
+    @State private var isDoubleColumn = true
     
     private let cardsPerPage = 10
     
@@ -30,7 +31,7 @@ struct CategoryDetailView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
+                // Glass header with padding
                 header
                 
                 // Paginated card grid
@@ -65,53 +66,68 @@ struct CategoryDetailView: View {
     
     // MARK: - Header
     
+    private var categoryTitle: String {
+        category?.rawValue ?? "Featured"
+    }
+    
+    private var categoryEmoji: String {
+        category?.emoji ?? "🌟"
+    }
+    
     private var header: some View {
         ZStack {
             Rectangle()
                 .fill(.ultraThinMaterial)
                 .ignoresSafeArea(edges: .top)
             
-            HStack {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.pTitle3)
-                        .foregroundStyle(.primary)
-                }
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
                 
-                Spacer()
-                
-                VStack(spacing: 2) {
-                    HStack(spacing: 8) {
-                        if let cat = category {
-                            Text(cat.emoji)
-                                .font(.pTitle3)
-                            Text(cat.rawValue)
-                                .font(.pTitle3)
-                                .fontWeight(.bold)
-                        } else {
-                            Text("🌟")
-                                .font(.pTitle3)
-                            Text("Featured")
-                                .font(.pTitle3)
-                                .fontWeight(.bold)
-                        }
+                HStack(spacing: 12) {
+                    // Back button
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.pBody)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
                     }
                     
-                    Text("\(allCards.count) cards")
-                        .font(.pCaption)
-                        .foregroundStyle(.secondary)
+                    Spacer()
+                    
+                    // Title
+                    VStack(spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(categoryEmoji)
+                                .font(.pBody)
+                            Text(categoryTitle)
+                                .font(.pBody)
+                                .fontWeight(.bold)
+                        }
+                        
+                        Text("\(allCards.count) cards")
+                            .font(.pCaption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    // Grid toggle
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isDoubleColumn.toggle()
+                        }
+                    }) {
+                        Image(systemName: isDoubleColumn ? "square.grid.2x2" : "rectangle.grid.1x2")
+                            .font(.pBody)
+                            .foregroundStyle(.primary)
+                    }
                 }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.left")
-                    .font(.pTitle3)
-                    .opacity(0)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
             }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
         }
-        .frame(height: 60)
+        .frame(height: 52)
+        .glassEffect(.regular, in: .rect)
     }
     
     // MARK: - Card Pages View
@@ -124,15 +140,31 @@ struct CategoryDetailView: View {
                 let pageCards = Array(allCards[startIndex..<endIndex])
                 
                 ScrollView(.vertical, showsIndicators: true) {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        ForEach(pageCards) { card in
-                            CategoryCardItem(card: card)
-                                .onTapGesture {
-                                    fullScreenActivity = card
-                                }
+                    if isDoubleColumn {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 16) {
+                            ForEach(pageCards) { card in
+                                CategoryCardItem(card: card)
+                                    .onTapGesture {
+                                        fullScreenActivity = card
+                                    }
+                            }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 100)
+                    } else {
+                        LazyVGrid(columns: [GridItem(.flexible())], spacing: 16) {
+                            ForEach(pageCards) { card in
+                                CategoryCardItem(card: card)
+                                    .onTapGesture {
+                                        fullScreenActivity = card
+                                    }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 100)
                     }
-                    .padding()
                 }
                 .tag(pageIndex)
             }
@@ -219,7 +251,14 @@ struct CategoryCardItem: View {
     let card: FriendActivity
     
     var body: some View {
-        FIFACardView(card: card, height: 140)
+        GeometryReader { geo in
+            let width = geo.size.width
+            let height = width * (9.0 / 16.0)  // Maintain 16:9 aspect ratio
+            
+            FIFACardView(card: card, height: height)
+                .frame(width: width, height: height)
+        }
+        .aspectRatio(16/9, contentMode: .fit)
     }
 }
 

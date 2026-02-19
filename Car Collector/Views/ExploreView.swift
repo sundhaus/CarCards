@@ -150,11 +150,11 @@ struct FeaturedRow: View {
     var onCardTap: (FriendActivity) -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Featured header (tappable to open full view)
-            NavigationLink {
-                CategoryDetailView(category: nil, initialCards: cards)
-            } label: {
+        NavigationLink {
+            CategoryDetailView(category: nil, initialCards: cards)
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                // Featured header
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Featured")
@@ -173,24 +173,27 @@ struct FeaturedRow: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal)
-            }
-            .buttonStyle(.plain)
-            .onAppear {
-                print("🌟 FEATURED ROW: Rendering with \(cards.count) cards")
-            }
-            
-            // Horizontal scrolling cards
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(cards) { card in
-                        ExploreCardItem(card: card, height: 140)
-                            .onTapGesture {
-                                onCardTap(card)
-                            }
+                
+                // Horizontal scrolling cards
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(cards) { card in
+                            ExploreCardItem(card: card, height: 140)
+                        }
                     }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.06))
+            )
+            .padding(.horizontal, 12)
+        }
+        .buttonStyle(.plain)
+        .onAppear {
+            print("🌟 FEATURED ROW: Rendering with \(cards.count) cards")
         }
     }
 }
@@ -203,11 +206,11 @@ struct CategoryRow: View {
     var onCardTap: (FriendActivity) -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Category header (tappable to open full view)
-            NavigationLink {
-                CategoryDetailView(category: category, initialCards: cards)
-            } label: {
+        NavigationLink {
+            CategoryDetailView(category: category, initialCards: cards)
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                // Category header
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(category.rawValue)
@@ -226,22 +229,25 @@ struct CategoryRow: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal)
-            }
-            .buttonStyle(.plain)
-            
-            // Horizontal scrolling cards
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(cards) { card in
-                        ExploreCardItem(card: card, height: 140)
-                            .onTapGesture {
-                                onCardTap(card)
-                            }
+                
+                // Horizontal scrolling cards
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(cards) { card in
+                            ExploreCardItem(card: card, height: 140)
+                        }
                     }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.06))
+            )
+            .padding(.horizontal, 12)
         }
+        .buttonStyle(.plain)
     }
 }
 
