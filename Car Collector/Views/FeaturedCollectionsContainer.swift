@@ -25,6 +25,7 @@ struct FeaturedCollectionsContainer: View {
             headerSection
             carouselSection
         }
+        .contentShape(Rectangle())
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
     

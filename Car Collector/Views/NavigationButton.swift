@@ -60,6 +60,7 @@ struct NavigationButton: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
             .frame(height: 92)
+            .contentShape(Rectangle())
             .glassEffect(.regular, in: .rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)

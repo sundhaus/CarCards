@@ -50,6 +50,7 @@ struct HomeContainer: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 140)
+            .contentShape(Rectangle())
             .glassEffect(.regular, in: .rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)
