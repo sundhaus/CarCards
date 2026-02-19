@@ -421,52 +421,45 @@ struct CardContextMenuOverlay: View {
         return false
     }
     
-    // Determine if card is in the left column based on screen center
+    // Determine if card is in the left column
     private var cardIsOnLeft: Bool {
         cardFrame.midX < UIScreen.main.bounds.width / 2
     }
     
-    // Panel width matches card width
-    private var panelWidth: CGFloat {
-        cardFrame.width
-    }
-    
     var body: some View {
-        GeometryReader { geo in
-            let overlayOrigin = geo.frame(in: .global).origin
-            let adjustedX = cardFrame.minX - overlayOrigin.x
-            let adjustedY = cardFrame.minY - overlayOrigin.y
-            
-            ZStack(alignment: .topLeading) {
-                // Dimmed background - tap to dismiss
-                Color.black.opacity(appeared ? 0.5 : 0)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        dismissMenu()
-                    }
-                
-                // Card + panel as one unit
-                HStack(spacing: 0) {
-                    if !cardIsOnLeft {
-                        // Card is on right → panel slides out to the left
-                        panelView(extendsRight: false)
-                            .frame(width: appeared ? panelWidth : 0)
-                            .clipped()
-                        
-                        cardView
-                    } else {
-                        // Card is on left → panel slides out to the right
-                        cardView
-                        
-                        panelView(extendsRight: true)
-                            .frame(width: appeared ? panelWidth : 0)
-                            .clipped()
-                    }
+        ZStack {
+            // Dimmed background - tap to dismiss
+            Color.black.opacity(appeared ? 0.5 : 0)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    dismissMenu()
                 }
-                .offset(
-                    x: cardIsOnLeft ? adjustedX : (appeared ? adjustedX - panelWidth : adjustedX),
-                    y: adjustedY
-                )
+            
+            // Use a canvas that ignores safe area to position via global coords
+            GeometryReader { geo in
+                let originY = geo.frame(in: .global).minY
+                
+                // Card at its exact global position
+                let cardX = cardFrame.minX
+                let cardY = cardFrame.minY - originY
+                
+                // Panel position: beside the card in the opposite column
+                let panelX = cardIsOnLeft ? cardFrame.maxX : cardFrame.minX - cardFrame.width
+                
+                // Card
+                UnifiedCardView(card: card, isLargeSize: false)
+                    .frame(width: cardFrame.width, height: cardFrame.height)
+                    .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
+                    .position(x: cardX + cardFrame.width / 2, y: cardY + cardFrame.height / 2)
+                
+                // Panel slides out from behind card edge
+                actionPanel
+                    .frame(width: cardFrame.width, height: cardFrame.height)
+                    .position(
+                        x: appeared ? panelX + cardFrame.width / 2 : cardFrame.midX,
+                        y: cardY + cardFrame.height / 2
+                    )
+                    .opacity(appeared ? 1 : 0)
             }
         }
         .onAppear {
@@ -476,28 +469,8 @@ struct CardContextMenuOverlay: View {
         }
     }
     
-    private var cardView: some View {
-        UnifiedCardView(card: card, isLargeSize: false)
-            .frame(width: cardFrame.width, height: cardFrame.height)
-            .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
-    }
-    
-    private func panelView(extendsRight: Bool) -> some View {
-        let corners: UnevenRoundedRectangle = extendsRight ?
-            UnevenRoundedRectangle(
-                topLeadingRadius: 0,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: 12,
-                topTrailingRadius: 12
-            ) :
-            UnevenRoundedRectangle(
-                topLeadingRadius: 12,
-                bottomLeadingRadius: 12,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 0
-            )
-        
-        return VStack(spacing: 0) {
+    private var actionPanel: some View {
+        VStack(spacing: 0) {
             Spacer()
             
             if isVehicle {
@@ -511,9 +484,11 @@ struct CardContextMenuOverlay: View {
             
             Spacer()
         }
-        .frame(height: cardFrame.height)
-        .background(corners.fill(.white))
-        .clipShape(corners)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.white)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     
     private func actionRow(label: String, action: @escaping () -> Void) -> some View {
