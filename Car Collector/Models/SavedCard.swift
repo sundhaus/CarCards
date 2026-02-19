@@ -20,6 +20,7 @@ struct SavedCard: Identifiable, Codable {
     let previousOwners: Int  // Number of previous owners
     var customFrame: String?  // Custom frame/border ("none", "white", "black")
     var firebaseId: String?  // CloudCard ID from Firebase (for syncing)
+    var originalImageData: Data?  // Original image before background removal
     
     init(
         id: UUID = UUID(),
@@ -33,7 +34,8 @@ struct SavedCard: Identifiable, Codable {
         capturedLocation: String? = nil,
         previousOwners: Int = 0,
         customFrame: String? = nil,
-        firebaseId: String? = nil
+        firebaseId: String? = nil,
+        originalImage: UIImage? = nil
     ) {
         self.id = id
         self.imageData = image.jpegData(compressionQuality: 0.8) ?? Data()
@@ -47,6 +49,7 @@ struct SavedCard: Identifiable, Codable {
         self.previousOwners = previousOwners
         self.customFrame = customFrame
         self.firebaseId = firebaseId
+        self.originalImageData = originalImage?.jpegData(compressionQuality: 0.8)
     }
     
     // MARK: - Custom Decoder (handles older cards missing new fields)
@@ -54,6 +57,7 @@ struct SavedCard: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id, imageData, make, model, color, year
         case specs, capturedBy, capturedLocation, previousOwners, customFrame, firebaseId
+        case originalImageData
     }
     
     init(from decoder: Decoder) throws {
@@ -73,10 +77,16 @@ struct SavedCard: Identifiable, Codable {
         previousOwners = try container.decodeIfPresent(Int.self, forKey: .previousOwners) ?? 0
         customFrame = try container.decodeIfPresent(String.self, forKey: .customFrame)
         firebaseId = try container.decodeIfPresent(String.self, forKey: .firebaseId)
+        originalImageData = try container.decodeIfPresent(Data.self, forKey: .originalImageData)
     }
     
     var image: UIImage? {
         UIImage(data: imageData)
+    }
+    
+    var originalImage: UIImage? {
+        guard let data = originalImageData else { return nil }
+        return UIImage(data: data)
     }
     
     // Key for spec lookup/caching

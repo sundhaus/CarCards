@@ -22,6 +22,7 @@ struct CustomizeCardView: View {
     @State private var displayImage: UIImage?
     @State private var isRemovingBackground = false
     @State private var backgroundRemoved = false
+    @State private var originalImage: UIImage?  // Preserved original before bg removal
     
     var body: some View {
         ZStack {
@@ -165,6 +166,12 @@ struct CustomizeCardView: View {
                 }
             } else {
                 selectedFrame = .white
+            }
+            
+            // If card has original image stored, background was previously removed
+            if let storedOriginal = card.originalImage {
+                originalImage = storedOriginal
+                backgroundRemoved = true
             }
         }
         .onDisappear {
@@ -320,9 +327,15 @@ struct CustomizeCardView: View {
     private func removeBackground() {
         isRemovingBackground = true
         
-        guard let sourceImage = card.image else {
+        // Use original image if we have one, otherwise use current card image
+        guard let sourceImage = originalImage ?? card.image else {
             isRemovingBackground = false
             return
+        }
+        
+        // Preserve the original image before processing
+        if originalImage == nil {
+            originalImage = sourceImage
         }
         
         SubjectLifter.liftSubject(from: sourceImage) { result in
@@ -341,7 +354,9 @@ struct CustomizeCardView: View {
     }
     
     private func restoreBackground() {
-        displayImage = nil
+        // Restore original image (sets displayImage so save will write it back)
+        displayImage = originalImage
+        originalImage = nil
         backgroundRemoved = false
     }
     
@@ -376,10 +391,15 @@ struct CustomizeCardView: View {
                     capturedLocation: card.capturedLocation,
                     previousOwners: card.previousOwners,
                     customFrame: customFrameValue,
-                    firebaseId: card.firebaseId
+                    firebaseId: card.firebaseId,
+                    originalImage: backgroundRemoved ? originalImage : nil
                 )
             } else {
                 savedCards[index].customFrame = customFrameValue
+                // If background was restored, clear the original image data
+                if !backgroundRemoved {
+                    savedCards[index].originalImageData = nil
+                }
             }
             
             CardStorage.saveCards(savedCards)
