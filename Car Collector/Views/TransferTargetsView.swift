@@ -11,6 +11,7 @@ struct TransferTargetsView: View {
     var isLandscape: Bool = false
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var marketplaceService = MarketplaceService.shared
+    @State private var useDoubleColumn = false
     
     // Calculate winning bids from marketplace service
     private var winningBids: [CloudListing] {
@@ -44,6 +45,16 @@ struct TransferTargetsView: View {
                         .foregroundStyle(.primary)
                     
                     Spacer()
+                    
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            useDoubleColumn.toggle()
+                        }
+                    }) {
+                        Image(systemName: useDoubleColumn ? "square.grid.2x2" : "rectangle.grid.1x2")
+                            .font(.pTitle3)
+                            .foregroundStyle(.primary)
+                    }
                 }
                 .padding(.horizontal)
                 .padding(.top, 18)
@@ -70,10 +81,19 @@ struct TransferTargetsView: View {
                                 .frame(height: 150)
                                 .padding(.horizontal)
                             } else {
-                                ForEach(winningBids) { listing in
-                                    ListingCardView(listing: listing, showActions: false)
-                                        .padding(.horizontal)
+                                let columns = useDoubleColumn
+                                    ? [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+                                    : [GridItem(.flexible())]
+                                LazyVGrid(columns: columns, spacing: 12) {
+                                    ForEach(winningBids) { listing in
+                                        if useDoubleColumn {
+                                            CompactTargetCard(listing: listing)
+                                        } else {
+                                            ListingCardView(listing: listing, showActions: false)
+                                        }
+                                    }
                                 }
+                                .padding(.horizontal)
                             }
                         }
                         
@@ -98,10 +118,19 @@ struct TransferTargetsView: View {
                                 .frame(height: 150)
                                 .padding(.horizontal)
                             } else {
-                                ForEach(outbidCards) { listing in
-                                    ListingCardView(listing: listing, showActions: false)
-                                        .padding(.horizontal)
+                                let columns = useDoubleColumn
+                                    ? [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+                                    : [GridItem(.flexible())]
+                                LazyVGrid(columns: columns, spacing: 12) {
+                                    ForEach(outbidCards) { listing in
+                                        if useDoubleColumn {
+                                            CompactTargetCard(listing: listing)
+                                        } else {
+                                            ListingCardView(listing: listing, showActions: false)
+                                        }
+                                    }
                                 }
+                                .padding(.horizontal)
                             }
                         }
                     }
@@ -227,6 +256,73 @@ struct ListingCardView: View {
             await MainActor.run {
                 cardImage = image
             }
+        } catch {
+            print("❌ Failed to load listing image: \(error)")
+        }
+    }
+}
+
+// Compact target card for double column mode
+struct CompactTargetCard: View {
+    let listing: CloudListing
+    @State private var cardImage: UIImage?
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Card image
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
+                
+                if let image = cardImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Image(systemName: "car.fill")
+                        .font(.poppins(24))
+                        .foregroundStyle(.gray.opacity(0.4))
+                }
+                
+                if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
+                    Image(borderImageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .allowsHitTesting(false)
+                }
+            }
+            .aspectRatio(16/9, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            
+            // Info bar
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(listing.make) \(listing.model)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        Image(systemName: "dollarsign.circle.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.green)
+                        Text("\(Int(listing.currentBid))")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+        }
+        .background(Color.white.opacity(0.08))
+        .cornerRadius(12)
+        .task { await loadImage() }
+    }
+    
+    private func loadImage() async {
+        guard !listing.imageURL.isEmpty else { return }
+        do {
+            let image = try await CardService.shared.loadImage(from: listing.imageURL)
+            await MainActor.run { cardImage = image }
         } catch {
             print("❌ Failed to load listing image: \(error)")
         }

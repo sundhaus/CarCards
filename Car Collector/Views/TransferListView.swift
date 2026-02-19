@@ -11,6 +11,7 @@ struct TransferListView: View {
     var isLandscape: Bool = false
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var marketplaceService = MarketplaceService.shared
+    @State private var useDoubleColumn = false
     
     // Calculate selling listings (active)
     private var sellingListings: [CloudListing] {
@@ -42,6 +43,16 @@ struct TransferListView: View {
                         .foregroundStyle(.primary)
                     
                     Spacer()
+                    
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            useDoubleColumn.toggle()
+                        }
+                    }) {
+                        Image(systemName: useDoubleColumn ? "square.grid.2x2" : "rectangle.grid.1x2")
+                            .font(.pTitle3)
+                            .foregroundStyle(.primary)
+                    }
                 }
                 .padding(.horizontal)
                 .padding(.top, 18)
@@ -71,10 +82,19 @@ struct TransferListView: View {
                                 .frame(height: 150)
                                 .padding(.horizontal)
                             } else {
-                                ForEach(sellingListings) { listing in
-                                    TransferListingCard(listing: listing)
-                                        .padding(.horizontal)
+                                let columns = useDoubleColumn
+                                    ? [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+                                    : [GridItem(.flexible())]
+                                LazyVGrid(columns: columns, spacing: 12) {
+                                    ForEach(sellingListings) { listing in
+                                        if useDoubleColumn {
+                                            CompactTransferListingCard(listing: listing)
+                                        } else {
+                                            TransferListingCard(listing: listing)
+                                        }
+                                    }
                                 }
+                                .padding(.horizontal)
                             }
                         }
                         
@@ -96,10 +116,19 @@ struct TransferListView: View {
                                 .frame(height: 150)
                                 .padding(.horizontal)
                             } else {
-                                ForEach(soldListings) { listing in
-                                    TransferListingCard(listing: listing)
-                                        .padding(.horizontal)
+                                let columns = useDoubleColumn
+                                    ? [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+                                    : [GridItem(.flexible())]
+                                LazyVGrid(columns: columns, spacing: 12) {
+                                    ForEach(soldListings) { listing in
+                                        if useDoubleColumn {
+                                            CompactTransferListingCard(listing: listing)
+                                        } else {
+                                            TransferListingCard(listing: listing)
+                                        }
+                                    }
                                 }
+                                .padding(.horizontal)
                             }
                         }
                     }
@@ -261,6 +290,94 @@ struct TransferListingCard: View {
             await MainActor.run {
                 cardImage = image
             }
+        } catch {
+            print("❌ Failed to load listing image: \(error)")
+        }
+    }
+}
+
+// Compact listing card for double column mode
+struct CompactTransferListingCard: View {
+    let listing: CloudListing
+    @State private var cardImage: UIImage?
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Card image
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
+                
+                if let image = cardImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    ProgressView().tint(.gray)
+                }
+                
+                if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
+                    Image(borderImageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .allowsHitTesting(false)
+                }
+                
+                // Status badge overlay
+                VStack {
+                    HStack {
+                        Spacer()
+                        HStack(spacing: 3) {
+                            Image(systemName: listing.status == .active ? "clock.fill" : "checkmark.circle.fill")
+                                .font(.system(size: 8))
+                            Text(listing.status == .active ? "Active" : "Sold")
+                                .font(.system(size: 9, weight: .semibold))
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(listing.status == .active ? Color.orange.opacity(0.8) : Color.green.opacity(0.8))
+                        .foregroundStyle(.white)
+                        .cornerRadius(6)
+                        .padding(6)
+                    }
+                    Spacer()
+                }
+            }
+            .aspectRatio(16/9, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            
+            // Info bar
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(listing.make) \(listing.model)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text("$\(Int(listing.buyNowPrice))")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.green)
+                        if listing.currentBid > 0 {
+                            Text("\(Int(listing.currentBid)) bid")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+        }
+        .background(Color.white.opacity(0.08))
+        .cornerRadius(12)
+        .task { await loadImage() }
+    }
+    
+    private func loadImage() async {
+        guard !listing.imageURL.isEmpty else { return }
+        do {
+            let image = try await CardService.shared.loadImage(from: listing.imageURL)
+            await MainActor.run { cardImage = image }
         } catch {
             print("❌ Failed to load listing image: \(error)")
         }
