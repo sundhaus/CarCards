@@ -108,13 +108,16 @@ struct CaptureLandingView: View {
                             showCamera = false
                             selectedTab = 4
                         } else {
-                            // Driver or Location - save image and show form
+                            // Driver or Location - save image, dismiss camera, then show form after dismiss completes
                             capturedImage = card.image
                             showCamera = false
-                            if captureType == .driver || captureType == .driverPlusVehicle {
-                                showDriverForm = true
-                            } else if captureType == .location {
-                                showLocationForm = true
+                            // Delay form presentation until fullScreenCover dismiss animation completes
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                if captureType == .driver || captureType == .driverPlusVehicle {
+                                    showDriverForm = true
+                                } else if captureType == .location {
+                                    showLocationForm = true
+                                }
                             }
                         }
                     },
@@ -192,7 +195,10 @@ struct CaptureLandingView: View {
                                         previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
                                         
                                         showDriverForm = false
-                                        showCardPreview = true
+                                        // Delay preview until sheet dismiss animation completes
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                            showCardPreview = true
+                                        }
                                     }
                                 } catch {
                                     print("❌ Failed to save driver card: \(error)")
@@ -247,7 +253,9 @@ struct CaptureLandingView: View {
                                         previewGeneration = ""
                                         
                                         showLocationForm = false
-                                        showCardPreview = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                            showCardPreview = true
+                                        }
                                     }
                                 } catch {
                                     print("❌ Failed to save location card: \(error)")

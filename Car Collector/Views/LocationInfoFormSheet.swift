@@ -54,9 +54,10 @@ struct LocationInfoFormSheet: View {
                         Button(action: {
                             onComplete?(capturedImage, locationName)
                         }) {
-                            Text("Save Location")
+                            Text("SAVE LOCATION")
                                 .font(.poppins(18))
-                                .foregroundStyle(.primary)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 18)
                                 .background(
@@ -70,7 +71,7 @@ struct LocationInfoFormSheet: View {
                     }
                 }
             }
-            .navigationTitle("Location Info")
+            .navigationTitle("LOCATION INFO")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

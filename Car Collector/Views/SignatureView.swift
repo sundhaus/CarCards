@@ -99,14 +99,55 @@ struct SignatureView: View {
     }
     
     private func combineImageWithSignature() -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: cardImage.size)
+        let cardSize = cardImage.size
+        let canvasSize = canvas.bounds.size
+        
+        // Calculate where the card image appears within the canvas (scaledToFit)
+        let cardAspect = cardSize.width / cardSize.height
+        let canvasAspect = canvasSize.width / canvasSize.height
+        
+        let visibleRect: CGRect
+        if cardAspect > canvasAspect {
+            // Card is wider than canvas — fits to width
+            let fitHeight = canvasSize.width / cardAspect
+            let yOffset = (canvasSize.height - fitHeight) / 2
+            visibleRect = CGRect(x: 0, y: yOffset, width: canvasSize.width, height: fitHeight)
+        } else {
+            // Card is taller than canvas — fits to height
+            let fitWidth = canvasSize.height * cardAspect
+            let xOffset = (canvasSize.width - fitWidth) / 2
+            visibleRect = CGRect(x: xOffset, y: 0, width: fitWidth, height: canvasSize.height)
+        }
+        
+        let renderer = UIGraphicsImageRenderer(size: cardSize)
         return renderer.image { context in
             // Draw card image
             cardImage.draw(at: .zero)
             
-            // Draw signature
-            let signatureImage = canvas.drawing.image(from: canvas.bounds, scale: UITraitCollection.current.displayScale)
-            signatureImage.draw(in: CGRect(origin: .zero, size: cardImage.size))
+            // Get the full canvas drawing at screen scale
+            let scale = UITraitCollection.current.displayScale
+            let signatureFullImage = canvas.drawing.image(from: canvas.bounds, scale: scale)
+            
+            // Map canvas visible rect to card image coordinates
+            // The signature needs to be cropped to just the visible card area,
+            // then scaled to fill the card image
+            let scaleX = cardSize.width / visibleRect.width
+            let scaleY = cardSize.height / visibleRect.height
+            
+            // Crop the signature to just the card-visible portion
+            let cropRect = CGRect(
+                x: visibleRect.origin.x * scale,
+                y: visibleRect.origin.y * scale,
+                width: visibleRect.width * scale,
+                height: visibleRect.height * scale
+            )
+            
+            if let cgImage = signatureFullImage.cgImage,
+               let croppedCG = cgImage.cropping(to: cropRect) {
+                let croppedSignature = UIImage(cgImage: croppedCG)
+                // Draw cropped signature scaled to fill entire card
+                croppedSignature.draw(in: CGRect(origin: .zero, size: cardSize))
+            }
         }
     }
 }

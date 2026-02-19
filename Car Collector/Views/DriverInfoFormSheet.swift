@@ -32,8 +32,8 @@ struct DriverInfoFormSheet: View {
                 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Preview image
-                        Image(uiImage: capturedImage)
+                        // Preview image — show signature composite if available
+                        Image(uiImage: signatureImage ?? capturedImage)
                             .resizable()
                             .scaledToFill()
                             .frame(width: 200, height: 120)
@@ -98,7 +98,7 @@ struct DriverInfoFormSheet: View {
                                 Text(signatureImage != nil ? "Signature Added" : "Add Signature")
                                     .font(.poppins(16))
                             }
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(
@@ -118,9 +118,10 @@ struct DriverInfoFormSheet: View {
                             let finalCardImage = signatureImage ?? capturedImage
                             onComplete?(finalCardImage, firstName, lastName, nickname, vehicleName)
                         }) {
-                            Text("Save Driver")
+                            Text("SAVE DRIVER")
                                 .font(.poppins(18))
-                                .foregroundStyle(.primary)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 18)
                                 .background(
@@ -134,7 +135,7 @@ struct DriverInfoFormSheet: View {
                     }
                 }
             }
-            .navigationTitle("Driver Info")
+            .navigationTitle("DRIVER INFO")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
