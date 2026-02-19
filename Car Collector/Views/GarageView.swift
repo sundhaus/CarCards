@@ -330,7 +330,7 @@ struct GarageView: View {
         GeometryReader { geometry in
             let cardsPerPage = cardsPerRow == 1 ? 5 : 10
             let totalPages = Int(ceil(Double(allCards.count) / Double(cardsPerPage)))
-            let verticalInset: CGFloat = 28
+            let verticalInset: CGFloat = 10
             
             VStack(spacing: 0) {
                 TabView(selection: $currentPage) {
