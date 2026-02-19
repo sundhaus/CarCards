@@ -375,6 +375,7 @@ struct GarageView: View {
     @ViewBuilder
     private func garageCardCell(card: AnyCard) -> some View {
         UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
+            .opacity(showContextMenu && contextMenuCard?.id == card.id ? 0 : 1)
             .background(
                 GeometryReader { geo in
                     Color.clear
@@ -420,75 +421,86 @@ struct CardContextMenuOverlay: View {
         return false
     }
     
-    // Determine if card is in the left column
     private var cardIsOnLeft: Bool {
         cardFrame.midX < UIScreen.main.bounds.width / 2
     }
     
     var body: some View {
-        ZStack {
-            // Dimmed background - tap to dismiss
-            Color.black.opacity(appeared ? 0.5 : 0)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    dismissMenu()
-                }
-            
-            // Just the action panel, positioned beside the actual card
-            GeometryReader { geo in
-                let geoOrigin = geo.frame(in: .global).origin
-                let panelY = cardFrame.minY - geoOrigin.y
-                let targetX = cardIsOnLeft ? cardFrame.maxX - geoOrigin.x : cardFrame.minX - cardFrame.width - geoOrigin.x
-                let startX = cardFrame.minX - geoOrigin.x
-                
-                actionPanel
-                    .frame(width: cardFrame.width, height: cardFrame.height)
-                    .offset(
-                        x: appeared ? targetX : startX,
-                        y: panelY
-                    )
-                    .opacity(appeared ? 1 : 0)
-            }
+        // Full-screen container starting from true top-left (0,0)
+        Color.clear
             .ignoresSafeArea()
-        }
-        .onAppear {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                appeared = true
+            .overlay(alignment: .topLeading) {
+                // Dimmed background
+                Color.black.opacity(appeared ? 0.5 : 0)
+                    .ignoresSafeArea()
+                    .onTapGesture { dismissMenu() }
             }
-        }
+            .overlay(alignment: .topLeading) {
+                // Card + panel positioned at exact global coords
+                HStack(spacing: 0) {
+                    if !cardIsOnLeft {
+                        // Right column card → panel on left
+                        actionPanel(roundedLeft: true)
+                            .frame(width: appeared ? cardFrame.width : 0)
+                            .clipped()
+                        
+                        cardPreview
+                    } else {
+                        // Left column card → panel on right
+                        cardPreview
+                        
+                        actionPanel(roundedLeft: false)
+                            .frame(width: appeared ? cardFrame.width : 0)
+                            .clipped()
+                    }
+                }
+                .offset(
+                    x: cardIsOnLeft ? cardFrame.minX : (appeared ? cardFrame.minX - cardFrame.width : cardFrame.minX),
+                    y: cardFrame.minY
+                )
+            }
+            .onAppear {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    appeared = true
+                }
+            }
     }
     
-    private var actionPanel: some View {
-        let corners: UnevenRoundedRectangle = cardIsOnLeft ?
-            UnevenRoundedRectangle(
-                topLeadingRadius: 0,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: 12,
-                topTrailingRadius: 12
-            ) :
-            UnevenRoundedRectangle(
-                topLeadingRadius: 12,
-                bottomLeadingRadius: 12,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 0
-            )
-        
-        return VStack(spacing: 0) {
+    private var cardPreview: some View {
+        UnifiedCardView(card: card, isLargeSize: false)
+            .frame(width: cardFrame.width, height: cardFrame.height)
+    }
+    
+    private func actionPanel(roundedLeft: Bool) -> some View {
+        VStack(spacing: 0) {
             Spacer()
             
             if isVehicle {
                 actionRow(label: "Customize", action: onCustomize)
-                
-                Divider()
-                    .padding(.horizontal, 12)
+                Divider().padding(.horizontal, 12)
             }
             
             actionRow(label: "Quick Sell", action: onQuickSell)
             
             Spacer()
         }
-        .background(corners.fill(.white))
-        .clipShape(corners)
+        .frame(height: cardFrame.height)
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: roundedLeft ? 12 : 0,
+                bottomLeadingRadius: roundedLeft ? 12 : 0,
+                bottomTrailingRadius: roundedLeft ? 0 : 12,
+                topTrailingRadius: roundedLeft ? 0 : 12
+            ).fill(.white)
+        )
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: roundedLeft ? 12 : 0,
+                bottomLeadingRadius: roundedLeft ? 12 : 0,
+                bottomTrailingRadius: roundedLeft ? 0 : 12,
+                topTrailingRadius: roundedLeft ? 0 : 12
+            )
+        )
     }
     
     private func actionRow(label: String, action: @escaping () -> Void) -> some View {
