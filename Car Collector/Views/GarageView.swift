@@ -795,89 +795,95 @@ struct CardBackView: View {
     
     var body: some View {
         ZStack {
-            // Carbon fiber background texture
-            Image("CardBackTexture")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-            
-            VStack(spacing: 6 * scale) {
-                // Header
-                VStack(spacing: 2 * scale) {
-                    Text("\(make.uppercased()) \(model.uppercased())")
-                        .font(.custom("Futura-Bold", size: 14 * scale))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                    
-                    Text(year)
-                        .font(.poppins(10 * scale))
-                        .foregroundStyle(.white.opacity(0.8))
-                }
-                .padding(.top, 14 * scale)
+            // Clipped content layer (texture + text)
+            ZStack {
+                // Carbon fiber background texture
+                Image("CardBackTexture")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
                 
-                // Description / summary
-                if !specs.description.isEmpty {
-                    Text(specs.description)
-                        .font(.poppins(7 * scale))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.7)
-                        .padding(.horizontal, 16 * scale)
-                }
-                
-                Spacer()
-                
-                // Specs grid
                 VStack(spacing: 6 * scale) {
-                    // Row 1: Power stats
-                    HStack(spacing: 10 * scale) {
-                        statItem(
-                            label: "HP",
-                            value: specs.horsepower,
-                            highlight: specs.horsepower != "N/A"
-                        )
-                        statItem(
-                            label: "TORQUE",
-                            value: specs.torque,
-                            highlight: specs.torque != "N/A"
-                        )
+                    // Header
+                    VStack(spacing: 2 * scale) {
+                        Text("\(make.uppercased()) \(model.uppercased())")
+                            .font(.custom("Futura-Bold", size: 14 * scale))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                        
+                        Text(year)
+                            .font(.poppins(10 * scale))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                    .padding(.top, 14 * scale)
+                    
+                    // Description / summary
+                    if !specs.description.isEmpty {
+                        Text(specs.description)
+                            .font(.poppins(7 * scale))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.7)
+                            .padding(.horizontal, 16 * scale)
                     }
                     
-                    // Row 2: Performance stats
-                    HStack(spacing: 10 * scale) {
-                        statItem(
-                            label: "0-60",
-                            value: specs.zeroToSixty,
-                            highlight: specs.zeroToSixty != "N/A"
-                        )
-                        statItem(
-                            label: "TOP SPEED",
-                            value: specs.topSpeed,
-                            highlight: specs.topSpeed != "N/A"
-                        )
-                    }
+                    Spacer()
                     
-                    // Row 3: Details
-                    HStack(spacing: 10 * scale) {
-                        statItem(
-                            label: "ENGINE",
-                            value: specs.engine,
-                            highlight: specs.engine != "N/A"
-                        )
-                        statItem(
-                            label: "DRIVE",
-                            value: specs.drivetrain,
-                            highlight: specs.drivetrain != "N/A"
-                        )
+                    // Specs grid
+                    VStack(spacing: 6 * scale) {
+                        // Row 1: Power stats
+                        HStack(spacing: 10 * scale) {
+                            statItem(
+                                label: "HP",
+                                value: specs.horsepower,
+                                highlight: specs.horsepower != "N/A"
+                            )
+                            statItem(
+                                label: "TORQUE",
+                                value: specs.torque,
+                                highlight: specs.torque != "N/A"
+                            )
+                        }
+                        
+                        // Row 2: Performance stats
+                        HStack(spacing: 10 * scale) {
+                            statItem(
+                                label: "0-60",
+                                value: specs.zeroToSixty,
+                                highlight: specs.zeroToSixty != "N/A"
+                            )
+                            statItem(
+                                label: "TOP SPEED",
+                                value: specs.topSpeed,
+                                highlight: specs.topSpeed != "N/A"
+                            )
+                        }
+                        
+                        // Row 3: Details
+                        HStack(spacing: 10 * scale) {
+                            statItem(
+                                label: "ENGINE",
+                                value: specs.engine,
+                                highlight: specs.engine != "N/A"
+                            )
+                            statItem(
+                                label: "DRIVE",
+                                value: specs.drivetrain,
+                                highlight: specs.drivetrain != "N/A"
+                            )
+                        }
                     }
+                    .padding(.horizontal, 14 * scale)
+                    
+                    Spacer()
                 }
-                .padding(.horizontal, 14 * scale)
-                
-                Spacer()
             }
+            .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
             
-            // PNG border overlay based on customFrame
+            // PNG border overlay ON TOP of clipped content
             if let borderImageName = CardBorderConfig.forFrame(customFrame).borderImageName {
                 Image(borderImageName)
                     .resizable()
