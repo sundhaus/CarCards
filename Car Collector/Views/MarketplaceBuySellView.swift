@@ -191,7 +191,10 @@ struct MarketplaceBuySellView: View {
                     BuyView(
                         activeListings: filteredListings,
                         hasUnfilteredListings: !marketplaceService.activeListings.isEmpty,
-                        useDoubleColumn: useDoubleColumn
+                        useDoubleColumn: useDoubleColumn,
+                        onListingSelected: { listing in
+                            selectedListing = listing
+                        }
                     )
                 } else {
                     SellView(
@@ -410,6 +413,7 @@ struct BuyView: View {
     let activeListings: [CloudListing]
     let hasUnfilteredListings: Bool
     var useDoubleColumn: Bool = false
+    var onListingSelected: (CloudListing) -> Void = { _ in }
     
     private var gridColumns: [GridItem] {
         if useDoubleColumn {
@@ -454,7 +458,7 @@ struct BuyView: View {
                             }
                         }
                         .onTapGesture {
-                            selectedListing = listing
+                            onListingSelected(listing)
                         }
                     }
                 }
