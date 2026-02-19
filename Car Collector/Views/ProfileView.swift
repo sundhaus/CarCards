@@ -18,6 +18,7 @@ struct ProfileView: View {
     @State private var selectedImage: UIImage?
     @State private var profileImage: UIImage?
     @State private var isUploadingImage = false
+    @State private var showOwnProfile = false
     
     // Pull from Firebase
     private var username: String {
@@ -138,11 +139,23 @@ struct ProfileView: View {
                     .buttonStyle(.plain)
                     .padding(.top, 8)
                     
-                    // Username
+                    // Username — tap to view public profile
                     VStack(spacing: 4) {
-                        Text(username)
-                            .font(.pTitle2)
-                            .fontWeight(.semibold)
+                        Button(action: {
+                            showOwnProfile = true
+                        }) {
+                            HStack(spacing: 6) {
+                                Text(username)
+                                    .font(.pTitle2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
                         
                         Text("Level \(levelSystem.level)")
                             .font(.pSubheadline)
@@ -291,6 +304,22 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showImagePicker) {
             ImagePicker(selectedImage: $selectedImage, sourceType: imageSourceType)
+        }
+        .fullScreenCover(isPresented: $showOwnProfile) {
+            if let uid = UserService.shared.currentProfile?.id {
+                NavigationStack {
+                    UserProfileView(userId: uid, username: username)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarLeading) {
+                                Button(action: { showOwnProfile = false }) {
+                                    Image(systemName: "xmark")
+                                        .font(.pBody)
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                        }
+                }
+            }
         }
         .onChange(of: selectedImage) { _, newImage in
             guard let image = newImage,
