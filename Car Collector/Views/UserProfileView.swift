@@ -550,6 +550,7 @@ struct CloudCardDetailView: View {
                     Spacer()
                     cardContent(screenSize: geometry.size)
                         .rotationEffect(.degrees(90))
+                        .cardTilt()
                     Spacer()
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
