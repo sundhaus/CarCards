@@ -65,10 +65,6 @@ struct CategoryDetailView: View {
         category?.rawValue ?? "Featured"
     }
     
-    private var categoryEmoji: String {
-        category?.emoji ?? "🌟"
-    }
-    
     private var header: some View {
         HStack(spacing: 12) {
             // Back button
@@ -78,18 +74,14 @@ struct CategoryDetailView: View {
                     .foregroundStyle(.primary)
             }
             
-            // Title
-            VStack(spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(categoryEmoji)
-                        .font(.pBody)
-                    Text(categoryTitle)
-                        .font(.pBody)
-                        .fontWeight(.bold)
-                }
+            // Title + count
+            HStack(spacing: 8) {
+                Text(categoryTitle.uppercased())
+                    .font(.pBody)
+                    .fontWeight(.bold)
                 
-                Text("\(allCards.count) cards")
-                    .font(.pCaption2)
+                Text("\(allCards.count)")
+                    .font(.pCaption)
                     .foregroundStyle(.secondary)
             }
             
