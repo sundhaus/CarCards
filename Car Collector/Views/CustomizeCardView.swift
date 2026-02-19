@@ -333,7 +333,6 @@ struct CustomizeCardView: View {
                 case .success(let processedImage):
                     displayImage = processedImage
                     backgroundRemoved = true
-                    saveImageToCard(processedImage)
                 case .failure(let error):
                     print("❌ Background removal failed: \(error)")
                 }
@@ -344,33 +343,6 @@ struct CustomizeCardView: View {
     private func restoreBackground() {
         displayImage = nil
         backgroundRemoved = false
-        
-        // Restore original image in storage
-        if let originalImage = card.image {
-            saveImageToCard(originalImage)
-        }
-    }
-    
-    private func saveImageToCard(_ image: UIImage) {
-        var savedCards = CardStorage.loadCards()
-        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-            savedCards[index] = SavedCard(
-                id: card.id,
-                image: image,
-                make: card.make,
-                model: card.model,
-                color: card.color,
-                year: card.year,
-                specs: card.specs,
-                capturedBy: card.capturedBy,
-                capturedLocation: card.capturedLocation,
-                previousOwners: card.previousOwners,
-                customFrame: card.customFrame,
-                firebaseId: card.firebaseId
-            )
-            CardStorage.saveCards(savedCards)
-            print("💾 Saved updated card image")
-        }
     }
     
     // MARK: - Helper Functions
@@ -390,7 +362,26 @@ struct CustomizeCardView: View {
                 }
             }()
             
-            savedCards[index].customFrame = customFrameValue
+            // If background was removed, save the processed image too
+            if let updatedImage = displayImage {
+                savedCards[index] = SavedCard(
+                    id: card.id,
+                    image: updatedImage,
+                    make: card.make,
+                    model: card.model,
+                    color: card.color,
+                    year: card.year,
+                    specs: card.specs,
+                    capturedBy: card.capturedBy,
+                    capturedLocation: card.capturedLocation,
+                    previousOwners: card.previousOwners,
+                    customFrame: customFrameValue,
+                    firebaseId: card.firebaseId
+                )
+            } else {
+                savedCards[index].customFrame = customFrameValue
+            }
+            
             CardStorage.saveCards(savedCards)
             
             print("💾 Saved frame: \(customFrameValue) for card: \(card.make) \(card.model)")
