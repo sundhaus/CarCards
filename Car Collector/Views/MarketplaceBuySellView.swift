@@ -143,7 +143,7 @@ struct MarketplaceBuySellView: View {
                 .padding(4)
                 .glassEffect(.regular, in: .capsule)
                 .padding(.horizontal)
-                .padding(.top, 16)
+                .padding(.top, 8)
                 .padding(.bottom, 8)
                 
                 // Filter Panel
@@ -176,6 +176,9 @@ struct MarketplaceBuySellView: View {
             marketplaceService.listenToActiveListings()
             print("📊 Listening to Firebase marketplace listings")
         }
+        .navigationTitle("Buy & Sell")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .fullScreenCover(item: $selectedCard) { card in
             CardDetailsView(
                 card: card,
