@@ -272,7 +272,7 @@ struct UserProfileView: View {
                                     }
                                     .padding(.horizontal)
                                     
-                                    ZStack(alignment: .topLeading) {
+                                    ZStack(alignment: .topTrailing) {
                                         UserCardView(card: crown, isLargeSize: true)
                                             .onTapGesture {
                                                 Task {
@@ -608,7 +608,7 @@ struct UserCardView: View {
         }
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .overlay(alignment: .topLeading) {
+        .overlay(alignment: .topTrailing) {
             if isCrowned {
                 Image(systemName: "crown.fill")
                     .font(.system(size: isLargeSize ? 14 : 10, weight: .bold))

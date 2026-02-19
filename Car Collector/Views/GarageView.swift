@@ -112,7 +112,9 @@ struct GarageView: View {
                                 UserService.shared.setCrownCard(isCurrentlyCrowned ? nil : fbId)
                             }
                             showContextMenu = false
-                            loadAllCards() // Re-sort to pin/unpin
+                            cardFrames.removeAll()
+                            loadAllCards()
+                            currentPage = 0
                         }
                     )
                 }
@@ -391,10 +393,10 @@ struct GarageView: View {
     private func garageCardCell(card: AnyCard) -> some View {
         let isCrowned = card.firebaseId != nil && card.firebaseId == UserService.shared.crownCardId
         
-        ZStack(alignment: .topLeading) {
+        ZStack(alignment: .topTrailing) {
             UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
             
-            // Crown badge
+            // Crown badge — top-right to avoid covering card name
             if isCrowned {
                 Image(systemName: "crown.fill")
                     .font(.system(size: 12, weight: .bold))
@@ -472,69 +474,65 @@ struct CardContextMenuOverlay: View {
                     .ignoresSafeArea()
                     .onTapGesture { dismissMenu() }
                 
-                // Panel behind card + card on top + crown tab
-                VStack(spacing: 0) {
-                    // Crown tab — pops out above the card's top-right corner
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                            impactFeedback.impactOccurred()
-                            onCrownToggle()
-                        }) {
-                            Image(systemName: "crown.fill")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(isCrowned ? Color.yellow : Color.white.opacity(0.45))
-                                .frame(width: 38, height: 30)
-                                .background(
-                                    UnevenRoundedRectangle(
-                                        topLeadingRadius: 10,
-                                        bottomLeadingRadius: 0,
-                                        bottomTrailingRadius: 0,
-                                        topTrailingRadius: 10
-                                    )
-                                    .fill(Color(.systemBackground))
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .offset(x: -8)
-                        .opacity(appeared ? 1 : 0)
-                        .offset(y: appeared ? 0 : 10)
-                    }
-                    .frame(width: cardFrame.width)
-                    
-                    // Card + side panel
-                    ZStack(alignment: cardIsOnLeft ? .leading : .trailing) {
-                        // Action panel - sits behind and extends out
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.systemBackground))
-                            .frame(
-                                width: appeared ? cardFrame.width + panelWidth : cardFrame.width,
-                                height: cardFrame.height
-                            )
-                            .overlay(alignment: cardIsOnLeft ? .trailing : .leading) {
-                                // Action buttons on the exposed side
-                                VStack(spacing: 0) {
-                                    Spacer()
-                                    
-                                    actionRow(label: "Customize", action: onCustomize)
-                                    Divider().padding(.horizontal, 12)
-                                    
-                                    actionRow(label: "Quick Sell", action: onQuickSell)
-                                    
-                                    Spacer()
-                                }
-                                .frame(width: panelWidth)
+                // Side panel + card
+                ZStack(alignment: cardIsOnLeft ? .leading : .trailing) {
+                    // Action panel - sits behind and extends out
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.systemBackground))
+                        .frame(
+                            width: appeared ? cardFrame.width + panelWidth : cardFrame.width,
+                            height: cardFrame.height
+                        )
+                        .overlay(alignment: cardIsOnLeft ? .trailing : .leading) {
+                            VStack(spacing: 0) {
+                                Spacer()
+                                actionRow(label: "Customize", action: onCustomize)
+                                Divider().padding(.horizontal, 12)
+                                actionRow(label: "Quick Sell", action: onQuickSell)
+                                Spacer()
                             }
-                        
-                        // Card on top
-                        cardPreview
-                    }
+                            .frame(width: panelWidth)
+                        }
+                    
+                    // Card on top
+                    cardPreview
                 }
                 .offset(
                     x: cardIsOnLeft ? localX : (appeared ? localX - panelWidth : localX),
-                    y: localY - 30  // Shift up to account for crown tab height
+                    y: localY
                 )
+                
+                // Crown tab — pops UP out of the card's top corner closest to screen edge
+                let crownTabWidth: CGFloat = 38
+                let crownTabHeight: CGFloat = 30
+                // Position at screen-edge corner of the card
+                let crownX: CGFloat = cardIsOnLeft
+                    ? localX + 8  // left column → top-left of card
+                    : localX + cardFrame.width - crownTabWidth - 8  // right column → top-right of card
+                let crownY: CGFloat = localY - (appeared ? crownTabHeight : 0)
+                
+                Button(action: {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                    impactFeedback.impactOccurred()
+                    onCrownToggle()
+                }) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(isCrowned ? Color.yellow : Color.white.opacity(0.45))
+                        .frame(width: crownTabWidth, height: crownTabHeight)
+                        .background(
+                            UnevenRoundedRectangle(
+                                topLeadingRadius: 10,
+                                bottomLeadingRadius: 0,
+                                bottomTrailingRadius: 0,
+                                topTrailingRadius: 10
+                            )
+                            .fill(Color(.systemBackground))
+                        )
+                }
+                .buttonStyle(.plain)
+                .offset(x: crownX, y: crownY)
+                .opacity(appeared ? 1 : 0)
             }
         }
         .onAppear {
