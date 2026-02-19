@@ -82,7 +82,7 @@ struct ExploreView: View {
     
     private var categoryScrollView: some View {
         ScrollView(.vertical, showsIndicators: true) {
-            VStack(spacing: 16) {
+            VStack(spacing: 2) {
                 // Featured row first (if we have featured cards)
                 if !exploreService.featuredCards.isEmpty {
                     FeaturedRow(cards: exploreService.featuredCards) { card in
@@ -154,28 +154,33 @@ struct FeaturedRow: View {
             CategoryDetailView(category: nil, initialCards: cards)
         } label: {
             VStack(alignment: .leading, spacing: 0) {
-                // Banner header
+                // Floating glass header
                 HStack(spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("FEATURED")
-                            .font(.pHeadline)
-                            .foregroundStyle(.primary)
-                        
-                        Text("Top picks from the community")
-                            .font(.pCaption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("FEATURED")
+                        .font(.pHeadline)
+                        .foregroundStyle(.primary)
                     
                     Spacer()
                     
-                    Image(systemName: "chevron.right")
+                    Text("\(cards.count)")
                         .font(.pCaption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+                .overlay(
+                    Rectangle()
+                        .frame(height: 0.5)
+                        .foregroundStyle(Color.white.opacity(0.08)),
+                    alignment: .bottom
+                )
                 
-                // Full-width dark card container
+                // Card container
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(cards) { card in
@@ -185,7 +190,7 @@ struct FeaturedRow: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                 }
-                .background(Color.white.opacity(0.04))
+                .background(Color.white.opacity(0.03))
             }
         }
         .buttonStyle(.plain)
@@ -207,28 +212,33 @@ struct CategoryRow: View {
             CategoryDetailView(category: category, initialCards: cards)
         } label: {
             VStack(alignment: .leading, spacing: 0) {
-                // Banner header
+                // Floating glass header
                 HStack(spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(category.rawValue.uppercased())
-                            .font(.pHeadline)
-                            .foregroundStyle(.primary)
-                        
-                        Text(category.description)
-                            .font(.pCaption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text(category.rawValue.uppercased())
+                        .font(.pHeadline)
+                        .foregroundStyle(.primary)
                     
                     Spacer()
                     
-                    Image(systemName: "chevron.right")
+                    Text("\(cards.count)")
                         .font(.pCaption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
+                .overlay(
+                    Rectangle()
+                        .frame(height: 0.5)
+                        .foregroundStyle(Color.white.opacity(0.08)),
+                    alignment: .bottom
+                )
                 
-                // Full-width dark card container
+                // Card container
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(cards) { card in
@@ -238,7 +248,7 @@ struct CategoryRow: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                 }
-                .background(Color.white.opacity(0.04))
+                .background(Color.white.opacity(0.03))
             }
         }
         .buttonStyle(.plain)
