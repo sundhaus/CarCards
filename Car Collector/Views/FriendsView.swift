@@ -222,6 +222,7 @@ struct FriendActivityCard: View {
     @State private var heatCount: Int = 0
     @State private var isAnimatingHeat = false
     @State private var showFloatingFlame = false
+    @State private var profileImage: UIImage?
     
     // Specs fetching state
     @State private var fetchedSpecs: VehicleSpecs?
@@ -240,8 +241,14 @@ struct FriendActivityCard: View {
         VStack(alignment: .leading, spacing: 8) {
             // Friend info header
             HStack(spacing: 8) {
-                // Level bubble
-                ZStack {
+                // Profile picture
+                if let profileImage = profileImage {
+                    Image(uiImage: profileImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 32, height: 32)
+                        .clipShape(Circle())
+                } else {
                     Circle()
                         .fill(
                             LinearGradient(
@@ -251,10 +258,11 @@ struct FriendActivityCard: View {
                             )
                         )
                         .frame(width: 32, height: 32)
-                    
-                    Text("\(activity.level)")
-                        .font(.poppins(14))
-                        .foregroundStyle(.primary)
+                        .overlay {
+                            Text(String(activity.username.prefix(1)).uppercased())
+                                .font(.poppins(14))
+                                .foregroundStyle(.white)
+                        }
                 }
                 
                 // Tappable username
@@ -337,12 +345,6 @@ struct FriendActivityCard: View {
                             withAnimation(.spring(response: 0.4)) {
                                 flippedCardId = activity.id
                             }
-                        }
-                    }
-                    .onTapGesture(count: 2) {
-                        // Double tap to heat
-                        if !isHeated {
-                            toggleHeat()
                         }
                     }
                 } else {
@@ -439,6 +441,7 @@ struct FriendActivityCard: View {
             .padding(.horizontal)
             .task {
                 await loadCardImage()
+                await loadProfilePicture()
             }
             .onChange(of: activity.heatedBy) { _, newHeatedBy in
                 // Only sync from Firestore if the data actually changed from what we last knew
@@ -451,54 +454,6 @@ struct FriendActivityCard: View {
                 }
             }
             
-            // Engagement buttons - Heat system
-            HStack(spacing: 20) {
-                // Heat button (flame icon)
-                Button(action: {
-                    toggleHeat()
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: isHeated ? "flame.fill" : "flame")
-                            .font(.pSubheadline)
-                            .foregroundStyle(isHeated ?
-                                LinearGradient(
-                                    colors: [.orange, .red],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ) :
-                                LinearGradient(
-                                    colors: [.secondary, .secondary],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .scaleEffect(isAnimatingHeat ? 1.3 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isAnimatingHeat)
-                        
-                        if heatCount > 0 {
-                            Text("\(heatCount)")
-                                .font(.pCaption)
-                                .fontWeight(.medium)
-                                .foregroundStyle(isHeated ? .orange : .secondary)
-                        }
-                    }
-                }
-                
-                // Comment button (placeholder for future)
-                Button(action: {}) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "bubble.right")
-                            .font(.pSubheadline)
-                        Text("Comment")
-                            .font(.pCaption)
-                    }
-                    .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
         }
     }
     
@@ -516,6 +471,20 @@ struct FriendActivityCard: View {
             await MainActor.run {
                 isLoadingImage = false
             }
+        }
+    }
+    
+    private func loadProfilePicture() async {
+        do {
+            if let profile = try await UserService.shared.fetchProfile(uid: activity.userId),
+               let urlString = profile.profilePictureURL {
+                let image = try await CardService.shared.loadImage(from: urlString)
+                await MainActor.run {
+                    profileImage = image
+                }
+            }
+        } catch {
+            print("⚠️ Failed to load profile picture: \(error)")
         }
     }
     
