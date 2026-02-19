@@ -350,34 +350,13 @@ struct CameraView: View {
     
     var body: some View {
         ZStack {
-            if let image = camera.capturedImage {
-                CardComposerView(
-                    image: image,
-                    onSave: { image, make, model, color, year, specs in
-                        let card = SavedCard(
-                            image: image,
-                            make: make,
-                            model: model,
-                            color: color,
-                            year: year,
-                            specs: specs,
-                            capturedBy: UserService.shared.currentProfile?.username,
-                            capturedLocation: locationService.currentCity,
-                            previousOwners: 0
-                        )
-                        onCardSaved(card)
-                    },
-                    onRetake: {
-                        camera.capturedImage = nil
-                        camera.startSession()
-                    },
-                    captureType: captureType
-                )
-            } else {
-                ZStack {
-                    CameraPreview(camera: camera)
-                        .ignoresSafeArea()
-                    
+            // Camera preview is ALWAYS alive underneath
+            ZStack {
+                CameraPreview(camera: camera)
+                    .ignoresSafeArea()
+                
+                // Only show controls when not in composer
+                if camera.capturedImage == nil {
                     VStack {
                         HStack {
                             Button(action: {
@@ -413,25 +392,52 @@ struct CameraView: View {
                         .padding(.bottom, 40)
                     }
                 }
-                .gesture(
-                    MagnificationGesture(minimumScaleDelta: 0.0)
-                        .onChanged { value in
-                            let delta = value / lastZoomFactor
-                            lastZoomFactor = value
-                            let newZoom = camera.zoomFactor * delta
-                            camera.setZoom(newZoom)
-                            
-                            if newZoom < 1 && camera.availableLenses.count > 0 {
-                                camera.switchLens(to: 0)
-                            } else if newZoom >= 1 && newZoom < 2.5 && camera.availableLenses.count > 1 {
-                                camera.switchLens(to: 1)
-                            } else if newZoom >= 2.5 && camera.availableLenses.count > 2 {
-                                camera.switchLens(to: 2)
-                            }
+            }
+            .gesture(
+                MagnificationGesture(minimumScaleDelta: 0.0)
+                    .onChanged { value in
+                        guard camera.capturedImage == nil else { return }
+                        let delta = value / lastZoomFactor
+                        lastZoomFactor = value
+                        let newZoom = camera.zoomFactor * delta
+                        camera.setZoom(newZoom)
+                        
+                        if newZoom < 1 && camera.availableLenses.count > 0 {
+                            camera.switchLens(to: 0)
+                        } else if newZoom >= 1 && newZoom < 2.5 && camera.availableLenses.count > 1 {
+                            camera.switchLens(to: 1)
+                        } else if newZoom >= 2.5 && camera.availableLenses.count > 2 {
+                            camera.switchLens(to: 2)
                         }
-                        .onEnded { _ in
-                            lastZoomFactor = 1.0
-                        }
+                    }
+                    .onEnded { _ in
+                        lastZoomFactor = 1.0
+                    }
+            )
+            
+            // Composer overlays on top when image is captured
+            if let image = camera.capturedImage {
+                CardComposerView(
+                    image: image,
+                    onSave: { image, make, model, color, year, specs in
+                        let card = SavedCard(
+                            image: image,
+                            make: make,
+                            model: model,
+                            color: color,
+                            year: year,
+                            specs: specs,
+                            capturedBy: UserService.shared.currentProfile?.username,
+                            capturedLocation: locationService.currentCity,
+                            previousOwners: 0
+                        )
+                        onCardSaved(card)
+                    },
+                    onRetake: {
+                        // Just clear the image - camera is already running underneath
+                        camera.capturedImage = nil
+                    },
+                    captureType: captureType
                 )
             }
         }
