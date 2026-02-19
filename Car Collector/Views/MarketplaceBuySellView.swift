@@ -116,127 +116,65 @@ struct MarketplaceBuySellView: View {
                 .ignoresSafeArea(edges: .all)
             
             VStack(spacing: 0) {
-                // File folder-style tabs
-                ZStack(alignment: .bottom) {
-                    Color.clear
-                        .frame(height: 60)
-                    
-                    HStack(spacing: 0) {
-                        // Buy Tab
+                // Glass segmented tabs
+                HStack(spacing: 6) {
+                    ForEach(["Buy", "Sell"], id: \.self) { tab in
+                        let index = tab == "Buy" ? 0 : 1
                         Button(action: {
-                            selectedMarketTab = 0  // Instant switch, no animation
-                        }) {
-                            Text("Buy")
-                                .font(.poppins(18))
-                                .foregroundStyle(selectedMarketTab == 0 ? .primary : .secondary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(
-                                    GeometryReader { geo in
-                                        VStack(spacing: 0) {
-                                            if selectedMarketTab == 0 {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(.white)
-                                            } else {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(Color(.systemGray5))
-                                            }
-                                        }
-                                    }
-                                )
-                        }
-                        .overlay(alignment: .trailing) {
-                            if selectedMarketTab != 0 {
-                                Rectangle()
-                                    .fill(Color(.systemGray4))
-                                    .frame(width: 1)
-                                    .padding(.vertical, 8)
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedMarketTab = index
                             }
-                        }
-                        
-                        // Sell Tab
-                        Button(action: {
-                            selectedMarketTab = 1  // Instant switch, no animation
                         }) {
-                            Text("Sell")
-                                .font(.poppins(18))
-                                .foregroundStyle(selectedMarketTab == 1 ? .primary : .secondary)
+                            Text(tab)
+                                .font(.pSubheadline)
+                                .fontWeight(selectedMarketTab == index ? .semibold : .regular)
+                                .foregroundStyle(selectedMarketTab == index ? .white : .white.opacity(0.5))
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(
-                                    GeometryReader { geo in
-                                        VStack(spacing: 0) {
-                                            if selectedMarketTab == 1 {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(.white)
-                                            } else {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(Color(.systemGray5))
-                                            }
-                                        }
+                                .padding(.vertical, 10)
+                                .background {
+                                    if selectedMarketTab == index {
+                                        Capsule()
+                                            .fill(.white.opacity(0.15))
                                     }
-                                )
+                                }
                         }
                     }
-                    .padding(.horizontal)
+                }
+                .padding(4)
+                .glassEffect(.regular, in: .capsule)
+                .padding(.horizontal)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+                
+                // Filter Panel
+                if selectedMarketTab == 0 {
+                    buyFiltersView
+                } else {
+                    sellFiltersView
                 }
                 
-                // Content area - white background extending to bottom
-                ZStack(alignment: .top) {
-                    Color.white
-                        .ignoresSafeArea(edges: .bottom)
-                    
-                    VStack(spacing: 0) {
-                        Spacer()
-                            .frame(height: 16)
-                        
-                        // Filter Panel - Conditional based on selected tab
-                        if selectedMarketTab == 0 {
-                            buyFiltersView
-                        } else {
-                            sellFiltersView
+                // Tab Content
+                if selectedMarketTab == 0 {
+                    BuyView(
+                        activeListings: filteredListings,
+                        hasUnfilteredListings: !marketplaceService.activeListings.isEmpty
+                    )
+                    .tag(0)
+                } else {
+                    SellView(
+                        savedCards: filteredCards,
+                        filterMake: sellFilterMake,
+                        filterModel: sellFilterModel,
+                        filterYear: sellFilterYear,
+                        onCardSelected: { card in
+                            selectedCard = card
                         }
-                        
-                        // Tab Content - Direct switching, no TabView
-                        if selectedMarketTab == 0 {
-                            // Buy Tab
-                            BuyView(
-                                activeListings: filteredListings,
-                                hasUnfilteredListings: !marketplaceService.activeListings.isEmpty
-                            )
-                            .tag(0)
-                        } else {
-                            // Sell Tab
-                            SellView(
-                                savedCards: filteredCards,
-                                filterMake: sellFilterMake,
-                                filterModel: sellFilterModel,
-                                filterYear: sellFilterYear,
-                                onCardSelected: { card in
-                                    selectedCard = card  // fullScreenCover auto-presents
-                                }
-                            )
-                            .tag(1)
-                        }
-                    }
-                    .ignoresSafeArea(edges: .bottom)
-                    .padding(.bottom, isLandscape ? 0 : 100)
-                    .padding(.trailing, isLandscape ? 100 : 0)
+                    )
+                    .tag(1)
                 }
             }
-            .ignoresSafeArea(edges: .bottom)
+            .padding(.bottom, isLandscape ? 0 : 100)
+            .padding(.trailing, isLandscape ? 100 : 0)
         }
         .onAppear {
             marketplaceService.listenToActiveListings()
@@ -334,7 +272,7 @@ struct MarketplaceBuySellView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color.white.opacity(0.08))
         .cornerRadius(12)
         .padding(.horizontal)
     }
@@ -379,11 +317,11 @@ struct MarketplaceBuySellView: View {
                     }
                 )
                 
-                Spacer()  // No price filter for Sell tab
+                Spacer()
             }
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color.white.opacity(0.08))
         .cornerRadius(12)
         .padding(.horizontal)
     }
@@ -418,11 +356,11 @@ struct MarketplaceBuySellView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.systemBackground))
+                .background(Color.white.opacity(0.1))
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(.systemGray4), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
                 )
             }
             .disabled(disabled)
@@ -549,7 +487,7 @@ struct ListingCardRow: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 8)
-        .background(.white)
+        .background(Color.white.opacity(0.08))
         .cornerRadius(12)
     }
 }
@@ -579,7 +517,7 @@ struct GarageCardRow: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 8)
-        .background(.white)
+        .background(Color.white.opacity(0.08))
         .cornerRadius(12)
     }
 }

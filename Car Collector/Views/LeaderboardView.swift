@@ -16,147 +16,53 @@ struct LeaderboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Gray backdrop that extends entire page
-                Color(.systemGray6)
+                Color.appBackgroundSolid
                     .ignoresSafeArea(edges: .all)
                 
                 VStack(spacing: 0) {
-                    // File folder-style tabs
-                    ZStack(alignment: .bottom) {
-                        Color.clear
-                            .frame(height: 60)
-                        
-                        HStack(spacing: 4) {
-                            // Cards Collected Tab
+                    // Glass segmented tabs
+                    HStack(spacing: 6) {
+                        ForEach(["Cards", "Heat", "Earnings"], id: \.self) { tab in
+                            let index = ["Cards", "Heat", "Earnings"].firstIndex(of: tab)!
                             Button(action: {
-                                selectedTab = 0
-                            }) {
-                                Text("Cards")
-                                    .font(.poppins(16))
-                                    .foregroundStyle(selectedTab == 0 ? .primary : .secondary)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .padding(.horizontal, 8)
-                                    .background(
-                                        VStack(spacing: 0) {
-                                            if selectedTab == 0 {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(.white)
-                                            } else {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(Color(.systemGray5))
-                                            }
-                                        }
-                                    )
-                            }
-                            .overlay(alignment: .trailing) {
-                                if selectedTab != 0 {
-                                    Rectangle()
-                                        .fill(Color(.systemGray4))
-                                        .frame(width: 1)
-                                        .padding(.vertical, 8)
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedTab = index
                                 }
-                            }
-                            
-                            // Total Heat Tab
-                            Button(action: {
-                                selectedTab = 1
                             }) {
-                                Text("Heat")
-                                    .font(.poppins(16))
-                                    .foregroundStyle(selectedTab == 1 ? .primary : .secondary)
+                                Text(tab)
+                                    .font(.pSubheadline)
+                                    .fontWeight(selectedTab == index ? .semibold : .regular)
+                                    .foregroundStyle(selectedTab == index ? .white : .white.opacity(0.5))
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .padding(.horizontal, 8)
-                                    .background(
-                                        VStack(spacing: 0) {
-                                            if selectedTab == 1 {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(.white)
-                                            } else {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(Color(.systemGray5))
-                                            }
+                                    .padding(.vertical, 10)
+                                    .background {
+                                        if selectedTab == index {
+                                            Capsule()
+                                                .fill(.white.opacity(0.15))
                                         }
-                                    )
-                            }
-                            .overlay(alignment: .trailing) {
-                                if selectedTab != 1 {
-                                    Rectangle()
-                                        .fill(Color(.systemGray4))
-                                        .frame(width: 1)
-                                        .padding(.vertical, 8)
-                                }
-                            }
-                            
-                            // Earnings Tab
-                            Button(action: {
-                                selectedTab = 2
-                            }) {
-                                Text("Earnings")
-                                    .font(.poppins(16))
-                                    .foregroundStyle(selectedTab == 2 ? .primary : .secondary)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .padding(.horizontal, 8)
-                                    .background(
-                                        VStack(spacing: 0) {
-                                            if selectedTab == 2 {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(.white)
-                                            } else {
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 12,
-                                                    topTrailingRadius: 12
-                                                )
-                                                .fill(Color(.systemGray5))
-                                            }
-                                        }
-                                    )
+                                    }
                             }
                         }
-                        .padding(.horizontal, 12)
+                    }
+                    .padding(4)
+                    .glassEffect(.regular, in: .capsule)
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
+                    
+                    // Tab Content
+                    if selectedTab == 0 {
+                        CardsLeaderboard(entries: leaderboardService.cardsLeaderboard)
+                    } else if selectedTab == 1 {
+                        HeatLeaderboard(entries: leaderboardService.heatLeaderboard)
+                    } else {
+                        EarningsLeaderboard(entries: leaderboardService.earningsLeaderboard)
                     }
                     
-                    // Content area - white background extending to bottom
-                    ZStack(alignment: .top) {
-                        Color.white
-                            .ignoresSafeArea(edges: .bottom)
-                        
-                        VStack(spacing: 0) {
-                            Spacer()
-                                .frame(height: 16)
-                            
-                            // Tab Content
-                            if selectedTab == 0 {
-                                CardsLeaderboard(entries: leaderboardService.cardsLeaderboard)
-                            } else if selectedTab == 1 {
-                                HeatLeaderboard(entries: leaderboardService.heatLeaderboard)
-                            } else {
-                                EarningsLeaderboard(entries: leaderboardService.earningsLeaderboard)
-                            }
-                        }
-                        .ignoresSafeArea(edges: .bottom)
-                        .padding(.bottom, isLandscape ? 0 : 100)
-                        .padding(.trailing, isLandscape ? 100 : 0)
-                    }
+                    Spacer(minLength: 0)
                 }
-                .ignoresSafeArea(edges: .bottom)
+                .padding(.bottom, isLandscape ? 0 : 100)
+                .padding(.trailing, isLandscape ? 100 : 0)
             }
             .navigationTitle("Leaderboard")
             .navigationBarTitleDisplayMode(.inline)
@@ -395,7 +301,7 @@ struct LeaderboardRow: View {
             }
         }
         .padding()
-        .background(isCurrentUser ? Color.blue.opacity(0.1) : Color(.systemGray6))
+        .background(isCurrentUser ? Color.blue.opacity(0.15) : Color.white.opacity(0.08))
         .cornerRadius(12)
     }
     
