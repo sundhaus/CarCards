@@ -988,7 +988,7 @@ struct CardBackView: View {
                     }
                 }
                 .padding(.horizontal, 18 * scale)
-                .padding(.bottom, 10 * scale)
+                .padding(.bottom, 18 * scale)
             }
             .frame(width: cardWidth, height: cardHeight)
             
