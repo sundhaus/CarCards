@@ -270,8 +270,62 @@ struct LevelHeader: View {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+        let showGoldOutline = levelSystem.level > 99
+        let outlineSize = size + 8  // gap of ~2.5pt between shape edge and outline
+        let goldGradient = LinearGradient(
+            colors: [Color(red: 1.0, green: 0.84, blue: 0.0), Color(red: 0.85, green: 0.65, blue: 0.13)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
         
         return ZStack {
+            // Gold outline — same shape, larger, stroke only
+            if showGoldOutline {
+                Group {
+                    let adjustedLevel = ((levelSystem.level - 1) % 100) + 1
+                    
+                    switch adjustedLevel {
+                    case 1...10:
+                        Circle()
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 11...20:
+                        TriangleShape()
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 21...30:
+                        Rectangle()
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 31...40:
+                        PentagonShape()
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 41...50:
+                        HexagonShape()
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 51...60:
+                        Circle()
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 61...70:
+                        TriangleShape()
+                            .rotation(Angle(degrees: 180))
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 71...80:
+                        DiamondShape()
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 81...90:
+                        PentagonShape()
+                            .rotation(Angle(degrees: 180))
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    case 91...100:
+                        HexagonShape()
+                            .rotation(Angle(degrees: 30))
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    default:
+                        Circle()
+                            .stroke(goldGradient, lineWidth: 1.5)
+                    }
+                }
+                .frame(width: outlineSize, height: outlineSize)
+            }
+            
             // Shape background - apply fill before wrapping in AnyView
             Group {
                 let adjustedLevel = ((levelSystem.level - 1) % 100) + 1
