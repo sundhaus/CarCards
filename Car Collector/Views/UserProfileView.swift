@@ -302,9 +302,7 @@ struct UserProfileView: View {
                                         Image(systemName: "star.fill")
                                             .font(.system(size: 14, weight: .bold))
                                             .foregroundStyle(.yellow)
-                                            .padding(6)
-                                            .background(Color.black.opacity(0.65))
-                                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                                            .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
                                             .padding(8)
                                     }
                                     .padding(.horizontal)
@@ -616,9 +614,7 @@ struct UserCardView: View {
                 Image(systemName: "star.fill")
                     .font(.system(size: isLargeSize ? 14 : 10, weight: .bold))
                     .foregroundStyle(.yellow)
-                    .padding(isLargeSize ? 6 : 4)
-                    .background(Color.black.opacity(0.65))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
                     .padding(isLargeSize ? 8 : 5)
             }
         }

@@ -411,9 +411,7 @@ struct GarageView: View {
                 Image(systemName: "star.fill")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.yellow)
-                    .padding(4)
-                    .background(Color.black.opacity(0.65))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
                     .padding(5)
             }
         }
