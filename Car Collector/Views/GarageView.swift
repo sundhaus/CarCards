@@ -349,7 +349,7 @@ struct GarageView: View {
                             
                             Spacer()
                         }
-                        .padding(.bottom, 12)
+                        .padding(.bottom, 4)
                         .tag(pageIndex)
                     }
                 }
@@ -367,7 +367,7 @@ struct GarageView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 6)
                     .glassEffect(.regular, in: .capsule)
-                    .padding(.top, 4)
+                    .padding(.vertical, 12)
                 }
             }
         }
