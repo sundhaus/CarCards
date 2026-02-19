@@ -18,21 +18,19 @@ struct AppBackground: View {
                 // Adaptive base: white in light mode, space gray in dark
                 (colorScheme == .dark ? Color(white: 0.11) : Color.white)
                 
-                // Spline graphic - right side, shifted above midline
-                Image("SplineBackground")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: geo.size.width * 1.2)
-                    .offset(x: geo.size.width * 0.2, y: -60)
-                
-                // Floating shapes layer - always visible
-                FloatingShapesView(size: geo.size, animate: animateShapes)
-                
-                // Light blur layer
-                Color(.systemBackground)
-                    .opacity(0.05)
-                    .blur(radius: 80)
-                    .allowsHitTesting(false)
+                // Spline + shapes grouped, with light blur over both
+                Group {
+                    // Spline graphic - right side, shifted above midline
+                    Image("SplineBackground")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: geo.size.width * 1.2)
+                        .offset(x: geo.size.width * 0.2, y: -60)
+                    
+                    // Floating shapes layer - always visible
+                    FloatingShapesView(size: geo.size, animate: animateShapes)
+                }
+                .blur(radius: 3)
             }
         }
         .ignoresSafeArea()
