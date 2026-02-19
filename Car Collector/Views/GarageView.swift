@@ -328,7 +328,7 @@ struct GarageView: View {
     
     private var portraitPagedView: some View {
         GeometryReader { geometry in
-            let cardsPerPage = cardsPerRow == 1 ? 5 : 10 // 5 cards (5x1) or 10 cards (5x2)
+            let cardsPerPage = cardsPerRow == 1 ? 5 : 10
             let totalPages = Int(ceil(Double(allCards.count) / Double(cardsPerPage)))
             
             VStack(spacing: 0) {
@@ -341,34 +341,7 @@ struct GarageView: View {
                         VStack {
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
                                 ForEach(pageCards) { card in
-                                    UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
-                                        .opacity(showContextMenu && contextMenuCard?.id == card.id ? 0 : 1)
-                                        .background(
-                                            GeometryReader { geo in
-                                                Color.clear
-                                                    .onAppear {
-                                                        cardFrames[card.id] = geo.frame(in: .named("garage"))
-                                                    }
-                                                    .onChange(of: geo.frame(in: .named("garage"))) { _, newFrame in
-                                                        cardFrames[card.id] = newFrame
-                                                    }
-                                            }
-                                        )
-                                        .onTapGesture {
-                                            selectedCard = card
-                                            withAnimation {
-                                                showCardDetail = true
-                                            }
-                                        }
-                                        .onLongPressGesture(minimumDuration: 0.25) {
-                                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                                            impactFeedback.impactOccurred()
-                                            contextMenuCard = card
-                                            contextMenuCardFrame = cardFrames[card.id] ?? .zero
-                                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                                showContextMenu = true
-                                            }
-                                        }
+                                    garageCardCell(card: card)
                                 }
                             }
                             .padding(.horizontal)
@@ -398,6 +371,38 @@ struct GarageView: View {
                 }
             }
         }
+    }
+    
+    @ViewBuilder
+    private func garageCardCell(card: AnyCard) -> some View {
+        UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
+            .opacity(showContextMenu && contextMenuCard?.id == card.id ? 0 : 1)
+            .background(
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear {
+                            cardFrames[card.id] = geo.frame(in: .named("garage"))
+                        }
+                        .onChange(of: geo.frame(in: .named("garage"))) { _, newFrame in
+                            cardFrames[card.id] = newFrame
+                        }
+                }
+            )
+            .onTapGesture {
+                selectedCard = card
+                withAnimation {
+                    showCardDetail = true
+                }
+            }
+            .onLongPressGesture(minimumDuration: 0.25) {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+                contextMenuCard = card
+                contextMenuCardFrame = cardFrames[card.id] ?? .zero
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    showContextMenu = true
+                }
+            }
     }
 }
 
