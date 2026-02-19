@@ -22,6 +22,7 @@ struct UserProfileView: View {
     @State private var followStats: (friends: Int, following: Int, followers: Int) = (0, 0, 0)
     @State private var isFollowing = false
     @State private var followsMe = false
+    @State private var isCheckingRelationship = true
     @State private var selectedCard: AnyCard?
     @State private var showCardDetail = false
     @State private var isLoadingCardImage = false
@@ -186,20 +187,26 @@ struct UserProfileView: View {
                                 }
                                 
                                 // Relationship Status Bar
-                                Button(action: handleRelationshipAction) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: relationshipStatus.icon)
-                                            .font(.pSubheadline)
-                                        Text(relationshipStatus.buttonText)
-                                            .font(.pSubheadline)
-                                            .fontWeight(.semibold)
+                                if isCheckingRelationship {
+                                    ProgressView()
+                                        .frame(width: 180, height: 36)
+                                        .padding(.top, 4)
+                                } else {
+                                    Button(action: handleRelationshipAction) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: relationshipStatus.icon)
+                                                .font(.pSubheadline)
+                                            Text(relationshipStatus.buttonText)
+                                                .font(.pSubheadline)
+                                                .fontWeight(.semibold)
+                                        }
+                                        .foregroundStyle(.white)
+                                        .frame(width: 180, height: 36)
+                                        .background(relationshipStatus.buttonColor)
+                                        .cornerRadius(18)
                                     }
-                                    .foregroundStyle(.white)
-                                    .frame(width: 180, height: 36)
-                                    .background(relationshipStatus.buttonColor)
-                                    .cornerRadius(18)
+                                    .padding(.top, 4)
                                 }
-                                .padding(.top, 4)
                                 
                                 // Stats row - Friends/Following/Followers
                                 HStack(spacing: 32) {
@@ -345,7 +352,7 @@ struct UserProfileView: View {
             await loadProfile()
             await loadCards()
             await loadFollowStats()
-            checkRelationshipStatus()
+            await checkRelationshipStatus()
         }
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
@@ -420,12 +427,20 @@ struct UserProfileView: View {
         }
     }
     
-    private func checkRelationshipStatus() {
-        // Check if I'm following them
-        isFollowing = friendsService.following.contains { $0.id == userId }
-        
-        // Check if they're following me
-        followsMe = friendsService.followers.contains { $0.id == userId }
+    private func checkRelationshipStatus() async {
+        // Direct Firestore queries instead of checking cached arrays
+        do {
+            isFollowing = try await friendsService.checkIfFollowing(userId: userId)
+            followsMe = try await friendsService.checkIfFollowsMe(userId: userId)
+            isCheckingRelationship = false
+            print("👥 Relationship: isFollowing=\(isFollowing), followsMe=\(followsMe)")
+        } catch {
+            // Fallback to cached data
+            isFollowing = friendsService.following.contains { $0.id == userId }
+            followsMe = friendsService.followers.contains { $0.id == userId }
+            isCheckingRelationship = false
+            print("⚠️ Relationship check fell back to cache: \(error)")
+        }
     }
 }
 
