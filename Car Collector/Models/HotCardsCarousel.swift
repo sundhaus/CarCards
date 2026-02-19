@@ -58,6 +58,7 @@ struct HotCardsCarousel: View {
                     .padding(.horizontal, (geometry.size.width - 280) / 2)
                 }
                 .frame(height: 157.5)
+                .padding(.top, 16)
                 .scrollDisabled(true)
                 .gesture(
                     DragGesture(minimumDistance: 20)
@@ -80,7 +81,7 @@ struct HotCardsCarousel: View {
                 }
             }
         }
-        .frame(height: 170)
+        .frame(height: 186)
     }
     
     // MARK: - Swipe Direction Handler
