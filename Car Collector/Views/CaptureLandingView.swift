@@ -19,8 +19,14 @@ struct CaptureLandingView: View {
     @State private var showLocationForm = false
     @State private var showDriverTypeSelector = false
     
+    // Pending form flags — set before camera dismiss, acted on in onDismiss
+    @State private var pendingDriverForm = false
+    @State private var pendingLocationForm = false
+    @State private var pendingCameraOpen = false
+    
     // Card preview states
     @State private var showCardPreview = false
+    @State private var pendingCardPreview = false
     @State private var previewCardImage: UIImage?
     @State private var previewMake = ""
     @State private var previewModel = ""
@@ -79,11 +85,8 @@ struct CaptureLandingView: View {
                                 icon: "mappin.circle.fill",
                                 gradient: [Color.green, Color.teal],
                                 action: {
-                                    print("📍 Location button tapped")
                                     captureType = .location
-                                    print("   captureType set to: \(captureType)")
                                     showCamera = true
-                                    print("   Opening camera with captureType: \(captureType)")
                                 }
                             )
                         }
@@ -98,7 +101,16 @@ struct CaptureLandingView: View {
             }
             .background { AppBackground() }
             // Camera for all capture types
-            .fullScreenCover(isPresented: $showCamera) {
+            .fullScreenCover(isPresented: $showCamera, onDismiss: {
+                // Fires AFTER camera fullScreenCover dismiss animation completes
+                if pendingDriverForm {
+                    pendingDriverForm = false
+                    showDriverForm = true
+                } else if pendingLocationForm {
+                    pendingLocationForm = false
+                    showLocationForm = true
+                }
+            }) {
                 CameraView(
                     isPresented: $showCamera,
                     onCardSaved: { card in
@@ -108,52 +120,54 @@ struct CaptureLandingView: View {
                             showCamera = false
                             selectedTab = 4
                         } else {
-                            // Driver or Location - save image, dismiss camera, then show form after dismiss completes
+                            // Driver or Location - store image, flag pending form, dismiss camera
                             capturedImage = card.image
-                            showCamera = false
-                            // Delay form presentation until fullScreenCover dismiss animation completes
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                if captureType == .driver || captureType == .driverPlusVehicle {
-                                    showDriverForm = true
-                                } else if captureType == .location {
-                                    showLocationForm = true
-                                }
+                            if captureType == .driver || captureType == .driverPlusVehicle {
+                                pendingDriverForm = true
+                            } else if captureType == .location {
+                                pendingLocationForm = true
                             }
+                            showCamera = false
+                            // Form will show via onDismiss callback above
                         }
                     },
                     captureType: captureType
                 )
             }
             // Driver type selector
-            .sheet(isPresented: $showDriverTypeSelector) {
+            .sheet(isPresented: $showDriverTypeSelector, onDismiss: {
+                // If a driver type was picked, open camera now that sheet is fully gone
+                if pendingCameraOpen {
+                    pendingCameraOpen = false
+                    showCamera = true
+                }
+            }) {
                 DriverTypeSelectorView(
                     onSelect: { type in
-                        print("👤 Driver type selected: \(type)")
                         captureType = type
-                        print("   captureType set to: \(captureType)")
+                        pendingCameraOpen = true
                         showDriverTypeSelector = false
-                        showCamera = true
-                        print("   Opening camera with captureType: \(captureType)")
                     }
                 )
                 .presentationDetents([.height(300)])
             }
-            // Driver info form
-            .sheet(isPresented: $showDriverForm) {
+            // Driver info form — fullScreenCover to avoid sheet presentation conflicts
+            .fullScreenCover(isPresented: $showDriverForm, onDismiss: {
+                if pendingCardPreview {
+                    pendingCardPreview = false
+                    showCardPreview = true
+                }
+            }) {
                 if let image = capturedImage {
                     DriverInfoFormSheet(
                         capturedImage: image,
                         isDriverPlusVehicle: captureType == .driverPlusVehicle,
                         onComplete: { cardImage, firstName, lastName, nickname, vehicleName in
                             print("📝 Driver saved: \(firstName) \(lastName)" + (nickname.isEmpty ? "" : " (\(nickname))"))
-                            if !vehicleName.isEmpty {
-                                print("   Vehicle: \(vehicleName)")
-                            }
                             
                             // Save to Firebase and local storage
                             Task {
                                 do {
-                                    // Save to Firebase
                                     let firebaseId = try await CardService.shared.saveDriverCard(
                                         image: cardImage,
                                         firstName: firstName,
@@ -165,7 +179,6 @@ struct CaptureLandingView: View {
                                         capturedLocation: locationService.currentCity
                                     )
                                     
-                                    // Save to local storage
                                     let driverCard = DriverCard(
                                         image: cardImage,
                                         firstName: firstName,
@@ -182,44 +195,45 @@ struct CaptureLandingView: View {
                                     localCards.append(driverCard)
                                     CardStorage.saveDriverCards(localCards)
                                     
-                                    // Award XP
                                     levelSystem.addXP(10)
-                                    
                                     print("✅ Driver card saved successfully")
                                     
-                                    // Show card preview
                                     await MainActor.run {
                                         previewCardImage = cardImage
                                         previewMake = firstName
                                         previewModel = lastName
                                         previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
                                         
+                                        pendingCardPreview = true
                                         showDriverForm = false
-                                        // Delay preview until sheet dismiss animation completes
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                            showCardPreview = true
-                                        }
+                                        // Preview will show via onDismiss callback above
                                     }
                                 } catch {
                                     print("❌ Failed to save driver card: \(error)")
+                                    await MainActor.run {
+                                        showDriverForm = false
+                                    }
                                 }
                             }
                         }
                     )
                 }
             }
-            // Location info form
-            .sheet(isPresented: $showLocationForm) {
+            // Location info form — fullScreenCover
+            .fullScreenCover(isPresented: $showLocationForm, onDismiss: {
+                if pendingCardPreview {
+                    pendingCardPreview = false
+                    showCardPreview = true
+                }
+            }) {
                 if let image = capturedImage {
                     LocationInfoFormSheet(
                         capturedImage: image,
                         onComplete: { cardImage, locationName in
                             print("📍 Location saved: \(locationName)")
                             
-                            // Save to Firebase and local storage
                             Task {
                                 do {
-                                    // Save to Firebase
                                     let firebaseId = try await CardService.shared.saveLocationCard(
                                         image: cardImage,
                                         locationName: locationName,
@@ -227,7 +241,6 @@ struct CaptureLandingView: View {
                                         capturedLocation: locationService.currentCity
                                     )
                                     
-                                    // Save to local storage
                                     let locationCard = LocationCard(
                                         image: cardImage,
                                         locationName: locationName,
@@ -240,25 +253,23 @@ struct CaptureLandingView: View {
                                     localCards.append(locationCard)
                                     CardStorage.saveLocationCards(localCards)
                                     
-                                    // Award XP
                                     levelSystem.addXP(10)
-                                    
                                     print("✅ Location card saved successfully")
                                     
-                                    // Show card preview
                                     await MainActor.run {
                                         previewCardImage = cardImage
                                         previewMake = locationName
                                         previewModel = ""
                                         previewGeneration = ""
                                         
+                                        pendingCardPreview = true
                                         showLocationForm = false
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                            showCardPreview = true
-                                        }
                                     }
                                 } catch {
                                     print("❌ Failed to save location card: \(error)")
+                                    await MainActor.run {
+                                        showLocationForm = false
+                                    }
                                 }
                             }
                         }
@@ -273,11 +284,11 @@ struct CaptureLandingView: View {
                         make: previewMake,
                         model: previewModel,
                         generation: previewGeneration,
-                        onWrongVehicle: nil, // Not applicable for driver/location
-                        showWrongVehicleButton: false // Hide "Not your vehicle" button
+                        onWrongVehicle: nil,
+                        showWrongVehicleButton: false
                     )
                     .onDisappear {
-                        selectedTab = 4 // Dismiss CaptureLandingView when preview is dismissed
+                        selectedTab = 4
                     }
                 }
             }
