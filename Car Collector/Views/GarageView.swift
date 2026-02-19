@@ -388,23 +388,26 @@ struct GarageView: View {
                         }
                 }
             )
-            .onTapGesture {
-                selectedCard = card
-                withAnimation {
-                    showCardDetail = true
-                }
-            }
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.2)
-                    .onEnded { _ in
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
-                        contextMenuCard = card
-                        contextMenuCardFrame = cardFrames[card.id] ?? .zero
-                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
-                            showContextMenu = true
+            .gesture(
+                ExclusiveGesture(
+                    LongPressGesture(minimumDuration: 0.2)
+                        .onEnded { _ in
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                            contextMenuCard = card
+                            contextMenuCardFrame = cardFrames[card.id] ?? .zero
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                                showContextMenu = true
+                            }
+                        },
+                    TapGesture()
+                        .onEnded {
+                            selectedCard = card
+                            withAnimation {
+                                showCardDetail = true
+                            }
                         }
-                    }
+                )
             )
     }
 }
