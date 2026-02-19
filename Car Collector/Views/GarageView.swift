@@ -330,6 +330,7 @@ struct GarageView: View {
         GeometryReader { geometry in
             let cardsPerPage = cardsPerRow == 1 ? 5 : 10
             let totalPages = Int(ceil(Double(allCards.count) / Double(cardsPerPage)))
+            let verticalInset: CGFloat = 24
             
             VStack(spacing: 0) {
                 TabView(selection: $currentPage) {
@@ -345,7 +346,7 @@ struct GarageView: View {
                                 }
                             }
                             .padding(.horizontal)
-                            .padding(.top, 20)
+                            .padding(.top, verticalInset)
                             
                             Spacer()
                         }
@@ -367,7 +368,7 @@ struct GarageView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .glassEffect(.regular, in: .capsule)
-                    .padding(.bottom, 4)
+                    .padding(.vertical, verticalInset)
                 }
             }
         }
