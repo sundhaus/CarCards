@@ -92,9 +92,9 @@ struct ProfileView: View {
                             .foregroundStyle(.gray)
                     }
                 }
-                .padding()
-                
-                Divider()
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .glassEffect(.regular, in: .rect)
                 
                 // Profile content
                 VStack(spacing: 24) {

@@ -30,36 +30,28 @@ struct TransferTargetsView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header - compact with background extending to top
-                ZStack(alignment: .bottom) {
-                    // Background extends to top
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .ignoresSafeArea(edges: .top)
-                    
-                    // Content at bottom - compact
-                    HStack {
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.title3)
-                                .foregroundStyle(.primary)
-                        }
-                        
-                        Spacer()
-                        
-                        Text("Transfer Targets")
+                // Header
+                HStack {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
                             .font(.title3)
-                            .fontWeight(.bold)
-                        
-                        Spacer()
-                        
-                        Color.clear
-                            .frame(width: 30)
+                            .foregroundStyle(.primary)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
+                    
+                    Spacer()
+                    
+                    Text("Transfer Targets")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                    
+                    Spacer()
+                    
+                    Color.clear
+                        .frame(width: 30)
                 }
-                .frame(height: 60)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .glassEffect(.regular, in: .rect)
                 
                 ScrollView {
                     VStack(spacing: 16) {

@@ -107,34 +107,28 @@ struct UserProfileView: View {
             
             VStack(spacing: 0) {
                 // Custom header with back button
-                ZStack(alignment: .bottom) {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .ignoresSafeArea(edges: .top)
-                    
-                    HStack {
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.title3)
-                                .foregroundStyle(.primary)
-                        }
-                        
-                        Spacer()
-                        
-                        Text("Profile")
+                HStack {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
                             .font(.title3)
-                            .fontWeight(.bold)
-                        
-                        Spacer()
-                        
-                        // Placeholder for symmetry
-                        Color.clear
-                            .frame(width: 30)
+                            .foregroundStyle(.primary)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
+                    
+                    Spacer()
+                    
+                    Text("Profile")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                    
+                    Spacer()
+                    
+                    // Placeholder for symmetry
+                    Color.clear
+                        .frame(width: 30)
                 }
-                .frame(height: 60)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .glassEffect(.regular, in: .rect)
                 
                 if isLoadingProfile {
                     Spacer()

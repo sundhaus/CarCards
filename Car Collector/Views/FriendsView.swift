@@ -49,59 +49,50 @@ struct FriendsView: View {
                 
                 VStack(spacing: 0) {
                     // Header banner
-                    ZStack(alignment: .bottom) {
-                        // Background extends to top
-                        Rectangle()
-                            .fill(.ultraThinMaterial)
-                            .ignoresSafeArea(edges: .top)
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.title3)
+                                .foregroundStyle(.primary)
+                        }
                         
-                        // Content at bottom
-                        HStack {
-                            Button(action: { dismiss() }) {
-                                Image(systemName: "chevron.left")
+                        Spacer()
+                        
+                        Text("Friends")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            withAnimation {
+                                showFriendsList = true
+                            }
+                        }) {
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: "line.3.horizontal")
                                     .font(.title3)
                                     .foregroundStyle(.primary)
-                            }
-                            
-                            Spacer()
-                            
-                            Text("Friends")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                withAnimation {
-                                    showFriendsList = true
-                                }
-                            }) {
-                                ZStack(alignment: .topTrailing) {
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.title3)
-                                        .foregroundStyle(.primary)
-                                    
-                                    // Notification badge
-                                    if friendsService.newFollowersCount > 0 {
-                                        ZStack {
-                                            Circle()
-                                                .fill(.red)
-                                                .frame(width: 18, height: 18)
-                                            
-                                            Text("\(friendsService.newFollowersCount)")
-                                                .font(.system(size: 10, weight: .bold))
-                                                .foregroundStyle(.primary)
-                                        }
-                                        .offset(x: 8, y: -8)
+                                
+                                // Notification badge
+                                if friendsService.newFollowersCount > 0 {
+                                    ZStack {
+                                        Circle()
+                                            .fill(.red)
+                                            .frame(width: 18, height: 18)
+                                        
+                                        Text("\(friendsService.newFollowersCount)")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundStyle(.primary)
                                     }
+                                    .offset(x: 8, y: -8)
                                 }
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .padding(.bottom, 8)
                     }
-                    .frame(height: 60)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .glassEffect(.regular, in: .rect)
                     
                     // Friends activity feed
                     ScrollView {

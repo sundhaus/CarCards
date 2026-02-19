@@ -45,37 +45,30 @@ struct ExploreView: View {
     // MARK: - Header
     
     private var header: some View {
-        ZStack {
-            // Background
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .top)
-            
-            HStack {
-                // Back button
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title3)
-                        .foregroundStyle(.primary)
-                }
-                
-                Spacer()
-                
-                Text("Explore")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                
-                Spacer()
-                
-                // Invisible spacer for centering
+        HStack {
+            // Back button
+            Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
                     .font(.title3)
-                    .opacity(0)
+                    .foregroundStyle(.primary)
             }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            
+            Spacer()
+            
+            Text("Explore")
+                .font(.title3)
+                .fontWeight(.bold)
+            
+            Spacer()
+            
+            // Invisible spacer for centering
+            Image(systemName: "chevron.left")
+                .font(.title3)
+                .opacity(0)
         }
-        .frame(height: 60)
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .glassEffect(.regular, in: .rect)
     }
     
     // MARK: - Content Views
