@@ -22,6 +22,8 @@ struct UserProfileView: View {
     @State private var followStats: (friends: Int, following: Int, followers: Int) = (0, 0, 0)
     @State private var isFollowing = false
     @State private var followsMe = false
+    @State private var selectedCard: CloudCard?
+    @State private var showCardDetail = false
     
     @ObservedObject private var friendsService = FriendsService.shared
     
@@ -290,6 +292,12 @@ struct UserProfileView: View {
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
                                     ForEach(userCards) { card in
                                         UserCardView(card: card, isLargeSize: cardsPerRow == 1)
+                                            .onTapGesture {
+                                                selectedCard = card
+                                                withAnimation {
+                                                    showCardDetail = true
+                                                }
+                                            }
                                     }
                                 }
                                 .padding(.horizontal)
@@ -303,6 +311,14 @@ struct UserProfileView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                 }
+            }
+            
+            // Full screen card detail overlay
+            if showCardDetail, let card = selectedCard {
+                CloudCardDetailView(
+                    card: card,
+                    isShowing: $showCardDetail
+                )
             }
         }
         .navigationBarHidden(true)
@@ -503,6 +519,163 @@ struct UserCardView: View {
     }
     
     private func loadCardImage() async {
+        do {
+            cardImage = try await CardService.shared.loadImage(from: card.imageURL)
+            isLoadingImage = false
+        } catch {
+            print("❌ Failed to load card image: \(error)")
+            isLoadingImage = false
+        }
+    }
+}
+
+// MARK: - Cloud Card Full Screen Detail View
+
+struct CloudCardDetailView: View {
+    let card: CloudCard
+    @Binding var isShowing: Bool
+    
+    @State private var cardImage: UIImage?
+    @State private var isLoadingImage = true
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Dimmed background
+                Color.black.opacity(0.85)
+                    .ignoresSafeArea()
+                
+                // Card container - rotate to landscape
+                VStack {
+                    Spacer()
+                    cardContent(screenSize: geometry.size)
+                        .rotationEffect(.degrees(90))
+                    Spacer()
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                
+                // X button
+                VStack {
+                    HStack {
+                        Button(action: {
+                            withAnimation {
+                                isShowing = false
+                            }
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
+                        .padding(20)
+                        
+                        Spacer()
+                    }
+                    
+                    Spacer()
+                }
+            }
+        }
+        .transition(.opacity)
+        .task {
+            await loadImage()
+        }
+    }
+    
+    private func cardContent(screenSize: CGSize) -> some View {
+        let cardWidth: CGFloat = screenSize.height * 0.8
+        let cardHeight: CGFloat = cardWidth / 16 * 9
+        
+        return ZStack {
+            // Card background
+            RoundedRectangle(cornerRadius: cardHeight * 0.05)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.85, blue: 0.88),
+                            Color(red: 0.75, green: 0.75, blue: 0.78)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            
+            // Card image
+            Group {
+                if isLoadingImage {
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(1.5)
+                } else if let image = cardImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.gray.opacity(0.4))
+                }
+            }
+            .frame(width: cardWidth, height: cardHeight)
+            .clipped()
+            
+            // PNG border overlay
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: cardWidth, height: cardHeight)
+                    .allowsHitTesting(false)
+            }
+            
+            // Car name overlay
+            VStack {
+                HStack {
+                    HStack(spacing: 6) {
+                        let config = CardBorderConfig.forFrame(card.customFrame)
+                        Text(card.make.uppercased())
+                            .font(.custom("Futura-Light", size: cardHeight * 0.06))
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                        
+                        Text(card.model.uppercased())
+                            .font(.custom("Futura-Bold", size: cardHeight * 0.06))
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                            .lineLimit(1)
+                    }
+                    .padding(.top, cardHeight * 0.06)
+                    .padding(.leading, cardHeight * 0.06)
+                    Spacer()
+                }
+                Spacer()
+            }
+            
+            // Owner info at bottom
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Text("Owned by \(card.capturedBy ?? "Unknown")")
+                        .font(.system(size: cardHeight * 0.04, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.black.opacity(0.5))
+                        .cornerRadius(8)
+                        .padding(cardHeight * 0.04)
+                }
+            }
+        }
+        .frame(width: cardWidth, height: cardHeight)
+        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.05))
+        .shadow(color: .black.opacity(0.5), radius: 20)
+    }
+    
+    private func loadImage() async {
         do {
             cardImage = try await CardService.shared.loadImage(from: card.imageURL)
             isLoadingImage = false
