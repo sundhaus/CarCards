@@ -146,47 +146,52 @@ class ExploreService: ObservableObject {
         }
     }
     
-    // Fetch featured cards (top unique cards by heat, any category)
+    // Fetch featured cards — only cards that appeared in the hot cards carousel
     private func fetchFeaturedCards(completion: @escaping ([FriendActivity]) -> Void) {
-        print("   🔎 Querying Featured (unique cards by heat)")
+        print("   🔎 Querying Featured (from hot cards carousel)")
         
-        db.collection("friend_activities")
-            .getDocuments { snapshot, error in
-                if let error = error {
-                    print("   ❌ Featured query error: \(error.localizedDescription)")
-                    completion([])
-                    return
+        let hotCards = HotCardsService.shared.hotCards
+        
+        if !hotCards.isEmpty {
+            // Deduplicate by cardId
+            let deduped = Self.deduplicateByCardId(hotCards)
+            let sorted = deduped.sorted { $0.heatCount > $1.heatCount }
+            let featured = Array(sorted.prefix(self.cardsPerCategory))
+            print("   ✅ Hot cards: \(hotCards.count) → deduped \(deduped.count) → featured \(featured.count)")
+            completion(featured)
+        } else {
+            // Hot cards not loaded yet — fetch from Firestore with heat threshold
+            print("   ⏳ Hot cards not loaded yet, fetching top heat cards")
+            db.collection("friend_activities")
+                .order(by: "heatCount", descending: true)
+                .limit(to: 20)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        print("   ❌ Featured query error: \(error.localizedDescription)")
+                        completion([])
+                        return
+                    }
+                    
+                    guard let documents = snapshot?.documents else {
+                        completion([])
+                        return
+                    }
+                    
+                    let activities = documents.compactMap { FriendActivity(document: $0) }
+                        .filter { $0.heatCount > 0 }
+                    let deduped = Self.deduplicateByCardId(activities)
+                    let featured = Array(deduped.prefix(self.cardsPerCategory))
+                    print("   ✅ Fallback: \(activities.count) → \(featured.count) featured")
+                    completion(featured)
                 }
-                
-                guard let documents = snapshot?.documents else {
-                    print("   ❌ No snapshot for Featured")
-                    completion([])
-                    return
-                }
-                
-                print("   📄 Got \(documents.count) total documents")
-                
-                let activities = documents.compactMap { FriendActivity(document: $0) }
-                
-                // Deduplicate by cardId — keep the entry with highest heat
-                let deduped = Self.deduplicateByCardId(activities)
-                
-                // Sort by heat and take top N
-                let sorted = deduped.sorted { $0.heatCount > $1.heatCount }
-                let featured = Array(sorted.prefix(self.cardsPerCategory))
-                
-                print("   ✅ \(activities.count) activities → \(deduped.count) unique → top \(featured.count)")
-                
-                completion(featured)
-            }
+        }
     }
     
-    // Fetch paginated featured cards (deduped, sorted by heat)
+    // Fetch paginated featured cards (only hot cards with heat > 0)
     func fetchFeaturedCardsPaginated(startAfter: DocumentSnapshot?, limit: Int, completion: @escaping ([FriendActivity], DocumentSnapshot?) -> Void) {
-        // Featured pagination: fetch a larger batch, dedupe, return top N
-        // We need to fetch more because dedup will shrink the result set
         var query = db.collection("friend_activities")
-            .limit(to: limit * 5)
+            .order(by: "heatCount", descending: true)
+            .limit(to: limit * 3)
         
         if let lastDoc = startAfter {
             query = query.start(afterDocument: lastDoc)
@@ -204,7 +209,7 @@ class ExploreService: ObservableObject {
                 return
             }
             
-            let activities = documents.compactMap { FriendActivity(document: $0) }
+            let activities = documents.compactMap { FriendActivity(document: $0) }.filter { $0.heatCount > 0 }
             let deduped = Self.deduplicateByCardId(activities)
             let sorted = deduped.sorted { $0.heatCount > $1.heatCount }
             let topCards = Array(sorted.prefix(limit))
