@@ -790,107 +790,79 @@ struct CardBackView: View {
     var customFrame: String? = nil
     var cardHeight: CGFloat = 200
     
-    // Scale factor relative to a reference height
+    // Card is 16:9 landscape
+    private var cardWidth: CGFloat { cardHeight * (16.0 / 9.0) }
     private var scale: CGFloat { cardHeight / 200 }
     
     var body: some View {
         ZStack {
-            // Clipped content layer (texture + text)
-            ZStack {
-                // Carbon fiber background texture
-                Image("CardBackTexture")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
-                
-                VStack(spacing: 6 * scale) {
-                    // Header
-                    VStack(spacing: 2 * scale) {
-                        Text("\(make.uppercased()) \(model.uppercased())")
-                            .font(.custom("Futura-Bold", size: 14 * scale))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
-                        
-                        Text(year)
-                            .font(.poppins(10 * scale))
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                    .padding(.top, 14 * scale)
-                    
-                    // Description / summary
-                    if !specs.description.isEmpty {
-                        Text(specs.description)
-                            .font(.poppins(7 * scale))
-                            .foregroundStyle(.white.opacity(0.7))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(3)
-                            .minimumScaleFactor(0.7)
-                            .padding(.horizontal, 16 * scale)
-                    }
-                    
-                    Spacer()
-                    
-                    // Specs grid
-                    VStack(spacing: 6 * scale) {
-                        // Row 1: Power stats
-                        HStack(spacing: 10 * scale) {
-                            statItem(
-                                label: "HP",
-                                value: specs.horsepower,
-                                highlight: specs.horsepower != "N/A"
-                            )
-                            statItem(
-                                label: "TORQUE",
-                                value: specs.torque,
-                                highlight: specs.torque != "N/A"
-                            )
-                        }
-                        
-                        // Row 2: Performance stats
-                        HStack(spacing: 10 * scale) {
-                            statItem(
-                                label: "0-60",
-                                value: specs.zeroToSixty,
-                                highlight: specs.zeroToSixty != "N/A"
-                            )
-                            statItem(
-                                label: "TOP SPEED",
-                                value: specs.topSpeed,
-                                highlight: specs.topSpeed != "N/A"
-                            )
-                        }
-                        
-                        // Row 3: Details
-                        HStack(spacing: 10 * scale) {
-                            statItem(
-                                label: "ENGINE",
-                                value: specs.engine,
-                                highlight: specs.engine != "N/A"
-                            )
-                            statItem(
-                                label: "DRIVE",
-                                value: specs.drivetrain,
-                                highlight: specs.drivetrain != "N/A"
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 14 * scale)
-                    
-                    Spacer()
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
+            // Carbon fiber texture — explicit frame to prevent overflow
+            Image("CardBackTexture")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: cardWidth, height: cardHeight)
+                .clipped()
             
-            // PNG border overlay ON TOP of clipped content
+            // Content overlay
+            VStack(spacing: 4 * scale) {
+                // Header
+                VStack(spacing: 2 * scale) {
+                    Text("\(make.uppercased()) \(model.uppercased())")
+                        .font(.custom("Futura-Bold", size: 12 * scale))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                    
+                    Text(year)
+                        .font(.poppins(9 * scale))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                .padding(.top, 12 * scale)
+                
+                // Description
+                if !specs.description.isEmpty {
+                    Text(specs.description)
+                        .font(.poppins(6 * scale))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.6)
+                        .padding(.horizontal, 20 * scale)
+                }
+                
+                Spacer(minLength: 2 * scale)
+                
+                // Specs 3x2 grid
+                VStack(spacing: 4 * scale) {
+                    HStack(spacing: 8 * scale) {
+                        statItem(label: "HP", value: specs.horsepower, highlight: specs.horsepower != "N/A")
+                        statItem(label: "TORQUE", value: specs.torque, highlight: specs.torque != "N/A")
+                    }
+                    HStack(spacing: 8 * scale) {
+                        statItem(label: "0-60", value: specs.zeroToSixty, highlight: specs.zeroToSixty != "N/A")
+                        statItem(label: "TOP SPEED", value: specs.topSpeed, highlight: specs.topSpeed != "N/A")
+                    }
+                    HStack(spacing: 8 * scale) {
+                        statItem(label: "ENGINE", value: specs.engine, highlight: specs.engine != "N/A")
+                        statItem(label: "DRIVE", value: specs.drivetrain, highlight: specs.drivetrain != "N/A")
+                    }
+                }
+                .padding(.horizontal, 12 * scale)
+                .padding(.bottom, 10 * scale)
+            }
+            .frame(width: cardWidth, height: cardHeight)
+            
+            // Border overlay — always on top
             if let borderImageName = CardBorderConfig.forFrame(customFrame).borderImageName {
                 Image(borderImageName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                    .frame(width: cardWidth, height: cardHeight)
+                    .clipped()
                     .allowsHitTesting(false)
             }
         }
+        .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(radius: 10)
         .rotation3DEffect(
@@ -899,22 +871,21 @@ struct CardBackView: View {
         )
     }
     
-    // Helper view for stat items
     private func statItem(label: String, value: String, highlight: Bool) -> some View {
-        VStack(spacing: 2 * scale) {
+        VStack(spacing: 1 * scale) {
             Text(value)
-                .font(.poppins(14 * scale))
+                .font(.poppins(12 * scale))
                 .foregroundStyle(highlight ? .white : .white.opacity(0.4))
                 .lineLimit(1)
-                .minimumScaleFactor(0.5)
+                .minimumScaleFactor(0.4)
             Text(label)
-                .font(.poppins(7 * scale))
+                .font(.poppins(6 * scale))
                 .foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 5 * scale)
+        .padding(.vertical, 4 * scale)
         .background(highlight ? Color.white.opacity(0.15) : Color.clear)
-        .cornerRadius(6 * scale)
+        .cornerRadius(5 * scale)
     }
 }
 
