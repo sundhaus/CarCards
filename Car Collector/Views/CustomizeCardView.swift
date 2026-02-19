@@ -18,11 +18,19 @@ struct CustomizeCardView: View {
     let card: AnyCard
     @Environment(\.dismiss) private var dismiss
     @State private var selectedFrame: CardFrame = .white
-    @State private var selectedTab = 0 // 0: Border, 1: Stickers, 2: Effects
+    @State private var selectedTab = 0 // 0: Border, 1: Background, 2: Stickers, 3: Effects
     @State private var displayImage: UIImage?
     @State private var isRemovingBackground = false
     @State private var backgroundRemoved = false
     @State private var originalImage: UIImage?  // Preserved original before bg removal
+    @State private var transparentSubject: UIImage?  // Subject with alpha channel
+    
+    // Background positioning
+    @State private var selectedBackground: String? = nil  // Asset name of selected bg
+    @State private var bgOffset: CGSize = .zero
+    @State private var bgScale: CGFloat = 1.0
+    @State private var lastBgOffset: CGSize = .zero
+    @State private var lastBgScale: CGFloat = 1.0
     
     var body: some View {
         ZStack {
@@ -64,17 +72,35 @@ struct CustomizeCardView: View {
                 
                 // Card preview centered
                 ZStack {
-                    // Card image
-                    if let image = displayImage ?? card.image {
-                        Image(uiImage: image)
+                    // Background image (if selected and bg removed)
+                    if selectedBackground != nil && transparentSubject != nil {
+                        Image(selectedBackground!)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 320, height: 180)
+                            .scaleEffect(bgScale)
+                            .offset(bgOffset)
+                            .clipped()
+                        
+                        // Transparent subject on top
+                        Image(uiImage: transparentSubject!)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 320, height: 180)
                             .clipped()
                     } else {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(width: 320, height: 180)
+                        // Normal card image
+                        if let image = displayImage ?? card.image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 320, height: 180)
+                                .clipped()
+                        } else {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 320, height: 180)
+                        }
                     }
                     
                     // Border PNG overlay based on selection
@@ -121,8 +147,41 @@ struct CustomizeCardView: View {
                     .frame(width: 320, height: 180)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 180 * 0.09))
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    DragGesture()
+                        .onChanged { value in
+                            guard selectedBackground != nil && transparentSubject != nil else { return }
+                            bgOffset = CGSize(
+                                width: lastBgOffset.width + value.translation.width,
+                                height: lastBgOffset.height + value.translation.height
+                            )
+                        }
+                        .onEnded { _ in
+                            lastBgOffset = bgOffset
+                        }
+                )
+                .simultaneousGesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            guard selectedBackground != nil && transparentSubject != nil else { return }
+                            bgScale = lastBgScale * value
+                        }
+                        .onEnded { _ in
+                            bgScale = max(0.5, min(bgScale, 4.0))
+                            lastBgScale = bgScale
+                        }
+                )
                 .cardTilt()
                 .animation(.spring(response: 0.3), value: selectedFrame)
+                
+                // Positioning hint when background is active
+                if selectedBackground != nil && transparentSubject != nil {
+                    Text("Drag & pinch to position background")
+                        .font(.pCaption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 8)
+                }
                 
                 Spacer()
                 
@@ -131,8 +190,9 @@ struct CustomizeCardView: View {
                     // Tab headers
                     HStack(spacing: 0) {
                         tabHeader(title: "BORDER", index: 0)
-                        tabHeader(title: "STICKERS", index: 1)
-                        tabHeader(title: "EFFECTS", index: 2)
+                        tabHeader(title: "BG", index: 1)
+                        tabHeader(title: "STICKERS", index: 2)
+                        tabHeader(title: "EFFECTS", index: 3)
                     }
                     .frame(height: 50)
                     
@@ -143,6 +203,8 @@ struct CustomizeCardView: View {
                         if selectedTab == 0 {
                             borderTabContent
                         } else if selectedTab == 1 {
+                            backgroundTabContent
+                        } else if selectedTab == 2 {
                             placeholderTabContent(title: "Stickers", icon: "photo.on.rectangle.angled")
                         } else {
                             effectsTabContent
@@ -287,88 +349,285 @@ struct CustomizeCardView: View {
     // MARK: - Effects Tab Content
     
     private var effectsTabContent: some View {
-        VStack(spacing: 16) {
-            Text("EFFECTS")
+        VStack(spacing: 12) {
+            Image(systemName: "wand.and.stars")
+                .font(.poppins(40))
+                .foregroundStyle(.tertiary)
+            Text("Effects")
                 .font(.pHeadline)
-                .foregroundStyle(.primary)
-                .padding(.top, 20)
-            
-            Button(action: removeBackground) {
-                HStack(spacing: 10) {
-                    if isRemovingBackground {
-                        ProgressView()
-                            .tint(.white)
+                .foregroundStyle(.tertiary)
+            Text("COMING SOON")
+                .font(.pCaption)
+                .foregroundStyle(.tertiary)
+        }
+    }
+    
+    // MARK: - Background Tab Content
+    
+    private var backgroundTabContent: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                // Remove Background button at top — vehicle only
+                if case .vehicle = card {
+                    Button(action: removeBackground) {
+                        HStack(spacing: 10) {
+                            if isRemovingBackground {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: backgroundRemoved ? "checkmark.circle.fill" : "scissors")
+                                    .font(.pSubheadline)
+                            }
+                            Text(backgroundRemoved ? "Background Removed" : "Remove Background")
+                                .font(.pSubheadline)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(backgroundRemoved ? Color.green : Color.blue)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isRemovingBackground || backgroundRemoved)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    
+                    if backgroundRemoved {
+                        Button(action: restoreBackground) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.uturn.backward")
+                                    .font(.pCaption)
+                                Text("Restore Original")
+                                    .font(.pCaption)
+                            }
+                            .foregroundStyle(.white.opacity(0.6))
+                        }
+                    }
+                }
+                
+                // Background options — only shown after bg removal
+                if backgroundRemoved && transparentSubject != nil {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("BACKGROUNDS")
+                            .font(.pCaption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 20)
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 14) {
+                                // None option
+                                bgCircleOption(assetName: nil, label: "None")
+                                
+                                // White studio background
+                                bgCircleOption(assetName: "BgWhiteDefault", label: "Studio")
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                } else if !backgroundRemoved {
+                    Text("Remove background first to add a custom one")
+                        .font(.pCaption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 30)
+                        .padding(.top, 8)
+                }
+                
+                Spacer(minLength: 0)
+            }
+        }
+    }
+    
+    private func bgCircleOption(assetName: String?, label: String) -> some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3)) {
+                if selectedBackground == assetName {
+                    return // Already selected
+                }
+                selectedBackground = assetName
+                bgOffset = .zero
+                bgScale = 1.0
+                lastBgOffset = .zero
+                lastBgScale = 1.0
+                
+                // If "None" selected, show the bg-removed white version
+                if assetName == nil {
+                    displayImage = nil // Will use the white-bg removed version from removeBackground
+                }
+            }
+        }) {
+            VStack(spacing: 6) {
+                ZStack {
+                    if let name = assetName {
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 56, height: 56)
+                            .overlay(
+                                Image(name)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 56, height: 56)
+                                    .clipShape(Circle())
+                            )
                     } else {
-                        Image(systemName: backgroundRemoved ? "checkmark.circle.fill" : "scissors")
-                            .font(.pSubheadline)
+                        Circle()
+                            .fill(Color(white: 0.25))
+                            .frame(width: 56, height: 56)
+                            .overlay(
+                                Image(systemName: "nosign")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            )
                     }
-                    Text(backgroundRemoved ? "Background Removed" : "Remove Background")
-                        .font(.pSubheadline)
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(backgroundRemoved ? Color.green : Color.blue)
-                .cornerRadius(12)
-            }
-            .disabled(isRemovingBackground || backgroundRemoved)
-            .padding(.horizontal, 30)
-            
-            if backgroundRemoved {
-                Button(action: restoreBackground) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.uturn.backward")
-                            .font(.pCaption)
-                        Text("Restore Original")
-                            .font(.pCaption)
+                    
+                    // Selection ring
+                    if selectedBackground == assetName {
+                        Circle()
+                            .stroke(Color.blue, lineWidth: 3)
+                            .frame(width: 62, height: 62)
                     }
-                    .foregroundStyle(.white.opacity(0.6))
                 }
+                
+                Text(label)
+                    .font(.system(size: 10))
+                    .foregroundStyle(selectedBackground == assetName ? .white : .white.opacity(0.6))
             }
-            
-            Spacer()
         }
     }
     
     private func removeBackground() {
         isRemovingBackground = true
         
-        // Use original image if we have one, otherwise use current card image
         guard let sourceImage = originalImage ?? card.image else {
             isRemovingBackground = false
             return
         }
         
-        // Preserve the original image before processing
         if originalImage == nil {
             originalImage = sourceImage
         }
         
+        // Get both white-bg version (for display) and transparent version (for compositing)
+        let group = DispatchGroup()
+        var whiteBgResult: UIImage?
+        var transparentResult: UIImage?
+        
+        group.enter()
         SubjectLifter.liftSubject(from: sourceImage) { result in
-            DispatchQueue.main.async {
-                isRemovingBackground = false
-                
-                switch result {
-                case .success(let processedImage):
-                    displayImage = processedImage
-                    backgroundRemoved = true
-                case .failure(let error):
-                    print("❌ Background removal failed: \(error)")
-                }
+            if case .success(let image) = result {
+                whiteBgResult = image
+            }
+            group.leave()
+        }
+        
+        group.enter()
+        SubjectLifter.liftSubjectTransparent(from: sourceImage) { result in
+            if case .success(let image) = result {
+                transparentResult = image
+            }
+            group.leave()
+        }
+        
+        group.notify(queue: .main) {
+            isRemovingBackground = false
+            if let whiteBg = whiteBgResult {
+                displayImage = whiteBg
+                backgroundRemoved = true
+                transparentSubject = transparentResult
+            } else {
+                print("❌ Background removal failed")
             }
         }
     }
     
     private func restoreBackground() {
-        // Restore original image (sets displayImage so save will write it back)
         displayImage = originalImage
         originalImage = nil
         backgroundRemoved = false
+        transparentSubject = nil
+        selectedBackground = nil
+        bgOffset = .zero
+        bgScale = 1.0
+        lastBgOffset = .zero
+        lastBgScale = 1.0
     }
     
     // MARK: - Helper Functions
     
+    /// Render positioned background + transparent subject into a single image
+    private func renderBackgroundComposite(background: UIImage, subject: UIImage) -> UIImage {
+        // Use the card's aspect ratio: 16:9 landscape
+        let cardSize = CGSize(width: 720, height: 405)
+        let previewWidth: CGFloat = 320
+        let previewHeight: CGFloat = 180
+        let scaleFactor = cardSize.width / previewWidth
+        
+        let renderer = UIGraphicsImageRenderer(size: cardSize)
+        return renderer.image { context in
+            let cgContext = context.cgContext
+            
+            // Draw background with user's positioning
+            cgContext.saveGState()
+            
+            // Center of card
+            let centerX = cardSize.width / 2
+            let centerY = cardSize.height / 2
+            
+            // Scale the offset and scale factor to render resolution
+            let renderOffset = CGSize(
+                width: bgOffset.width * scaleFactor,
+                height: bgOffset.height * scaleFactor
+            )
+            
+            // Calculate background draw size (aspectFill the card)
+            let bgAspect = background.size.width / background.size.height
+            let cardAspect = cardSize.width / cardSize.height
+            var bgDrawSize: CGSize
+            if bgAspect > cardAspect {
+                bgDrawSize = CGSize(width: cardSize.height * bgAspect, height: cardSize.height)
+            } else {
+                bgDrawSize = CGSize(width: cardSize.width, height: cardSize.width / bgAspect)
+            }
+            
+            // Apply user's scale
+            bgDrawSize.width *= bgScale
+            bgDrawSize.height *= bgScale
+            
+            let bgRect = CGRect(
+                x: centerX - bgDrawSize.width / 2 + renderOffset.width,
+                y: centerY - bgDrawSize.height / 2 + renderOffset.height,
+                width: bgDrawSize.width,
+                height: bgDrawSize.height
+            )
+            background.draw(in: bgRect)
+            cgContext.restoreGState()
+            
+            // Draw transparent subject on top (aspectFill the card)
+            let subAspect = subject.size.width / subject.size.height
+            var subDrawSize: CGSize
+            if subAspect > cardAspect {
+                subDrawSize = CGSize(width: cardSize.height * subAspect, height: cardSize.height)
+            } else {
+                subDrawSize = CGSize(width: cardSize.width, height: cardSize.width / subAspect)
+            }
+            let subRect = CGRect(
+                x: centerX - subDrawSize.width / 2,
+                y: centerY - subDrawSize.height / 2,
+                width: subDrawSize.width,
+                height: subDrawSize.height
+            )
+            subject.draw(in: subRect)
+        }
+    }
+    
     private func saveFrameSelection() {
+        // If a custom background is applied, render the composite
+        if let bgName = selectedBackground, let subject = transparentSubject {
+            if let bgUIImage = UIImage(named: bgName) {
+                displayImage = renderBackgroundComposite(background: bgUIImage, subject: subject)
+            }
+        }
+        
         // Map CardFrame enum to actual PNG border names
         let customFrameValue: String = {
             switch selectedFrame {

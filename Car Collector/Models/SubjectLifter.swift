@@ -180,4 +180,73 @@ class SubjectLifter {
         
         return UIImage(cgImage: cgImage)
     }
+    
+    /// Apply mask with transparency (alpha channel preserved) for background compositing
+    private static func applyMaskTransparent(_ maskPixelBuffer: CVPixelBuffer, to image: CGImage) -> UIImage? {
+        let ciImage = CIImage(cgImage: image)
+        let maskImage = CIImage(cvPixelBuffer: maskPixelBuffer)
+        
+        let scaleX = ciImage.extent.width / maskImage.extent.width
+        let scaleY = ciImage.extent.height / maskImage.extent.height
+        let scaledMask = maskImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
+        
+        // Use clear/transparent background instead of white
+        let clearBackground = CIImage(color: CIColor(red: 0, green: 0, blue: 0, alpha: 0)).cropped(to: ciImage.extent)
+        
+        guard let blendFilter = CIFilter(name: "CIBlendWithMask") else { return nil }
+        blendFilter.setValue(ciImage, forKey: kCIInputImageKey)
+        blendFilter.setValue(clearBackground, forKey: kCIInputBackgroundImageKey)
+        blendFilter.setValue(scaledMask, forKey: kCIInputMaskImageKey)
+        
+        guard let outputImage = blendFilter.outputImage else { return nil }
+        
+        let context = CIContext()
+        // Use RGBA8 color space to preserve alpha
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
+        guard let cgResult = context.createCGImage(outputImage, from: outputImage.extent, format: .RGBA8, colorSpace: colorSpace) else { return nil }
+        
+        return UIImage(cgImage: cgResult)
+    }
+    
+    /// Lift subject with transparent background (for compositing over custom backgrounds)
+    static func liftSubjectTransparent(from image: UIImage, completion: @escaping (Result<UIImage, Error>) -> Void) {
+        guard let cgImage = image.cgImage else {
+            completion(.failure(NSError(domain: "SubjectLifter", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid image"])))
+            return
+        }
+        
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        
+        let request = VNGenerateForegroundInstanceMaskRequest { request, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let result = request.results?.first as? VNInstanceMaskObservation else {
+                completion(.failure(NSError(domain: "SubjectLifter", code: -2, userInfo: [NSLocalizedDescriptionKey: "No subject detected"])))
+                return
+            }
+            
+            do {
+                let maskPixelBuffer = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
+                
+                if let maskedImage = applyMaskTransparent(maskPixelBuffer, to: cgImage) {
+                    completion(.success(maskedImage))
+                } else {
+                    completion(.failure(NSError(domain: "SubjectLifter", code: -3, userInfo: [NSLocalizedDescriptionKey: "Failed to apply transparent mask"])))
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try handler.perform([request])
+            } catch {
+                completion(.failure(error))
+            }
+        }
+    }
 }
