@@ -34,9 +34,15 @@ final class CardImageStore {
             try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         }
         
-        // Configure cache - limit to ~30MB for images in memory
+        // Configure cache - limit to ~30MB decoded pixels in memory
         imageCache.totalCostLimit = 30 * 1024 * 1024
-        imageCache.countLimit = 50
+        imageCache.countLimit = 30
+    }
+    
+    /// Estimated decoded memory size of a UIImage
+    private func imageCost(_ image: UIImage) -> Int {
+        guard let cg = image.cgImage else { return 500_000 }
+        return cg.bytesPerRow * cg.height
     }
     
     // MARK: - Vehicle Card Images
@@ -45,7 +51,7 @@ final class CardImageStore {
         let url = vehicleDir.appendingPathComponent("\(cardId.uuidString).jpg")
         if let data = image.jpegData(compressionQuality: 0.8) {
             try? data.write(to: url, options: .atomic)
-            imageCache.setObject(image, forKey: cardId.uuidString as NSString, cost: data.count)
+            imageCache.setObject(image, forKey: cardId.uuidString as NSString, cost: imageCost(image))
         }
     }
     
@@ -66,7 +72,7 @@ final class CardImageStore {
         guard let data = try? Data(contentsOf: url),
               let image = UIImage(data: data) else { return nil }
         
-        imageCache.setObject(image, forKey: key, cost: data.count)
+        imageCache.setObject(image, forKey: key, cost: imageCost(image))
         return image
     }
     
@@ -96,7 +102,7 @@ final class CardImageStore {
         let url = driverDir.appendingPathComponent("\(cardId.uuidString).jpg")
         if let data = image.jpegData(compressionQuality: 0.8) {
             try? data.write(to: url, options: .atomic)
-            imageCache.setObject(image, forKey: "driver_\(cardId.uuidString)" as NSString, cost: data.count)
+            imageCache.setObject(image, forKey: "driver_\(cardId.uuidString)" as NSString, cost: imageCost(image))
         }
     }
     
@@ -110,7 +116,7 @@ final class CardImageStore {
         guard let data = try? Data(contentsOf: url),
               let image = UIImage(data: data) else { return nil }
         
-        imageCache.setObject(image, forKey: key, cost: data.count)
+        imageCache.setObject(image, forKey: key, cost: imageCost(image))
         return image
     }
     
@@ -126,7 +132,7 @@ final class CardImageStore {
         let url = locationDir.appendingPathComponent("\(cardId.uuidString).jpg")
         if let data = image.jpegData(compressionQuality: 0.8) {
             try? data.write(to: url, options: .atomic)
-            imageCache.setObject(image, forKey: "location_\(cardId.uuidString)" as NSString, cost: data.count)
+            imageCache.setObject(image, forKey: "location_\(cardId.uuidString)" as NSString, cost: imageCost(image))
         }
     }
     
@@ -140,7 +146,7 @@ final class CardImageStore {
         guard let data = try? Data(contentsOf: url),
               let image = UIImage(data: data) else { return nil }
         
-        imageCache.setObject(image, forKey: key, cost: data.count)
+        imageCache.setObject(image, forKey: key, cost: imageCost(image))
         return image
     }
     

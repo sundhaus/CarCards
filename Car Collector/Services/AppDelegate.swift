@@ -15,6 +15,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // ✅ Configure Firebase FIRST - before any Firebase services are accessed
         FirebaseManager.configure()
         
+        // Limit URL cache to 20MB memory / 50MB disk (default is 4MB/20MB)
+        URLCache.shared = URLCache(
+            memoryCapacity: 20 * 1024 * 1024,
+            diskCapacity: 50 * 1024 * 1024,
+            diskPath: "url_cache"
+        )
+        
         // Watch for any orientation changes and force back to portrait
         NotificationCenter.default.addObserver(
             forName: UIDevice.orientationDidChangeNotification,
@@ -25,6 +32,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         }
         
         return true
+    }
+    
+    func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+        CardImageStore.shared.clearCache()
+        URLCache.shared.removeAllCachedResponses()
+        print("⚠️ AppDelegate: memory warning - cleared caches")
     }
     
     // Additional methods for Firebase compatibility

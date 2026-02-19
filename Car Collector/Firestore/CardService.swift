@@ -22,7 +22,7 @@ class CardService: ObservableObject {
     private let storage = FirebaseManager.shared.storage
     private var cardsListener: ListenerRegistration?
     
-    // Image cache to avoid re-downloading
+    // Image cache to avoid re-downloading (limited to ~40MB)
     private var imageCache = NSCache<NSString, UIImage>()
     
     private var cardsCollection: CollectionReference {
@@ -30,7 +30,25 @@ class CardService: ObservableObject {
     }
     
     private init() {
-        imageCache.countLimit = 100
+        imageCache.countLimit = 50
+        imageCache.totalCostLimit = 40 * 1024 * 1024  // 40MB max
+        
+        // Clear caches on memory warnings
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.imageCache.removeAllObjects()
+            CardImageStore.shared.clearCache()
+            URLCache.shared.removeAllCachedResponses()
+            print("⚠️ Memory warning: cleared all image caches")
+        }
+    }
+    
+    /// Estimated memory cost of a UIImage for NSCache
+    private func imageCost(_ image: UIImage) -> Int {
+        guard let cg = image.cgImage else { return 500_000 }
+        return cg.bytesPerRow * cg.height
     }
     
     deinit {
@@ -101,7 +119,7 @@ class CardService: ObservableObject {
         try await UserService.shared.incrementCardCount(uid: uid)
         
         // 4. Cache the image locally
-        imageCache.setObject(image, forKey: imageURL as NSString)
+        imageCache.setObject(image, forKey: imageURL as NSString, cost: imageCost(image))
         
         // 5. Post activity to friend feed
         do {
@@ -174,7 +192,7 @@ class CardService: ObservableObject {
         }
         
         // Update local cache
-        imageCache.setObject(image, forKey: newImageURL as NSString)
+        imageCache.setObject(image, forKey: newImageURL as NSString, cost: imageCost(image))
     }
     
     // MARK: - Listen to My Cards (real-time)
@@ -234,7 +252,7 @@ class CardService: ObservableObject {
         }
         
         // Cache it
-        imageCache.setObject(image, forKey: urlString as NSString)
+        imageCache.setObject(image, forKey: urlString as NSString, cost: imageCost(image))
         
         return image
     }
