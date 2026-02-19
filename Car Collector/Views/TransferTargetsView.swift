@@ -237,7 +237,7 @@ struct ListingCardView: View {
                         Image(systemName: "dollarsign.circle.fill")
                             .foregroundStyle(.green)
                             .font(.pCaption)
-                        Text("\(Int(listing.currentBid))")
+                        Text(listing.currentBid > 0 ? "\(Int(listing.currentBid))" : "None")
                             .font(.pCaption)
                             .fontWeight(.semibold)
                     }
@@ -255,7 +255,7 @@ struct ListingCardView: View {
             Spacer()
         }
         .padding(12)
-        .background(Color.white.opacity(0.08))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .task {
             await loadImage()
@@ -318,7 +318,7 @@ struct CompactTargetCard: View {
                         Image(systemName: "dollarsign.circle.fill")
                             .font(.system(size: 10))
                             .foregroundStyle(.green)
-                        Text("\(Int(listing.currentBid))")
+                        Text(listing.currentBid > 0 ? "\(Int(listing.currentBid))" : "None")
                             .font(.system(size: 11, weight: .bold))
                     }
                 }
@@ -327,7 +327,7 @@ struct CompactTargetCard: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 8)
         }
-        .background(Color.white.opacity(0.08))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .task { await loadImage() }
     }

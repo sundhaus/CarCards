@@ -258,10 +258,10 @@ struct TransferListingCard: View {
                     Text("CURRENT BID")
                         .font(.pCaption2)
                         .foregroundStyle(.secondary)
-                    Text("$\(Int(listing.currentBid))")
+                    Text(listing.currentBid > 0 ? "$\(Int(listing.currentBid))" : "None")
                         .font(.pHeadline)
                         .fontWeight(.bold)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(listing.currentBid > 0 ? .orange : .secondary)
                 }
                 .frame(maxWidth: .infinity)
                 
@@ -281,9 +281,8 @@ struct TransferListingCard: View {
                 .frame(maxWidth: .infinity)
             }
             .padding(.vertical, 10)
-            .background(Color.white.opacity(0.04))
         }
-        .background(Color.white.opacity(0.08))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .task { await loadImage() }
     }
@@ -370,9 +369,9 @@ struct CompactTransferListingCard: View {
                     Text("BID")
                         .font(.system(size: 8))
                         .foregroundStyle(.secondary)
-                    Text("$\(Int(listing.currentBid))")
+                    Text(listing.currentBid > 0 ? "$\(Int(listing.currentBid))" : "None")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(listing.currentBid > 0 ? .orange : .secondary)
                 }
                 .frame(maxWidth: .infinity)
                 
@@ -392,7 +391,7 @@ struct CompactTransferListingCard: View {
             }
             .padding(.vertical, 6)
         }
-        .background(Color.white.opacity(0.08))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .task { await loadImage() }
     }

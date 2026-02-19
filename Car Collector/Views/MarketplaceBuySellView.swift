@@ -311,7 +311,7 @@ struct MarketplaceBuySellView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.08))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .padding(.horizontal)
     }
@@ -360,7 +360,7 @@ struct MarketplaceBuySellView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.08))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .padding(.horizontal)
     }
@@ -395,7 +395,7 @@ struct MarketplaceBuySellView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color.white.opacity(0.1))
+                .background(.ultraThinMaterial)
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -542,10 +542,10 @@ struct ListingCardRow: View {
                         Text("CURRENT BID")
                             .font(.pCaption2)
                             .foregroundStyle(.secondary)
-                        Text("$\(Int(listing.currentBid))")
+                        Text(listing.currentBid > 0 ? "$\(Int(listing.currentBid))" : "None")
                             .font(.pTitle3)
                             .fontWeight(.bold)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(listing.currentBid > 0 ? .orange : .secondary)
                     }
                     .frame(maxWidth: .infinity)
                     
@@ -566,7 +566,7 @@ struct ListingCardRow: View {
                 }
                 .padding(.vertical, 12)
             }
-            .background(Color.white.opacity(0.08))
+            .background(.ultraThinMaterial)
             .cornerRadius(12)
             
             // Card sits on top
@@ -608,7 +608,7 @@ struct GarageCardRow: View {
                 .padding(.top, 12)
                 .padding(.bottom, 12)
             }
-            .background(Color.white.opacity(0.08))
+            .background(.ultraThinMaterial)
             .cornerRadius(12)
             
             // Card sits on top, overlapping the info bar
@@ -931,9 +931,9 @@ struct CompactListingCard: View {
                     Text("BID")
                         .font(.system(size: 8))
                         .foregroundStyle(.secondary)
-                    Text("$\(Int(listing.currentBid))")
+                    Text(listing.currentBid > 0 ? "$\(Int(listing.currentBid))" : "None")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(listing.currentBid > 0 ? .orange : .secondary)
                 }
                 .frame(maxWidth: .infinity)
                 
@@ -953,7 +953,7 @@ struct CompactListingCard: View {
             }
             .padding(.vertical, 6)
         }
-        .background(Color.white.opacity(0.08))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .onAppear { loadImage() }
     }
@@ -1045,7 +1045,7 @@ struct CompactGarageCard: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 8)
         }
-        .background(Color.white.opacity(0.08))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }

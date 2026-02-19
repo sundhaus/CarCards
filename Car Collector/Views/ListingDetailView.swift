@@ -264,7 +264,7 @@ struct ListingDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 16)
-        .background(Color.white.opacity(0.06))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
     
@@ -284,7 +284,7 @@ struct ListingDetailView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.08))
+                .background(.ultraThinMaterial)
                 .cornerRadius(10)
                 
                 Button(action: {
@@ -377,7 +377,7 @@ struct ListingDetailView: View {
             }
         }
         .padding(12)
-        .background(Color.white.opacity(0.06))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
     
