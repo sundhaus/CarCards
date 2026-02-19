@@ -619,12 +619,10 @@ struct CardDetailView: View {
         let currentCard = updatedCard ?? card
         
         return ZStack {
-            // Background gradient
-            LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            // Carbon fiber background
+            Image("CardBackTexture")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
             
             VStack(spacing: 0) {
                 // Header

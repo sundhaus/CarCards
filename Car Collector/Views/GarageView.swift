@@ -795,12 +795,10 @@ struct CardBackView: View {
     
     var body: some View {
         ZStack {
-            // Background gradient
-            LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            // Carbon fiber background texture
+            Image("CardBackTexture")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
             
             VStack(spacing: 6 * scale) {
                 // Header

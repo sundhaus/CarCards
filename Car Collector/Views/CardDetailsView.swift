@@ -390,11 +390,9 @@ struct CardDetailsView: View {
     
     private var cardBackView: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            Image("CardBackTexture")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
             
             VStack(spacing: 12) {
                 Text("\(card.make.uppercased()) \(card.model.uppercased())")
@@ -468,11 +466,9 @@ struct CardDetailsView: View {
     
     private var specsLoadingView: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            Image("CardBackTexture")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
             
             VStack(spacing: 12) {
                 ProgressView()

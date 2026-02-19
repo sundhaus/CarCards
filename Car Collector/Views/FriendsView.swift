@@ -353,11 +353,9 @@ struct FriendActivityCard: View {
                         if isFetchingSpecs {
                             // Loading specs
                             ZStack {
-                                LinearGradient(
-                                    colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                                Image("CardBackTexture")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
                                 
                                 VStack(spacing: 12) {
                                     ProgressView()
@@ -373,11 +371,9 @@ struct FriendActivityCard: View {
                         } else {
                             // Card back with specs
                             ZStack {
-                                LinearGradient(
-                                    colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                                Image("CardBackTexture")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
                                 
                                 VStack(spacing: 12) {
                                     Text("\(activity.cardMake.uppercased()) \(activity.cardModel.uppercased())")
