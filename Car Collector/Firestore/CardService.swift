@@ -298,6 +298,36 @@ class CardService: ObservableObject {
     
     // MARK: - Migrate Local Cards to Cloud (UPDATED with metadata)
     
+    // MARK: - Sync Modified Card Images to Firebase
+    
+    /// Re-uploads card images that were modified locally (e.g. background removal)
+    /// but never synced to Firebase. Call on app startup.
+    func syncModifiedImages(localCards: [SavedCard]) async {
+        guard FirebaseManager.shared.currentUserId != nil else { return }
+        
+        var synced = 0
+        for card in localCards {
+            // Card has background removed (originalImageData exists) and has a firebaseId
+            guard card.originalImageData != nil,
+                  let firebaseId = card.firebaseId,
+                  let image = card.image else { continue }
+            
+            do {
+                try await updateCardImage(cardId: firebaseId, image: image)
+                synced += 1
+                print("🔄 Synced modified image for \(card.make) \(card.model)")
+            } catch {
+                print("⚠️ Failed to sync image for \(card.make) \(card.model): \(error)")
+            }
+        }
+        
+        if synced > 0 {
+            print("✅ Synced \(synced) modified card images to Firebase")
+        }
+    }
+    
+    // MARK: - Migrate Local Cards
+    
     func migrateLocalCards(localCards: [SavedCard]) async throws {
         guard FirebaseManager.shared.currentUserId != nil else {
             throw FirebaseError.notAuthenticated

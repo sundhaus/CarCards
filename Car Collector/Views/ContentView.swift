@@ -204,6 +204,15 @@ struct ContentView: View {
             // Defer card loading off the init path
             DispatchQueue.main.async {
                 savedCards = CardStorage.loadCards()
+                
+                // One-time sync of locally modified images to Firebase
+                if !UserDefaults.standard.bool(forKey: "hasCompletedImageSync_v1") {
+                    let cardsToSync = savedCards
+                    Task {
+                        await CardService.shared.syncModifiedImages(localCards: cardsToSync)
+                        UserDefaults.standard.set(true, forKey: "hasCompletedImageSync_v1")
+                    }
+                }
             }
             // Pre-warm Capture tab after a brief delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
