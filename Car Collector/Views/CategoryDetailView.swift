@@ -20,6 +20,7 @@ struct CategoryDetailView: View {
     @State private var lastDocument: DocumentSnapshot?
     @State private var isLoadingMore = false
     @State private var hasMorePages = true
+    @State private var fullScreenActivity: FriendActivity? = nil
     
     private let cardsPerPage = 10
     
@@ -41,6 +42,18 @@ struct CategoryDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .overlay {
+            if let activity = fullScreenActivity {
+                FullScreenFriendCardView(
+                    activity: activity,
+                    isShowing: Binding(
+                        get: { fullScreenActivity != nil },
+                        set: { if !$0 { fullScreenActivity = nil } }
+                    ),
+                    showUserInfo: true
+                )
+            }
+        }
         .onAppear {
             // Start with preloaded cards from Explore
             allCards = initialCards
@@ -114,12 +127,10 @@ struct CategoryDetailView: View {
                 ScrollView(.vertical, showsIndicators: true) {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                         ForEach(pageCards) { card in
-                            NavigationLink {
-                                UserProfileView(userId: card.userId, username: card.username)
-                            } label: {
-                                CategoryCardItem(card: card)
-                            }
-                            .buttonStyle(.plain)
+                            CategoryCardItem(card: card)
+                                .onTapGesture {
+                                    fullScreenActivity = card
+                                }
                         }
                     }
                     .padding()

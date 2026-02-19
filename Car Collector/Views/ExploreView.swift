@@ -11,6 +11,7 @@ import SwiftUI
 struct ExploreView: View {
     @StateObject private var exploreService = ExploreService()
     @Environment(\.dismiss) private var dismiss
+    @State private var fullScreenActivity: FriendActivity? = nil
     var isLandscape: Bool = false
     
     var body: some View {
@@ -34,6 +35,18 @@ struct ExploreView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .overlay {
+            if let activity = fullScreenActivity {
+                FullScreenFriendCardView(
+                    activity: activity,
+                    isShowing: Binding(
+                        get: { fullScreenActivity != nil },
+                        set: { if !$0 { fullScreenActivity = nil } }
+                    ),
+                    showUserInfo: true
+                )
+            }
+        }
         .onAppear {
             print("\n📱 EXPLORE VIEW: onAppear triggered")
             print("   isLoading: \(exploreService.isLoading)")
@@ -73,13 +86,17 @@ struct ExploreView: View {
             VStack(spacing: 16) {
                 // Featured row first (if we have featured cards)
                 if !exploreService.featuredCards.isEmpty {
-                    FeaturedRow(cards: exploreService.featuredCards)
+                    FeaturedRow(cards: exploreService.featuredCards) { card in
+                        fullScreenActivity = card
+                    }
                 }
                 
                 // Show each category that has cards
                 ForEach(sortedCategories, id: \.self) { category in
                     if let cards = exploreService.cardsByCategory[category], !cards.isEmpty {
-                        CategoryRow(category: category, cards: cards)
+                        CategoryRow(category: category, cards: cards) { card in
+                            fullScreenActivity = card
+                        }
                     }
                 }
             }
@@ -131,6 +148,7 @@ struct ExploreView: View {
 
 struct FeaturedRow: View {
     let cards: [FriendActivity]
+    var onCardTap: (FriendActivity) -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -166,12 +184,10 @@ struct FeaturedRow: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(cards) { card in
-                        NavigationLink {
-                            UserProfileView(userId: card.userId, username: card.username)
-                        } label: {
-                            ExploreCardItem(card: card, height: 140)
-                        }
-                        .buttonStyle(.plain)
+                        ExploreCardItem(card: card, height: 140)
+                            .onTapGesture {
+                                onCardTap(card)
+                            }
                     }
                 }
                 .padding(.horizontal)
@@ -185,6 +201,7 @@ struct FeaturedRow: View {
 struct CategoryRow: View {
     let category: VehicleCategory
     let cards: [FriendActivity]
+    var onCardTap: (FriendActivity) -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -217,12 +234,10 @@ struct CategoryRow: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(cards) { card in
-                        NavigationLink {
-                            UserProfileView(userId: card.userId, username: card.username)
-                        } label: {
-                            ExploreCardItem(card: card, height: 140)
-                        }
-                        .buttonStyle(.plain)
+                        ExploreCardItem(card: card, height: 140)
+                            .onTapGesture {
+                                onCardTap(card)
+                            }
                     }
                 }
                 .padding(.horizontal)

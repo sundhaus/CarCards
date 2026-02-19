@@ -11,11 +11,13 @@ import SwiftUI
 struct FullScreenFriendCardView: View {
     let activity: FriendActivity
     @Binding var isShowing: Bool
+    var showUserInfo: Bool = false
     
     @State private var isFlipped = false
     @State private var flipDegrees: Double = 0
     @State private var isFetchingSpecs = false
     @State private var fetchedSpecs: VehicleSpecs?
+    @State private var profileImage: UIImage?
     
     private func specsAreComplete(_ specs: VehicleSpecs?) -> Bool {
         guard let specs = specs else { return false }
@@ -44,7 +46,7 @@ struct FullScreenFriendCardView: View {
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 
-                // X button — top left
+                // X button — top left, User info — top right
                 VStack {
                     HStack {
                         Button(action: {
@@ -64,27 +66,53 @@ struct FullScreenFriendCardView: View {
                         
                         Spacer()
                         
-                        // Flip hint
-                        if !isFetchingSpecs {
-                            if specsAreComplete(fetchedSpecs) {
-                                Text("Tap card to flip")
-                                    .font(.pCaption)
-                                    .foregroundStyle(.white.opacity(0.7))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(.black.opacity(0.6))
-                                    .cornerRadius(20)
-                                    .padding(.trailing, 20)
-                            } else {
-                                Text("Tap to load stats")
-                                    .font(.pCaption)
-                                    .foregroundStyle(.white.opacity(0.7))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(.black.opacity(0.6))
-                                    .cornerRadius(20)
-                                    .padding(.trailing, 20)
+                        if showUserInfo {
+                            // User profile chip — tappable
+                            NavigationLink {
+                                UserProfileView(userId: activity.userId, username: activity.username)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Text(activity.username)
+                                        .font(.pCaption)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white)
+                                    
+                                    if let profileImage = profileImage {
+                                        Image(uiImage: profileImage)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 30, height: 30)
+                                            .clipShape(Circle())
+                                    } else {
+                                        Circle()
+                                            .fill(.white.opacity(0.3))
+                                            .frame(width: 30, height: 30)
+                                            .overlay {
+                                                Text(String(activity.username.prefix(1)).uppercased())
+                                                    .font(.poppins(13))
+                                                    .fontWeight(.semibold)
+                                                    .foregroundStyle(.white)
+                                            }
+                                    }
+                                }
+                                .padding(.leading, 12)
+                                .padding(.trailing, 6)
+                                .padding(.vertical, 6)
+                                .background(.black.opacity(0.6))
+                                .cornerRadius(20)
                             }
+                            .buttonStyle(.plain)
+                            .padding(.trailing, 20)
+                        } else if !isFetchingSpecs {
+                            // Flip hint (when no user info shown)
+                            Text(specsAreComplete(fetchedSpecs) ? "Tap card to flip" : "Tap to load stats")
+                                .font(.pCaption)
+                                .foregroundStyle(.white.opacity(0.7))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(.black.opacity(0.6))
+                                .cornerRadius(20)
+                                .padding(.trailing, 20)
                         }
                     }
                     Spacer()
@@ -99,6 +127,11 @@ struct FullScreenFriendCardView: View {
             }
         }
         .transition(.opacity)
+        .task {
+            if showUserInfo {
+                await loadProfilePicture()
+            }
+        }
     }
     
     // MARK: - Card Content
@@ -187,6 +220,22 @@ struct FullScreenFriendCardView: View {
         } catch {
             print("❌ Failed to fetch specs: \(error)")
             await MainActor.run { isFetchingSpecs = false }
+        }
+    }
+    
+    // MARK: - Load Profile Picture
+    
+    private func loadProfilePicture() async {
+        do {
+            if let profile = try await UserService.shared.fetchProfile(uid: activity.userId),
+               let urlString = profile.profilePictureURL {
+                let image = try await CardService.shared.loadImage(from: urlString)
+                await MainActor.run {
+                    profileImage = image
+                }
+            }
+        } catch {
+            print("⚠️ Failed to load profile picture: \(error)")
         }
     }
 }
