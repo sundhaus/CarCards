@@ -88,12 +88,13 @@ struct LevelHeader: View {
             }
             .frame(height: 60)
             .background(alignment: .bottom) {
-                // Glass rect much taller than header - top and side edges
+                // Glass rect oversized in all directions - top and side edges
                 // extend off-screen so only the bottom glow is visible
                 Rectangle()
                     .fill(.clear)
                     .frame(height: 200)
                     .frame(maxWidth: .infinity)
+                    .padding(.horizontal, -40)
                     .glassEffect(.regular, in: .rect)
                     .ignoresSafeArea()
             }
