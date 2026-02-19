@@ -316,7 +316,8 @@ struct UserProfileView: View {
                             
                             // Garage header with toggle
                             HStack {
-                                Text("GARAGE (\(userCards.count))")
+                                let garageCards = userCards.filter { $0.id != crownCard?.id }
+                                Text("GARAGE (\(garageCards.count))")
                                     .font(.pHeadline)
                                 
                                 Spacer()
@@ -334,7 +335,7 @@ struct UserProfileView: View {
                             if isLoadingCards {
                                 ProgressView()
                                     .padding(.top, 40)
-                            } else if userCards.isEmpty {
+                            } else if userCards.filter({ $0.id != crownCard?.id }).isEmpty {
                                 VStack(spacing: 12) {
                                     Image(systemName: "car")
                                         .font(.poppins(50))
@@ -345,8 +346,8 @@ struct UserProfileView: View {
                                 .frame(height: 200)
                             } else {
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
-                                    ForEach(userCards) { card in
-                                        UserCardView(card: card, isLargeSize: cardsPerRow == 1, isCrowned: card.id == userProfile?.crownCardId)
+                                    ForEach(userCards.filter { $0.id != crownCard?.id }) { card in
+                                        UserCardView(card: card, isLargeSize: cardsPerRow == 1)
                                             .onTapGesture {
                                                 Task {
                                                     isLoadingCardImage = true
