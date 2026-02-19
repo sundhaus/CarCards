@@ -60,7 +60,7 @@ struct GarageView: View {
                         Button(action: {
                             cardsPerRow = cardsPerRow == 1 ? 2 : 1
                         }) {
-                            Image(systemName: cardsPerRow == 1 ? "square.grid.2x2" : "rectangle")
+                            Image(systemName: cardsPerRow == 1 ? "square.grid.2x2" : "rectangle.grid.1x2")
                                 .font(.pTitle3)
                                 .foregroundStyle(.blue)
                         }
