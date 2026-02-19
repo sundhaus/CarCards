@@ -311,8 +311,8 @@ struct MarketplaceBuySellView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
         .padding(.horizontal)
     }
     
@@ -360,8 +360,8 @@ struct MarketplaceBuySellView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
         .padding(.horizontal)
     }
     
@@ -395,12 +395,8 @@ struct MarketplaceBuySellView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(.ultraThinMaterial)
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                )
+                .background(.clear)
+                .glassEffect(.regular, in: .rect(cornerRadius: 8))
             }
             .disabled(disabled)
         }
@@ -566,8 +562,8 @@ struct ListingCardRow: View {
                 }
                 .padding(.vertical, 12)
             }
-            .background(.ultraThinMaterial)
-            .cornerRadius(12)
+            .background(.clear)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
             
             // Card sits on top
             VStack(spacing: 0) {
@@ -608,8 +604,8 @@ struct GarageCardRow: View {
                 .padding(.top, 12)
                 .padding(.bottom, 12)
             }
-            .background(.ultraThinMaterial)
-            .cornerRadius(12)
+            .background(.clear)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
             
             // Card sits on top, overlapping the info bar
             VStack(spacing: 0) {
@@ -953,8 +949,8 @@ struct CompactListingCard: View {
             }
             .padding(.vertical, 6)
         }
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
         .onAppear { loadImage() }
     }
     
@@ -1045,8 +1041,8 @@ struct CompactGarageCard: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 8)
         }
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
 }
 

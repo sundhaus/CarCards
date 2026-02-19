@@ -264,8 +264,8 @@ struct ListingDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 16)
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
     
     // MARK: - Action Section (Bid / Buy)
@@ -284,8 +284,8 @@ struct ListingDetailView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(.ultraThinMaterial)
-                .cornerRadius(10)
+                .background(.clear)
+                .glassEffect(.regular, in: .rect(cornerRadius: 10))
                 
                 Button(action: {
                     Task { await performBid() }
@@ -303,7 +303,7 @@ struct ListingDetailView: View {
                 .padding(.vertical, 10)
                 .background(Color.orange)
                 .foregroundStyle(.white)
-                .cornerRadius(10)
+                .glassEffect(.regular, in: .rect(cornerRadius: 10))
                 .disabled(isPlacingBid || isBuyingNow)
             }
             
@@ -326,7 +326,7 @@ struct ListingDetailView: View {
             .padding(.vertical, 14)
             .background(Color.green)
             .foregroundStyle(.white)
-            .cornerRadius(12)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
             .disabled(isPlacingBid || isBuyingNow)
         }
     }
@@ -349,7 +349,7 @@ struct ListingDetailView: View {
                     .padding(.vertical, 12)
                     .background(Color.red.opacity(0.15))
                     .foregroundStyle(.red)
-                    .cornerRadius(10)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 10))
             }
         }
     }
@@ -377,8 +377,8 @@ struct ListingDetailView: View {
             }
         }
         .padding(12)
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
     
     // MARK: - Actions

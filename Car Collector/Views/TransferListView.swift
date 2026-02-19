@@ -282,8 +282,8 @@ struct TransferListingCard: View {
             }
             .padding(.vertical, 10)
         }
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
         .task { await loadImage() }
     }
     
@@ -391,8 +391,8 @@ struct CompactTransferListingCard: View {
             }
             .padding(.vertical, 6)
         }
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
         .task { await loadImage() }
     }
     
