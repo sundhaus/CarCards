@@ -375,7 +375,6 @@ struct GarageView: View {
     @ViewBuilder
     private func garageCardCell(card: AnyCard) -> some View {
         UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
-            .opacity(showContextMenu && contextMenuCard?.id == card.id ? 0 : 1)
             .background(
                 GeometryReader { geo in
                     Color.clear
@@ -435,32 +434,22 @@ struct CardContextMenuOverlay: View {
                     dismissMenu()
                 }
             
-            // Use a canvas that ignores safe area to position via global coords
+            // Just the action panel, positioned beside the actual card
             GeometryReader { geo in
-                let originY = geo.frame(in: .global).minY
+                let geoOrigin = geo.frame(in: .global).origin
+                let panelY = cardFrame.minY - geoOrigin.y
+                let targetX = cardIsOnLeft ? cardFrame.maxX - geoOrigin.x : cardFrame.minX - cardFrame.width - geoOrigin.x
+                let startX = cardFrame.minX - geoOrigin.x
                 
-                // Card at its exact global position
-                let cardX = cardFrame.minX
-                let cardY = cardFrame.minY - originY
-                
-                // Panel position: beside the card in the opposite column
-                let panelX = cardIsOnLeft ? cardFrame.maxX : cardFrame.minX - cardFrame.width
-                
-                // Card
-                UnifiedCardView(card: card, isLargeSize: false)
-                    .frame(width: cardFrame.width, height: cardFrame.height)
-                    .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
-                    .position(x: cardX + cardFrame.width / 2, y: cardY + cardFrame.height / 2)
-                
-                // Panel slides out from behind card edge
                 actionPanel
                     .frame(width: cardFrame.width, height: cardFrame.height)
-                    .position(
-                        x: appeared ? panelX + cardFrame.width / 2 : cardFrame.midX,
-                        y: cardY + cardFrame.height / 2
+                    .offset(
+                        x: appeared ? targetX : startX,
+                        y: panelY
                     )
                     .opacity(appeared ? 1 : 0)
             }
+            .ignoresSafeArea()
         }
         .onAppear {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -470,7 +459,21 @@ struct CardContextMenuOverlay: View {
     }
     
     private var actionPanel: some View {
-        VStack(spacing: 0) {
+        let corners: UnevenRoundedRectangle = cardIsOnLeft ?
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 12,
+                topTrailingRadius: 12
+            ) :
+            UnevenRoundedRectangle(
+                topLeadingRadius: 12,
+                bottomLeadingRadius: 12,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 0
+            )
+        
+        return VStack(spacing: 0) {
             Spacer()
             
             if isVehicle {
@@ -484,11 +487,8 @@ struct CardContextMenuOverlay: View {
             
             Spacer()
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.white)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(corners.fill(.white))
+        .clipShape(corners)
     }
     
     private func actionRow(label: String, action: @escaping () -> Void) -> some View {
