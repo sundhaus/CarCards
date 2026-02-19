@@ -12,6 +12,7 @@ struct TransferListView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var marketplaceService = MarketplaceService.shared
     @State private var useDoubleColumn = false
+    @State private var selectedListing: CloudListing?
     
     // Calculate selling listings (active)
     private var sellingListings: [CloudListing] {
@@ -87,10 +88,15 @@ struct TransferListView: View {
                                     : [GridItem(.flexible())]
                                 LazyVGrid(columns: columns, spacing: 12) {
                                     ForEach(sellingListings) { listing in
-                                        if useDoubleColumn {
-                                            CompactTransferListingCard(listing: listing)
-                                        } else {
-                                            TransferListingCard(listing: listing)
+                                        Group {
+                                            if useDoubleColumn {
+                                                CompactTransferListingCard(listing: listing)
+                                            } else {
+                                                TransferListingCard(listing: listing)
+                                            }
+                                        }
+                                        .onTapGesture {
+                                            selectedListing = listing
                                         }
                                     }
                                 }
@@ -121,10 +127,15 @@ struct TransferListView: View {
                                     : [GridItem(.flexible())]
                                 LazyVGrid(columns: columns, spacing: 12) {
                                     ForEach(soldListings) { listing in
-                                        if useDoubleColumn {
-                                            CompactTransferListingCard(listing: listing)
-                                        } else {
-                                            TransferListingCard(listing: listing)
+                                        Group {
+                                            if useDoubleColumn {
+                                                CompactTransferListingCard(listing: listing)
+                                            } else {
+                                                TransferListingCard(listing: listing)
+                                            }
+                                        }
+                                        .onTapGesture {
+                                            selectedListing = listing
                                         }
                                     }
                                 }
@@ -140,6 +151,9 @@ struct TransferListView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(item: $selectedListing) { listing in
+            ListingDetailView(listing: listing)
+        }
         .onAppear {
             // Listener already started in app startup
             print("📋 Transfer List - Selling: \(sellingListings.count), Sold: \(soldListings.count)")

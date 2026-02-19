@@ -12,6 +12,7 @@ struct TransferTargetsView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var marketplaceService = MarketplaceService.shared
     @State private var useDoubleColumn = false
+    @State private var selectedListing: CloudListing?
     
     // Calculate winning bids from marketplace service
     private var winningBids: [CloudListing] {
@@ -65,7 +66,7 @@ struct TransferTargetsView: View {
                     VStack(spacing: 16) {
                         // Winning Bids Section
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Winning (\(winningBids.count))")
+                            Text("WINNING (\(winningBids.count))")
                                 .font(.pHeadline)
                                 .padding(.horizontal)
                             
@@ -86,10 +87,15 @@ struct TransferTargetsView: View {
                                     : [GridItem(.flexible())]
                                 LazyVGrid(columns: columns, spacing: 12) {
                                     ForEach(winningBids) { listing in
-                                        if useDoubleColumn {
-                                            CompactTargetCard(listing: listing)
-                                        } else {
-                                            ListingCardView(listing: listing, showActions: false)
+                                        Group {
+                                            if useDoubleColumn {
+                                                CompactTargetCard(listing: listing)
+                                            } else {
+                                                ListingCardView(listing: listing, showActions: false)
+                                            }
+                                        }
+                                        .onTapGesture {
+                                            selectedListing = listing
                                         }
                                     }
                                 }
@@ -99,7 +105,7 @@ struct TransferTargetsView: View {
                         
                         // Outbid Section
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Outbid (\(outbidCards.count))")
+                            Text("OUTBID (\(outbidCards.count))")
                                 .font(.pHeadline)
                                 .padding(.horizontal)
                             
@@ -123,10 +129,15 @@ struct TransferTargetsView: View {
                                     : [GridItem(.flexible())]
                                 LazyVGrid(columns: columns, spacing: 12) {
                                     ForEach(outbidCards) { listing in
-                                        if useDoubleColumn {
-                                            CompactTargetCard(listing: listing)
-                                        } else {
-                                            ListingCardView(listing: listing, showActions: false)
+                                        Group {
+                                            if useDoubleColumn {
+                                                CompactTargetCard(listing: listing)
+                                            } else {
+                                                ListingCardView(listing: listing, showActions: false)
+                                            }
+                                        }
+                                        .onTapGesture {
+                                            selectedListing = listing
                                         }
                                     }
                                 }
@@ -142,6 +153,9 @@ struct TransferTargetsView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(item: $selectedListing) { listing in
+            ListingDetailView(listing: listing)
+        }
         .onAppear {
             // Start listening to bids
             if let uid = FirebaseManager.shared.currentUserId {

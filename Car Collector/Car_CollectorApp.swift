@@ -144,6 +144,10 @@ struct CarCardCollectorApp: App {
         UserService.shared.loadProfile(uid: uid)
         CardService.shared.listenToMyCards(uid: uid)
         
+        // Marketplace listeners — my listings (Transfer List) and my bids (Transfer Targets)
+        MarketplaceService.shared.listenToMyListings(uid: uid)
+        MarketplaceService.shared.listenToMyBids(uid: uid)
+        
         isReady = true
         // LevelSystem syncs via UserService listener, no sleep needed
     }

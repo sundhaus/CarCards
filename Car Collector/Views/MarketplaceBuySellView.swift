@@ -29,6 +29,7 @@ struct MarketplaceBuySellView: View {
     
     @State private var selectedCard: SavedCard?
     @State private var comparePriceCard: SavedCard?  // For Compare Price navigation
+    @State private var selectedListing: CloudListing?  // For viewing/bidding on a listing
     
     // Firebase MarketplaceService for real-time listings
     @ObservedObject private var marketplaceService = MarketplaceService.shared
@@ -243,6 +244,9 @@ struct MarketplaceBuySellView: View {
                 }
             )
         }
+        .sheet(item: $selectedListing) { listing in
+            ListingDetailView(listing: listing)
+        }
     }
     
     // MARK: - Buy Filters View
@@ -442,10 +446,15 @@ struct BuyView: View {
             } else {
                 LazyVGrid(columns: gridColumns, spacing: 12) {
                     ForEach(activeListings) { listing in
-                        if useDoubleColumn {
-                            CompactListingCard(listing: listing)
-                        } else {
-                            ListingCardRow(listing: listing)
+                        Group {
+                            if useDoubleColumn {
+                                CompactListingCard(listing: listing)
+                            } else {
+                                ListingCardRow(listing: listing)
+                            }
+                        }
+                        .onTapGesture {
+                            selectedListing = listing
                         }
                     }
                 }
