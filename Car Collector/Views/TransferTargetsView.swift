@@ -46,7 +46,8 @@ struct TransferTargetsView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 10)
+                .padding(.top, 18)
+                .padding(.bottom, 10)
                 .glassEffect(.regular, in: .rect)
                 
                 ScrollView {
