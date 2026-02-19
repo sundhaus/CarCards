@@ -57,8 +57,10 @@ enum AnyCard: Identifiable {
         switch self {
         case .vehicle(let card):
             return card.customFrame
-        case .driver, .location:
-            return nil
+        case .driver(let card):
+            return card.customFrame
+        case .location(let card):
+            return card.customFrame
         }
     }
     
@@ -86,6 +88,24 @@ enum AnyCard: Identifiable {
         case .vehicle: return "Vehicle"
         case .driver: return "Driver"
         case .location: return "Location"
+        }
+    }
+    
+    /// Light-weight text for top-left of card (e.g. make / first name / location name)
+    var titleLine1: String {
+        switch self {
+        case .vehicle(let card): return card.make
+        case .driver(let card): return card.firstName
+        case .location(let card): return card.locationName
+        }
+    }
+    
+    /// Bold text for top-left of card (e.g. model / last name / subtitle)
+    var titleLine2: String {
+        switch self {
+        case .vehicle(let card): return card.model
+        case .driver(let card): return card.lastName
+        case .location(let card): return card.capturedLocation ?? ""
         }
     }
 }

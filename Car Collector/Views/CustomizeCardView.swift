@@ -15,7 +15,7 @@ enum CardFrame: String, CaseIterable {
 }
 
 struct CustomizeCardView: View {
-    let card: SavedCard
+    let card: AnyCard
     @Environment(\.dismiss) private var dismiss
     @State private var selectedFrame: CardFrame = .white
     @State private var selectedTab = 0 // 0: Border, 1: Stickers, 2: Effects
@@ -99,16 +99,18 @@ struct CustomizeCardView: View {
                                 let textColor: Color = selectedFrame == .white ? .white : .black
                                 let shadowColor: Color = selectedFrame == .white ? .black.opacity(0.8) : .white.opacity(0.6)
                                 
-                                Text(card.make.uppercased())
+                                Text(card.titleLine1.uppercased())
                                     .font(.custom("Futura-Light", size: 14))
                                     .foregroundStyle(textColor)
                                     .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
                                 
-                                Text(card.model.uppercased())
-                                    .font(.custom("Futura-Bold", size: 14))
-                                    .foregroundStyle(textColor)
-                                    .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
-                                    .lineLimit(1)
+                                if !card.titleLine2.isEmpty {
+                                    Text(card.titleLine2.uppercased())
+                                        .font(.custom("Futura-Bold", size: 14))
+                                        .foregroundStyle(textColor)
+                                        .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
+                                        .lineLimit(1)
+                                }
                             }
                             .padding(.top, 14)
                             .padding(.leading, 14)
@@ -169,10 +171,11 @@ struct CustomizeCardView: View {
             }
             
             // If card has original image stored, background was previously removed
-            if let storedOriginal = card.originalImage {
+            if case .vehicle(let vehicleCard) = card,
+               let storedOriginal = vehicleCard.originalImage {
                 originalImage = storedOriginal
                 backgroundRemoved = true
-                print("🖼️ Loaded stored original image (from \(card.originalImageData != nil ? "memory" : "file"))")
+                print("🖼️ Loaded stored original image (from \(vehicleCard.originalImageData != nil ? "memory" : "file"))")
             } else {
                 print("🖼️ No stored original image")
             }
@@ -366,88 +369,92 @@ struct CustomizeCardView: View {
     // MARK: - Helper Functions
     
     private func saveFrameSelection() {
-        // Load current cards from storage
-        var savedCards = CardStorage.loadCards()
+        // Map CardFrame enum to actual PNG border names
+        let customFrameValue: String = {
+            switch selectedFrame {
+            case .white: return "Border_Def_Wht"
+            case .black: return "Border_Def_Blk"
+            }
+        }()
         
-        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-            // Map CardFrame enum to actual PNG border names
-            let customFrameValue: String = {
-                switch selectedFrame {
-                case .white:
-                    return "Border_Def_Wht"
-                case .black:
-                    return "Border_Def_Blk"
+        switch card {
+        case .vehicle(let vehicleCard):
+            var savedCards = CardStorage.loadCards()
+            if let index = savedCards.firstIndex(where: { $0.id == vehicleCard.id }) {
+                if let updatedImage = displayImage {
+                    savedCards[index] = SavedCard(
+                        id: vehicleCard.id,
+                        image: updatedImage,
+                        make: vehicleCard.make,
+                        model: vehicleCard.model,
+                        color: vehicleCard.color,
+                        year: vehicleCard.year,
+                        specs: vehicleCard.specs,
+                        capturedBy: vehicleCard.capturedBy,
+                        capturedLocation: vehicleCard.capturedLocation,
+                        previousOwners: vehicleCard.previousOwners,
+                        customFrame: customFrameValue,
+                        firebaseId: vehicleCard.firebaseId,
+                        originalImage: backgroundRemoved ? originalImage : nil
+                    )
+                } else {
+                    savedCards[index].customFrame = customFrameValue
+                    if !backgroundRemoved { savedCards[index].originalImageData = nil }
                 }
-            }()
-            
-            // If background was removed, save the processed image too
-            if let updatedImage = displayImage {
-                savedCards[index] = SavedCard(
-                    id: card.id,
-                    image: updatedImage,
-                    make: card.make,
-                    model: card.model,
-                    color: card.color,
-                    year: card.year,
-                    specs: card.specs,
-                    capturedBy: card.capturedBy,
-                    capturedLocation: card.capturedLocation,
-                    previousOwners: card.previousOwners,
-                    customFrame: customFrameValue,
-                    firebaseId: card.firebaseId,
-                    originalImage: backgroundRemoved ? originalImage : nil
-                )
-                print("💾 Saving card - bgRemoved: \(backgroundRemoved), originalImage: \(originalImage != nil), originalImageData: \(savedCards[index].originalImageData?.count ?? 0) bytes")
-            } else {
-                savedCards[index].customFrame = customFrameValue
-                // If background was restored, clear the original image data
-                if !backgroundRemoved {
-                    savedCards[index].originalImageData = nil
-                }
+                CardStorage.saveCards(savedCards)
+                print("💾 Saved frame: \(customFrameValue) for vehicle: \(vehicleCard.make) \(vehicleCard.model)")
             }
             
-            CardStorage.saveCards(savedCards)
+        case .driver(let driverCard):
+            var driverCards = CardStorage.loadDriverCards()
+            if let index = driverCards.firstIndex(where: { $0.id == driverCard.id }) {
+                driverCards[index].customFrame = customFrameValue
+                CardStorage.saveDriverCards(driverCards)
+                print("💾 Saved frame: \(customFrameValue) for driver: \(driverCard.displayName)")
+            }
             
-            print("💾 Saved frame: \(customFrameValue) for card: \(card.make) \(card.model)")
-            
-            // Sync to Firebase (use firebaseId if available)
-            if let firebaseId = card.firebaseId {
-                Task {
-                    do {
-                        // Sync custom frame
-                        try await CardService.shared.updateCustomFrame(
+        case .location(let locationCard):
+            var locationCards = CardStorage.loadLocationCards()
+            if let index = locationCards.firstIndex(where: { $0.id == locationCard.id }) {
+                locationCards[index].customFrame = customFrameValue
+                CardStorage.saveLocationCards(locationCards)
+                print("💾 Saved frame: \(customFrameValue) for location: \(locationCard.locationName)")
+            }
+        }
+        
+        // Sync to Firebase if card has a firebaseId
+        if let firebaseId = card.firebaseId {
+            Task {
+                do {
+                    try await CardService.shared.updateCustomFrame(
+                        cardId: firebaseId,
+                        customFrame: customFrameValue
+                    )
+                    print("✅ Synced custom frame to Firebase")
+                    
+                    if let updatedImage = displayImage {
+                        try await CardService.shared.updateCardImage(
                             cardId: firebaseId,
-                            customFrame: customFrameValue
+                            image: updatedImage
                         )
-                        print("✅ Synced custom frame to Firebase")
-                        
-                        // If background was removed, re-upload image to Firebase
-                        if let updatedImage = displayImage {
-                            try await CardService.shared.updateCardImage(
-                                cardId: firebaseId,
-                                image: updatedImage
-                            )
-                            print("✅ Synced updated card image to Firebase")
-                        }
-                    } catch {
-                        print("❌ Failed to sync customization to Firebase: \(error)")
+                        print("✅ Synced updated card image to Firebase")
                     }
+                } catch {
+                    print("❌ Failed to sync customization to Firebase: \(error)")
                 }
             }
-        } else {
-            print("❌ Could not find card in storage to save frame")
         }
     }
 }
 
 #Preview {
     CustomizeCardView(
-        card: SavedCard(
+        card: .vehicle(SavedCard(
             image: UIImage(systemName: "photo")!,
             make: "Toyota",
             model: "Supra",
             color: "Red",
             year: "1998"
-        )
+        ))
     )
 }

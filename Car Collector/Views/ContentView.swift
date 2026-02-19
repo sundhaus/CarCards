@@ -327,7 +327,7 @@ struct GarageViewContent: View {
         }
         .fullScreenCover(isPresented: $showCustomize) {
             if let card = selectedCard {
-                CustomizeCardView(card: card)
+                CustomizeCardView(card: .vehicle(card))
             }
         }
     }
