@@ -13,7 +13,7 @@ struct FriendsView: View {
     @StateObject private var friendsService = FriendsService.shared
     @State private var showFriendsList = false
     @State private var showSearch = false
-    @State private var flippedCardId: String? = nil  // Track which card is flipped
+    @State private var fullScreenActivity: FriendActivity? = nil
     @Environment(\.dismiss) private var dismiss
     
     // Generate gradient colors based on level (same as LevelHeader)
@@ -136,7 +136,9 @@ struct FriendsView: View {
                                     FriendActivityCard(
                                         activity: activity,
                                         levelGradient: levelGradient(for: activity.level),
-                                        flippedCardId: $flippedCardId
+                                        onCardTap: {
+                                            fullScreenActivity = activity
+                                        }
                                     )
                                     
                                     if activity.id != friendsService.friendActivities.last?.id {
@@ -148,18 +150,6 @@ struct FriendsView: View {
                         }
                         .padding(.vertical, 16)
                         .padding(.bottom, isLandscape ? 20 : 100)
-                        .background(
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    // Tap anywhere in feed area to dismiss flipped card
-                                    if flippedCardId != nil {
-                                        withAnimation(.spring(response: 0.4)) {
-                                            flippedCardId = nil
-                                        }
-                                    }
-                                }
-                        )
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -194,6 +184,17 @@ struct FriendsView: View {
                     .allowsHitTesting(false)
                 }
                 .ignoresSafeArea(edges: .bottom)
+                
+                // Fullscreen card overlay
+                if let activity = fullScreenActivity {
+                    FullScreenFriendCardView(
+                        activity: activity,
+                        isShowing: Binding(
+                            get: { fullScreenActivity != nil },
+                            set: { if !$0 { fullScreenActivity = nil } }
+                        )
+                    )
+                }
             }
             .navigationBarBackButtonHidden(true)
             .toolbar(.hidden, for: .navigationBar)
@@ -214,7 +215,7 @@ struct FriendsView: View {
 struct FriendActivityCard: View {
     let activity: FriendActivity
     let levelGradient: [Color]
-    @Binding var flippedCardId: String?  // Shared state from parent
+    var onCardTap: () -> Void
     
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
@@ -224,51 +225,41 @@ struct FriendActivityCard: View {
     @State private var showFloatingFlame = false
     @State private var profileImage: UIImage?
     
-    // Specs fetching state
-    @State private var fetchedSpecs: VehicleSpecs?
-    @State private var isFetchingSpecs = false
-    
     // Track the last synced state from Firestore to detect conflicts
     @State private var lastSyncedHeatedBy: [String] = []
     @State private var lastSyncedHeatCount: Int = 0
     
-    // Computed property: is THIS card flipped?
-    private var isFlipped: Bool {
-        flippedCardId == activity.id
-    }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Friend info header
-            HStack(spacing: 8) {
-                // Profile picture
-                if let profileImage = profileImage {
-                    Image(uiImage: profileImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 32, height: 32)
-                        .clipShape(Circle())
-                } else {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: levelGradient,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+            // Friend info header — taps navigate to profile
+            NavigationLink {
+                UserProfileView(userId: activity.userId, username: activity.username)
+            } label: {
+                HStack(spacing: 8) {
+                    // Profile picture
+                    if let profileImage = profileImage {
+                        Image(uiImage: profileImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 32, height: 32)
+                            .clipShape(Circle())
+                    } else {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: levelGradient,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
-                        .frame(width: 32, height: 32)
-                        .overlay {
-                            Text(String(activity.username.prefix(1)).uppercased())
-                                .font(.poppins(14))
-                                .foregroundStyle(.white)
-                        }
-                }
-                
-                // Tappable username
-                NavigationLink {
-                    UserProfileView(userId: activity.userId, username: activity.username)
-                } label: {
+                            .frame(width: 32, height: 32)
+                            .overlay {
+                                Text(String(activity.username.prefix(1)).uppercased())
+                                    .font(.poppins(14))
+                                    .foregroundStyle(.white)
+                            }
+                    }
+                    
                     VStack(alignment: .leading, spacing: 2) {
                         Text(activity.username)
                             .font(.pSubheadline)
@@ -278,178 +269,90 @@ struct FriendActivityCard: View {
                             .font(.pCaption)
                             .foregroundStyle(.secondary)
                     }
+                    
+                    Spacer()
+                    
+                    Text(activity.timeAgo)
+                        .font(.pCaption)
+                        .foregroundStyle(.secondary)
                 }
-                
-                Spacer()
-                
-                Text(activity.timeAgo)
-                    .font(.pCaption)
-                    .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             .padding(.horizontal)
             .padding(.top, 16)
             
-            // Card preview with tap to flip, double-tap to heat
+            // Card preview — tap opens fullscreen
             ZStack {
-                if !isFlipped {
-                    // FRONT OF CARD - FIFA Style
-                    ZStack {
-                        FIFACardView(card: activity, height: 202.5)
-                        
-                        // Floating flame animation overlay
-                        if showFloatingFlame {
-                            Image(systemName: "flame.fill")
-                                .font(.poppins(80))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [.orange, .red],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                                .shadow(color: .black.opacity(0.3), radius: 10)
-                                .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
-                                .opacity(showFloatingFlame ? 1.0 : 0.0)
-                                .transition(.scale.combined(with: .opacity))
-                        }
-                        
-                        // Tap hint overlay
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                Text("Tap for specs")
-                                    .font(.poppins(11))
-                                    .foregroundStyle(.primary)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.black.opacity(0.6))
-                                    .cornerRadius(6)
-                                    .padding(8)
-                            }
-                        }
-                    }
-                    .frame(width: 360, height: 202.5)
-                    .onTapGesture {
-                        // Single tap to flip/unflip
-                        if isFlipped {
-                            // This card is flipped, flip it back
-                            withAnimation(.spring(response: 0.4)) {
-                                flippedCardId = nil
-                            }
-                        } else {
-                            // Flip this card (auto-flips any other card back)
-                            Task {
-                                await fetchSpecsIfNeeded()
-                            }
-                            withAnimation(.spring(response: 0.4)) {
-                                flippedCardId = activity.id
-                            }
-                        }
-                    }
-                } else {
-                    // BACK OF CARD
-                    ZStack {
-                        if isFetchingSpecs {
-                            // Loading specs
-                            ZStack {
-                                Image("CardBackTexture")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                
-                                VStack(spacing: 12) {
-                                    ProgressView()
-                                        .tint(.white)
-                                        .scaleEffect(1.5)
-                                    Text("Loading specs...")
-                                        .font(.pCaption)
-                                        .foregroundStyle(.white.opacity(0.8))
-                                }
-                            }
-                            .frame(width: 360, height: 202.5)
-                            .clipShape(RoundedRectangle(cornerRadius: 202.5 * 0.09))
-                        } else {
-                            // Card back with specs
-                            ZStack {
-                                Image("CardBackTexture")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                
-                                VStack(spacing: 12) {
-                                    Text("\(activity.cardMake.uppercased()) \(activity.cardModel.uppercased())")
-                                        .font(.custom("Futura-Bold", size: 20))
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(1)
-                                    
-                                    Text(activity.cardYear)
-                                        .font(.poppins(14))
-                                        .foregroundStyle(.white.opacity(0.8))
-                                    
-                                    // Summary/Description
-                                    if let description = fetchedSpecs?.description, !description.isEmpty {
-                                        Text(description)
-                                            .font(.poppins(11))
-                                            .foregroundStyle(.white.opacity(0.9))
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(3)
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 4)
-                                    }
-                                    
-                                    // Compact stats in 2 columns
-                                    HStack(alignment: .top, spacing: 12) {
-                                        // Left column
-                                        VStack(spacing: 6) {
-                                            compactStatRow(label: "HP", value: parseIntValue(fetchedSpecs?.horsepower))
-                                            compactStatRow(label: "0-60", value: parseDoubleValue(fetchedSpecs?.zeroToSixty))
-                                            compactStatRow(label: "ENGINE", value: fetchedSpecs?.engine ?? "???")
-                                        }
-                                        
-                                        // Right column
-                                        VStack(spacing: 6) {
-                                            compactStatRow(label: "TRQ", value: parseIntValue(fetchedSpecs?.torque))
-                                            compactStatRow(label: "TOP", value: parseIntValue(fetchedSpecs?.topSpeed))
-                                            compactStatRow(label: "DRIVE", value: fetchedSpecs?.drivetrain ?? "???")
-                                        }
-                                    }
-                                    .padding(.horizontal, 20)
-                                    
-                                    Text("Tap to flip back")
-                                        .font(.poppins(10))
-                                        .foregroundStyle(.secondary)
-                                }
-                                .padding(.vertical, 12)
-                                
-                                // PNG border overlay based on customFrame
-                                if let borderImageName = CardBorderConfig.forFrame(activity.customFrame).borderImageName {
-                                    Image(borderImageName)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .allowsHitTesting(false)
-                                }
-                            }
-                            .frame(width: 360, height: 202.5)
-                            .clipShape(RoundedRectangle(cornerRadius: 202.5 * 0.09))
-                    }
+                FIFACardView(card: activity, height: 202.5)
+                
+                // Floating flame animation overlay
+                if showFloatingFlame {
+                    Image(systemName: "flame.fill")
+                        .font(.poppins(80))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.orange, .red],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: .black.opacity(0.3), radius: 10)
+                        .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
+                        .opacity(showFloatingFlame ? 1.0 : 0.0)
+                        .transition(.scale.combined(with: .opacity))
                 }
-            }  // Close else (back card)
-            }  // Close outer ZStack (line 294)
+            }
+            .frame(width: 360, height: 202.5)
+            .onTapGesture {
+                onCardTap()
+            }
             .padding(.horizontal)
-            .task {
-                await loadCardImage()
-                await loadProfilePicture()
-            }
-            .onChange(of: activity.heatedBy) { _, newHeatedBy in
-                // Only sync from Firestore if the data actually changed from what we last knew
-                syncFromFirestoreIfNeeded(newHeatedBy: newHeatedBy, newHeatCount: activity.heatCount)
-            }
-            .onAppear {
-                // Initial load only
-                if lastSyncedHeatedBy.isEmpty {
-                    loadHeatState()
-                }
-            }
             
+            // Heat button row — taps navigate to profile
+            NavigationLink {
+                UserProfileView(userId: activity.userId, username: activity.username)
+            } label: {
+                HStack {
+                    // Heat button (intercepts tap, doesn't navigate)
+                    Button(action: toggleHeat) {
+                        HStack(spacing: 4) {
+                            Image(systemName: isHeated ? "flame.fill" : "flame")
+                                .font(.poppins(16))
+                                .foregroundStyle(isHeated ? .orange : .secondary)
+                                .scaleEffect(isAnimatingHeat ? 1.3 : 1.0)
+                            
+                            if heatCount > 0 {
+                                Text("\(heatCount)")
+                                    .font(.pCaption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(isHeated ? .orange : .secondary)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            .padding(.bottom, 12)
+        }
+        .task {
+            await loadCardImage()
+            await loadProfilePicture()
+        }
+        .onChange(of: activity.heatedBy) { _, newHeatedBy in
+            syncFromFirestoreIfNeeded(newHeatedBy: newHeatedBy, newHeatCount: activity.heatCount)
+        }
+        .onAppear {
+            if lastSyncedHeatedBy.isEmpty {
+                loadHeatState()
+            }
         }
     }
     
@@ -487,185 +390,76 @@ struct FriendActivityCard: View {
     private func loadHeatState() {
         guard let currentUserId = FirebaseManager.shared.currentUserId else { return }
         
-        // Load initial state from activity
         isHeated = activity.heatedBy.contains(currentUserId)
         heatCount = activity.heatCount
         
-        // Store what we loaded
         lastSyncedHeatedBy = activity.heatedBy
         lastSyncedHeatCount = activity.heatCount
-        
-        print("📊 Loaded heat state - isHeated: \(isHeated), count: \(heatCount)")
     }
     
     private func syncFromFirestoreIfNeeded(newHeatedBy: [String], newHeatCount: Int) {
         guard let currentUserId = FirebaseManager.shared.currentUserId else { return }
         
-        // Check if Firestore data actually changed from what we last synced
-        guard newHeatedBy != lastSyncedHeatedBy || newHeatCount != lastSyncedHeatCount else {
-            print("📊 No change in Firestore data, skipping sync")
-            return
-        }
+        guard newHeatedBy != lastSyncedHeatedBy || newHeatCount != lastSyncedHeatCount else { return }
         
-        print("📊 Firestore updated - syncing: heatedBy: \(newHeatedBy.count), count: \(newHeatCount)")
-        
-        // Update our local state to match Firestore
         isHeated = newHeatedBy.contains(currentUserId)
         heatCount = newHeatCount
         
-        // Update last synced state
         lastSyncedHeatedBy = newHeatedBy
         lastSyncedHeatCount = newHeatCount
     }
     
     private func toggleHeat() {
         guard let currentUserId = FirebaseManager.shared.currentUserId else { return }
-        
-        // Prevent double-tapping
         guard !isAnimatingHeat else { return }
         
-        // Determine action
         let willBeHeated = !isHeated
-        
-        print("🔥 Toggle heat - current: \(isHeated), will be: \(willBeHeated)")
-        
-        // Optimistic UI update
         isHeated = willBeHeated
         
         if willBeHeated {
             heatCount += 1
             
-            // Animate button flame
             isAnimatingHeat = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 isAnimatingHeat = false
             }
             
-            // Show floating flame over card
             withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
                 showFloatingFlame = true
             }
-            
-            // Hide floating flame after animation
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 withAnimation(.easeOut(duration: 0.3)) {
                     showFloatingFlame = false
                 }
             }
             
-            // Update Firestore
             Task {
                 do {
                     try await FriendsService.shared.addHeat(activityId: activity.id, userId: currentUserId)
-                    print("✅ Heat added to Firestore")
                 } catch {
-                    // Revert on error
                     await MainActor.run {
                         isHeated = false
                         heatCount = max(0, heatCount - 1)
                     }
-                    print("❌ Failed to add heat: \(error)")
                 }
             }
         } else {
             heatCount = max(0, heatCount - 1)
             
-            // Update Firestore
             Task {
                 do {
                     try await FriendsService.shared.removeHeat(activityId: activity.id, userId: currentUserId)
-                    print("✅ Heat removed from Firestore")
                 } catch {
-                    // Revert on error
                     await MainActor.run {
                         isHeated = true
                         heatCount += 1
                     }
-                    print("❌ Failed to remove heat: \(error)")
                 }
             }
         }
     }
-    
-    // MARK: - Helper Methods for Specs
-    
-    // Compact stat row without background container
-    private func compactStatRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.poppins(9))
-                .foregroundStyle(.secondary)
-                .frame(width: 45, alignment: .leading)
-            
-            Text(value)
-                .font(.poppins(13))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-    }
-    
-    private func statItem(label: String, value: String, compact: Bool = false) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.poppins(compact ? 14 : 18))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            
-            Text(label)
-                .font(.poppins(9))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, compact ? 4 : 8)
-        .background(Color.white.opacity(0.15))
-        .cornerRadius(6)
-    }
-    
-    private func parseIntValue(_ string: String?) -> String {
-        guard let string = string, string != "N/A" else { return "???" }
-        let cleaned = string.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
-        return cleaned.isEmpty ? "???" : cleaned
-    }
-    
-    private func parseDoubleValue(_ string: String?) -> String {
-        guard let string = string, string != "N/A" else { return "???" }
-        let cleaned = string.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
-        return cleaned.isEmpty ? "???" : cleaned + "s"
-    }
-    
-    private func fetchSpecsIfNeeded() async {
-        guard fetchedSpecs == nil else { return }
-        
-        await MainActor.run {
-            isFetchingSpecs = true
-        }
-        
-        do {
-            // Use VehicleIDService - checks Firestore cache first!
-            // If your friend already flipped this card, specs load instantly
-            let vehicleService = VehicleIdentificationService()
-            let specs = try await vehicleService.fetchSpecs(
-                make: activity.cardMake,
-                model: activity.cardModel,
-                year: activity.cardYear
-            )
-            
-            await MainActor.run {
-                fetchedSpecs = specs
-                isFetchingSpecs = false
-            }
-            
-            print("✅ Loaded specs for \(activity.cardMake) \(activity.cardModel) from shared cache")
-        } catch {
-            print("❌ Failed to fetch specs: \(error)")
-            await MainActor.run {
-                isFetchingSpecs = false
-            }
-        }
-    }
 }
+
 
 // Friends/Following/Followers list popup
 struct FollowListPopup: View {
