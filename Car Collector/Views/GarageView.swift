@@ -450,7 +450,7 @@ struct CardContextMenuOverlay: View {
                 ZStack(alignment: cardIsOnLeft ? .leading : .trailing) {
                     // Action panel - sits behind and extends out
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(.white)
+                        .fill(Color(.systemBackground))
                         .frame(
                             width: appeared ? cardFrame.width + panelWidth : cardFrame.width,
                             height: cardFrame.height
@@ -497,7 +497,7 @@ struct CardContextMenuOverlay: View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.black)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 14)
                 .contentShape(Rectangle())
