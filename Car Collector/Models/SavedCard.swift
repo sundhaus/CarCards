@@ -80,6 +80,24 @@ struct SavedCard: Identifiable, Codable {
         originalImageData = try container.decodeIfPresent(Data.self, forKey: .originalImageData)
     }
     
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(imageData, forKey: .imageData)
+        try container.encode(make, forKey: .make)
+        try container.encode(model, forKey: .model)
+        try container.encode(color, forKey: .color)
+        try container.encode(year, forKey: .year)
+        try container.encodeIfPresent(specs, forKey: .specs)
+        try container.encodeIfPresent(capturedBy, forKey: .capturedBy)
+        try container.encodeIfPresent(capturedLocation, forKey: .capturedLocation)
+        try container.encode(previousOwners, forKey: .previousOwners)
+        try container.encodeIfPresent(customFrame, forKey: .customFrame)
+        try container.encodeIfPresent(firebaseId, forKey: .firebaseId)
+        try container.encodeIfPresent(originalImageData, forKey: .originalImageData)
+    }
+    
     var image: UIImage? {
         UIImage(data: imageData)
     }

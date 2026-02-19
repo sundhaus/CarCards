@@ -172,6 +172,9 @@ struct CustomizeCardView: View {
             if let storedOriginal = card.originalImage {
                 originalImage = storedOriginal
                 backgroundRemoved = true
+                print("🖼️ Loaded stored original image (\(card.originalImageData?.count ?? 0) bytes)")
+            } else {
+                print("🖼️ No stored original image (originalImageData is nil)")
             }
         }
         .onDisappear {
@@ -394,6 +397,7 @@ struct CustomizeCardView: View {
                     firebaseId: card.firebaseId,
                     originalImage: backgroundRemoved ? originalImage : nil
                 )
+                print("💾 Saving card - bgRemoved: \(backgroundRemoved), originalImage: \(originalImage != nil), originalImageData: \(savedCards[index].originalImageData?.count ?? 0) bytes")
             } else {
                 savedCards[index].customFrame = customFrameValue
                 // If background was restored, clear the original image data
