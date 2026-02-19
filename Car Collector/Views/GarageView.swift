@@ -339,13 +339,13 @@ struct GarageView: View {
                         let pageCards = Array(allCards[startIndex..<endIndex])
                         
                         VStack {
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 12) {
                                 ForEach(pageCards) { card in
                                     garageCardCell(card: card)
                                 }
                             }
                             .padding(.horizontal)
-                            .padding(.top, 24)
+                            .padding(.top, 20)
                             
                             Spacer()
                         }
@@ -367,6 +367,7 @@ struct GarageView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 6)
                     .glassEffect(.regular, in: .capsule)
+                    .padding(.top, 4)
                 }
             }
         }
