@@ -9,7 +9,7 @@ import SwiftUI
 
 struct SavedCard: Identifiable, Codable {
     let id: UUID
-    let imageData: Data  // Final rendered card image
+    var imageData: Data  // In-memory image data (may be empty if stored on disk)
     let make: String
     let model: String
     let color: String
@@ -64,7 +64,8 @@ struct SavedCard: Identifiable, Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         id = try container.decode(UUID.self, forKey: .id)
-        imageData = try container.decode(Data.self, forKey: .imageData)
+        // imageData may be absent when loaded from metadata-only JSON
+        imageData = try container.decodeIfPresent(Data.self, forKey: .imageData) ?? Data()
         make = try container.decode(String.self, forKey: .make)
         model = try container.decode(String.self, forKey: .model)
         color = try container.decode(String.self, forKey: .color)
@@ -84,7 +85,10 @@ struct SavedCard: Identifiable, Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         try container.encode(id, forKey: .id)
-        try container.encode(imageData, forKey: .imageData)
+        // Only encode imageData if non-empty (metadata-only saves skip it)
+        if !imageData.isEmpty {
+            try container.encode(imageData, forKey: .imageData)
+        }
         try container.encode(make, forKey: .make)
         try container.encode(model, forKey: .model)
         try container.encode(color, forKey: .color)
@@ -95,16 +99,29 @@ struct SavedCard: Identifiable, Codable {
         try container.encode(previousOwners, forKey: .previousOwners)
         try container.encodeIfPresent(customFrame, forKey: .customFrame)
         try container.encodeIfPresent(firebaseId, forKey: .firebaseId)
-        try container.encodeIfPresent(originalImageData, forKey: .originalImageData)
+        // originalImageData NOT encoded to metadata JSON - stored as separate file
     }
     
+    // MARK: - Image Access (lazy loads from disk if needed)
+    
     var image: UIImage? {
-        UIImage(data: imageData)
+        if !imageData.isEmpty {
+            return UIImage(data: imageData)
+        }
+        return CardImageStore.shared.loadVehicleImage(for: id)
     }
     
     var originalImage: UIImage? {
-        guard let data = originalImageData else { return nil }
-        return UIImage(data: data)
+        if let data = originalImageData, !data.isEmpty {
+            return UIImage(data: data)
+        }
+        return CardImageStore.shared.loadVehicleOriginal(for: id)
+    }
+    
+    /// Whether this card has an original (pre-bg-removal) image stored
+    var hasOriginalImage: Bool {
+        if let data = originalImageData, !data.isEmpty { return true }
+        return CardImageStore.shared.loadVehicleOriginal(for: id) != nil
     }
     
     // Key for spec lookup/caching

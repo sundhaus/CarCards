@@ -307,8 +307,8 @@ class CardService: ObservableObject {
         
         var synced = 0
         for card in localCards {
-            // Card has background removed (originalImageData exists) and has a firebaseId
-            guard card.originalImageData != nil,
+            // Card has background removed (original image exists) and has a firebaseId
+            guard card.hasOriginalImage,
                   let firebaseId = card.firebaseId,
                   let image = card.image else { continue }
             

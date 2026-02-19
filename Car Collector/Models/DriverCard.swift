@@ -9,7 +9,7 @@ import SwiftUI
 
 struct DriverCard: Identifiable, Codable {
     let id: UUID
-    let imageData: Data  // Final rendered card image (with signature if added)
+    var imageData: Data  // In-memory image data (may be empty if stored on disk)
     let firstName: String
     let lastName: String
     let nickname: String
@@ -46,8 +46,48 @@ struct DriverCard: Identifiable, Codable {
         self.firebaseId = firebaseId
     }
     
+    enum CodingKeys: String, CodingKey {
+        case id, imageData, firstName, lastName, nickname, vehicleName
+        case isDriverPlusVehicle, capturedBy, capturedLocation, capturedDate, firebaseId
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        imageData = try container.decodeIfPresent(Data.self, forKey: .imageData) ?? Data()
+        firstName = try container.decode(String.self, forKey: .firstName)
+        lastName = try container.decode(String.self, forKey: .lastName)
+        nickname = try container.decodeIfPresent(String.self, forKey: .nickname) ?? ""
+        vehicleName = try container.decodeIfPresent(String.self, forKey: .vehicleName) ?? ""
+        isDriverPlusVehicle = try container.decodeIfPresent(Bool.self, forKey: .isDriverPlusVehicle) ?? false
+        capturedBy = try container.decodeIfPresent(String.self, forKey: .capturedBy)
+        capturedLocation = try container.decodeIfPresent(String.self, forKey: .capturedLocation)
+        capturedDate = try container.decodeIfPresent(Date.self, forKey: .capturedDate) ?? Date()
+        firebaseId = try container.decodeIfPresent(String.self, forKey: .firebaseId)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        if !imageData.isEmpty {
+            try container.encode(imageData, forKey: .imageData)
+        }
+        try container.encode(firstName, forKey: .firstName)
+        try container.encode(lastName, forKey: .lastName)
+        try container.encode(nickname, forKey: .nickname)
+        try container.encode(vehicleName, forKey: .vehicleName)
+        try container.encode(isDriverPlusVehicle, forKey: .isDriverPlusVehicle)
+        try container.encodeIfPresent(capturedBy, forKey: .capturedBy)
+        try container.encodeIfPresent(capturedLocation, forKey: .capturedLocation)
+        try container.encode(capturedDate, forKey: .capturedDate)
+        try container.encodeIfPresent(firebaseId, forKey: .firebaseId)
+    }
+    
     var image: UIImage? {
-        UIImage(data: imageData)
+        if !imageData.isEmpty {
+            return UIImage(data: imageData)
+        }
+        return CardImageStore.shared.loadDriverImage(for: id)
     }
     
     var fullName: String {

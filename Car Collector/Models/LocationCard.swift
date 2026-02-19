@@ -9,7 +9,7 @@ import SwiftUI
 
 struct LocationCard: Identifiable, Codable {
     let id: UUID
-    let imageData: Data  // Final rendered card image
+    var imageData: Data  // In-memory image data (may be empty if stored on disk)
     let locationName: String
     let capturedBy: String?  // Username who captured the card
     let capturedLocation: String?  // City where captured (can be different from locationName)
@@ -34,7 +34,38 @@ struct LocationCard: Identifiable, Codable {
         self.firebaseId = firebaseId
     }
     
+    enum CodingKeys: String, CodingKey {
+        case id, imageData, locationName, capturedBy, capturedLocation, capturedDate, firebaseId
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        imageData = try container.decodeIfPresent(Data.self, forKey: .imageData) ?? Data()
+        locationName = try container.decode(String.self, forKey: .locationName)
+        capturedBy = try container.decodeIfPresent(String.self, forKey: .capturedBy)
+        capturedLocation = try container.decodeIfPresent(String.self, forKey: .capturedLocation)
+        capturedDate = try container.decodeIfPresent(Date.self, forKey: .capturedDate) ?? Date()
+        firebaseId = try container.decodeIfPresent(String.self, forKey: .firebaseId)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        if !imageData.isEmpty {
+            try container.encode(imageData, forKey: .imageData)
+        }
+        try container.encode(locationName, forKey: .locationName)
+        try container.encodeIfPresent(capturedBy, forKey: .capturedBy)
+        try container.encodeIfPresent(capturedLocation, forKey: .capturedLocation)
+        try container.encode(capturedDate, forKey: .capturedDate)
+        try container.encodeIfPresent(firebaseId, forKey: .firebaseId)
+    }
+    
     var image: UIImage? {
-        UIImage(data: imageData)
+        if !imageData.isEmpty {
+            return UIImage(data: imageData)
+        }
+        return CardImageStore.shared.loadLocationImage(for: id)
     }
 }

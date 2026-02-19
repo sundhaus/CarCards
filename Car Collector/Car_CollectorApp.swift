@@ -21,6 +21,8 @@ struct CarCardCollectorApp: App {
         WindowGroup {
             rootView
                 .task {
+                    // Migrate card images from UserDefaults to files (one-time)
+                    CardStorage.migrateIfNeeded()
                     await checkAuthState()
                 }
                 .onChange(of: scenePhase) { _, newPhase in

@@ -172,9 +172,9 @@ struct CustomizeCardView: View {
             if let storedOriginal = card.originalImage {
                 originalImage = storedOriginal
                 backgroundRemoved = true
-                print("🖼️ Loaded stored original image (\(card.originalImageData?.count ?? 0) bytes)")
+                print("🖼️ Loaded stored original image (from \(card.originalImageData != nil ? "memory" : "file"))")
             } else {
-                print("🖼️ No stored original image (originalImageData is nil)")
+                print("🖼️ No stored original image")
             }
         }
         .onDisappear {
