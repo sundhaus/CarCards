@@ -54,7 +54,9 @@ struct CategoryDetailView: View {
             }
         }
         .onAppear {
-            allCards = initialCards
+            // Dedup initial cards (same card can appear in multiple activity entries)
+            allCards = ExploreService.deduplicateByCardId(initialCards)
+                .sorted { $0.heatCount > $1.heatCount }
             hasMorePages = initialCards.count >= cardsPerPage
         }
     }
@@ -144,11 +146,24 @@ struct CategoryDetailView: View {
     
     // MARK: - Load Next Page
     
+    private func appendNewCards(_ newCards: [FriendActivity], lastDoc: DocumentSnapshot?) {
+        // Filter out any cards already displayed (by cardId)
+        let existingIds = Set(allCards.map { $0.cardId })
+        let unique = newCards.filter { !existingIds.contains($0.cardId) }
+        
+        if unique.isEmpty && newCards.isEmpty {
+            hasMorePages = false
+        } else {
+            allCards.append(contentsOf: unique)
+            lastDocument = lastDoc
+        }
+        isLoadingMore = false
+    }
+    
     private func loadNextPage() {
         guard !isLoadingMore else { return }
         
         isLoadingMore = true
-        print("📄 Loading next page for \(category?.rawValue ?? "Featured")")
         
         if let cat = category {
             exploreService.fetchCategoryCardsPaginated(
@@ -157,13 +172,7 @@ struct CategoryDetailView: View {
                 limit: cardsPerPage
             ) { newCards, lastDoc in
                 DispatchQueue.main.async {
-                    if newCards.isEmpty {
-                        hasMorePages = false
-                    } else {
-                        allCards.append(contentsOf: newCards)
-                        lastDocument = lastDoc
-                    }
-                    isLoadingMore = false
+                    self.appendNewCards(newCards, lastDoc: lastDoc)
                 }
             }
         } else {
@@ -172,13 +181,7 @@ struct CategoryDetailView: View {
                 limit: cardsPerPage
             ) { newCards, lastDoc in
                 DispatchQueue.main.async {
-                    if newCards.isEmpty {
-                        hasMorePages = false
-                    } else {
-                        allCards.append(contentsOf: newCards)
-                        lastDocument = lastDoc
-                    }
-                    isLoadingMore = false
+                    self.appendNewCards(newCards, lastDoc: lastDoc)
                 }
             }
         }
