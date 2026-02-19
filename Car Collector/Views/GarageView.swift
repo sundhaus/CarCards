@@ -23,6 +23,7 @@ struct GarageView: View {
     
     var body: some View {
         NavigationStack {
+            GeometryReader { screenGeo in
             ZStack {
                 VStack(spacing: 0) {
                     // Custom header with title and toggle on same line
@@ -69,7 +70,7 @@ struct GarageView: View {
                     .glassEffect(.regular, in: .rect)
                     
                     // Spacer between header and cards
-                    Spacer().frame(height: 8)
+                    Spacer().frame(height: 16)
                     
                     // Content
                     if allCards.isEmpty {
@@ -93,6 +94,7 @@ struct GarageView: View {
                     CardContextMenuOverlay(
                         card: card,
                         cardFrame: contextMenuCardFrame,
+                        screenWidth: screenGeo.size.width,
                         isShowing: $showContextMenu,
                         onCustomize: {
                             showContextMenu = false
@@ -149,6 +151,7 @@ struct GarageView: View {
                         }
                 }
             }
+            } // GeometryReader
         }
     }
     
@@ -344,7 +347,7 @@ struct GarageView: View {
                                 }
                             }
                             .padding(.horizontal)
-                            .padding(.top, 4)
+                            .padding(.top, 8)
                             
                             Spacer()
                         }
@@ -410,6 +413,7 @@ struct GarageView: View {
 struct CardContextMenuOverlay: View {
     let card: AnyCard
     let cardFrame: CGRect
+    let screenWidth: CGFloat
     @Binding var isShowing: Bool
     let onCustomize: () -> Void
     let onQuickSell: () -> Void
@@ -422,7 +426,7 @@ struct CardContextMenuOverlay: View {
     }
     
     private var cardIsOnLeft: Bool {
-        cardFrame.midX < UIScreen.main.bounds.width / 2
+        cardFrame.midX < screenWidth / 2
     }
     
     var body: some View {
