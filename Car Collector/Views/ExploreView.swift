@@ -99,7 +99,6 @@ struct ExploreView: View {
                     }
                 }
             }
-            .padding(.vertical, 16)
             .padding(.bottom, isLandscape ? 20 : 100)
         }
     }
