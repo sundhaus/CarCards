@@ -121,7 +121,6 @@ struct GarageView: View {
                 }
             }
             .background { AppBackground() }
-            .coordinateSpace(name: "garage")
             .onAppear {
                 OrientationManager.lockOrientation(.portrait)
                 loadAllCards()
@@ -381,9 +380,9 @@ struct GarageView: View {
                 GeometryReader { geo in
                     Color.clear
                         .onAppear {
-                            cardFrames[card.id] = geo.frame(in: .named("garage"))
+                            cardFrames[card.id] = geo.frame(in: .global)
                         }
-                        .onChange(of: geo.frame(in: .named("garage"))) { _, newFrame in
+                        .onChange(of: geo.frame(in: .global)) { _, newFrame in
                             cardFrames[card.id] = newFrame
                         }
                 }
@@ -422,71 +421,99 @@ struct CardContextMenuOverlay: View {
         return false
     }
     
-    // Height of the action panel
-    private var panelHeight: CGFloat {
-        isVehicle ? 100 : 52
+    // Determine if card is in the left column based on screen center
+    private var cardIsOnLeft: Bool {
+        cardFrame.midX < UIScreen.main.bounds.width / 2
+    }
+    
+    // Panel width matches card width
+    private var panelWidth: CGFloat {
+        cardFrame.width
     }
     
     var body: some View {
-        ZStack {
-            // Blurred dimmed background - tap to dismiss
-            Color.black.opacity(appeared ? 0.5 : 0)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    dismissMenu()
-                }
+        GeometryReader { geo in
+            let overlayOrigin = geo.frame(in: .global).origin
+            let adjustedX = cardFrame.minX - overlayOrigin.x
+            let adjustedY = cardFrame.minY - overlayOrigin.y
             
-            // Card + sliding panel positioned at original card location
-            VStack(spacing: 0) {
-                // White panel slides out from behind the card
-                VStack(spacing: 0) {
-                    if isVehicle {
-                        actionRow(label: "Customize", action: onCustomize)
-                        
-                        Divider()
-                            .padding(.horizontal, 12)
+            ZStack(alignment: .topLeading) {
+                // Dimmed background - tap to dismiss
+                Color.black.opacity(appeared ? 0.5 : 0)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        dismissMenu()
                     }
-                    
-                    actionRow(label: "Quick Sell", action: onQuickSell)
+                
+                // Card + panel as one unit
+                HStack(spacing: 0) {
+                    if !cardIsOnLeft {
+                        // Card is on right → panel slides out to the left
+                        panelView(extendsRight: false)
+                            .frame(width: appeared ? panelWidth : 0)
+                            .clipped()
+                        
+                        cardView
+                    } else {
+                        // Card is on left → panel slides out to the right
+                        cardView
+                        
+                        panelView(extendsRight: true)
+                            .frame(width: appeared ? panelWidth : 0)
+                            .clipped()
+                    }
                 }
-                .frame(width: cardFrame.width)
-                .frame(height: appeared ? nil : 0, alignment: .top)
-                .clipped()
-                .background(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 0,
-                        bottomLeadingRadius: 12,
-                        bottomTrailingRadius: 12,
-                        topTrailingRadius: 0
-                    )
-                    .fill(.white)
-                )
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 0,
-                        bottomLeadingRadius: 12,
-                        bottomTrailingRadius: 12,
-                        topTrailingRadius: 0
-                    )
+                .offset(
+                    x: cardIsOnLeft ? adjustedX : (appeared ? adjustedX - panelWidth : adjustedX),
+                    y: adjustedY
                 )
             }
-            // Position so top edge overlaps card bottom by a few points
-            .position(
-                x: cardFrame.midX,
-                y: cardFrame.maxY - 4 + (appeared ? panelHeight / 2 : 0)
-            )
-            
-            // Card rendered on top at its exact position
-            UnifiedCardView(card: card, isLargeSize: false)
-                .frame(width: cardFrame.width, height: cardFrame.height)
-                .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
-                .position(x: cardFrame.midX, y: cardFrame.midY)
         }
         .onAppear {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 appeared = true
             }
         }
+    }
+    
+    private var cardView: some View {
+        UnifiedCardView(card: card, isLargeSize: false)
+            .frame(width: cardFrame.width, height: cardFrame.height)
+            .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
+    }
+    
+    private func panelView(extendsRight: Bool) -> some View {
+        let corners: UnevenRoundedRectangle = extendsRight ?
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 12,
+                topTrailingRadius: 12
+            ) :
+            UnevenRoundedRectangle(
+                topLeadingRadius: 12,
+                bottomLeadingRadius: 12,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 0
+            )
+        
+        return VStack(spacing: 0) {
+            Spacer()
+            
+            if isVehicle {
+                actionRow(label: "Customize", action: onCustomize)
+                
+                Divider()
+                    .padding(.horizontal, 12)
+            }
+            
+            actionRow(label: "Quick Sell", action: onQuickSell)
+            
+            Spacer()
+        }
+        .frame(height: cardFrame.height)
+        .background(corners.fill(.white))
+        .clipShape(corners)
     }
     
     private func actionRow(label: String, action: @escaping () -> Void) -> some View {
