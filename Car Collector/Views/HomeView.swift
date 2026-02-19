@@ -73,7 +73,7 @@ struct HomeView: View {
                 Spacer()
             }
             .background {
-                AppBackground()
+                AppBackground(showFloatingShapes: true)
             }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
