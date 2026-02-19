@@ -8,9 +8,8 @@
 import UIKit
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-    // Only allow portrait and landscape-right (home button on left, notch/island on right)
-    // Explicitly exclude landscape-left
-    static var orientationLock: UIInterfaceOrientationMask = [.portrait, .landscapeRight]
+    // Portrait only - no landscape allowed
+    static var orientationLock: UIInterfaceOrientationMask = .portrait
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         // ✅ Configure Firebase FIRST - before any Firebase services are accessed
@@ -30,30 +29,21 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
-        return AppDelegate.orientationLock
+        return .portrait
     }
 }
 
-// Orientation lock helper
+// Orientation lock helper (portrait-only, kept for API compatibility)
 struct OrientationManager {
     static func lockOrientation(_ orientation: UIInterfaceOrientationMask, rotate: Bool = false) {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            AppDelegate.orientationLock = orientation
-            windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientation))
-            
-            // Optionally force rotation to portrait
-            if rotate && orientation == .portrait {
-                UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
-            }
-        }
+        // Always portrait - ignore orientation parameter
     }
     
     static func lockToPortrait() {
-        lockOrientation(.portrait, rotate: true)
+        // Already portrait-only via AppDelegate
     }
     
     static func unlockOrientation() {
-        // Only unlock to portrait and landscape-right (excludes landscape-left)
-        lockOrientation([.portrait, .landscapeRight])
+        // No-op - portrait only
     }
 }
