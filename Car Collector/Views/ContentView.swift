@@ -19,6 +19,7 @@ struct ContentView: View {
     
     // Track which tabs have been visited (for lazy loading)
     @State private var visitedTabs: Set<Int> = [1] // Home is pre-loaded
+    @ObservedObject private var navigationController = NavigationController.shared
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -198,6 +199,8 @@ struct ContentView: View {
             if !visitedTabs.contains(newValue) {
                 visitedTabs.insert(newValue)
             }
+            // Always reset to root when switching tabs
+            navigationController.resetToRoot(tab: newValue)
         }
         .onAppear {
             OrientationManager.lockToPortrait()

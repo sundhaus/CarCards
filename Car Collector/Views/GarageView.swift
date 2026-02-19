@@ -20,9 +20,10 @@ struct GarageView: View {
     @State private var contextMenuCard: AnyCard?
     @State private var contextMenuCardFrame: CGRect = .zero
     @State private var cardFrames: [UUID: CGRect] = [:]
+    @ObservedObject private var navigationController = NavigationController.shared
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationController.garageNavigationPath) {
             GeometryReader { screenGeo in
             ZStack {
                 VStack(spacing: 0) {

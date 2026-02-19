@@ -2,7 +2,7 @@
 //  NavigationController.swift
 //  CarCardCollector
 //
-//  Manages navigation state across tabs - allows hub buttons to reset to front page
+//  Manages navigation state across tabs - resets to root on tab switch
 //
 
 import SwiftUI
@@ -16,32 +16,26 @@ class NavigationController: ObservableObject {
     @Published var marketplaceNavigationPath = NavigationPath()
     @Published var shopNavigationPath = NavigationPath()
     
-    // Triggers to signal pop to root
-    @Published var popToRootTrigger: Int = 0
-    
     private init() {}
     
-    // Call this when a hub button is tapped - ALWAYS resets to root
+    /// Reset navigation for a specific tab (matches ContentView tab values)
+    /// 0=Shop, 1=Home, 2=Capture, 3=Market, 4=Garage
     func resetToRoot(tab: Int) {
-        // Always clear the navigation path for the tapped tab
         switch tab {
-        case 0:
-            homeNavigationPath = NavigationPath()
-        case 1:
-            garageNavigationPath = NavigationPath()
-        case 2:
-            marketplaceNavigationPath = NavigationPath()
-        case 3:
-            shopNavigationPath = NavigationPath()
-        default:
-            break
+        case 0: shopNavigationPath = NavigationPath()
+        case 1: homeNavigationPath = NavigationPath()
+        case 3: marketplaceNavigationPath = NavigationPath()
+        case 4: garageNavigationPath = NavigationPath()
+        default: break  // Capture (2) has no persistent nav stack
         }
-        
+        // Also triggers boolean-based navigation resets in views
         popToRootTrigger += 1
-        print("🔄 Reset navigation for tab \(tab)")
     }
     
-    // Reset all navigation paths (useful for logout/reset)
+    // Incremented to signal views to dismiss boolean-based navigation
+    @Published var popToRootTrigger: Int = 0
+    
+    /// Reset all navigation paths
     func resetAll() {
         homeNavigationPath = NavigationPath()
         garageNavigationPath = NavigationPath()
