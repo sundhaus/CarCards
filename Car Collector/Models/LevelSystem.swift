@@ -94,19 +94,16 @@ class LevelSystem: ObservableObject {
     
     static func calculateXPForLevel(_ level: Int) -> Int {
         if level <= 1 { return 0 }
-        if level == 2 { return 1000 } // Level 1→2 needs 1000 XP
         
-        // For level 3+, calculate based on previous levels
-        var xpNeeded = 1000 // XP needed for level 2
-        
-        // Calculate XP requirements for each level
-        for targetLevel in 3...level {
-            let tier = (targetLevel - 2) / 5
-            let constantBonus = 1000 + (tier * 500)
-            xpNeeded = Int(Double(xpNeeded) * 1.2) + constantBonus
-        }
-        
-        return xpNeeded
+        // Steam-like tiered linear growth:
+        // Every 10 levels, the XP requirement per level increases by 100
+        // Tier 0 (levels 1-9):   100 XP each
+        // Tier 1 (levels 10-19): 200 XP each
+        // Tier 2 (levels 20-29): 300 XP each
+        // ...
+        // Level 109→110: 1,200 XP
+        let tier = (level - 1) / 10  // 0-based tier
+        return (tier + 1) * 100
     }
     
     func addXP(_ amount: Int) {

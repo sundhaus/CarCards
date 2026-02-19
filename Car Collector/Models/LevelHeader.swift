@@ -317,10 +317,16 @@ struct LevelHeader: View {
             }
             .frame(width: size, height: size)
             
-            // Level number
+            // Level number — offset for triangle shapes so it sits at centroid
+            let adjustedLevel = ((levelSystem.level - 1) % 100) + 1
+            let isTriangleUp = (11...20).contains(adjustedLevel)
+            let isTriangleDown = (61...70).contains(adjustedLevel)
+            let triangleOffset: CGFloat = isTriangleUp ? size * 0.12 : (isTriangleDown ? -size * 0.12 : 0)
+            
             Text("\(levelSystem.level)")
                 .font(.poppins(size * 0.4))
                 .foregroundStyle(.white)
+                .offset(y: triangleOffset)
         }
     }
     
