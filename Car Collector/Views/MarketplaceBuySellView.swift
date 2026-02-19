@@ -113,7 +113,7 @@ struct MarketplaceBuySellView: View {
         ZStack {
             // Dark blue background
             Color.appBackgroundSolid
-                .ignoresSafeArea(edges: .all)
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Glass segmented tabs
@@ -153,13 +153,12 @@ struct MarketplaceBuySellView: View {
                     sellFiltersView
                 }
                 
-                // Tab Content — fills remaining space
+                // Tab Content — ScrollView fills remaining space
                 if selectedMarketTab == 0 {
                     BuyView(
                         activeListings: filteredListings,
                         hasUnfilteredListings: !marketplaceService.activeListings.isEmpty
                     )
-                    .frame(maxHeight: .infinity)
                 } else {
                     SellView(
                         savedCards: filteredCards,
@@ -170,11 +169,8 @@ struct MarketplaceBuySellView: View {
                             selectedCard = card
                         }
                     )
-                    .frame(maxHeight: .infinity)
                 }
             }
-            .padding(.bottom, isLandscape ? 0 : 80)
-            .padding(.trailing, isLandscape ? 100 : 0)
         }
         .onAppear {
             marketplaceService.listenToActiveListings()
@@ -405,6 +401,7 @@ struct BuyView: View {
                     }
                 }
                 .padding()
+                .padding(.bottom, 80)
             }
         }
     }
@@ -447,6 +444,7 @@ struct SellView: View {
                     }
                 }
                 .padding()
+                .padding(.bottom, 80)
             }
         }
     }
@@ -458,37 +456,49 @@ struct ListingCardRow: View {
     let listing: CloudListing
     
     var body: some View {
-        VStack(spacing: 8) {
-            // FIFA-style card
-            MarketplaceFIFACard(listing: listing)
-            
-            HStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Current Bid")
-                        .font(.pCaption)
-                        .foregroundStyle(.secondary)
-                    Text("$\(Int(listing.currentBid))")
-                        .font(.pTitle3)
-                        .fontWeight(.bold)
-                }
-                
+        ZStack(alignment: .bottom) {
+            // Info bar background — only visible below the card
+            VStack {
                 Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Buy Now")
-                        .font(.pCaption)
-                        .foregroundStyle(.secondary)
-                    Text("$\(Int(listing.buyNowPrice))")
-                        .font(.pTitle3)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.green)
+                HStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Current Bid")
+                            .font(.pCaption)
+                            .foregroundStyle(.secondary)
+                        Text("$\(Int(listing.currentBid))")
+                            .font(.pTitle3)
+                            .fontWeight(.bold)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("Buy Now")
+                            .font(.pCaption)
+                            .foregroundStyle(.secondary)
+                        Text("$\(Int(listing.buyNowPrice))")
+                            .font(.pTitle3)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.green)
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 12)
             }
-            .padding(.horizontal)
+            .background(Color.white.opacity(0.08))
+            .cornerRadius(12)
+            
+            // Card sits on top
+            VStack(spacing: 0) {
+                MarketplaceFIFACard(listing: listing)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 4)
+                
+                Color.clear
+                    .frame(height: 56)
+            }
         }
-        .padding(.vertical, 8)
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(12)
     }
 }
 
@@ -498,27 +508,40 @@ struct GarageCardRow: View {
     let card: SavedCard
     
     var body: some View {
-        VStack(spacing: 8) {
-            // FIFA-style card
-            SellTabCardView(card: card)
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("\(card.make.uppercased()) \(card.model.uppercased())")
-                        .font(.custom("Futura-Bold", size: 17))
-                    Text(card.year)
-                        .font(.pCaption)
+        ZStack(alignment: .bottom) {
+            // Info bar background — only visible below the card
+            VStack {
+                Spacer()
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(card.make.uppercased()) \(card.model.uppercased())")
+                            .font(.custom("Futura-Bold", size: 17))
+                        Text(card.year)
+                            .font(.pCaption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 12)
             }
-            .padding(.horizontal)
+            .background(Color.white.opacity(0.08))
+            .cornerRadius(12)
+            
+            // Card sits on top, overlapping the info bar
+            VStack(spacing: 0) {
+                SellTabCardView(card: card)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 4)
+                
+                // Spacer for the info bar height
+                Color.clear
+                    .frame(height: 52)
+            }
         }
-        .padding(.vertical, 8)
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(12)
     }
 }
 
