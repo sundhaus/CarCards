@@ -96,7 +96,7 @@ struct DriverCaptureFlow: View {
             ScrollView {
                 VStack(spacing: 16) {
                     NavigationButton(
-                        title: "Driver",
+                        title: "DRIVER",
                         subtitle: "Capture driver portrait",
                         icon: "person.fill",
                         gradient: [Color.purple, Color.pink],

@@ -38,7 +38,7 @@ struct MarketplaceLandingView: View {
                         VStack(spacing: 16) {
                             // Buy & Sell Card
                             NavigationButton(
-                                title: "Buy & Sell",
+                                title: "BUY & SELL",
                                 subtitle: "Browse marketplace listings",
                                 icon: "cart.fill",
                                 gradient: [Color.blue, Color.purple],
@@ -49,7 +49,7 @@ struct MarketplaceLandingView: View {
                             
                             // Transfer List
                             NavigationButton(
-                                title: "Transfer List",
+                                title: "TRANSFER LIST",
                                 subtitle: "Cards you've listed for sale",
                                 icon: "list.bullet.rectangle",
                                 gradient: [Color.orange, Color.red],
@@ -60,7 +60,7 @@ struct MarketplaceLandingView: View {
                             
                             // Transfer Targets
                             NavigationButton(
-                                title: "Transfer Targets",
+                                title: "TRANSFER TARGETS",
                                 subtitle: "Cards you're bidding on",
                                 icon: "target",
                                 gradient: [Color.green, Color.teal],

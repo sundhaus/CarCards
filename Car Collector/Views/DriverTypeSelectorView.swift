@@ -30,7 +30,7 @@ struct DriverTypeSelectorView: View {
                     HStack {
                         Image(systemName: "person.fill")
                             .font(.pTitle2)
-                        Text("Driver")
+                        Text("DRIVER")
                             .font(.poppins(18))
                         Spacer()
                         Image(systemName: "chevron.right")
@@ -53,7 +53,7 @@ struct DriverTypeSelectorView: View {
                     HStack {
                         Image(systemName: "person.and.background.dotted")
                             .font(.pTitle2)
-                        Text("Driver + Vehicle")
+                        Text("DRIVER + VEHICLE")
                             .font(.poppins(18))
                         Spacer()
                         Image(systemName: "chevron.right")

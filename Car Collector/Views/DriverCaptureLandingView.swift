@@ -42,7 +42,7 @@ struct DriverCaptureLandingView: View {
                         VStack(spacing: 16) {
                             // Driver Only
                             NavigationButton(
-                                title: "Driver",
+                                title: "DRIVER",
                                 subtitle: "Capture driver portrait",
                                 icon: "person.fill",
                                 gradient: [Color.purple, Color.pink],

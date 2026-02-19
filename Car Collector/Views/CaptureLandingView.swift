@@ -51,7 +51,7 @@ struct CaptureLandingView: View {
                         VStack(spacing: 16) {
                             // Vehicle Capture
                             NavigationButton(
-                                title: "Vehicle",
+                                title: "VEHICLE",
                                 subtitle: "Capture a car in the wild",
                                 icon: "car.fill",
                                 gradient: [Color.blue, Color.cyan],
@@ -63,7 +63,7 @@ struct CaptureLandingView: View {
                             
                             // Driver Capture
                             NavigationButton(
-                                title: "Driver",
+                                title: "DRIVER",
                                 subtitle: "Capture a driver portrait",
                                 icon: "person.fill",
                                 gradient: [Color.purple, Color.pink],
@@ -74,7 +74,7 @@ struct CaptureLandingView: View {
                             
                             // Location Capture
                             NavigationButton(
-                                title: "Location",
+                                title: "LOCATION",
                                 subtitle: "Capture a special location",
                                 icon: "mappin.circle.fill",
                                 gradient: [Color.green, Color.teal],

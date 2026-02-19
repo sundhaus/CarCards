@@ -28,7 +28,7 @@ struct HomeView: View {
                 HStack(spacing: 16) {
                     // Leaderboard
                     HomeContainer(
-                        title: "Leaderboard",
+                        title: "LEADERBOARD",
                         icon: "chart.bar.fill",
                         gradient: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
                         action: { showLeaderboard = true }
@@ -36,7 +36,7 @@ struct HomeView: View {
                     
                     // Friends
                     HomeContainer(
-                        title: "Friends",
+                        title: "FRIENDS",
                         icon: "person.2.fill",
                         gradient: friendsService.newFollowersCount > 0 ? [Color.green, Color.teal] : [Color.blue, Color.cyan],
                         action: { showFriends = true }
@@ -52,7 +52,7 @@ struct HomeView: View {
                 HStack(spacing: 16) {
                     // Sets (Coming Soon)
                     HomeContainer(
-                        title: "Sets",
+                        title: "SETS",
                         icon: "square.stack.3d.up.fill",
                         gradient: [Color.purple, Color.pink],
                         action: {},
@@ -62,7 +62,7 @@ struct HomeView: View {
                     
                     // Transfer List
                     HomeContainer(
-                        title: "Transfer List",
+                        title: "TRANSFER LIST",
                         icon: "doc.text.fill",
                         gradient: [Color.orange, Color.red],
                         action: { showTransferList = true }

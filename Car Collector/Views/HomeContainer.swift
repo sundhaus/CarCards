@@ -64,14 +64,14 @@ struct HomeContainer: View {
         
         HStack(spacing: 16) {
             HomeContainer(
-                title: "Leaderboard",
+                title: "LEADERBOARD",
                 icon: "chart.bar.fill",
                 gradient: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
                 action: {}
             )
             
             HomeContainer(
-                title: "Friends",
+                title: "FRIENDS",
                 icon: "person.2.fill",
                 gradient: [Color.blue, Color.cyan],
                 action: {}

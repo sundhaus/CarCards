@@ -51,10 +51,10 @@ struct UserProfileView: View {
         
         var buttonText: String {
             switch self {
-            case .notFollowing: return "Follow"
-            case .followBack: return "Follow Back"
-            case .following: return "Following"
-            case .friends: return "Friends"
+            case .notFollowing: return "FOLLOW"
+            case .followBack: return "FOLLOW BACK"
+            case .following: return "FOLLOWING"
+            case .friends: return "FRIENDS"
             }
         }
         

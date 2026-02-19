@@ -334,9 +334,9 @@ struct FollowListPopup: View {
     @State private var selectedTab: FollowTab = .friends
     
     enum FollowTab: String, CaseIterable {
-        case friends = "Friends"
-        case following = "Following"
-        case followers = "Followers"
+        case friends = "FRIENDS"
+        case following = "FOLLOWING"
+        case followers = "FOLLOWERS"
     }
     
     var body: some View {
@@ -932,7 +932,7 @@ struct SearchResultRow: View {
             // Follow/Following button
             if user.isFollowing {
                 Button(action: onUnfollow) {
-                    Text("Following")
+                    Text("FOLLOWING")
                         .font(.pCaption)
                         .fontWeight(.medium)
                         .foregroundStyle(.primary)
