@@ -19,7 +19,7 @@ struct GarageView: View {
     @State private var showContextMenu = false
     @State private var contextMenuCard: AnyCard?
     @State private var contextMenuCardFrame: CGRect = .zero
-    @State private var cardFrames: [String: CGRect] = [:]
+    @State private var cardFrames: [UUID: CGRect] = [:]
     
     var body: some View {
         NavigationStack {
