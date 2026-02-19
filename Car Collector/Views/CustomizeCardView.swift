@@ -19,6 +19,9 @@ struct CustomizeCardView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedFrame: CardFrame = .white
     @State private var selectedTab = 0 // 0: Border, 1: Stickers, 2: Effects
+    @State private var displayImage: UIImage?
+    @State private var isRemovingBackground = false
+    @State private var backgroundRemoved = false
     
     var body: some View {
         ZStack {
@@ -61,7 +64,7 @@ struct CustomizeCardView: View {
                 // Card preview centered
                 ZStack {
                     // Card image
-                    if let image = card.image {
+                    if let image = displayImage ?? card.image {
                         Image(uiImage: image)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -139,7 +142,7 @@ struct CustomizeCardView: View {
                         } else if selectedTab == 1 {
                             placeholderTabContent(title: "Stickers", icon: "photo.on.rectangle.angled")
                         } else {
-                            placeholderTabContent(title: "Effects", icon: "sparkles")
+                            effectsTabContent
                         }
                     }
                     .frame(height: 200)
@@ -265,6 +268,108 @@ struct CustomizeCardView: View {
             Text("Coming Soon")
                 .font(.pCaption)
                 .foregroundStyle(.tertiary)
+        }
+    }
+    
+    // MARK: - Effects Tab Content
+    
+    private var effectsTabContent: some View {
+        VStack(spacing: 16) {
+            Text("Effects")
+                .font(.pHeadline)
+                .foregroundStyle(.primary)
+                .padding(.top, 20)
+            
+            Button(action: removeBackground) {
+                HStack(spacing: 10) {
+                    if isRemovingBackground {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: backgroundRemoved ? "checkmark.circle.fill" : "scissors")
+                            .font(.pSubheadline)
+                    }
+                    Text(backgroundRemoved ? "Background Removed" : "Remove Background")
+                        .font(.pSubheadline)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(backgroundRemoved ? Color.green : Color.blue)
+                .cornerRadius(12)
+            }
+            .disabled(isRemovingBackground || backgroundRemoved)
+            .padding(.horizontal, 30)
+            
+            if backgroundRemoved {
+                Button(action: restoreBackground) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.pCaption)
+                        Text("Restore Original")
+                            .font(.pCaption)
+                    }
+                    .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+            
+            Spacer()
+        }
+    }
+    
+    private func removeBackground() {
+        isRemovingBackground = true
+        
+        guard let sourceImage = card.image else {
+            isRemovingBackground = false
+            return
+        }
+        
+        SubjectLifter.liftSubject(from: sourceImage) { result in
+            DispatchQueue.main.async {
+                isRemovingBackground = false
+                
+                switch result {
+                case .success(let processedImage):
+                    displayImage = processedImage
+                    backgroundRemoved = true
+                    saveImageToCard(processedImage)
+                case .failure(let error):
+                    print("❌ Background removal failed: \(error)")
+                }
+            }
+        }
+    }
+    
+    private func restoreBackground() {
+        displayImage = nil
+        backgroundRemoved = false
+        
+        // Restore original image in storage
+        if let originalImage = card.image {
+            saveImageToCard(originalImage)
+        }
+    }
+    
+    private func saveImageToCard(_ image: UIImage) {
+        var savedCards = CardStorage.loadCards()
+        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+            savedCards[index] = SavedCard(
+                id: card.id,
+                image: image,
+                make: card.make,
+                model: card.model,
+                color: card.color,
+                year: card.year,
+                specs: card.specs,
+                capturedBy: card.capturedBy,
+                capturedLocation: card.capturedLocation,
+                previousOwners: card.previousOwners,
+                customFrame: card.customFrame,
+                firebaseId: card.firebaseId
+            )
+            CardStorage.saveCards(savedCards)
+            print("💾 Saved updated card image")
         }
     }
     

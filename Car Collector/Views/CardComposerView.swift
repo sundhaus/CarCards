@@ -163,22 +163,6 @@ struct CardComposerView: View {
                 
                 Spacer()
                 
-                // Remove background button
-                Button(action: removeBackground) {
-                    HStack {
-                        Image(systemName: "scissors")
-                        Text("Remove Background")
-                    }
-                    .font(.pSubheadline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(.blue)
-                    .cornerRadius(20)
-                }
-                .disabled(isProcessing)
-                .padding(.bottom, 10)
-                
                 // Action buttons
                 HStack(spacing: 20) {
                     Button(action: onRetake) {
@@ -406,24 +390,6 @@ struct CardComposerView: View {
             
             // Restore the context state
             cgContext.restoreGState()
-        }
-    }
-    
-    private func removeBackground() {
-        isProcessing = true
-        
-        SubjectLifter.liftSubject(from: image) { result in
-            DispatchQueue.main.async {
-                isProcessing = false
-                
-                switch result {
-                case .success(let processedImage):
-                    displayImage = processedImage
-                case .failure(let error):
-                    print("Background removal failed: \(error)")
-                    // Keep original image if it fails
-                }
-            }
         }
     }
     
