@@ -38,18 +38,14 @@ struct TransferTargetsView: View {
                             .foregroundStyle(.primary)
                     }
                     
-                    Spacer()
-                    
-                    Text("Transfer Targets")
-                        .font(.title3)
+                    Text("TRANSFER TARGETS")
+                        .font(.title2)
                         .fontWeight(.bold)
+                        .foregroundStyle(.primary)
                     
                     Spacer()
-                    
-                    Color.clear
-                        .frame(width: 30)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal)
                 .padding(.vertical, 10)
                 .glassEffect(.regular, in: .rect)
                 

@@ -56,11 +56,10 @@ struct FriendsView: View {
                                 .foregroundStyle(.primary)
                         }
                         
-                        Spacer()
-                        
-                        Text("Friends")
-                            .font(.title3)
+                        Text("FRIENDS")
+                            .font(.title2)
                             .fontWeight(.bold)
+                            .foregroundStyle(.primary)
                         
                         Spacer()
                         
@@ -90,7 +89,7 @@ struct FriendsView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal)
                     .padding(.vertical, 10)
                     .glassEffect(.regular, in: .rect)
                     

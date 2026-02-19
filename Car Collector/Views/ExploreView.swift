@@ -47,25 +47,18 @@ struct ExploreView: View {
     
     private var header: some View {
         HStack {
-            // Back button
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
                     .font(.title3)
                     .foregroundStyle(.primary)
             }
             
-            Spacer()
-            
-            Text("Explore")
-                .font(.title3)
+            Text("EXPLORE")
+                .font(.title2)
                 .fontWeight(.bold)
+                .foregroundStyle(.primary)
             
             Spacer()
-            
-            // Invisible spacer for centering
-            Image(systemName: "chevron.left")
-                .font(.title3)
-                .opacity(0)
         }
         .padding(.horizontal)
         .padding(.vertical, 10)

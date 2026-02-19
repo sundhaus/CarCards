@@ -36,18 +36,14 @@ struct TransferListView: View {
                             .foregroundStyle(.primary)
                     }
                     
-                    Spacer()
-                    
-                    Text("Transfer List")
-                        .font(.title3)
+                    Text("TRANSFER LIST")
+                        .font(.title2)
                         .fontWeight(.bold)
+                        .foregroundStyle(.primary)
                     
                     Spacer()
-                    
-                    Color.clear
-                        .frame(width: 30)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal)
                 .padding(.vertical, 10)
                 .glassEffect(.regular, in: .rect)
                 

@@ -114,19 +114,14 @@ struct UserProfileView: View {
                             .foregroundStyle(.primary)
                     }
                     
-                    Spacer()
-                    
-                    Text("Profile")
-                        .font(.title3)
+                    Text("PROFILE")
+                        .font(.title2)
                         .fontWeight(.bold)
+                        .foregroundStyle(.primary)
                     
                     Spacer()
-                    
-                    // Placeholder for symmetry
-                    Color.clear
-                        .frame(width: 30)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal)
                 .padding(.vertical, 10)
                 .glassEffect(.regular, in: .rect)
                 
