@@ -3,7 +3,7 @@
 //  CarCardCollector
 //
 //  Full-page view for browsing all cards in a specific category
-//  Shows 10 cards per page, loads more on next page
+//  Scrollable grid with load-more pagination
 //
 
 import SwiftUI
@@ -16,7 +16,6 @@ struct CategoryDetailView: View {
     @StateObject private var exploreService = ExploreService()
     @Environment(\.dismiss) private var dismiss
     @State private var allCards: [FriendActivity] = []
-    @State private var currentPage = 0
     @State private var lastDocument: DocumentSnapshot?
     @State private var isLoadingMore = false
     @State private var hasMorePages = true
@@ -31,14 +30,14 @@ struct CategoryDetailView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Glass header with padding
+                // Glass header
                 header
                 
-                // Paginated card grid
+                // Scrollable card grid
                 if allCards.isEmpty {
                     emptyView
                 } else {
-                    cardPagesView
+                    cardGridView
                 }
             }
         }
@@ -55,11 +54,7 @@ struct CategoryDetailView: View {
             }
         }
         .onAppear {
-            // Start with preloaded cards from Explore
             allCards = initialCards
-            currentPage = 0
-            
-            // If we have exactly 10 cards, there might be more
             hasMorePages = initialCards.count >= cardsPerPage
         }
     }
@@ -75,111 +70,84 @@ struct CategoryDetailView: View {
     }
     
     private var header: some View {
-        ZStack {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .top)
+        HStack(spacing: 12) {
+            // Back button
+            Button(action: { dismiss() }) {
+                Image(systemName: "chevron.left")
+                    .font(.pTitle3)
+                    .foregroundStyle(.primary)
+            }
             
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                
-                HStack(spacing: 12) {
-                    // Back button
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.pBody)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                    }
-                    
-                    Spacer()
-                    
-                    // Title
-                    VStack(spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(categoryEmoji)
-                                .font(.pBody)
-                            Text(categoryTitle)
-                                .font(.pBody)
-                                .fontWeight(.bold)
-                        }
-                        
-                        Text("\(allCards.count) cards")
-                            .font(.pCaption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    // Grid toggle
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isDoubleColumn.toggle()
-                        }
-                    }) {
-                        Image(systemName: isDoubleColumn ? "square.grid.2x2" : "rectangle.grid.1x2")
-                            .font(.pBody)
-                            .foregroundStyle(.primary)
-                    }
+            // Title
+            VStack(spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(categoryEmoji)
+                        .font(.pBody)
+                    Text(categoryTitle)
+                        .font(.pBody)
+                        .fontWeight(.bold)
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 10)
+                
+                Text("\(allCards.count) cards")
+                    .font(.pCaption2)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            // Grid toggle
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isDoubleColumn.toggle()
+                }
+            }) {
+                Image(systemName: isDoubleColumn ? "square.grid.2x2" : "rectangle.grid.1x2")
+                    .font(.pTitle3)
+                    .foregroundStyle(.primary)
             }
         }
-        .frame(height: 52)
+        .padding(.horizontal)
+        .padding(.top, 18)
+        .padding(.bottom, 10)
         .glassEffect(.regular, in: .rect)
     }
     
-    // MARK: - Card Pages View
+    // MARK: - Card Grid View (continuous scroll with load-more)
     
-    private var cardPagesView: some View {
-        TabView(selection: $currentPage) {
-            ForEach(0..<totalPages, id: \.self) { pageIndex in
-                let startIndex = pageIndex * cardsPerPage
-                let endIndex = min(startIndex + cardsPerPage, allCards.count)
-                let pageCards = Array(allCards[startIndex..<endIndex])
-                
-                ScrollView(.vertical, showsIndicators: true) {
-                    if isDoubleColumn {
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 16) {
-                            ForEach(pageCards) { card in
-                                CategoryCardItem(card: card)
-                                    .onTapGesture {
-                                        fullScreenActivity = card
-                                    }
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
-                        .padding(.bottom, 100)
-                    } else {
-                        LazyVGrid(columns: [GridItem(.flexible())], spacing: 16) {
-                            ForEach(pageCards) { card in
-                                CategoryCardItem(card: card)
-                                    .onTapGesture {
-                                        fullScreenActivity = card
-                                    }
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
-                        .padding(.bottom, 100)
-                    }
-                }
-                .tag(pageIndex)
-            }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .onChange(of: currentPage) { oldValue, newValue in
-            // If we're on the last page and have more to load
-            if newValue == totalPages - 1 && hasMorePages && !isLoadingMore {
-                loadNextPage()
-            }
+    private var gridColumns: [GridItem] {
+        if isDoubleColumn {
+            return [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+        } else {
+            return [GridItem(.flexible())]
         }
     }
     
-    private var totalPages: Int {
-        Int(ceil(Double(allCards.count) / Double(cardsPerPage)))
+    private var cardGridView: some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            LazyVGrid(columns: gridColumns, spacing: 16) {
+                ForEach(allCards) { card in
+                    CategoryCardItem(card: card)
+                        .onTapGesture {
+                            fullScreenActivity = card
+                        }
+                        .onAppear {
+                            // Load more when last few cards appear
+                            if card.id == allCards.last?.id && hasMorePages && !isLoadingMore {
+                                loadNextPage()
+                            }
+                        }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 100)
+            
+            if isLoadingMore {
+                ProgressView()
+                    .tint(.white)
+                    .padding(.bottom, 100)
+            }
+        }
     }
     
     // MARK: - Load Next Page
@@ -191,7 +159,6 @@ struct CategoryDetailView: View {
         print("📄 Loading next page for \(category?.rawValue ?? "Featured")")
         
         if let cat = category {
-            // Load category cards
             exploreService.fetchCategoryCardsPaginated(
                 category: cat,
                 startAfter: lastDocument,
@@ -200,17 +167,14 @@ struct CategoryDetailView: View {
                 DispatchQueue.main.async {
                     if newCards.isEmpty {
                         hasMorePages = false
-                        print("✅ No more pages for \(cat.rawValue)")
                     } else {
                         allCards.append(contentsOf: newCards)
                         lastDocument = lastDoc
-                        print("✅ Loaded \(newCards.count) more cards for \(cat.rawValue)")
                     }
                     isLoadingMore = false
                 }
             }
         } else {
-            // Load featured cards
             exploreService.fetchFeaturedCardsPaginated(
                 startAfter: lastDocument,
                 limit: cardsPerPage
@@ -218,11 +182,9 @@ struct CategoryDetailView: View {
                 DispatchQueue.main.async {
                     if newCards.isEmpty {
                         hasMorePages = false
-                        print("✅ No more featured pages")
                     } else {
                         allCards.append(contentsOf: newCards)
                         lastDocument = lastDoc
-                        print("✅ Loaded \(newCards.count) more featured cards")
                     }
                     isLoadingMore = false
                 }
@@ -253,7 +215,7 @@ struct CategoryCardItem: View {
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let height = width * (9.0 / 16.0)  // Maintain 16:9 aspect ratio
+            let height = width * (9.0 / 16.0)
             
             FIFACardView(card: card, height: height)
                 .frame(width: width, height: height)
