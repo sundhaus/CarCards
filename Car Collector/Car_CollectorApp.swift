@@ -15,12 +15,18 @@ struct CarCardCollectorApp: App {
     @StateObject private var firebaseManager = FirebaseManager.shared
     @State private var showOnboarding = false
     @State private var isReady = false
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some Scene {
         WindowGroup {
             rootView
                 .task {
                     await checkAuthState()
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active {
+                        OrientationManager.forcePortrait()
+                    }
                 }
         }
     }

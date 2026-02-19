@@ -13,18 +13,24 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         // ✅ Configure Firebase FIRST - before any Firebase services are accessed
-        // This must happen before FirebaseManager.shared is initialized
         FirebaseManager.configure()
+        
+        // Watch for any orientation changes and force back to portrait
+        NotificationCenter.default.addObserver(
+            forName: UIDevice.orientationDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            OrientationManager.forcePortrait()
+        }
+        
         return true
     }
     
     // Additional methods for Firebase compatibility
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        // Firebase needs this for push notifications (even if not used yet)
-    }
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {}
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        // Firebase needs this for background notifications
         completionHandler(.noData)
     }
     
@@ -33,17 +39,26 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 }
 
-// Orientation lock helper (portrait-only, kept for API compatibility)
+// Orientation lock helper - actively forces portrait
 struct OrientationManager {
+    static func forcePortrait() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            let geometryPreferences = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: .portrait)
+            windowScene.requestGeometryUpdate(geometryPreferences) { error in
+                // Silently handle - portrait is already enforced via AppDelegate
+            }
+        }
+    }
+    
     static func lockOrientation(_ orientation: UIInterfaceOrientationMask, rotate: Bool = false) {
-        // Always portrait - ignore orientation parameter
+        forcePortrait()
     }
     
     static func lockToPortrait() {
-        // Already portrait-only via AppDelegate
+        forcePortrait()
     }
     
     static func unlockOrientation() {
-        // No-op - portrait only
+        forcePortrait()
     }
 }
