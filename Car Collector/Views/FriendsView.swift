@@ -142,8 +142,11 @@ struct FriendsView: View {
                                     )
                                     
                                     if activity.id != friendsService.friendActivities.last?.id {
-                                        Divider()
-                                            .padding(.horizontal)
+                                        Rectangle()
+                                            .fill(Color.white.opacity(0.08))
+                                            .frame(height: 1)
+                                            .padding(.horizontal, 20)
+                                            .padding(.vertical, 4)
                                     }
                                 }
                             }
@@ -219,15 +222,7 @@ struct FriendActivityCard: View {
     
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
-    @State private var isHeated: Bool = false
-    @State private var heatCount: Int = 0
-    @State private var isAnimatingHeat = false
-    @State private var showFloatingFlame = false
     @State private var profileImage: UIImage?
-    
-    // Track the last synced state from Firestore to detect conflicts
-    @State private var lastSyncedHeatedBy: [String] = []
-    @State private var lastSyncedHeatCount: Int = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -283,76 +278,17 @@ struct FriendActivityCard: View {
             .padding(.top, 16)
             
             // Card preview — tap opens fullscreen
-            ZStack {
-                FIFACardView(card: activity, height: 202.5)
-                
-                // Floating flame animation overlay
-                if showFloatingFlame {
-                    Image(systemName: "flame.fill")
-                        .font(.poppins(80))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.orange, .red],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .shadow(color: .black.opacity(0.3), radius: 10)
-                        .scaleEffect(showFloatingFlame ? 1.0 : 0.5)
-                        .opacity(showFloatingFlame ? 1.0 : 0.0)
-                        .transition(.scale.combined(with: .opacity))
+            FIFACardView(card: activity, height: 202.5)
+                .frame(width: 360, height: 202.5)
+                .onTapGesture {
+                    onCardTap()
                 }
-            }
-            .frame(width: 360, height: 202.5)
-            .onTapGesture {
-                onCardTap()
-            }
-            .padding(.horizontal)
-            
-            // Heat button row — taps navigate to profile
-            NavigationLink {
-                UserProfileView(userId: activity.userId, username: activity.username)
-            } label: {
-                HStack {
-                    // Heat button (intercepts tap, doesn't navigate)
-                    Button(action: toggleHeat) {
-                        HStack(spacing: 4) {
-                            Image(systemName: isHeated ? "flame.fill" : "flame")
-                                .font(.poppins(16))
-                                .foregroundStyle(isHeated ? .orange : .secondary)
-                                .scaleEffect(isAnimatingHeat ? 1.3 : 1.0)
-                            
-                            if heatCount > 0 {
-                                Text("\(heatCount)")
-                                    .font(.pCaption)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(isHeated ? .orange : .secondary)
-                            }
-                        }
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 10)
-                    }
-                    .buttonStyle(.plain)
-                    
-                    Spacer()
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal)
-            .padding(.bottom, 12)
+                .padding(.horizontal)
+                .padding(.bottom, 14)
         }
         .task {
             await loadCardImage()
             await loadProfilePicture()
-        }
-        .onChange(of: activity.heatedBy) { _, newHeatedBy in
-            syncFromFirestoreIfNeeded(newHeatedBy: newHeatedBy, newHeatCount: activity.heatCount)
-        }
-        .onAppear {
-            if lastSyncedHeatedBy.isEmpty {
-                loadHeatState()
-            }
         }
     }
     
@@ -384,78 +320,6 @@ struct FriendActivityCard: View {
             }
         } catch {
             print("⚠️ Failed to load profile picture: \(error)")
-        }
-    }
-    
-    private func loadHeatState() {
-        guard let currentUserId = FirebaseManager.shared.currentUserId else { return }
-        
-        isHeated = activity.heatedBy.contains(currentUserId)
-        heatCount = activity.heatCount
-        
-        lastSyncedHeatedBy = activity.heatedBy
-        lastSyncedHeatCount = activity.heatCount
-    }
-    
-    private func syncFromFirestoreIfNeeded(newHeatedBy: [String], newHeatCount: Int) {
-        guard let currentUserId = FirebaseManager.shared.currentUserId else { return }
-        
-        guard newHeatedBy != lastSyncedHeatedBy || newHeatCount != lastSyncedHeatCount else { return }
-        
-        isHeated = newHeatedBy.contains(currentUserId)
-        heatCount = newHeatCount
-        
-        lastSyncedHeatedBy = newHeatedBy
-        lastSyncedHeatCount = newHeatCount
-    }
-    
-    private func toggleHeat() {
-        guard let currentUserId = FirebaseManager.shared.currentUserId else { return }
-        guard !isAnimatingHeat else { return }
-        
-        let willBeHeated = !isHeated
-        isHeated = willBeHeated
-        
-        if willBeHeated {
-            heatCount += 1
-            
-            isAnimatingHeat = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                isAnimatingHeat = false
-            }
-            
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
-                showFloatingFlame = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                withAnimation(.easeOut(duration: 0.3)) {
-                    showFloatingFlame = false
-                }
-            }
-            
-            Task {
-                do {
-                    try await FriendsService.shared.addHeat(activityId: activity.id, userId: currentUserId)
-                } catch {
-                    await MainActor.run {
-                        isHeated = false
-                        heatCount = max(0, heatCount - 1)
-                    }
-                }
-            }
-        } else {
-            heatCount = max(0, heatCount - 1)
-            
-            Task {
-                do {
-                    try await FriendsService.shared.removeHeat(activityId: activity.id, userId: currentUserId)
-                } catch {
-                    await MainActor.run {
-                        isHeated = true
-                        heatCount += 1
-                    }
-                }
-            }
         }
     }
 }
