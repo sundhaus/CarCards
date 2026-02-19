@@ -69,9 +69,6 @@ struct GarageView: View {
                     .padding(.vertical, 10)
                     .glassEffect(.regular, in: .rect)
                     
-                    // Spacer between header and cards
-                    Spacer().frame(height: 12)
-                    
                     // Content
                     if allCards.isEmpty {
                         VStack(spacing: 12) {
@@ -384,9 +381,9 @@ struct GarageView: View {
                 GeometryReader { geo in
                     Color.clear
                         .onAppear {
-                            cardFrames[card.id] = geo.frame(in: .named("garageStack"))
+                            cardFrames[card.id] = geo.frame(in: .global)
                         }
-                        .onChange(of: geo.frame(in: .named("garageStack"))) { _, newFrame in
+                        .onChange(of: geo.frame(in: .global)) { _, newFrame in
                             cardFrames[card.id] = newFrame
                         }
                 }
@@ -431,34 +428,40 @@ struct CardContextMenuOverlay: View {
     }
     
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            // Dimmed background - tap to dismiss
-            Color.black.opacity(appeared ? 0.5 : 0)
-                .ignoresSafeArea()
-                .onTapGesture { dismissMenu() }
+        GeometryReader { overlayGeo in
+            let overlayOrigin = overlayGeo.frame(in: .global).origin
+            let localX = cardFrame.minX - overlayOrigin.x
+            let localY = cardFrame.minY - overlayOrigin.y
             
-            // Card + panel positioned at exact ZStack-relative coords
-            HStack(spacing: 0) {
-                if !cardIsOnLeft {
-                    // Right column card → panel on left
-                    actionPanel(roundedLeft: true)
-                        .frame(width: appeared ? cardFrame.width : 0)
-                        .clipped()
-                    
-                    cardPreview
-                } else {
-                    // Left column card → panel on right
-                    cardPreview
-                    
-                    actionPanel(roundedLeft: false)
-                        .frame(width: appeared ? cardFrame.width : 0)
-                        .clipped()
+            ZStack(alignment: .topLeading) {
+                // Dimmed background - tap to dismiss
+                Color.black.opacity(appeared ? 0.5 : 0)
+                    .ignoresSafeArea()
+                    .onTapGesture { dismissMenu() }
+                
+                // Card + panel positioned at exact coords
+                HStack(spacing: 0) {
+                    if !cardIsOnLeft {
+                        // Right column card → panel on left
+                        actionPanel(roundedLeft: true)
+                            .frame(width: appeared ? cardFrame.width : 0)
+                            .clipped()
+                        
+                        cardPreview
+                    } else {
+                        // Left column card → panel on right
+                        cardPreview
+                        
+                        actionPanel(roundedLeft: false)
+                            .frame(width: appeared ? cardFrame.width : 0)
+                            .clipped()
+                    }
                 }
+                .offset(
+                    x: cardIsOnLeft ? localX : (appeared ? localX - cardFrame.width : localX),
+                    y: localY
+                )
             }
-            .offset(
-                x: cardIsOnLeft ? cardFrame.minX : (appeared ? cardFrame.minX - cardFrame.width : cardFrame.minX),
-                y: cardFrame.minY
-            )
         }
         .onAppear {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
