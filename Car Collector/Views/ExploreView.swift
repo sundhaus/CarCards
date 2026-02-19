@@ -157,7 +157,7 @@ struct FeaturedRow: View {
                 // Featured header
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Featured")
+                        Text("FEATURED")
                             .font(.pHeadline)
                             .foregroundStyle(.primary)
                         
@@ -213,7 +213,7 @@ struct CategoryRow: View {
                 // Category header
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(category.rawValue)
+                        Text(category.rawValue.uppercased())
                             .font(.pHeadline)
                             .foregroundStyle(.primary)
                         
