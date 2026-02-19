@@ -331,7 +331,7 @@ struct GarageView: View {
             let cardsPerPage = cardsPerRow == 1 ? 5 : 10
             let totalPages = Int(ceil(Double(allCards.count) / Double(cardsPerPage)))
             
-            VStack(spacing: 0) {
+            ZStack(alignment: .bottom) {
                 TabView(selection: $currentPage) {
                     ForEach(0..<max(1, totalPages), id: \.self) { pageIndex in
                         let startIndex = pageIndex * cardsPerPage
@@ -349,13 +349,13 @@ struct GarageView: View {
                             
                             Spacer()
                         }
-                        .padding(.bottom, 4)
+                        .padding(.bottom, 40)
                         .tag(pageIndex)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 
-                // Liquid Glass page indicator
+                // Liquid Glass page indicator overlaid at bottom
                 if totalPages > 1 {
                     HStack(spacing: 8) {
                         ForEach(0..<totalPages, id: \.self) { index in
@@ -367,7 +367,7 @@ struct GarageView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 6)
                     .glassEffect(.regular, in: .capsule)
-                    .padding(.vertical, 12)
+                    .padding(.bottom, 12)
                 }
             }
         }
