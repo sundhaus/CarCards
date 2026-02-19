@@ -146,6 +146,37 @@ class CardService: ObservableObject {
         }
     }
     
+    // MARK: - Re-upload Card Image (after customization like background removal)
+    
+    func updateCardImage(cardId: String, image: UIImage) async throws {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
+        // Re-upload image (overwrites existing file at same path)
+        let newImageURL = try await uploadCardImage(image, uid: uid, cardId: cardId)
+        
+        // Update imageURL in cards collection
+        try await cardsCollection.document(cardId).updateData([
+            "imageURL": newImageURL
+        ])
+        print("✅ Updated card image URL: \(cardId)")
+        
+        // Update imageURL in friend activities
+        do {
+            try await FriendsService.shared.updateActivityImageURL(
+                cardId: cardId,
+                imageURL: newImageURL
+            )
+            print("✅ Updated image URL in friend activity")
+        } catch {
+            print("⚠️ Failed to update friend activity image (non-critical): \(error)")
+        }
+        
+        // Update local cache
+        imageCache.setObject(image, forKey: newImageURL as NSString)
+    }
+    
     // MARK: - Listen to My Cards (real-time)
     
     func listenToMyCards(uid: String) {

@@ -257,7 +257,7 @@ class FriendsService: ObservableObject {
                 if existingActivity.documents.isEmpty {
                     // Create new activity
                     let activityId = UUID().uuidString
-                    let activityData: [String: Any] = [
+                    var activityData: [String: Any] = [
                         "userId": userId,
                         "username": profile.username,
                         "level": profile.level,
@@ -268,6 +268,10 @@ class FriendsService: ObservableObject {
                         "imageURL": card.imageURL,
                         "createdAt": Timestamp(date: card.createdAt)
                     ]
+                    
+                    if let customFrame = card.customFrame {
+                        activityData["customFrame"] = customFrame
+                    }
                     
                     try await activitiesCollection.document(activityId).setData(activityData)
                 }
@@ -656,6 +660,23 @@ class FriendsService: ObservableObject {
         }
         
         print("✅ Updated customFrame for \(snapshot.documents.count) activities")
+    }
+    
+    // MARK: - Update Activity Image URL
+    
+    /// Update imageURL for all activities with a specific cardId (after background removal, etc.)
+    func updateActivityImageURL(cardId: String, imageURL: String) async throws {
+        let snapshot = try await activitiesCollection
+            .whereField("cardId", isEqualTo: cardId)
+            .getDocuments()
+        
+        for document in snapshot.documents {
+            try await activitiesCollection.document(document.documentID).updateData([
+                "imageURL": imageURL
+            ])
+        }
+        
+        print("✅ Updated imageURL for \(snapshot.documents.count) activities")
     }
     
     // MARK: - Update Activity Category

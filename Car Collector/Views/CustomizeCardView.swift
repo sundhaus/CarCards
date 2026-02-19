@@ -390,13 +390,23 @@ struct CustomizeCardView: View {
             if let firebaseId = card.firebaseId {
                 Task {
                     do {
+                        // Sync custom frame
                         try await CardService.shared.updateCustomFrame(
                             cardId: firebaseId,
                             customFrame: customFrameValue
                         )
                         print("✅ Synced custom frame to Firebase")
+                        
+                        // If background was removed, re-upload image to Firebase
+                        if let updatedImage = displayImage {
+                            try await CardService.shared.updateCardImage(
+                                cardId: firebaseId,
+                                image: updatedImage
+                            )
+                            print("✅ Synced updated card image to Firebase")
+                        }
                     } catch {
-                        print("❌ Failed to sync custom frame to Firebase: \(error)")
+                        print("❌ Failed to sync customization to Firebase: \(error)")
                     }
                 }
             }
