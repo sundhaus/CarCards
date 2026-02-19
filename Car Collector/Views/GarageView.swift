@@ -69,7 +69,7 @@ struct GarageView: View {
                     .padding(.vertical, 10)
                     .glassEffect(.regular, in: .rect)
                     
-                    Spacer().frame(height: 8)
+                    Spacer().frame(height: 20)
                     
                     // Content
                     if allCards.isEmpty {
