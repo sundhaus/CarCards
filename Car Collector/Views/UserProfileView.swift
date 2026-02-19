@@ -262,7 +262,7 @@ struct UserProfileView: View {
                             if let crown = crownCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack(spacing: 6) {
-                                        Image(systemName: "crown.fill")
+                                        Image(systemName: "star.fill")
                                             .font(.pCaption)
                                             .foregroundStyle(.yellow)
                                         Text("SHOWCASE")
@@ -297,7 +297,7 @@ struct UserProfileView: View {
                                             }
                                         
                                         // Crown badge overlay
-                                        Image(systemName: "crown.fill")
+                                        Image(systemName: "star.fill")
                                             .font(.system(size: 14, weight: .bold))
                                             .foregroundStyle(.yellow)
                                             .padding(6)
@@ -610,7 +610,7 @@ struct UserCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .overlay(alignment: .topTrailing) {
             if isCrowned {
-                Image(systemName: "crown.fill")
+                Image(systemName: "star.fill")
                     .font(.system(size: isLargeSize ? 14 : 10, weight: .bold))
                     .foregroundStyle(.yellow)
                     .padding(isLargeSize ? 6 : 4)

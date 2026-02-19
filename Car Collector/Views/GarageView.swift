@@ -94,7 +94,10 @@ struct GarageView: View {
                         cardFrame: contextMenuCardFrame,
                         screenWidth: screenGeo.size.width,
                         isShowing: $showContextMenu,
-                        isCrowned: card.firebaseId != nil && card.firebaseId == UserService.shared.crownCardId,
+                        isCrowned: {
+                            let cardId = card.firebaseId ?? card.id.uuidString
+                            return cardId == UserService.shared.crownCardId
+                        }(),
                         onCustomize: {
                             showContextMenu = false
                             selectedCard = card
@@ -107,14 +110,19 @@ struct GarageView: View {
                             quickSellCard(card)
                         },
                         onCrownToggle: {
-                            if let fbId = card.firebaseId {
-                                let isCurrentlyCrowned = fbId == UserService.shared.crownCardId
-                                UserService.shared.setCrownCard(isCurrentlyCrowned ? nil : fbId)
+                            // Get card ID — use firebaseId if available, fall back to local id
+                            let cardId = card.firebaseId ?? card.id.uuidString
+                            let isCurrentlyCrowned = cardId == UserService.shared.crownCardId
+                            UserService.shared.setCrownCard(isCurrentlyCrowned ? nil : cardId)
+                            
+                            // Dismiss menu with animation, then reload
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showContextMenu = false
                             }
-                            showContextMenu = false
-                            cardFrames.removeAll()
-                            loadAllCards()
-                            currentPage = 0
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                loadAllCards()
+                                currentPage = 0
+                            }
                         }
                     )
                 }
@@ -185,8 +193,10 @@ struct GarageView: View {
         // Sort: crowned card first, then newest first
         let crownId = UserService.shared.crownCardId
         allCards = cards.sorted { card1, card2 in
-            let card1Crowned = card1.firebaseId != nil && card1.firebaseId == crownId
-            let card2Crowned = card2.firebaseId != nil && card2.firebaseId == crownId
+            let id1 = card1.firebaseId ?? card1.id.uuidString
+            let id2 = card2.firebaseId ?? card2.id.uuidString
+            let card1Crowned = id1 == crownId
+            let card2Crowned = id2 == crownId
             if card1Crowned != card2Crowned { return card1Crowned }
             return card1.capturedDate > card2.capturedDate
         }
@@ -391,20 +401,20 @@ struct GarageView: View {
     
     @ViewBuilder
     private func garageCardCell(card: AnyCard) -> some View {
-        let isCrowned = card.firebaseId != nil && card.firebaseId == UserService.shared.crownCardId
+        let isCrowned = (card.firebaseId ?? card.id.uuidString) == UserService.shared.crownCardId
         
         ZStack(alignment: .topTrailing) {
             UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
             
-            // Crown badge — top-right to avoid covering card name
+            // Crown badge — top-right
             if isCrowned {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 12, weight: .bold))
+                Image(systemName: "star.fill")
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.yellow)
-                    .padding(5)
+                    .padding(4)
                     .background(Color.black.opacity(0.65))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .padding(6)
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .padding(5)
             }
         }
             .opacity(showContextMenu && contextMenuCard?.id == card.id ? 0 : 1)
@@ -474,7 +484,38 @@ struct CardContextMenuOverlay: View {
                     .ignoresSafeArea()
                     .onTapGesture { dismissMenu() }
                 
-                // Side panel + card
+                // Crown tab — rendered FIRST so it's BEHIND the card
+                let crownTabWidth: CGFloat = 36
+                let crownTabHeight: CGFloat = 28
+                let crownX: CGFloat = cardIsOnLeft
+                    ? localX + 8
+                    : localX + cardFrame.width - crownTabWidth - 8
+                let crownY: CGFloat = localY - (appeared ? crownTabHeight : 0)
+                
+                Button(action: {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                    impactFeedback.impactOccurred()
+                    onCrownToggle()
+                }) {
+                    Image(systemName: isCrowned ? "star.fill" : "star")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(isCrowned ? Color.yellow : Color.white.opacity(0.5))
+                        .frame(width: crownTabWidth, height: crownTabHeight)
+                        .background(
+                            UnevenRoundedRectangle(
+                                topLeadingRadius: 8,
+                                bottomLeadingRadius: 0,
+                                bottomTrailingRadius: 0,
+                                topTrailingRadius: 8
+                            )
+                            .fill(Color(.systemBackground))
+                        )
+                }
+                .buttonStyle(.plain)
+                .offset(x: crownX, y: crownY)
+                .opacity(appeared ? 1 : 0)
+                
+                // Side panel + card — rendered AFTER crown so card sits on top
                 ZStack(alignment: cardIsOnLeft ? .leading : .trailing) {
                     // Action panel - sits behind and extends out
                     RoundedRectangle(cornerRadius: 12)
@@ -501,38 +542,6 @@ struct CardContextMenuOverlay: View {
                     x: cardIsOnLeft ? localX : (appeared ? localX - panelWidth : localX),
                     y: localY
                 )
-                
-                // Crown tab — pops UP out of the card's top corner closest to screen edge
-                let crownTabWidth: CGFloat = 38
-                let crownTabHeight: CGFloat = 30
-                // Position at screen-edge corner of the card
-                let crownX: CGFloat = cardIsOnLeft
-                    ? localX + 8  // left column → top-left of card
-                    : localX + cardFrame.width - crownTabWidth - 8  // right column → top-right of card
-                let crownY: CGFloat = localY - (appeared ? crownTabHeight : 0)
-                
-                Button(action: {
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                    impactFeedback.impactOccurred()
-                    onCrownToggle()
-                }) {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(isCrowned ? Color.yellow : Color.white.opacity(0.45))
-                        .frame(width: crownTabWidth, height: crownTabHeight)
-                        .background(
-                            UnevenRoundedRectangle(
-                                topLeadingRadius: 10,
-                                bottomLeadingRadius: 0,
-                                bottomTrailingRadius: 0,
-                                topTrailingRadius: 10
-                            )
-                            .fill(Color(.systemBackground))
-                        )
-                }
-                .buttonStyle(.plain)
-                .offset(x: crownX, y: crownY)
-                .opacity(appeared ? 1 : 0)
             }
         }
         .onAppear {
