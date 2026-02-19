@@ -392,7 +392,7 @@ struct CardContextMenuOverlay: View {
     let onCustomize: () -> Void
     let onQuickSell: () -> Void
     
-    @State private var menuVisible = false
+    @State private var appeared = false
     
     private var isVehicle: Bool {
         if case .vehicle = card { return true }
@@ -401,62 +401,65 @@ struct CardContextMenuOverlay: View {
     
     var body: some View {
         ZStack {
-            // Dimmed background - tap to dismiss
-            Color.black.opacity(0.6)
+            // Blurred + dimmed background - tap to dismiss
+            Color.black.opacity(appeared ? 0.5 : 0)
                 .ignoresSafeArea()
                 .onTapGesture {
                     dismissMenu()
                 }
             
-            // Card + menu row
-            HStack(spacing: 16) {
-                // Card preview
+            // Card + actions stack
+            VStack(spacing: 0) {
+                // The card itself - larger preview
                 UnifiedCardView(card: card, isLargeSize: false)
-                    .frame(width: 200)
-                    .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                    .frame(width: 300, height: 300 / (16/9))
+                    .shadow(color: .black.opacity(0.6), radius: 30, x: 0, y: 15)
                 
-                // Menu options sliding in from right
-                VStack(spacing: 12) {
-                    if isVehicle {
-                        contextMenuButton(
-                            icon: "paintbrush.fill",
-                            label: "Customize",
-                            color: .blue
-                        ) {
-                            onCustomize()
+                // Actions container extending below card
+                VStack(spacing: 0) {
+                    // Thin connector line
+                    Rectangle()
+                        .fill(.white.opacity(0.15))
+                        .frame(width: 1, height: 12)
+                    
+                    // Action buttons in a card-shaped container
+                    VStack(spacing: 2) {
+                        if isVehicle {
+                            actionButton(
+                                icon: "paintbrush.fill",
+                                label: "Customize",
+                                color: .blue,
+                                action: onCustomize
+                            )
                         }
+                        
+                        actionButton(
+                            icon: "dollarsign.circle.fill",
+                            label: "Quick Sell",
+                            subtitle: "+250 coins",
+                            color: .orange,
+                            action: onQuickSell
+                        )
                     }
-                    
-                    contextMenuButton(
-                        icon: "dollarsign.circle.fill",
-                        label: "Quick Sell",
-                        subtitle: "250 coins",
-                        color: .orange
-                    ) {
-                        onQuickSell()
-                    }
-                    
-                    contextMenuButton(
-                        icon: "xmark.circle.fill",
-                        label: "Cancel",
-                        color: .gray
-                    ) {
-                        dismissMenu()
-                    }
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .frame(width: 200)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 16))
                 }
-                .offset(x: menuVisible ? 0 : 80)
-                .opacity(menuVisible ? 1 : 0)
+                .offset(y: appeared ? 0 : -20)
+                .opacity(appeared ? 1 : 0)
             }
+            .scaleEffect(appeared ? 1 : 0.85)
+            .opacity(appeared ? 1 : 0)
         }
-        .transition(.opacity)
         .onAppear {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-                menuVisible = true
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                appeared = true
             }
         }
     }
     
-    private func contextMenuButton(
+    private func actionButton(
         icon: String,
         label: String,
         subtitle: String? = nil,
@@ -464,35 +467,45 @@ struct CardContextMenuOverlay: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 4) {
+            HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 28))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(color)
-                    .frame(width: 60, height: 60)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .frame(width: 36, height: 36)
+                    .background(color.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 
-                Text(label)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
-                
-                if let subtitle = subtitle {
-                    Text(subtitle)
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.6))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(label)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.tertiary)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
     
     private func dismissMenu() {
-        withAnimation(.easeIn(duration: 0.2)) {
-            menuVisible = false
+        withAnimation(.easeOut(duration: 0.2)) {
+            appeared = false
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            withAnimation {
-                isShowing = false
-            }
+            isShowing = false
         }
     }
 }
