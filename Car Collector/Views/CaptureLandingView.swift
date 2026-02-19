@@ -43,7 +43,7 @@ struct CaptureLandingView: View {
                             .font(.poppins(16))
                             .foregroundStyle(.secondary)
                     }
-                    .padding(.top, 20)
+                    .padding(.top, 60)
                     .padding(.bottom, 30)
                     
                     // Main content
