@@ -41,7 +41,6 @@ struct FeaturedCollectionsContainer: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 20)
-        .padding(.bottom, 12)
     }
     
     private var timerBadge: some View {
@@ -63,6 +62,7 @@ struct FeaturedCollectionsContainer: View {
     private var carouselSection: some View {
         HotCardsCarousel()
             .padding(.horizontal, 8)
+            .padding(.top, 16)
             .padding(.bottom, 12)
     }
     
