@@ -790,6 +790,9 @@ struct CardBackView: View {
     var customFrame: String? = nil
     var cardHeight: CGFloat = 200
     
+    // Scale factor relative to a reference height
+    private var scale: CGFloat { cardHeight / 200 }
+    
     var body: some View {
         ZStack {
             // Background gradient
@@ -799,25 +802,38 @@ struct CardBackView: View {
                 endPoint: .bottomTrailing
             )
             
-            VStack(spacing: 16) {
+            VStack(spacing: 6 * scale) {
                 // Header
-                VStack(spacing: 4) {
+                VStack(spacing: 2 * scale) {
                     Text("\(make.uppercased()) \(model.uppercased())")
-                        .font(.custom("Futura-Bold", size: 22))
+                        .font(.custom("Futura-Bold", size: 14 * scale))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                     
                     Text(year)
-                        .font(.pSubheadline)
+                        .font(.poppins(10 * scale))
                         .foregroundStyle(.white.opacity(0.8))
                 }
-                .padding(.top, 20)
+                .padding(.top, 14 * scale)
+                
+                // Description / summary
+                if !specs.description.isEmpty {
+                    Text(specs.description)
+                        .font(.poppins(7 * scale))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.7)
+                        .padding(.horizontal, 16 * scale)
+                }
                 
                 Spacer()
                 
                 // Specs grid
-                VStack(spacing: 12) {
+                VStack(spacing: 6 * scale) {
                     // Row 1: Power stats
-                    HStack(spacing: 20) {
+                    HStack(spacing: 10 * scale) {
                         statItem(
                             label: "HP",
                             value: specs.horsepower,
@@ -831,7 +847,7 @@ struct CardBackView: View {
                     }
                     
                     // Row 2: Performance stats
-                    HStack(spacing: 20) {
+                    HStack(spacing: 10 * scale) {
                         statItem(
                             label: "0-60",
                             value: specs.zeroToSixty,
@@ -845,7 +861,7 @@ struct CardBackView: View {
                     }
                     
                     // Row 3: Details
-                    HStack(spacing: 20) {
+                    HStack(spacing: 10 * scale) {
                         statItem(
                             label: "ENGINE",
                             value: specs.engine,
@@ -858,7 +874,7 @@ struct CardBackView: View {
                         )
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 14 * scale)
                 
                 Spacer()
             }
@@ -881,20 +897,20 @@ struct CardBackView: View {
     
     // Helper view for stat items
     private func statItem(label: String, value: String, highlight: Bool) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2 * scale) {
             Text(value)
-                .font(.poppins(22))
+                .font(.poppins(14 * scale))
                 .foregroundStyle(highlight ? .white : .white.opacity(0.4))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             Text(label)
-                .font(.poppins(10))
+                .font(.poppins(7 * scale))
                 .foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.vertical, 5 * scale)
         .background(highlight ? Color.white.opacity(0.15) : Color.clear)
-        .cornerRadius(8)
+        .cornerRadius(6 * scale)
     }
 }
 
