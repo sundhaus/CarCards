@@ -210,9 +210,9 @@ struct UserProfileView: View {
                                 
                                 // Stats row - Friends/Following/Followers
                                 HStack(spacing: 32) {
-                                    StatButton(title: "Friends", count: followStats.friends)
-                                    StatButton(title: "Following", count: followStats.following)
-                                    StatButton(title: "Followers", count: followStats.followers)
+                                    StatButton(title: "FRIENDS", count: followStats.friends)
+                                    StatButton(title: "FOLLOWING", count: followStats.following)
+                                    StatButton(title: "FOLLOWERS", count: followStats.followers)
                                 }
                                 .padding(.horizontal)
                                 
@@ -227,7 +227,7 @@ struct UserProfileView: View {
                                                 .font(.pHeadline)
                                                 .fontWeight(.semibold)
                                         }
-                                        Text("Cards")
+                                        Text("CARDS")
                                             .font(.pCaption)
                                             .foregroundStyle(.secondary)
                                     }
@@ -244,7 +244,7 @@ struct UserProfileView: View {
                                                 .font(.pHeadline)
                                                 .fontWeight(.semibold)
                                         }
-                                        Text("Coins")
+                                        Text("COINS")
                                             .font(.pCaption)
                                             .foregroundStyle(.secondary)
                                     }
@@ -259,7 +259,7 @@ struct UserProfileView: View {
                             
                             // Garage header with toggle
                             HStack {
-                                Text("Garage (\(userCards.count))")
+                                Text("GARAGE (\(userCards.count))")
                                     .font(.pHeadline)
                                 
                                 Spacer()

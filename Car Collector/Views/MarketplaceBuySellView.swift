@@ -150,8 +150,8 @@ struct MarketplaceBuySellView: View {
                 
                 // Glass segmented tabs
                 HStack(spacing: 6) {
-                    ForEach(["Buy", "Sell"], id: \.self) { tab in
-                        let index = tab == "Buy" ? 0 : 1
+                    ForEach(["BUY", "SELL"], id: \.self) { tab in
+                        let index = tab == "BUY" ? 0 : 1
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedMarketTab = index
@@ -287,7 +287,7 @@ struct MarketplaceBuySellView: View {
                 
                 // Price range
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Price")
+                    Text("PRICE")
                         .font(.pCaption)
                         .foregroundStyle(.secondary)
                     HStack(spacing: 8) {
@@ -526,7 +526,7 @@ struct ListingCardRow: View {
                 Spacer()
                 HStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Current Bid")
+                        Text("CURRENT BID")
                             .font(.pCaption)
                             .foregroundStyle(.secondary)
                         Text("$\(Int(listing.currentBid))")
@@ -537,7 +537,7 @@ struct ListingCardRow: View {
                     Spacer()
                     
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text("Buy Now")
+                        Text("BUY NOW")
                             .font(.pCaption)
                             .foregroundStyle(.secondary)
                         Text("$\(Int(listing.buyNowPrice))")

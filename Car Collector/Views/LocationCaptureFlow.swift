@@ -105,7 +105,7 @@ struct LocationInfoFormView: View {
             VStack(spacing: 24) {
             // Header
             VStack(spacing: 8) {
-                Text("Location Info")
+                Text("LOCATION INFO")
                     .font(.poppins(32))
                     .foregroundStyle(.white)
                 

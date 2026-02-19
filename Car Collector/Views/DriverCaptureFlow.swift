@@ -81,7 +81,7 @@ struct DriverCaptureFlow: View {
         VStack(spacing: 0) {
             // Header
             VStack(spacing: 8) {
-                Text("Capture Driver")
+                Text("CAPTURE DRIVER")
                     .font(.poppins(42))
                     .foregroundStyle(.white)
                 
@@ -179,7 +179,7 @@ struct DriverInfoFormView: View {
             VStack(spacing: 24) {
             // Header
             VStack(spacing: 8) {
-                Text("Driver Info")
+                Text("DRIVER INFO")
                     .font(.poppins(32))
                     .foregroundStyle(.white)
                 

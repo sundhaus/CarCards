@@ -22,7 +22,7 @@ struct MarketplaceLandingView: View {
                 VStack(spacing: 0) {
                     // Header
                     VStack(spacing: 8) {
-                        Text("Marketplace")
+                        Text("MARKETPLACE")
                             .font(.poppins(42))
                             .foregroundStyle(.primary)
                         

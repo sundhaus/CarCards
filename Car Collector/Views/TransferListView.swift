@@ -63,7 +63,7 @@ struct TransferListView: View {
                     VStack(spacing: 16) {
                         // Selling Section (Active Listings)
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Selling (\(sellingListings.count))")
+                            Text("SELLING (\(sellingListings.count))")
                                 .font(.pHeadline)
                                 .padding(.horizontal)
                             
@@ -100,7 +100,7 @@ struct TransferListView: View {
                         
                         // Sold Section
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Sold (\(soldListings.count))")
+                            Text("SOLD (\(soldListings.count))")
                                 .font(.pHeadline)
                                 .padding(.horizontal)
                             

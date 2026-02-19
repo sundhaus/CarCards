@@ -76,7 +76,7 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("Profile")
+                    Text("PROFILE")
                         .font(.pTitle2)
                         .fontWeight(.bold)
                     
@@ -184,7 +184,7 @@ struct ProfileView: View {
                     // Stats - simple list format
                     VStack(spacing: 12) {
                         HStack {
-                            Text("Total XP Earned:")
+                            Text("TOTAL XP EARNED:")
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Text("\(levelSystem.totalXP)")
@@ -194,7 +194,7 @@ struct ProfileView: View {
                         Divider()
                         
                         HStack {
-                            Text("Cards Collected:")
+                            Text("CARDS COLLECTED:")
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Text("\(totalCards)")
@@ -204,7 +204,7 @@ struct ProfileView: View {
                         Divider()
                         
                         HStack {
-                            Text("Coins:")
+                            Text("COINS:")
                                 .foregroundStyle(.secondary)
                             Spacer()
                             HStack(spacing: 4) {
@@ -219,7 +219,7 @@ struct ProfileView: View {
                     
                     // Account creation date
                     VStack(spacing: 4) {
-                        Text("Member Since")
+                        Text("MEMBER SINCE")
                             .font(.pCaption)
                             .foregroundStyle(.secondary)
                         Text(accountCreationDate, style: .date)

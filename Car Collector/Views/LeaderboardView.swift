@@ -29,7 +29,7 @@ struct LeaderboardView: View {
                                     selectedTab = index
                                 }
                             }) {
-                                Text(tab)
+                                Text(tab.uppercased())
                                     .font(.pSubheadline)
                                     .fontWeight(selectedTab == index ? .semibold : .regular)
                                     .foregroundStyle(selectedTab == index ? .white : .white.opacity(0.5))

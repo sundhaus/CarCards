@@ -41,7 +41,7 @@ struct CustomizeCardView: View {
                     
                     Spacer()
                     
-                    Text("Customize Card")
+                    Text("CUSTOMIZE CARD")
                         .font(.pTitle3)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
@@ -128,9 +128,9 @@ struct CustomizeCardView: View {
                 VStack(spacing: 0) {
                     // Tab headers
                     HStack(spacing: 0) {
-                        tabHeader(title: "Border", index: 0)
-                        tabHeader(title: "Stickers", index: 1)
-                        tabHeader(title: "Effects", index: 2)
+                        tabHeader(title: "BORDER", index: 0)
+                        tabHeader(title: "STICKERS", index: 1)
+                        tabHeader(title: "EFFECTS", index: 2)
                     }
                     .frame(height: 50)
                     
@@ -210,7 +210,7 @@ struct CustomizeCardView: View {
     
     private var borderTabContent: some View {
         VStack(spacing: 20) {
-            Text("Border Color")
+            Text("BORDER COLOR")
                 .font(.pHeadline)
                 .foregroundStyle(.primary)
                 .padding(.top, 20)
@@ -275,7 +275,7 @@ struct CustomizeCardView: View {
             Text(title)
                 .font(.pHeadline)
                 .foregroundStyle(.tertiary)
-            Text("Coming Soon")
+            Text("COMING SOON")
                 .font(.pCaption)
                 .foregroundStyle(.tertiary)
         }
@@ -285,7 +285,7 @@ struct CustomizeCardView: View {
     
     private var effectsTabContent: some View {
         VStack(spacing: 16) {
-            Text("Effects")
+            Text("EFFECTS")
                 .font(.pHeadline)
                 .foregroundStyle(.primary)
                 .padding(.top, 20)

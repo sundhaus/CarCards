@@ -79,7 +79,7 @@ struct CardDetailsView: View {
             
             Spacer()
             
-            Text("Item Details")
+            Text("ITEM DETAILS")
                 .font(.poppins(20))
                 .foregroundStyle(.white)
             
@@ -151,7 +151,7 @@ struct CardDetailsView: View {
                 HStack {
                     Image(systemName: "tag.fill")
                         .font(.poppins(18))
-                    Text("List on Transfer Market")
+                    Text("LIST ON TRANSFER MARKET")
                         .font(.poppins(17))
                     Spacer()
                     Image(systemName: showListingForm ? "chevron.up" : "chevron.down")
@@ -275,7 +275,7 @@ struct CardDetailsView: View {
     
     private var durationPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Duration")
+            Text("DURATION")
                 .font(.poppins(15))
                 .foregroundStyle(.white)
             
@@ -336,7 +336,7 @@ struct CardDetailsView: View {
             HStack {
                 Image(systemName: "gauge.with.dots.needle.67percent")
                     .font(.poppins(18))
-                Text("Vehicle Specs")
+                Text("VEHICLE SPECS")
                     .font(.poppins(17))
             }
             .foregroundStyle(.white)
@@ -352,7 +352,7 @@ struct CardDetailsView: View {
             HStack {
                 Image(systemName: "chart.bar.fill")
                     .font(.poppins(18))
-                Text("Compare Price")
+                Text("COMPARE PRICE")
                     .font(.poppins(17))
             }
             .foregroundStyle(.white)
@@ -368,7 +368,7 @@ struct CardDetailsView: View {
             showQuickSellConfirm = true
         }) {
             HStack {
-                Text("Quick Sell")
+                Text("QUICK SELL")
                     .font(.poppins(17))
                 Spacer()
                 HStack(spacing: 4) {

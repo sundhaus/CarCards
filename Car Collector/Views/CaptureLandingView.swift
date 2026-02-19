@@ -35,7 +35,7 @@ struct CaptureLandingView: View {
                 VStack(spacing: 0) {
                     // Header
                     VStack(spacing: 8) {
-                        Text("Capture")
+                        Text("CAPTURE")
                             .font(.poppins(42))
                             .foregroundStyle(.primary)
                         

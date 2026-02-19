@@ -31,7 +31,7 @@ struct FeaturedCollectionsContainer: View {
     
     private var headerSection: some View {
         HStack {
-            Text("Featured")
+            Text("FEATURED")
                 .font(.poppins(20))
                 .foregroundStyle(.primary)
             
