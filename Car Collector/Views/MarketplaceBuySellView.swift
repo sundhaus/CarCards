@@ -143,7 +143,7 @@ struct MarketplaceBuySellView: View {
                 .padding(4)
                 .glassEffect(.regular, in: .capsule)
                 .padding(.horizontal)
-                .padding(.top, 12)
+                .padding(.top, 16)
                 .padding(.bottom, 8)
                 
                 // Filter Panel
@@ -153,13 +153,13 @@ struct MarketplaceBuySellView: View {
                     sellFiltersView
                 }
                 
-                // Tab Content
+                // Tab Content — fills remaining space
                 if selectedMarketTab == 0 {
                     BuyView(
                         activeListings: filteredListings,
                         hasUnfilteredListings: !marketplaceService.activeListings.isEmpty
                     )
-                    .tag(0)
+                    .frame(maxHeight: .infinity)
                 } else {
                     SellView(
                         savedCards: filteredCards,
@@ -170,10 +170,10 @@ struct MarketplaceBuySellView: View {
                             selectedCard = card
                         }
                     )
-                    .tag(1)
+                    .frame(maxHeight: .infinity)
                 }
             }
-            .padding(.bottom, isLandscape ? 0 : 100)
+            .padding(.bottom, isLandscape ? 0 : 80)
             .padding(.trailing, isLandscape ? 100 : 0)
         }
         .onAppear {
