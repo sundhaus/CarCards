@@ -344,6 +344,7 @@ struct UserProfileView: View {
             }
         }
         .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             await loadProfile()
             await loadCards()

@@ -33,6 +33,7 @@ struct ExploreView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             print("\n📱 EXPLORE VIEW: onAppear triggered")
             print("   isLoading: \(exploreService.isLoading)")

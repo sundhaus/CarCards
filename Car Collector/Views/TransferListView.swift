@@ -117,6 +117,7 @@ struct TransferListView: View {
             .padding(.trailing, isLandscape ? 100 : 0)
         }
         .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             // Listener already started in app startup
             print("📋 Transfer List - Selling: \(sellingListings.count), Sold: \(soldListings.count)")
