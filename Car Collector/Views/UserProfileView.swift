@@ -187,26 +187,28 @@ struct UserProfileView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 
-                                // Relationship Status Bar
-                                if isCheckingRelationship {
-                                    ProgressView()
-                                        .frame(width: 180, height: 36)
-                                        .padding(.top, 4)
-                                } else {
-                                    Button(action: handleRelationshipAction) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: relationshipStatus.icon)
-                                                .font(.pSubheadline)
-                                            Text(relationshipStatus.buttonText)
-                                                .font(.pSubheadline)
-                                                .fontWeight(.semibold)
+                                // Relationship Status Bar (hide on own profile)
+                                if userId != UserService.shared.currentProfile?.id {
+                                    if isCheckingRelationship {
+                                        ProgressView()
+                                            .frame(width: 180, height: 36)
+                                            .padding(.top, 4)
+                                    } else {
+                                        Button(action: handleRelationshipAction) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: relationshipStatus.icon)
+                                                    .font(.pSubheadline)
+                                                Text(relationshipStatus.buttonText)
+                                                    .font(.pSubheadline)
+                                                    .fontWeight(.semibold)
+                                            }
+                                            .foregroundStyle(.white)
+                                            .frame(width: 180, height: 36)
+                                            .background(relationshipStatus.buttonColor)
+                                            .cornerRadius(18)
                                         }
-                                        .foregroundStyle(.white)
-                                        .frame(width: 180, height: 36)
-                                        .background(relationshipStatus.buttonColor)
-                                        .cornerRadius(18)
+                                        .padding(.top, 4)
                                     }
-                                    .padding(.top, 4)
                                 }
                                 
                                 // Stats row - Friends/Following/Followers
