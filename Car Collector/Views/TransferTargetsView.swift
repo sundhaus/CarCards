@@ -62,14 +62,12 @@ struct TransferTargetsView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "trophy")
                                         .font(.poppins(50))
-                                        .foregroundStyle(.gray)
+                                        .foregroundStyle(.white.opacity(0.3))
                                     Text("No winning bids")
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.white.opacity(0.5))
                                 }
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 150)
-                                .background(.white)
-                                .cornerRadius(12)
                                 .padding(.horizontal)
                             } else {
                                 ForEach(winningBids) { listing in
@@ -89,17 +87,15 @@ struct TransferTargetsView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "exclamationmark.triangle")
                                         .font(.poppins(50))
-                                        .foregroundStyle(.gray)
+                                        .foregroundStyle(.white.opacity(0.3))
                                     Text("No outbid cards")
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.white.opacity(0.5))
                                     Text("Bid history tracking coming soon")
                                         .font(.pCaption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.white.opacity(0.3))
                                 }
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 150)
-                                .background(.white)
-                                .cornerRadius(12)
                                 .padding(.horizontal)
                             } else {
                                 ForEach(outbidCards) { listing in
@@ -216,7 +212,7 @@ struct ListingCardView: View {
             Spacer()
         }
         .padding(12)
-        .background(.white)
+        .background(Color.white.opacity(0.08))
         .cornerRadius(12)
         .task {
             await loadImage()

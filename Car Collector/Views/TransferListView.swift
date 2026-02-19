@@ -60,17 +60,15 @@ struct TransferListView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "tag")
                                         .font(.poppins(50))
-                                        .foregroundStyle(.gray)
+                                        .foregroundStyle(.white.opacity(0.3))
                                     Text("No active listings")
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.white.opacity(0.5))
                                     Text("List cards from the marketplace")
                                         .font(.pCaption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.white.opacity(0.3))
                                 }
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 150)
-                                .background(.white)
-                                .cornerRadius(12)
                                 .padding(.horizontal)
                             } else {
                                 ForEach(sellingListings) { listing in
@@ -90,14 +88,12 @@ struct TransferListView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "checkmark.circle")
                                         .font(.poppins(50))
-                                        .foregroundStyle(.gray)
+                                        .foregroundStyle(.white.opacity(0.3))
                                     Text("No sold listings")
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.white.opacity(0.5))
                                 }
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 150)
-                                .background(.white)
-                                .cornerRadius(12)
                                 .padding(.horizontal)
                             } else {
                                 ForEach(soldListings) { listing in
@@ -250,7 +246,7 @@ struct TransferListingCard: View {
             }
             .padding(12)
         }
-        .background(Color(.systemGray6))
+        .background(Color.white.opacity(0.08))
         .cornerRadius(12)
         .task {
             await loadImage()
