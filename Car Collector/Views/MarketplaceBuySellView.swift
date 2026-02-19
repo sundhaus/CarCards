@@ -13,6 +13,7 @@ struct MarketplaceBuySellView: View {
     var onCardListed: ((SavedCard) -> Void)? = nil
     @State private var selectedMarketTab = 0
     @Environment(\.dismiss) private var dismiss
+    @State private var useDoubleColumn = false
     
     // Buy tab filters (for marketplace listings)
     @State private var buyFilterMake = "Any"
@@ -125,12 +126,22 @@ struct MarketplaceBuySellView: View {
                             .foregroundStyle(.primary)
                     }
                     
-                    Text("BUY & SELL")
+                    Text("MARKETPLACE")
                         .font(.pTitle2)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
                     
                     Spacer()
+                    
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            useDoubleColumn.toggle()
+                        }
+                    }) {
+                        Image(systemName: useDoubleColumn ? "square.grid.2x2" : "rectangle.grid.1x2")
+                            .font(.pTitle3)
+                            .foregroundStyle(.primary)
+                    }
                 }
                 .padding(.horizontal)
                 .padding(.top, 18)
@@ -178,7 +189,8 @@ struct MarketplaceBuySellView: View {
                 if selectedMarketTab == 0 {
                     BuyView(
                         activeListings: filteredListings,
-                        hasUnfilteredListings: !marketplaceService.activeListings.isEmpty
+                        hasUnfilteredListings: !marketplaceService.activeListings.isEmpty,
+                        useDoubleColumn: useDoubleColumn
                     )
                 } else {
                     SellView(
@@ -186,6 +198,7 @@ struct MarketplaceBuySellView: View {
                         filterMake: sellFilterMake,
                         filterModel: sellFilterModel,
                         filterYear: sellFilterYear,
+                        useDoubleColumn: useDoubleColumn,
                         onCardSelected: { card in
                             selectedCard = card
                         }
@@ -392,6 +405,15 @@ struct MarketplaceBuySellView: View {
 struct BuyView: View {
     let activeListings: [CloudListing]
     let hasUnfilteredListings: Bool
+    var useDoubleColumn: Bool = false
+    
+    private var gridColumns: [GridItem] {
+        if useDoubleColumn {
+            return [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+        } else {
+            return [GridItem(.flexible())]
+        }
+    }
     
     var body: some View {
         ScrollView {
@@ -418,9 +440,13 @@ struct BuyView: View {
                 }
                 .frame(minHeight: 300)
             } else {
-                VStack(spacing: 12) {
+                LazyVGrid(columns: gridColumns, spacing: 12) {
                     ForEach(activeListings) { listing in
-                        ListingCardRow(listing: listing)
+                        if useDoubleColumn {
+                            CompactListingCard(listing: listing)
+                        } else {
+                            ListingCardRow(listing: listing)
+                        }
                     }
                 }
                 .padding()
@@ -437,7 +463,16 @@ struct SellView: View {
     let filterMake: String
     let filterModel: String
     let filterYear: String
+    var useDoubleColumn: Bool = false
     let onCardSelected: (SavedCard) -> Void
+    
+    private var gridColumns: [GridItem] {
+        if useDoubleColumn {
+            return [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+        } else {
+            return [GridItem(.flexible())]
+        }
+    }
     
     var body: some View {
         ScrollView {
@@ -458,12 +493,18 @@ struct SellView: View {
                 }
                 .frame(minHeight: 300)
             } else {
-                VStack(spacing: 12) {
+                LazyVGrid(columns: gridColumns, spacing: 12) {
                     ForEach(savedCards) { card in
-                        GarageCardRow(card: card)
-                            .onTapGesture {
-                                onCardSelected(card)
+                        Group {
+                            if useDoubleColumn {
+                                CompactGarageCard(card: card)
+                            } else {
+                                GarageCardRow(card: card)
                             }
+                        }
+                        .onTapGesture {
+                            onCardSelected(card)
+                        }
                     }
                 }
                 .padding()
@@ -808,6 +849,176 @@ struct MarketplaceFIFACard: View {
                 isLoadingImage = false
             }
         }.resume()
+    }
+}
+
+// MARK: - Compact Listing Card (Double Column - Buy Tab)
+
+struct CompactListingCard: View {
+    let listing: CloudListing
+    @State private var cardImage: UIImage?
+    @State private var isLoadingImage = false
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Card image
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
+                
+                if let image = cardImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else if isLoadingImage {
+                    ProgressView().tint(.gray)
+                } else {
+                    Image(systemName: "car.fill")
+                        .font(.poppins(24))
+                        .foregroundStyle(.gray.opacity(0.4))
+                }
+                
+                // Border overlay
+                if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
+                    Image(borderImageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .allowsHitTesting(false)
+                }
+                
+                // Name overlay
+                VStack {
+                    HStack {
+                        let config = CardBorderConfig.forFrame(listing.customFrame)
+                        HStack(spacing: 3) {
+                            Text(listing.make.uppercased())
+                                .font(.custom("Futura-Light", size: 9))
+                                .foregroundStyle(config.textColor)
+                            Text(listing.model.uppercased())
+                                .font(.custom("Futura-Bold", size: 9))
+                                .foregroundStyle(config.textColor)
+                                .lineLimit(1)
+                        }
+                        .padding(.top, 8)
+                        .padding(.leading, 8)
+                        Spacer()
+                    }
+                    Spacer()
+                }
+            }
+            .aspectRatio(16/9, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            
+            // Info bar
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("$\(Int(listing.buyNowPrice))")
+                        .font(.pSubheadline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.green)
+                    Text("\(Int(listing.currentBid)) bid")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+        }
+        .background(Color.white.opacity(0.08))
+        .cornerRadius(12)
+        .onAppear { loadImage() }
+    }
+    
+    private func loadImage() {
+        guard !isLoadingImage, cardImage == nil, let url = URL(string: listing.imageURL) else { return }
+        isLoadingImage = true
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            guard let data = data, let image = UIImage(data: data) else {
+                DispatchQueue.main.async { isLoadingImage = false }
+                return
+            }
+            DispatchQueue.main.async {
+                cardImage = image
+                isLoadingImage = false
+            }
+        }.resume()
+    }
+}
+
+// MARK: - Compact Garage Card (Double Column - Sell Tab)
+
+struct CompactGarageCard: View {
+    let card: SavedCard
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Card image
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
+                
+                if let image = card.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Image(systemName: "car.fill")
+                        .font(.poppins(24))
+                        .foregroundStyle(.gray.opacity(0.4))
+                }
+                
+                // Border overlay
+                if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                    Image(borderImageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .allowsHitTesting(false)
+                }
+                
+                // Name overlay
+                VStack {
+                    HStack {
+                        let config = CardBorderConfig.forFrame(card.customFrame)
+                        HStack(spacing: 3) {
+                            Text(card.make.uppercased())
+                                .font(.custom("Futura-Light", size: 9))
+                                .foregroundStyle(config.textColor)
+                            Text(card.model.uppercased())
+                                .font(.custom("Futura-Bold", size: 9))
+                                .foregroundStyle(config.textColor)
+                                .lineLimit(1)
+                        }
+                        .padding(.top, 8)
+                        .padding(.leading, 8)
+                        Spacer()
+                    }
+                    Spacer()
+                }
+            }
+            .aspectRatio(16/9, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            
+            // Info bar
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(card.make) \(card.model)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                    Text(card.year)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+        }
+        .background(Color.white.opacity(0.08))
+        .cornerRadius(12)
     }
 }
 
