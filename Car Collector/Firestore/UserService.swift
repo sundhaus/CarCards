@@ -21,6 +21,7 @@ struct UserProfile: Codable, Identifiable {
     var createdAt: Date
     var linkedAccount: Bool
     var profilePictureURL: String?
+    var crownCardId: String?  // Firebase card ID of the user's showcase/favorite card
     
     // Firestore document → UserProfile
     init?(document: DocumentSnapshot) {
@@ -36,6 +37,7 @@ struct UserProfile: Codable, Identifiable {
         self.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
         self.linkedAccount = data["linkedAccount"] as? Bool ?? false
         self.profilePictureURL = data["profilePictureURL"] as? String
+        self.crownCardId = data["crownCardId"] as? String
     }
     
     // New user default
@@ -50,6 +52,7 @@ struct UserProfile: Codable, Identifiable {
         self.createdAt = Date()
         self.linkedAccount = false
         self.profilePictureURL = nil
+        self.crownCardId = nil
     }
     
     // Convert to Firestore dictionary
@@ -67,6 +70,10 @@ struct UserProfile: Codable, Identifiable {
         
         if let url = profilePictureURL {
             dict["profilePictureURL"] = url
+        }
+        
+        if let crownId = crownCardId {
+            dict["crownCardId"] = crownId
         }
         
         return dict
@@ -284,6 +291,32 @@ class UserService: ObservableObject {
     
     var coins: Int {
         currentProfile?.coins ?? 0
+    }
+    
+    // MARK: - Crown Card
+    
+    /// Set or remove the user's showcase crown card.
+    /// Pass nil to remove the crown.
+    func setCrownCard(_ cardId: String?) {
+        guard let uid = currentProfile?.id else { return }
+        
+        currentProfile?.crownCardId = cardId
+        
+        Task {
+            if let cardId = cardId {
+                try? await usersCollection.document(uid).updateData([
+                    "crownCardId": cardId
+                ])
+            } else {
+                try? await usersCollection.document(uid).updateData([
+                    "crownCardId": FieldValue.delete()
+                ])
+            }
+        }
+    }
+    
+    var crownCardId: String? {
+        currentProfile?.crownCardId
     }
     
     // MARK: - Fetch Profile by UID

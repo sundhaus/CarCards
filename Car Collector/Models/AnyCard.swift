@@ -62,6 +62,14 @@ enum AnyCard: Identifiable {
         }
     }
     
+    var firebaseId: String? {
+        switch self {
+        case .vehicle(let card): return card.firebaseId
+        case .driver(let card): return card.firebaseId
+        case .location(let card): return card.firebaseId
+        }
+    }
+    
     var capturedDate: Date {
         switch self {
         case .vehicle:

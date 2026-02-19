@@ -94,6 +94,7 @@ struct GarageView: View {
                         cardFrame: contextMenuCardFrame,
                         screenWidth: screenGeo.size.width,
                         isShowing: $showContextMenu,
+                        isCrowned: card.firebaseId != nil && card.firebaseId == UserService.shared.crownCardId,
                         onCustomize: {
                             showContextMenu = false
                             selectedCard = card
@@ -104,6 +105,14 @@ struct GarageView: View {
                         onQuickSell: {
                             showContextMenu = false
                             quickSellCard(card)
+                        },
+                        onCrownToggle: {
+                            if let fbId = card.firebaseId {
+                                let isCurrentlyCrowned = fbId == UserService.shared.crownCardId
+                                UserService.shared.setCrownCard(isCurrentlyCrowned ? nil : fbId)
+                            }
+                            showContextMenu = false
+                            loadAllCards() // Re-sort to pin/unpin
                         }
                     )
                 }
@@ -171,9 +180,13 @@ struct GarageView: View {
         let locationCards = CardStorage.loadLocationCards()
         cards.append(contentsOf: locationCards.map { AnyCard.location($0) })
         
-        // Sort by date (newest first)
+        // Sort: crowned card first, then newest first
+        let crownId = UserService.shared.crownCardId
         allCards = cards.sorted { card1, card2 in
-            card1.capturedDate > card2.capturedDate
+            let card1Crowned = card1.firebaseId != nil && card1.firebaseId == crownId
+            let card2Crowned = card2.firebaseId != nil && card2.firebaseId == crownId
+            if card1Crowned != card2Crowned { return card1Crowned }
+            return card1.capturedDate > card2.capturedDate
         }
         
         print("📦 Loaded \(vehicleCards.count) vehicles, \(driverCards.count) drivers, \(locationCards.count) locations")
@@ -376,7 +389,22 @@ struct GarageView: View {
     
     @ViewBuilder
     private func garageCardCell(card: AnyCard) -> some View {
-        UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
+        let isCrowned = card.firebaseId != nil && card.firebaseId == UserService.shared.crownCardId
+        
+        ZStack(alignment: .topLeading) {
+            UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
+            
+            // Crown badge
+            if isCrowned {
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.yellow)
+                    .padding(5)
+                    .background(Color.black.opacity(0.65))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .padding(6)
+            }
+        }
             .opacity(showContextMenu && contextMenuCard?.id == card.id ? 0 : 1)
             .background(
                 GeometryReader { geo in
@@ -420,8 +448,10 @@ struct CardContextMenuOverlay: View {
     let cardFrame: CGRect
     let screenWidth: CGFloat
     @Binding var isShowing: Bool
+    let isCrowned: Bool
     let onCustomize: () -> Void
     let onQuickSell: () -> Void
+    let onCrownToggle: () -> Void
     
     @State private var appeared = false
     
@@ -447,38 +477,70 @@ struct CardContextMenuOverlay: View {
                     .ignoresSafeArea()
                     .onTapGesture { dismissMenu() }
                 
-                // Panel behind card + card on top
-                ZStack(alignment: cardIsOnLeft ? .leading : .trailing) {
-                    // Action panel - sits behind and extends out
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemBackground))
-                        .frame(
-                            width: appeared ? cardFrame.width + panelWidth : cardFrame.width,
-                            height: cardFrame.height
-                        )
-                        .overlay(alignment: cardIsOnLeft ? .trailing : .leading) {
-                            // Action buttons on the exposed side
-                            VStack(spacing: 0) {
-                                Spacer()
-                                
-                                if isVehicle {
-                                    actionRow(label: "Customize", action: onCustomize)
-                                    Divider().padding(.horizontal, 12)
-                                }
-                                
-                                actionRow(label: "Quick Sell", action: onQuickSell)
-                                
-                                Spacer()
-                            }
-                            .frame(width: panelWidth)
+                // Panel behind card + card on top + crown tab
+                VStack(spacing: 0) {
+                    // Crown tab — pops out above the card's top-right corner
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                            impactFeedback.impactOccurred()
+                            onCrownToggle()
+                        }) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(isCrowned ? Color.yellow : Color.white.opacity(0.45))
+                                .frame(width: 38, height: 30)
+                                .background(
+                                    UnevenRoundedRectangle(
+                                        topLeadingRadius: 10,
+                                        bottomLeadingRadius: 0,
+                                        bottomTrailingRadius: 0,
+                                        topTrailingRadius: 10
+                                    )
+                                    .fill(Color(.systemBackground))
+                                )
                         }
+                        .buttonStyle(.plain)
+                        .offset(x: -8)
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 10)
+                    }
+                    .frame(width: cardFrame.width)
                     
-                    // Card on top
-                    cardPreview
+                    // Card + side panel
+                    ZStack(alignment: cardIsOnLeft ? .leading : .trailing) {
+                        // Action panel - sits behind and extends out
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.systemBackground))
+                            .frame(
+                                width: appeared ? cardFrame.width + panelWidth : cardFrame.width,
+                                height: cardFrame.height
+                            )
+                            .overlay(alignment: cardIsOnLeft ? .trailing : .leading) {
+                                // Action buttons on the exposed side
+                                VStack(spacing: 0) {
+                                    Spacer()
+                                    
+                                    if isVehicle {
+                                        actionRow(label: "Customize", action: onCustomize)
+                                        Divider().padding(.horizontal, 12)
+                                    }
+                                    
+                                    actionRow(label: "Quick Sell", action: onQuickSell)
+                                    
+                                    Spacer()
+                                }
+                                .frame(width: panelWidth)
+                            }
+                        
+                        // Card on top
+                        cardPreview
+                    }
                 }
                 .offset(
                     x: cardIsOnLeft ? localX : (appeared ? localX - panelWidth : localX),
-                    y: localY
+                    y: localY - 30  // Shift up to account for crown tab height
                 )
             }
         }

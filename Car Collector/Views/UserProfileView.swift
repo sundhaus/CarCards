@@ -23,6 +23,7 @@ struct UserProfileView: View {
     @State private var isFollowing = false
     @State private var followsMe = false
     @State private var isCheckingRelationship = true
+    @State private var crownCard: CloudCard?
     @State private var selectedCard: AnyCard?
     @State private var showCardDetail = false
     @State private var isLoadingCardImage = false
@@ -257,6 +258,60 @@ struct UserProfileView: View {
                             // Divider
                             Divider()
                             
+                            // Crown showcase card
+                            if let crown = crownCard {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "crown.fill")
+                                            .font(.pCaption)
+                                            .foregroundStyle(.yellow)
+                                        Text("SHOWCASE")
+                                            .font(.pCaption)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(.horizontal)
+                                    
+                                    ZStack(alignment: .topLeading) {
+                                        UserCardView(card: crown, isLargeSize: true)
+                                            .onTapGesture {
+                                                Task {
+                                                    isLoadingCardImage = true
+                                                    let image = (try? await CardService.shared.loadImage(from: crown.imageURL)) ?? UIImage()
+                                                    let savedCard = SavedCard(
+                                                        image: image,
+                                                        make: crown.make,
+                                                        model: crown.model,
+                                                        color: crown.color,
+                                                        year: crown.year,
+                                                        capturedBy: crown.capturedBy,
+                                                        capturedLocation: crown.capturedLocation,
+                                                        previousOwners: crown.previousOwners,
+                                                        customFrame: crown.customFrame,
+                                                        firebaseId: crown.id
+                                                    )
+                                                    selectedCard = .vehicle(savedCard)
+                                                    isLoadingCardImage = false
+                                                    withAnimation { showCardDetail = true }
+                                                }
+                                            }
+                                        
+                                        // Crown badge overlay
+                                        Image(systemName: "crown.fill")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundStyle(.yellow)
+                                            .padding(6)
+                                            .background(Color.black.opacity(0.65))
+                                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                                            .padding(8)
+                                    }
+                                    .padding(.horizontal)
+                                }
+                                .padding(.bottom, 8)
+                                
+                                Divider()
+                            }
+                            
                             // Garage header with toggle
                             HStack {
                                 Text("GARAGE (\(userCards.count))")
@@ -289,7 +344,7 @@ struct UserProfileView: View {
                             } else {
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
                                     ForEach(userCards) { card in
-                                        UserCardView(card: card, isLargeSize: cardsPerRow == 1)
+                                        UserCardView(card: card, isLargeSize: cardsPerRow == 1, isCrowned: card.id == userProfile?.crownCardId)
                                             .onTapGesture {
                                                 Task {
                                                     isLoadingCardImage = true
@@ -412,6 +467,12 @@ struct UserProfileView: View {
     private func loadCards() async {
         do {
             userCards = try await CardService.shared.fetchUserCards(uid: userId)
+            
+            // Extract crown card if profile has one
+            if let crownId = userProfile?.crownCardId {
+                crownCard = userCards.first(where: { $0.id == crownId })
+            }
+            
             isLoadingCards = false
         } catch {
             print("❌ Failed to load cards: \(error)")
@@ -465,6 +526,7 @@ struct StatButton: View {
 struct UserCardView: View {
     let card: CloudCard
     let isLargeSize: Bool
+    var isCrowned: Bool = false
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = true
     
@@ -546,6 +608,17 @@ struct UserCardView: View {
         }
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
+        .overlay(alignment: .topLeading) {
+            if isCrowned {
+                Image(systemName: "crown.fill")
+                    .font(.system(size: isLargeSize ? 14 : 10, weight: .bold))
+                    .foregroundStyle(.yellow)
+                    .padding(isLargeSize ? 6 : 4)
+                    .background(Color.black.opacity(0.65))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .padding(isLargeSize ? 8 : 5)
+            }
+        }
         .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
         .task {
             await loadCardImage()
