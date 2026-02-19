@@ -537,31 +537,34 @@ struct ListingCardRow: View {
             // Info bar background — only visible below the card
             VStack {
                 Spacer()
-                HStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 0) {
+                    VStack(spacing: 4) {
                         Text("CURRENT BID")
-                            .font(.pCaption)
+                            .font(.pCaption2)
                             .foregroundStyle(.secondary)
                         Text("$\(Int(listing.currentBid))")
                             .font(.pTitle3)
                             .fontWeight(.bold)
+                            .foregroundStyle(.orange)
                     }
+                    .frame(maxWidth: .infinity)
                     
-                    Spacer()
+                    Rectangle()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(width: 1, height: 36)
                     
-                    VStack(alignment: .trailing, spacing: 4) {
+                    VStack(spacing: 4) {
                         Text("BUY NOW")
-                            .font(.pCaption)
+                            .font(.pCaption2)
                             .foregroundStyle(.secondary)
                         Text("$\(Int(listing.buyNowPrice))")
                             .font(.pTitle3)
                             .fontWeight(.bold)
                             .foregroundStyle(.green)
                     }
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 12)
+                .padding(.vertical, 12)
             }
             .background(Color.white.opacity(0.08))
             .cornerRadius(12)
@@ -922,21 +925,33 @@ struct CompactListingCard: View {
             .aspectRatio(16/9, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            // Info bar
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("$\(Int(listing.buyNowPrice))")
-                        .font(.pSubheadline)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.green)
-                    Text("\(Int(listing.currentBid)) bid")
-                        .font(.system(size: 11))
+            // Info bar — split bid/buy
+            HStack(spacing: 0) {
+                VStack(spacing: 1) {
+                    Text("BID")
+                        .font(.system(size: 8))
                         .foregroundStyle(.secondary)
+                    Text("$\(Int(listing.currentBid))")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.orange)
                 }
-                Spacer()
+                .frame(maxWidth: .infinity)
+                
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 1, height: 22)
+                
+                VStack(spacing: 1) {
+                    Text("BUY")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.secondary)
+                    Text("$\(Int(listing.buyNowPrice))")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.green)
+                }
+                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 8)
+            .padding(.vertical, 6)
         }
         .background(Color.white.opacity(0.08))
         .cornerRadius(12)

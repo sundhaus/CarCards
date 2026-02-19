@@ -144,9 +144,9 @@ struct TransferListView: View {
                         }
                     }
                     .padding(.vertical)
+                    .padding(.bottom, isLandscape ? 0 : 80)
                 }
             }
-            .padding(.bottom, isLandscape ? 0 : 80)
             .padding(.trailing, isLandscape ? 100 : 0)
         }
         .navigationBarBackButtonHidden(true)
@@ -177,40 +177,27 @@ struct TransferListingCard: View {
     var timeRemaining: String {
         let now = Date()
         let remaining = listing.expirationDate.timeIntervalSince(now)
-        
-        if remaining <= 0 {
-            return "Expired"
-        }
-        
+        if remaining <= 0 { return "Expired" }
         let hours = Int(remaining / 3600)
         let minutes = Int((remaining.truncatingRemainder(dividingBy: 3600)) / 60)
-        
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
+        return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
     }
     
-    var statusBadge: some View {
-        HStack(spacing: 4) {
-            Image(systemName: listing.status == .active ? "clock.fill" : "checkmark.circle.fill")
-                .font(.pCaption)
-            Text(listing.status == .active ? timeRemaining : "Sold")
-                .font(.pCaption)
-                .fontWeight(.semibold)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(listing.status == .active ? Color.orange.opacity(0.2) : Color.green.opacity(0.2))
-        .foregroundStyle(listing.status == .active ? .orange : .green)
-        .cornerRadius(8)
+    private var statusColor: Color {
+        if listing.status == .sold { return .green }
+        return listing.isExpired ? .red : .orange
+    }
+    
+    private var statusText: String {
+        if listing.status == .sold { return "Sold" }
+        return timeRemaining
     }
     
     var body: some View {
         VStack(spacing: 0) {
+            // Top: image + name + status
             HStack(spacing: 12) {
-                // Car image with frame
+                // Card thumbnail
                 ZStack {
                     if let image = cardImage {
                         Image(uiImage: image)
@@ -222,12 +209,9 @@ struct TransferListingCard: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color(.systemGray5))
                             .frame(width: 80, height: 80)
-                            .overlay {
-                                ProgressView()
-                            }
+                            .overlay { ProgressView() }
                     }
                     
-                    // PNG border overlay based on customFrame
                     if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
                         Image(borderImageName)
                             .resizable()
@@ -238,72 +222,77 @@ struct TransferListingCard: View {
                     }
                 }
                 
-                // Card details
+                // Name + status inline
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(listing.year) \(listing.make)")
-                        .font(.pHeadline)
-                        .lineLimit(1)
-                    
-                    Text(listing.model.uppercased())
-                        .font(.pSubheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    
-                    HStack(spacing: 8) {
-                        // Show current bid or "No bids"
-                        if listing.currentBid > 0 {
-                            HStack(spacing: 4) {
-                                Image(systemName: "hammer.fill")
-                                    .foregroundStyle(.orange)
-                                    .font(.pCaption)
-                                Text("\(Int(listing.currentBid))")
-                                    .font(.pCaption)
-                                    .fontWeight(.semibold)
-                            }
-                        } else {
-                            HStack(spacing: 4) {
-                                Image(systemName: "tag.fill")
-                                    .foregroundStyle(.gray)
-                                    .font(.pCaption)
-                                Text("No bids")
-                                    .font(.pCaption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                    HStack(spacing: 6) {
+                        Text("\(listing.make) \(listing.model)")
+                            .font(.pHeadline)
+                            .lineLimit(1)
                         
-                        // Buy now price
-                        HStack(spacing: 4) {
-                            Image(systemName: "cart.fill")
-                                .foregroundStyle(.green)
-                                .font(.pCaption)
-                            Text("\(Int(listing.buyNowPrice))")
-                                .font(.pCaption)
-                                .fontWeight(.semibold)
+                        // Status badge inline
+                        HStack(spacing: 3) {
+                            Image(systemName: listing.status == .sold ? "checkmark.circle.fill" : "clock.fill")
+                                .font(.system(size: 9))
+                            Text(statusText)
+                                .font(.system(size: 10, weight: .semibold))
                         }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(statusColor.opacity(0.2))
+                        .foregroundStyle(statusColor)
+                        .cornerRadius(6)
                     }
+                    
+                    Text(listing.year)
+                        .font(.pCaption)
+                        .foregroundStyle(.secondary)
                 }
                 
                 Spacer()
-                
-                statusBadge
             }
             .padding(12)
+            
+            // Bottom: Current Bid | Buy Now — full width
+            HStack(spacing: 0) {
+                VStack(spacing: 4) {
+                    Text("CURRENT BID")
+                        .font(.pCaption2)
+                        .foregroundStyle(.secondary)
+                    Text("$\(Int(listing.currentBid))")
+                        .font(.pHeadline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.orange)
+                }
+                .frame(maxWidth: .infinity)
+                
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 1, height: 36)
+                
+                VStack(spacing: 4) {
+                    Text("BUY NOW")
+                        .font(.pCaption2)
+                        .foregroundStyle(.secondary)
+                    Text("$\(Int(listing.buyNowPrice))")
+                        .font(.pHeadline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.green)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 10)
+            .background(Color.white.opacity(0.04))
         }
         .background(Color.white.opacity(0.08))
         .cornerRadius(12)
-        .task {
-            await loadImage()
-        }
+        .task { await loadImage() }
     }
     
     private func loadImage() async {
         guard !listing.imageURL.isEmpty else { return }
-        
         do {
             let image = try await CardService.shared.loadImage(from: listing.imageURL)
-            await MainActor.run {
-                cardImage = image
-            }
+            await MainActor.run { cardImage = image }
         } catch {
             print("❌ Failed to load listing image: \(error)")
         }
@@ -314,6 +303,11 @@ struct TransferListingCard: View {
 struct CompactTransferListingCard: View {
     let listing: CloudListing
     @State private var cardImage: UIImage?
+    
+    private var statusColor: Color {
+        if listing.status == .sold { return .green }
+        return listing.isExpired ? .red : .orange
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -342,14 +336,14 @@ struct CompactTransferListingCard: View {
                     HStack {
                         Spacer()
                         HStack(spacing: 3) {
-                            Image(systemName: listing.status == .active ? "clock.fill" : "checkmark.circle.fill")
+                            Image(systemName: listing.status == .sold ? "checkmark.circle.fill" : "clock.fill")
                                 .font(.system(size: 8))
-                            Text(listing.status == .active ? "Active" : "Sold")
+                            Text(listing.status == .sold ? "Sold" : (listing.isExpired ? "Expired" : "Active"))
                                 .font(.system(size: 9, weight: .semibold))
                         }
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(listing.status == .active ? Color.orange.opacity(0.8) : Color.green.opacity(0.8))
+                        .background(statusColor.opacity(0.8))
                         .foregroundStyle(.white)
                         .cornerRadius(6)
                         .padding(6)
@@ -360,27 +354,43 @@ struct CompactTransferListingCard: View {
             .aspectRatio(16/9, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 10))
             
-            // Info bar
+            // Name
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(listing.make) \(listing.model)")
-                        .font(.system(size: 12, weight: .semibold))
-                        .lineLimit(1)
-                    HStack(spacing: 6) {
-                        Text("$\(Int(listing.buyNowPrice))")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.green)
-                        if listing.currentBid > 0 {
-                            Text("\(Int(listing.currentBid)) bid")
-                                .font(.system(size: 10))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
+                Text("\(listing.make) \(listing.model)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
                 Spacer()
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 8)
+            .padding(.top, 8)
+            
+            // Current Bid | Buy Now
+            HStack(spacing: 0) {
+                VStack(spacing: 1) {
+                    Text("BID")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.secondary)
+                    Text("$\(Int(listing.currentBid))")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.orange)
+                }
+                .frame(maxWidth: .infinity)
+                
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 1, height: 22)
+                
+                VStack(spacing: 1) {
+                    Text("BUY")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.secondary)
+                    Text("$\(Int(listing.buyNowPrice))")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.green)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 6)
         }
         .background(Color.white.opacity(0.08))
         .cornerRadius(12)

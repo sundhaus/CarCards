@@ -146,9 +146,9 @@ struct TransferTargetsView: View {
                         }
                     }
                     .padding(.vertical)
+                    .padding(.bottom, isLandscape ? 0 : 80)
                 }
             }
-            .padding(.bottom, isLandscape ? 0 : 80)
             .padding(.trailing, isLandscape ? 100 : 0)
         }
         .navigationBarBackButtonHidden(true)
