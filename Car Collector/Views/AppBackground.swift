@@ -30,9 +30,9 @@ struct AppBackground: View {
                     FloatingShapesView(size: geo.size)
                 }
                 
-                // Blur layer over everything
-                Rectangle()
-                    .fill(.ultraThinMaterial)
+                // Blur layer over everything (temporarily disabled)
+                // Rectangle()
+                //     .fill(.ultraThinMaterial)
             }
         }
         .ignoresSafeArea()
