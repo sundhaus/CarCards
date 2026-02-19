@@ -28,7 +28,7 @@ struct SignatureView: View {
                         dismiss()
                     }) {
                         Image(systemName: "xmark")
-                            .font(.title2)
+                            .font(.pTitle2)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
                             .frame(width: 44, height: 44)
@@ -39,7 +39,7 @@ struct SignatureView: View {
                     Spacer()
                     
                     Text("Add Signature")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.poppins(20))
                         .foregroundStyle(.white)
                     
                     Spacer()
@@ -49,7 +49,7 @@ struct SignatureView: View {
                         isDirty = false
                     }) {
                         Text("Clear")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.poppins(16))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
@@ -82,7 +82,7 @@ struct SignatureView: View {
                     dismiss()
                 }) {
                     Text("Save Signature")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.poppins(18))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)

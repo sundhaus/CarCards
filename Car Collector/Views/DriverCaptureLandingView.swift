@@ -27,11 +27,11 @@ struct DriverCaptureLandingView: View {
                     // Header
                     VStack(spacing: 8) {
                         Text("Capture Driver")
-                            .font(.system(size: 42, weight: .bold))
+                            .font(.poppins(42))
                             .foregroundStyle(.primary)
                         
                         Text("Choose capture type")
-                            .font(.system(size: 16))
+                            .font(.poppins(16))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 60)
@@ -80,7 +80,7 @@ struct DriverCaptureLandingView: View {
                             dismiss()
                         }) {
                             Image(systemName: "xmark")
-                                .font(.title2)
+                                .font(.pTitle2)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white)
                                 .frame(width: 44, height: 44)

@@ -364,7 +364,7 @@ struct CameraView: View {
                                 isPresented = false
                             }) {
                                 Image(systemName: "xmark")
-                                    .font(.title2)
+                                    .font(.pTitle2)
                                     .foregroundStyle(.white)
                                     .padding()
                                     .background(.black.opacity(0.5))

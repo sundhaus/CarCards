@@ -186,7 +186,7 @@ struct HotCardsCarousel: View {
         VStack {
             ProgressView()
             Text("Loading hot cards...")
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.secondary)
                 .padding(.top, 8)
         }
@@ -197,15 +197,15 @@ struct HotCardsCarousel: View {
     private var emptyView: some View {
         VStack(spacing: 8) {
             Image(systemName: "flame.fill")
-                .font(.system(size: 50))
+                .font(.poppins(50))
                 .foregroundStyle(.orange.opacity(0.7))
             
             Text("No hot cards yet")
-                .font(.subheadline)
+                .font(.pSubheadline)
                 .foregroundStyle(.primary.opacity(0.8))
             
             Text("Be the first to get some heat!")
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -331,7 +331,7 @@ struct HotCardItem: View {
                             .tint(.gray)
                     } else {
                         Image(systemName: "car.fill")
-                            .font(.system(size: 30))
+                            .font(.poppins(30))
                             .foregroundStyle(.gray.opacity(0.4))
                     }
                 }

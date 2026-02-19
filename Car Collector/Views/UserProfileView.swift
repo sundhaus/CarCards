@@ -110,12 +110,12 @@ struct UserProfileView: View {
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.title3)
+                            .font(.pTitle3)
                             .foregroundStyle(.primary)
                     }
                     
                     Text("PROFILE")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
                     
@@ -168,7 +168,7 @@ struct UserProfileView: View {
                                             .frame(width: 80, height: 80)
                                             .overlay {
                                                 Image(systemName: "person.fill")
-                                                    .font(.system(size: 36))
+                                                    .font(.poppins(36))
                                                     .foregroundStyle(.white)
                                             }
                                     }
@@ -177,11 +177,11 @@ struct UserProfileView: View {
                                 // Username and level
                                 VStack(spacing: 4) {
                                     Text(profile.username)
-                                        .font(.title2)
+                                        .font(.pTitle2)
                                         .fontWeight(.bold)
                                     
                                     Text("Level \(profile.level)")
-                                        .font(.subheadline)
+                                        .font(.pSubheadline)
                                         .foregroundStyle(.secondary)
                                 }
                                 
@@ -189,9 +189,9 @@ struct UserProfileView: View {
                                 Button(action: handleRelationshipAction) {
                                     HStack(spacing: 8) {
                                         Image(systemName: relationshipStatus.icon)
-                                            .font(.subheadline)
+                                            .font(.pSubheadline)
                                         Text(relationshipStatus.buttonText)
-                                            .font(.subheadline)
+                                            .font(.pSubheadline)
                                             .fontWeight(.semibold)
                                     }
                                     .foregroundStyle(.white)
@@ -214,14 +214,14 @@ struct UserProfileView: View {
                                     VStack(spacing: 4) {
                                         HStack(spacing: 4) {
                                             Image(systemName: "car.fill")
-                                                .font(.caption)
+                                                .font(.pCaption)
                                                 .foregroundStyle(.blue)
                                             Text("\(profile.totalCardsCollected)")
-                                                .font(.headline)
+                                                .font(.pHeadline)
                                                 .fontWeight(.semibold)
                                         }
                                         Text("Cards")
-                                            .font(.caption)
+                                            .font(.pCaption)
                                             .foregroundStyle(.secondary)
                                     }
                                     
@@ -231,14 +231,14 @@ struct UserProfileView: View {
                                     VStack(spacing: 4) {
                                         HStack(spacing: 4) {
                                             Image(systemName: "dollarsign.circle.fill")
-                                                .font(.caption)
+                                                .font(.pCaption)
                                                 .foregroundStyle(.yellow)
                                             Text("\(profile.coins)")
-                                                .font(.headline)
+                                                .font(.pHeadline)
                                                 .fontWeight(.semibold)
                                         }
                                         Text("Coins")
-                                            .font(.caption)
+                                            .font(.pCaption)
                                             .foregroundStyle(.secondary)
                                     }
                                 }
@@ -253,7 +253,7 @@ struct UserProfileView: View {
                             // Garage header with toggle
                             HStack {
                                 Text("Garage (\(userCards.count))")
-                                    .font(.headline)
+                                    .font(.pHeadline)
                                 
                                 Spacer()
                                 
@@ -273,7 +273,7 @@ struct UserProfileView: View {
                             } else if userCards.isEmpty {
                                 VStack(spacing: 12) {
                                     Image(systemName: "car")
-                                        .font(.system(size: 50))
+                                        .font(.poppins(50))
                                         .foregroundStyle(.gray)
                                     Text("No cards yet")
                                         .foregroundStyle(.secondary)
@@ -438,10 +438,10 @@ struct StatButton: View {
     var body: some View {
         VStack(spacing: 4) {
             Text("\(count)")
-                .font(.headline)
+                .font(.pHeadline)
                 .fontWeight(.bold)
             Text(title)
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.secondary)
         }
     }

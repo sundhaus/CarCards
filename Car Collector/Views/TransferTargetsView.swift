@@ -34,12 +34,12 @@ struct TransferTargetsView: View {
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.title3)
+                            .font(.pTitle3)
                             .foregroundStyle(.primary)
                     }
                     
                     Text("TRANSFER TARGETS")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
                     
@@ -55,13 +55,13 @@ struct TransferTargetsView: View {
                         // Winning Bids Section
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Winning (\(winningBids.count))")
-                                .font(.headline)
+                                .font(.pHeadline)
                                 .padding(.horizontal)
                             
                             if winningBids.isEmpty {
                                 VStack(spacing: 12) {
                                     Image(systemName: "trophy")
-                                        .font(.system(size: 50))
+                                        .font(.poppins(50))
                                         .foregroundStyle(.gray)
                                     Text("No winning bids")
                                         .foregroundStyle(.secondary)
@@ -82,18 +82,18 @@ struct TransferTargetsView: View {
                         // Outbid Section
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Outbid (\(outbidCards.count))")
-                                .font(.headline)
+                                .font(.pHeadline)
                                 .padding(.horizontal)
                             
                             if outbidCards.isEmpty {
                                 VStack(spacing: 12) {
                                     Image(systemName: "exclamationmark.triangle")
-                                        .font(.system(size: 50))
+                                        .font(.poppins(50))
                                         .foregroundStyle(.gray)
                                     Text("No outbid cards")
                                         .foregroundStyle(.secondary)
                                     Text("Bid history tracking coming soon")
-                                        .font(.caption)
+                                        .font(.pCaption)
                                         .foregroundStyle(.secondary)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -185,11 +185,11 @@ struct ListingCardView: View {
             // Card details
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(listing.year) \(listing.make)")
-                    .font(.headline)
+                    .font(.pHeadline)
                     .lineLimit(1)
                 
                 Text(listing.model.uppercased())
-                    .font(.subheadline)
+                    .font(.pSubheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 
@@ -197,18 +197,18 @@ struct ListingCardView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "dollarsign.circle.fill")
                             .foregroundStyle(.green)
-                            .font(.caption)
+                            .font(.pCaption)
                         Text("\(Int(listing.currentBid))")
-                            .font(.caption)
+                            .font(.pCaption)
                             .fontWeight(.semibold)
                     }
                     
                     HStack(spacing: 4) {
                         Image(systemName: "clock.fill")
                             .foregroundStyle(.orange)
-                            .font(.caption)
+                            .font(.pCaption)
                         Text(timeRemaining)
-                            .font(.caption)
+                            .font(.pCaption)
                     }
                 }
             }

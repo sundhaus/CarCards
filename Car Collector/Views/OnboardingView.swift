@@ -51,7 +51,7 @@ struct OnboardingView: View {
                 // App icon / logo area
                 VStack(spacing: 16) {
                     Image(systemName: "car.fill")
-                        .font(.system(size: 70))
+                        .font(.poppins(70))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [.blue, .cyan],
@@ -63,7 +63,7 @@ struct OnboardingView: View {
                         .opacity(animateIn ? 1.0 : 0.0)
                     
                     Text("Car Card Collector")
-                        .font(.system(size: 32, weight: .bold))
+                        .font(.poppins(32))
                         .foregroundStyle(.white)
                         .opacity(animateIn ? 1.0 : 0.0)
                 }
@@ -72,14 +72,14 @@ struct OnboardingView: View {
                 // Username input
                 VStack(spacing: 16) {
                     Text("Choose your name")
-                        .font(.title3)
+                        .font(.pTitle3)
                         .fontWeight(.medium)
                         .foregroundStyle(.white.opacity(0.8))
                     
                     VStack(spacing: 8) {
                         HStack {
                             TextField("", text: $username, prompt: Text("Enter username").foregroundStyle(.white.opacity(0.4)))
-                                .font(.system(size: 22, weight: .medium))
+                                .font(.poppins(22))
                                 .foregroundStyle(.white)
                                 .multilineTextAlignment(.center)
                                 .autocorrectionDisabled()
@@ -99,7 +99,7 @@ struct OnboardingView: View {
                                 } else if let available = isAvailable {
                                     Image(systemName: available ? "checkmark.circle.fill" : "xmark.circle.fill")
                                         .foregroundStyle(available ? .green : .red)
-                                        .font(.title3)
+                                        .font(.pTitle3)
                                         .transition(.scale.combined(with: .opacity))
                                 }
                             }
@@ -121,11 +121,11 @@ struct OnboardingView: View {
                             if isValid {
                                 if isChecking {
                                     Text("Checking availability...")
-                                        .font(.caption)
+                                        .font(.pCaption)
                                         .foregroundStyle(.white.opacity(0.5))
                                 } else if let available = isAvailable {
                                     Text(available ? "Username available!" : "Username already taken")
-                                        .font(.caption)
+                                        .font(.pCaption)
                                         .foregroundStyle(available ? .green : .red)
                                         .transition(.opacity)
                                 }
@@ -135,14 +135,14 @@ struct OnboardingView: View {
                             
                             // Character count
                             Text("\(username.count)/20")
-                                .font(.caption)
+                                .font(.pCaption)
                                 .foregroundStyle(.white.opacity(0.4))
                         }
                         
                         // Error message
                         if let error = errorMessage {
                             Text(error)
-                                .font(.caption)
+                                .font(.pCaption)
                                 .foregroundStyle(.red)
                                 .transition(.opacity)
                         }
@@ -162,7 +162,7 @@ struct OnboardingView: View {
                                 .tint(.white)
                         } else {
                             Text("Let's Go")
-                                .font(.system(size: 20, weight: .bold))
+                                .font(.poppins(20))
                         }
                     }
                     .foregroundStyle(.white)

@@ -73,14 +73,14 @@ struct CardDetailsView: View {
         HStack {
             Button(action: onDismiss) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.poppins(22))
                     .foregroundStyle(.white)
             }
             
             Spacer()
             
             Text("Item Details")
-                .font(.system(size: 20, weight: .semibold))
+                .font(.poppins(20))
                 .foregroundStyle(.white)
             
             Spacer()
@@ -93,10 +93,10 @@ struct CardDetailsView: View {
     private var coinCounter: some View {
         HStack(spacing: 4) {
             Image(systemName: "dollarsign.circle.fill")
-                .font(.system(size: 18))
+                .font(.poppins(18))
                 .foregroundStyle(.yellow)
             Text("\(userService.coins)")
-                .font(.system(size: 16, weight: .bold))
+                .font(.poppins(16))
                 .foregroundStyle(.white)
         }
         .padding(.horizontal, 12)
@@ -150,12 +150,12 @@ struct CardDetailsView: View {
             }) {
                 HStack {
                     Image(systemName: "tag.fill")
-                        .font(.system(size: 18))
+                        .font(.poppins(18))
                     Text("List on Transfer Market")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.poppins(17))
                     Spacer()
                     Image(systemName: showListingForm ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.poppins(14))
                 }
                 .foregroundStyle(.white)
                 .padding()
@@ -194,7 +194,7 @@ struct CardDetailsView: View {
             
             if let error = errorMessage {
                 Text(error)
-                    .font(.caption)
+                    .font(.pCaption)
                     .foregroundStyle(.red)
             }
         }
@@ -208,7 +208,7 @@ struct CardDetailsView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(label)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.poppins(15))
                     .foregroundStyle(.white)
                 Spacer()
             }
@@ -229,7 +229,7 @@ struct CardDetailsView: View {
             }
         }) {
             Image(systemName: "minus")
-                .font(.system(size: 20, weight: .bold))
+                .font(.poppins(20))
                 .foregroundStyle(.white)
                 .frame(width: 44, height: 44)
                 .background(Color.white.opacity(0.2))
@@ -246,7 +246,7 @@ struct CardDetailsView: View {
             }
         }) {
             Image(systemName: "plus")
-                .font(.system(size: 20, weight: .bold))
+                .font(.poppins(20))
                 .foregroundStyle(.white)
                 .frame(width: 44, height: 44)
                 .background(Color.white.opacity(0.2))
@@ -256,7 +256,7 @@ struct CardDetailsView: View {
     
     private func priceTextField(value: Binding<String>) -> some View {
         TextField("0", text: value)
-            .font(.system(size: 18, weight: .semibold))
+            .font(.poppins(18))
             .foregroundStyle(.white)
             .multilineTextAlignment(.center)
             .padding()
@@ -270,13 +270,13 @@ struct CardDetailsView: View {
             Image(systemName: "dollarsign.circle.fill")
                 .foregroundStyle(.yellow)
         }
-        .font(.system(size: 18))
+        .font(.poppins(18))
     }
     
     private var durationPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Duration")
-                .font(.system(size: 15, weight: .medium))
+                .font(.poppins(15))
                 .foregroundStyle(.white)
             
             Picker("Duration", selection: $selectedDuration) {
@@ -305,7 +305,7 @@ struct CardDetailsView: View {
                     .padding()
             } else {
                 Text("List for Transfer")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.poppins(17))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -335,9 +335,9 @@ struct CardDetailsView: View {
         }) {
             HStack {
                 Image(systemName: "gauge.with.dots.needle.67percent")
-                    .font(.system(size: 18))
+                    .font(.poppins(18))
                 Text("Vehicle Specs")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.poppins(17))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -351,9 +351,9 @@ struct CardDetailsView: View {
         Button(action: onComparePrice) {
             HStack {
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 18))
+                    .font(.poppins(18))
                 Text("Compare Price")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.poppins(17))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -369,11 +369,11 @@ struct CardDetailsView: View {
         }) {
             HStack {
                 Text("Quick Sell")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.poppins(17))
                 Spacer()
                 HStack(spacing: 4) {
                     Text("250")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.poppins(16))
                     Image(systemName: "dollarsign.circle.fill")
                         .foregroundStyle(.yellow)
                 }
@@ -402,13 +402,13 @@ struct CardDetailsView: View {
                     .foregroundStyle(.white)
                 
                 Text(card.year)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.poppins(14))
                     .foregroundStyle(.white.opacity(0.8))
                 
                 // Summary/Description
                 if let description = displaySpecs?.description, !description.isEmpty {
                     Text(description)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.poppins(12))
                         .foregroundStyle(.white.opacity(0.9))
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
@@ -454,12 +454,12 @@ struct CardDetailsView: View {
     private func compactStatRow(label: String, value: String) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.poppins(10))
                 .foregroundStyle(.white.opacity(0.6))
                 .frame(width: 50, alignment: .leading)
             
             Text(value)
-                .font(.system(size: 14, weight: .bold))
+                .font(.poppins(14))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -479,7 +479,7 @@ struct CardDetailsView: View {
                     .tint(.white)
                     .scaleEffect(1.5)
                 Text("Loading specs...")
-                    .font(.caption)
+                    .font(.pCaption)
                     .foregroundStyle(.white.opacity(0.8))
             }
         }
@@ -489,13 +489,13 @@ struct CardDetailsView: View {
     private func statItem(label: String, value: String, compact: Bool = false) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: compact ? 12 : 18, weight: .bold))
+                .font(.poppins(compact ? 12 : 18))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             
             Text(label)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.poppins(9))
                 .foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)

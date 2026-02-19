@@ -52,12 +52,12 @@ struct FriendsView: View {
                     HStack {
                         Button(action: { dismiss() }) {
                             Image(systemName: "chevron.left")
-                                .font(.title3)
+                                .font(.pTitle3)
                                 .foregroundStyle(.primary)
                         }
                         
                         Text("FRIENDS")
-                            .font(.title2)
+                            .font(.pTitle2)
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)
                         
@@ -70,7 +70,7 @@ struct FriendsView: View {
                         }) {
                             ZStack(alignment: .topTrailing) {
                                 Image(systemName: "line.3.horizontal")
-                                    .font(.title3)
+                                    .font(.pTitle3)
                                     .foregroundStyle(.primary)
                                 
                                 // Notification badge
@@ -81,7 +81,7 @@ struct FriendsView: View {
                                             .frame(width: 18, height: 18)
                                         
                                         Text("\(friendsService.newFollowersCount)")
-                                            .font(.system(size: 10, weight: .bold))
+                                            .font(.poppins(10))
                                             .foregroundStyle(.primary)
                                     }
                                     .offset(x: 8, y: -8)
@@ -103,12 +103,12 @@ struct FriendsView: View {
                             } else if friendsService.friendActivities.isEmpty {
                                 VStack(spacing: 12) {
                                     Image(systemName: "person.2")
-                                        .font(.system(size: 50))
+                                        .font(.poppins(50))
                                         .foregroundStyle(.gray)
                                     Text("No recent activity")
                                         .foregroundStyle(.secondary)
                                     Text("Follow people to see their cards")
-                                        .font(.caption)
+                                        .font(.pCaption)
                                         .foregroundStyle(.secondary)
                                     
                                     Button(action: {
@@ -118,7 +118,7 @@ struct FriendsView: View {
                                             Image(systemName: "person.badge.plus")
                                             Text("Find People")
                                         }
-                                        .font(.subheadline)
+                                        .font(.pSubheadline)
                                         .fontWeight(.medium)
                                         .foregroundStyle(.primary)
                                         .padding(.horizontal, 20)
@@ -253,7 +253,7 @@ struct FriendActivityCard: View {
                         .frame(width: 32, height: 32)
                     
                     Text("\(activity.level)")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.poppins(14))
                         .foregroundStyle(.primary)
                 }
                 
@@ -263,11 +263,11 @@ struct FriendActivityCard: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(activity.username)
-                            .font(.subheadline)
+                            .font(.pSubheadline)
                             .fontWeight(.semibold)
                             .foregroundStyle(.primary)
                         Text("added a card")
-                            .font(.caption)
+                            .font(.pCaption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -275,7 +275,7 @@ struct FriendActivityCard: View {
                 Spacer()
                 
                 Text(activity.timeAgo)
-                    .font(.caption)
+                    .font(.pCaption)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal)
@@ -291,7 +291,7 @@ struct FriendActivityCard: View {
                         // Floating flame animation overlay
                         if showFloatingFlame {
                             Image(systemName: "flame.fill")
-                                .font(.system(size: 80))
+                                .font(.poppins(80))
                                 .foregroundStyle(
                                     LinearGradient(
                                         colors: [.orange, .red],
@@ -311,7 +311,7 @@ struct FriendActivityCard: View {
                             HStack {
                                 Spacer()
                                 Text("Tap for specs")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.poppins(11))
                                     .foregroundStyle(.primary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
@@ -362,7 +362,7 @@ struct FriendActivityCard: View {
                                         .tint(.white)
                                         .scaleEffect(1.5)
                                     Text("Loading specs...")
-                                        .font(.caption)
+                                        .font(.pCaption)
                                         .foregroundStyle(.white.opacity(0.8))
                                 }
                             }
@@ -384,13 +384,13 @@ struct FriendActivityCard: View {
                                         .lineLimit(1)
                                     
                                     Text(activity.cardYear)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.poppins(14))
                                         .foregroundStyle(.white.opacity(0.8))
                                     
                                     // Summary/Description
                                     if let description = fetchedSpecs?.description, !description.isEmpty {
                                         Text(description)
-                                            .font(.system(size: 11, weight: .medium))
+                                            .font(.poppins(11))
                                             .foregroundStyle(.white.opacity(0.9))
                                             .multilineTextAlignment(.center)
                                             .lineLimit(3)
@@ -417,7 +417,7 @@ struct FriendActivityCard: View {
                                     .padding(.horizontal, 20)
                                     
                                     Text("Tap to flip back")
-                                        .font(.system(size: 10))
+                                        .font(.poppins(10))
                                         .foregroundStyle(.secondary)
                                 }
                                 .padding(.vertical, 12)
@@ -459,7 +459,7 @@ struct FriendActivityCard: View {
                 }) {
                     HStack(spacing: 6) {
                         Image(systemName: isHeated ? "flame.fill" : "flame")
-                            .font(.subheadline)
+                            .font(.pSubheadline)
                             .foregroundStyle(isHeated ?
                                 LinearGradient(
                                     colors: [.orange, .red],
@@ -477,7 +477,7 @@ struct FriendActivityCard: View {
                         
                         if heatCount > 0 {
                             Text("\(heatCount)")
-                                .font(.caption)
+                                .font(.pCaption)
                                 .fontWeight(.medium)
                                 .foregroundStyle(isHeated ? .orange : .secondary)
                         }
@@ -488,9 +488,9 @@ struct FriendActivityCard: View {
                 Button(action: {}) {
                     HStack(spacing: 4) {
                         Image(systemName: "bubble.right")
-                            .font(.subheadline)
+                            .font(.pSubheadline)
                         Text("Comment")
-                            .font(.caption)
+                            .font(.pCaption)
                     }
                     .foregroundStyle(.secondary)
                 }
@@ -628,12 +628,12 @@ struct FriendActivityCard: View {
     private func compactStatRow(label: String, value: String) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.poppins(9))
                 .foregroundStyle(.secondary)
                 .frame(width: 45, alignment: .leading)
             
             Text(value)
-                .font(.system(size: 13, weight: .bold))
+                .font(.poppins(13))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -643,13 +643,13 @@ struct FriendActivityCard: View {
     private func statItem(label: String, value: String, compact: Bool = false) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: compact ? 14 : 18, weight: .bold))
+                .font(.poppins(compact ? 14 : 18))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             
             Text(label)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.poppins(9))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -732,7 +732,7 @@ struct FollowListPopup: View {
                 // Header
                 HStack {
                     Text(selectedTab.rawValue)
-                        .font(.title2)
+                        .font(.pTitle2)
                         .fontWeight(.bold)
                     
                     Spacer()
@@ -743,7 +743,7 @@ struct FollowListPopup: View {
                         }
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
+                            .font(.pTitle2)
                             .foregroundStyle(.gray)
                     }
                 }
@@ -824,7 +824,7 @@ struct FollowListPopup: View {
                         Image(systemName: "person.badge.plus")
                         Text("Find People to Follow")
                     }
-                    .font(.subheadline)
+                    .font(.pSubheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
@@ -858,7 +858,7 @@ struct FollowListPopup: View {
     private func emptyStateView(message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "person.2")
-                .font(.system(size: 40))
+                .font(.poppins(40))
                 .foregroundStyle(.gray)
             Text(message)
                 .foregroundStyle(.secondary)
@@ -880,13 +880,13 @@ struct TabButton: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Text(title)
-                    .font(.subheadline)
+                    .font(.pSubheadline)
                     .fontWeight(isSelected ? .semibold : .regular)
                     .foregroundStyle(isSelected ? .primary : .secondary)
                 
                 HStack(spacing: 4) {
                     Text("\(count)")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(isSelected ? .blue : .secondary)
                     
                     // Notification badge
@@ -897,7 +897,7 @@ struct TabButton: View {
                                 .frame(width: 16, height: 16)
                             
                             Text("\(notificationCount)")
-                                .font(.system(size: 9, weight: .bold))
+                                .font(.poppins(9))
                                 .foregroundStyle(.primary)
                         }
                     }
@@ -944,7 +944,7 @@ struct SearchUsersView: View {
                 // Header
                 HStack {
                     Text("Find People")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .fontWeight(.bold)
                     
                     Spacer()
@@ -955,7 +955,7 @@ struct SearchUsersView: View {
                         }
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
+                            .font(.pTitle2)
                             .foregroundStyle(.gray)
                     }
                 }
@@ -1003,7 +1003,7 @@ struct SearchUsersView: View {
                 // Messages
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.red)
                         .padding(.horizontal)
                         .padding(.bottom, 8)
@@ -1011,7 +1011,7 @@ struct SearchUsersView: View {
                 
                 if let successMessage = successMessage {
                     Text(successMessage)
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.green)
                         .padding(.horizontal)
                         .padding(.bottom, 8)
@@ -1026,7 +1026,7 @@ struct SearchUsersView: View {
                             // Idle state
                             VStack(spacing: 12) {
                                 Image(systemName: "magnifyingglass")
-                                    .font(.system(size: 40))
+                                    .font(.poppins(40))
                                     .foregroundStyle(.gray.opacity(0.5))
                                 Text("Type a username to search")
                                     .foregroundStyle(.secondary)
@@ -1036,7 +1036,7 @@ struct SearchUsersView: View {
                         } else if searchResults.isEmpty && hasSearched && !isSearching {
                             VStack(spacing: 12) {
                                 Image(systemName: "person.fill.questionmark")
-                                    .font(.system(size: 40))
+                                    .font(.poppins(40))
                                     .foregroundStyle(.gray)
                                 Text("No users found")
                                     .foregroundStyle(.secondary)
@@ -1210,7 +1210,7 @@ struct FollowRow: View {
                         .frame(width: 40, height: 40)
                     
                     Text("\(person.level)")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.poppins(16))
                         .foregroundStyle(.primary)
                 }
                 
@@ -1218,19 +1218,19 @@ struct FollowRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(person.username)
-                            .font(.subheadline)
+                            .font(.pSubheadline)
                             .fontWeight(.semibold)
                             .foregroundStyle(.primary)
                         
                         if person.isFriend {
                             Image(systemName: "checkmark.seal.fill")
-                                .font(.caption)
+                                .font(.pCaption)
                                 .foregroundStyle(.blue)
                         }
                     }
                     
                     Text("\(person.totalCards) cards")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                 }
                 
@@ -1239,7 +1239,7 @@ struct FollowRow: View {
                 // Follow status indicator
                 if person.followsMe && !person.isFollowing {
                     Text("Follows you")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.blue)
                 }
             }
@@ -1269,7 +1269,7 @@ struct SearchResultRow: View {
                         .frame(width: 40, height: 40)
                         .overlay(
                             Text(String(user.username.prefix(1)).uppercased())
-                                .font(.headline)
+                                .font(.pHeadline)
                                 .foregroundStyle(.primary)
                         )
                     
@@ -1277,27 +1277,27 @@ struct SearchResultRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(user.username)
-                                .font(.subheadline)
+                                .font(.pSubheadline)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.primary)
                             
                             if user.isFriend {
                                 Image(systemName: "checkmark.seal.fill")
-                                    .font(.caption)
+                                    .font(.pCaption)
                                     .foregroundStyle(.blue)
                             }
                         }
                         
                         HStack(spacing: 8) {
                             Text("Level \(user.level)")
-                                .font(.caption)
+                                .font(.pCaption)
                                 .foregroundStyle(.secondary)
                             
                             Text("•")
                                 .foregroundStyle(.secondary)
                             
                             Text("\(user.totalCards) cards")
-                                .font(.caption)
+                                .font(.pCaption)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -1310,7 +1310,7 @@ struct SearchResultRow: View {
             if user.isFollowing {
                 Button(action: onUnfollow) {
                     Text("Following")
-                        .font(.caption)
+                        .font(.pCaption)
                         .fontWeight(.medium)
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 12)
@@ -1321,7 +1321,7 @@ struct SearchResultRow: View {
             } else {
                 Button(action: onFollow) {
                     Image(systemName: "person.badge.plus")
-                        .font(.title3)
+                        .font(.pTitle3)
                         .foregroundStyle(.blue)
                 }
             }

@@ -14,14 +14,14 @@ struct ShopView: View {
         VStack {
             Spacer()
             Image(systemName: "bag.fill")
-                .font(.system(size: 60))
+                .font(.poppins(60))
                 .foregroundStyle(.green)
             Text("Shop")
-                .font(.title)
+                .font(.pTitle)
                 .fontWeight(.semibold)
                 .padding(.top, 8)
             Text("Coming soon")
-                .font(.subheadline)
+                .font(.pSubheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }

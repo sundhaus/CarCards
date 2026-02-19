@@ -29,7 +29,7 @@ struct GarageView: View {
                     // Custom header with title and toggle on same line
                     HStack {
                         Text("GARAGE")
-                            .font(.title2)
+                            .font(.pTitle2)
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)
                         
@@ -42,7 +42,7 @@ struct GarageView: View {
                             }
                         }) {
                             Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.title3)
+                                .font(.pTitle3)
                                 .foregroundStyle(.purple)
                         }
                         
@@ -53,7 +53,7 @@ struct GarageView: View {
                             }
                         }) {
                             Image(systemName: "arrow.clockwise")
-                                .font(.title3)
+                                .font(.pTitle3)
                                 .foregroundStyle(.green)
                         }
                         
@@ -61,7 +61,7 @@ struct GarageView: View {
                             cardsPerRow = cardsPerRow == 1 ? 2 : 1
                         }) {
                             Image(systemName: cardsPerRow == 1 ? "square.grid.2x2" : "rectangle")
-                                .font(.title3)
+                                .font(.pTitle3)
                                 .foregroundStyle(.blue)
                         }
                     }
@@ -73,7 +73,7 @@ struct GarageView: View {
                     if allCards.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "car.fill")
-                                .font(.system(size: 60))
+                                .font(.poppins(60))
                                 .foregroundStyle(.secondary)
                             Text("Your collection will appear here")
                                 .foregroundStyle(.secondary)
@@ -496,7 +496,7 @@ struct CardContextMenuOverlay: View {
     private func actionRow(label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.system(size: 16, weight: .medium))
+                .font(.poppins(16))
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 14)
@@ -652,7 +652,7 @@ struct UnifiedCardDetailView: View {
                             }
                         }) {
                             Image(systemName: "xmark")
-                                .font(.title2)
+                                .font(.pTitle2)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white)
                                 .frame(width: 44, height: 44)
@@ -667,7 +667,7 @@ struct UnifiedCardDetailView: View {
                         if case .vehicle = card, !isFetchingSpecs {
                             if specsAreComplete(cardSpecs) {
                                 Text("Tap card to flip")
-                                    .font(.caption)
+                                    .font(.pCaption)
                                     .foregroundStyle(.white.opacity(0.7))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
@@ -676,7 +676,7 @@ struct UnifiedCardDetailView: View {
                                     .padding(.trailing, 20)
                             } else {
                                 Text("Tap to load stats")
-                                    .font(.caption)
+                                    .font(.pCaption)
                                     .foregroundStyle(.white.opacity(0.7))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
@@ -807,7 +807,7 @@ struct CardBackView: View {
                         .foregroundStyle(.white)
                     
                     Text(year)
-                        .font(.subheadline)
+                        .font(.pSubheadline)
                         .foregroundStyle(.white.opacity(0.8))
                 }
                 .padding(.top, 20)
@@ -883,12 +883,12 @@ struct CardBackView: View {
     private func statItem(label: String, value: String, highlight: Bool) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: 22, weight: .bold))
+                .font(.poppins(22))
                 .foregroundStyle(highlight ? .white : .white.opacity(0.4))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.poppins(10))
                 .foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
@@ -1046,7 +1046,7 @@ struct SimpleCardView: View {
                 // Type badge in top-left
                 HStack {
                     Text(card.cardType)
-                        .font(.system(size: isLargeSize ? 10 : 8, weight: .bold))
+                        .font(.poppins(isLargeSize ? 10 : 8))
                         .foregroundStyle(.white)
                         .padding(.horizontal, isLargeSize ? 8 : 6)
                         .padding(.vertical, isLargeSize ? 4 : 3)

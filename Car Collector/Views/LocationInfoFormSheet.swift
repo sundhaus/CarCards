@@ -42,7 +42,7 @@ struct LocationInfoFormSheet: View {
                         VStack(spacing: 16) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Location Name *")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.poppins(14))
                                     .foregroundStyle(.secondary)
                                 
                                 TextField("Enter location name", text: $locationName)
@@ -55,7 +55,7 @@ struct LocationInfoFormSheet: View {
                             onComplete?(capturedImage, locationName)
                         }) {
                             Text("Save Location")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.poppins(18))
                                 .foregroundStyle(.primary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 18)

@@ -31,20 +31,20 @@ struct NavigationButton: View {
                         .frame(width: 60, height: 60)
                     
                     Image(systemName: icon)
-                        .font(.system(size: 26))
+                        .font(.poppins(26))
                         .foregroundStyle(.white)
                 }
                 
                 // Title and subtitle
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.poppins(18))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     
                     Text(subtitle)
-                        .font(.system(size: 13))
+                        .font(.poppins(13))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
@@ -54,7 +54,7 @@ struct NavigationButton: View {
                 
                 // Chevron arrow
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.poppins(14))
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 16)

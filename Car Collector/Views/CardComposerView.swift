@@ -125,7 +125,7 @@ struct CardComposerView: View {
                 HStack(spacing: 15) {
                     Button(action: rotateLeft) {
                         Image(systemName: "rotate.left")
-                            .font(.title3)
+                            .font(.pTitle3)
                             .foregroundStyle(.white)
                             .padding(10)
                             .background(.gray.opacity(0.6))
@@ -134,7 +134,7 @@ struct CardComposerView: View {
                     
                     Button(action: rotateRight) {
                         Image(systemName: "rotate.right")
-                            .font(.title3)
+                            .font(.pTitle3)
                             .foregroundStyle(.white)
                             .padding(10)
                             .background(.gray.opacity(0.6))
@@ -143,7 +143,7 @@ struct CardComposerView: View {
                     
                     Button(action: flipHorizontal) {
                         Image(systemName: "arrow.left.and.right.righttriangle.left.righttriangle.right")
-                            .font(.title3)
+                            .font(.pTitle3)
                             .foregroundStyle(.white)
                             .padding(10)
                             .background(.gray.opacity(0.6))
@@ -152,7 +152,7 @@ struct CardComposerView: View {
                     
                     Button(action: flipVertical) {
                         Image(systemName: "arrow.up.and.down.righttriangle.up.righttriangle.down")
-                            .font(.title3)
+                            .font(.pTitle3)
                             .foregroundStyle(.white)
                             .padding(10)
                             .background(.gray.opacity(0.6))
@@ -169,7 +169,7 @@ struct CardComposerView: View {
                         Image(systemName: "scissors")
                         Text("Remove Background")
                     }
-                    .font(.subheadline)
+                    .font(.pSubheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
@@ -183,7 +183,7 @@ struct CardComposerView: View {
                 HStack(spacing: 20) {
                     Button(action: onRetake) {
                         Text("Retake")
-                            .font(.headline)
+                            .font(.pHeadline)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -204,7 +204,7 @@ struct CardComposerView: View {
                         }
                     }) {
                         Text("Save")
-                            .font(.headline)
+                            .font(.pHeadline)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -219,7 +219,7 @@ struct CardComposerView: View {
             // Instructions
             VStack {
                 Text("Pinch to zoom, drag to move")
-                    .font(.caption)
+                    .font(.pCaption)
                     .foregroundStyle(.white)
                     .padding()
                     .background(.black.opacity(0.6))
@@ -240,11 +240,11 @@ struct CardComposerView: View {
                         .tint(.purple)
                     
                     Text("AI is analyzing your car...")
-                        .font(.headline)
+                        .font(.pHeadline)
                         .foregroundStyle(.white)
                     
                     Text("This takes just a few seconds")
-                        .font(.subheadline)
+                        .font(.pSubheadline)
                         .foregroundStyle(.white.opacity(0.7))
                 }
             }
@@ -260,11 +260,11 @@ struct CardComposerView: View {
                         .tint(.green)
                     
                     Text("Fetching vehicle specs...")
-                        .font(.headline)
+                        .font(.pHeadline)
                         .foregroundStyle(.white)
                     
                     Text("Getting performance data")
-                        .font(.subheadline)
+                        .font(.pSubheadline)
                         .foregroundStyle(.white.opacity(0.7))
                 }
             }
@@ -555,12 +555,12 @@ struct AlternativeVehiclesSheet: View {
     private var headerSection: some View {
         VStack(spacing: 10) {
             Text("Choose Your Vehicle")
-                .font(.title2)
+                .font(.pTitle2)
                 .fontWeight(.bold)
                 .padding(.top, 20)
             
             Text("Select the correct match from these options")
-                .font(.subheadline)
+                .font(.pSubheadline)
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 20)
         }
@@ -609,11 +609,11 @@ struct AlternativeVehiclesSheet: View {
     private func vehicleInfo(_ vehicle: VehicleIdentification) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("\(vehicle.make) \(vehicle.model)")
-                .font(.headline)
+                .font(.pHeadline)
                 .foregroundStyle(.primary)
             
             Text(vehicle.generation)
-                .font(.subheadline)
+                .font(.pSubheadline)
                 .foregroundStyle(.secondary)
         }
     }
@@ -623,7 +623,7 @@ struct AlternativeVehiclesSheet: View {
             Image(systemName: confidenceIcon(vehicle.confidence))
                 .foregroundStyle(confidenceColor(vehicle.confidence))
             Text(vehicle.confidence?.capitalized ?? "Unknown")
-                .font(.caption)
+                .font(.pCaption)
                 .fontWeight(.semibold)
                 .foregroundStyle(confidenceColor(vehicle.confidence))
         }
@@ -632,7 +632,7 @@ struct AlternativeVehiclesSheet: View {
     private var cancelButton: some View {
         Button(action: onCancel) {
             Text("Cancel")
-                .font(.headline)
+                .font(.pHeadline)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding()

@@ -49,12 +49,12 @@ struct ExploreView: View {
         HStack {
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
-                    .font(.title3)
+                    .font(.pTitle3)
                     .foregroundStyle(.primary)
             }
             
             Text("EXPLORE")
-                .font(.title2)
+                .font(.pTitle2)
                 .fontWeight(.bold)
                 .foregroundStyle(.primary)
             
@@ -93,7 +93,7 @@ struct ExploreView: View {
             ProgressView()
                 .tint(.white)
             Text("Loading cars...")
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -102,13 +102,13 @@ struct ExploreView: View {
     private var emptyView: some View {
         VStack(spacing: 16) {
             Image(systemName: "car.fill")
-                .font(.system(size: 60))
+                .font(.poppins(60))
                 .foregroundStyle(.gray)
             Text("No cars with specs yet")
-                .font(.subheadline)
+                .font(.pSubheadline)
                 .foregroundStyle(.secondary)
             Text("Cards need specs to appear in Explore")
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -141,18 +141,18 @@ struct FeaturedRow: View {
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Featured")
-                            .font(.headline)
+                            .font(.pHeadline)
                             .foregroundStyle(.primary)
                         
                         Text("Top picks from the community")
-                            .font(.caption)
+                            .font(.pCaption)
                             .foregroundStyle(.secondary)
                     }
                     
                     Spacer()
                     
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal)
@@ -195,18 +195,18 @@ struct CategoryRow: View {
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(category.rawValue)
-                            .font(.headline)
+                            .font(.pHeadline)
                             .foregroundStyle(.primary)
                         
                         Text(category.description)
-                            .font(.caption)
+                            .font(.pCaption)
                             .foregroundStyle(.secondary)
                     }
                     
                     Spacer()
                     
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal)

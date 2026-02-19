@@ -77,7 +77,7 @@ struct ProfileView: View {
                 // Header
                 HStack {
                     Text("Profile")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .fontWeight(.bold)
                     
                     Spacer()
@@ -88,7 +88,7 @@ struct ProfileView: View {
                         }
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
+                            .font(.pTitle2)
                             .foregroundStyle(.gray)
                     }
                 }
@@ -121,7 +121,7 @@ struct ProfileView: View {
                                     .clipShape(Circle())
                             } else {
                                 Image(systemName: "person.fill")
-                                    .font(.system(size: 40))
+                                    .font(.poppins(40))
                                     .foregroundStyle(.white)
                             }
                             
@@ -141,11 +141,11 @@ struct ProfileView: View {
                     // Username
                     VStack(spacing: 4) {
                         Text(username)
-                            .font(.title2)
+                            .font(.pTitle2)
                             .fontWeight(.semibold)
                         
                         Text("Level \(levelSystem.level)")
-                            .font(.subheadline)
+                            .font(.pSubheadline)
                             .foregroundStyle(.secondary)
                     }
                     
@@ -153,7 +153,7 @@ struct ProfileView: View {
                     VStack(spacing: 8) {
                         // XP fraction
                         Text("\(levelSystem.currentXP) / \(levelSystem.xpForNextLevel) XP")
-                            .font(.caption)
+                            .font(.pCaption)
                             .foregroundStyle(.secondary)
                         
                         // Progress bar
@@ -220,10 +220,10 @@ struct ProfileView: View {
                     // Account creation date
                     VStack(spacing: 4) {
                         Text("Member Since")
-                            .font(.caption)
+                            .font(.pCaption)
                             .foregroundStyle(.secondary)
                         Text(accountCreationDate, style: .date)
-                            .font(.subheadline)
+                            .font(.pSubheadline)
                             .fontWeight(.medium)
                     }
                     
@@ -235,16 +235,16 @@ struct ProfileView: View {
                             
                             VStack(spacing: 4) {
                                 Image(systemName: "exclamationmark.shield")
-                                    .font(.title3)
+                                    .font(.pTitle3)
                                     .foregroundStyle(.orange)
                                 
                                 Text("Account not backed up")
-                                    .font(.caption)
+                                    .font(.pCaption)
                                     .fontWeight(.medium)
                                     .foregroundStyle(.orange)
                                 
                                 Text("Sign in with Apple to save your progress across devices")
-                                    .font(.caption2)
+                                    .font(.pCaption2)
                                     .foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
                             }
@@ -258,7 +258,7 @@ struct ProfileView: View {
                                     Image(systemName: "apple.logo")
                                     Text("Sign in with Apple")
                                 }
-                                .font(.subheadline)
+                                .font(.pSubheadline)
                                 .fontWeight(.medium)
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)

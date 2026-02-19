@@ -33,13 +33,13 @@ struct HomeContainer: View {
                         .frame(width: 70, height: 70)
                     
                     Image(systemName: icon)
-                        .font(.system(size: 32))
+                        .font(.poppins(32))
                         .foregroundStyle(.white)
                 }
                 
                 // Title
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.poppins(16))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)

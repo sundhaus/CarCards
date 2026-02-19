@@ -16,7 +16,7 @@ struct DriverTypeSelectorView: View {
             // Header
             VStack(spacing: 8) {
                 Text("Choose Capture Type")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.poppins(24))
                     .foregroundStyle(.primary)
             }
             .padding(.top, 30)
@@ -29,9 +29,9 @@ struct DriverTypeSelectorView: View {
                 }) {
                     HStack {
                         Image(systemName: "person.fill")
-                            .font(.title2)
+                            .font(.pTitle2)
                         Text("Driver")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.poppins(18))
                         Spacer()
                         Image(systemName: "chevron.right")
                     }
@@ -52,9 +52,9 @@ struct DriverTypeSelectorView: View {
                 }) {
                     HStack {
                         Image(systemName: "person.and.background.dotted")
-                            .font(.title2)
+                            .font(.pTitle2)
                         Text("Driver + Vehicle")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.poppins(18))
                         Spacer()
                         Image(systemName: "chevron.right")
                     }

@@ -32,7 +32,7 @@ struct PhotoCaptureView: View {
                         isPresented = false
                     }) {
                         Image(systemName: "xmark")
-                            .font(.title)
+                            .font(.pTitle)
                             .foregroundStyle(.white)
                             .frame(width: 60, height: 60)
                             .background(.black.opacity(0.5))
@@ -62,7 +62,7 @@ struct PhotoCaptureView: View {
                         camera.flipCamera()
                     }) {
                         Image(systemName: "arrow.triangle.2.circlepath.camera")
-                            .font(.title)
+                            .font(.pTitle)
                             .foregroundStyle(.white)
                             .frame(width: 60, height: 60)
                             .background(.black.opacity(0.5))
@@ -123,7 +123,7 @@ struct PhotoComposerView: View {
                     Spacer()
                     
                     Text("Edit Photo")
-                        .font(.headline)
+                        .font(.pHeadline)
                         .foregroundStyle(.white)
                     
                     Spacer()

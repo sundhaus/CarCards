@@ -22,15 +22,15 @@ struct CategoryMigrationView: View {
                     // Header
                     VStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 60))
+                            .font(.poppins(60))
                             .foregroundStyle(.blue)
                         
                         Text("Category Migration")
-                            .font(.title2)
+                            .font(.pTitle2)
                             .fontWeight(.bold)
                         
                         Text("Add categories to existing cards so they appear in Explore")
-                            .font(.subheadline)
+                            .font(.pSubheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
@@ -48,7 +48,7 @@ struct CategoryMigrationView: View {
                                         .tint(.blue)
                                     
                                     Text("\(migrationService.processedCards) / \(migrationService.totalCards) cards processed")
-                                        .font(.caption)
+                                        .font(.pCaption)
                                         .foregroundStyle(.secondary)
                                 }
                                 .padding(.horizontal)
@@ -72,7 +72,7 @@ struct CategoryMigrationView: View {
                             
                             // Status message
                             Text(migrationService.migrationProgress)
-                                .font(.callout)
+                                .font(.pCallout)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
@@ -114,7 +114,7 @@ struct CategoryMigrationView: View {
                     // Info text
                     VStack(spacing: 8) {
                         Text("This will:")
-                            .font(.caption)
+                            .font(.pCaption)
                             .fontWeight(.semibold)
                         
                         VStack(alignment: .leading, spacing: 4) {
@@ -123,7 +123,7 @@ struct CategoryMigrationView: View {
                             InfoRow(text: "Update cards in Firestore")
                             InfoRow(text: "Skip cards that already have categories")
                         }
-                        .font(.caption)
+                        .font(.pCaption)
                     }
                     .foregroundStyle(.secondary)
                     .padding()
@@ -153,12 +153,12 @@ struct StatBox: View {
     var body: some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.title2)
+                .font(.pTitle2)
                 .fontWeight(.bold)
                 .foregroundStyle(color)
             
             Text(label)
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -174,7 +174,7 @@ struct InfoRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.green)
             
             Text(text)

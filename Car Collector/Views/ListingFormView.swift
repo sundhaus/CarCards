@@ -54,7 +54,7 @@ struct ListingFormView: View {
                     VStack(spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Min Start Bid")
-                                .font(.headline)
+                                .font(.pHeadline)
                             TextField("0", text: $minStartBid)
                                 .textFieldStyle(.roundedBorder)
                                 .keyboardType(.numberPad)
@@ -62,7 +62,7 @@ struct ListingFormView: View {
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Buy Now Price")
-                                .font(.headline)
+                                .font(.pHeadline)
                             TextField("0", text: $buyNowPrice)
                                 .textFieldStyle(.roundedBorder)
                                 .keyboardType(.numberPad)
@@ -70,7 +70,7 @@ struct ListingFormView: View {
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Duration")
-                                .font(.headline)
+                                .font(.pHeadline)
                             Picker("Duration", selection: $selectedDuration) {
                                 ForEach(durations, id: \.self) { hours in
                                     Text("\(hours) hours").tag(hours)
@@ -82,7 +82,7 @@ struct ListingFormView: View {
                         // Error message
                         if let error = errorMessage {
                             Text(error)
-                                .font(.caption)
+                                .font(.pCaption)
                                 .foregroundStyle(.red)
                                 .multilineTextAlignment(.center)
                         }
@@ -92,7 +92,7 @@ struct ListingFormView: View {
                             // Cancel button
                             Button(action: onCancel) {
                                 Text("Cancel")
-                                    .font(.headline)
+                                    .font(.pHeadline)
                                     .foregroundStyle(.red)
                                     .frame(maxWidth: .infinity)
                                     .padding()
@@ -129,7 +129,7 @@ struct ListingFormView: View {
                     .padding()
             } else {
                 Text("List Card")
-                    .font(.headline)
+                    .font(.pHeadline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding()

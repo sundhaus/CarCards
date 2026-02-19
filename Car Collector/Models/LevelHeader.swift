@@ -151,7 +151,7 @@ struct LevelHeader: View {
                             .frame(width: 40, height: 40)
                             .overlay {
                                 Image(systemName: "person.fill")
-                                    .font(.system(size: 18))
+                                    .font(.poppins(18))
                                     .foregroundStyle(.white)
                             }
                     }
@@ -159,7 +159,7 @@ struct LevelHeader: View {
                 
                 // Username
                 Text(username)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.poppins(17))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 
@@ -231,7 +231,7 @@ struct LevelHeader: View {
                             .frame(width: 40, height: 40)
                             .overlay {
                                 Image(systemName: "person.fill")
-                                    .font(.system(size: 18))
+                                    .font(.poppins(18))
                                     .foregroundStyle(.white)
                             }
                     }
@@ -239,7 +239,7 @@ struct LevelHeader: View {
                 
                 // Username
                 Text(username)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.poppins(16))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 
@@ -319,7 +319,7 @@ struct LevelHeader: View {
             
             // Level number
             Text("\(levelSystem.level)")
-                .font(.system(size: size * 0.4, weight: .bold))
+                .font(.poppins(size * 0.4))
                 .foregroundStyle(.white)
         }
     }
@@ -328,11 +328,11 @@ struct LevelHeader: View {
     private var coinsSection: some View {
         HStack(spacing: 6) {
             Image(systemName: "dollarsign.circle.fill")
-                .font(.system(size: 20))
+                .font(.poppins(20))
                 .foregroundStyle(.yellow)
             
             Text("\(levelSystem.coins)")
-                .font(.system(size: 18, weight: .semibold))
+                .font(.poppins(18))
                 .foregroundStyle(.primary)
         }
         .padding(.horizontal, 12)

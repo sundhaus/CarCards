@@ -32,7 +32,7 @@ struct LeaderboardView: View {
                                 selectedTab = 0
                             }) {
                                 Text("Cards")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(.poppins(16))
                                     .foregroundStyle(selectedTab == 0 ? .primary : .secondary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
@@ -69,7 +69,7 @@ struct LeaderboardView: View {
                                 selectedTab = 1
                             }) {
                                 Text("Heat")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(.poppins(16))
                                     .foregroundStyle(selectedTab == 1 ? .primary : .secondary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
@@ -106,7 +106,7 @@ struct LeaderboardView: View {
                                 selectedTab = 2
                             }) {
                                 Text("Earnings")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(.poppins(16))
                                     .foregroundStyle(selectedTab == 2 ? .primary : .secondary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
@@ -188,10 +188,10 @@ struct CardsLeaderboard: View {
                 VStack {
                     Spacer()
                     Image(systemName: "square.stack.3d.up")
-                        .font(.system(size: 60))
+                        .font(.poppins(60))
                         .foregroundStyle(.gray)
                     Text("No data available")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .foregroundStyle(.secondary)
                         .padding(.top, 8)
                     Spacer()
@@ -243,10 +243,10 @@ struct HeatLeaderboard: View {
                 VStack {
                     Spacer()
                     Image(systemName: "flame")
-                        .font(.system(size: 60))
+                        .font(.poppins(60))
                         .foregroundStyle(.gray)
                     Text("No data available")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .foregroundStyle(.secondary)
                         .padding(.top, 8)
                     Spacer()
@@ -298,10 +298,10 @@ struct EarningsLeaderboard: View {
                 VStack {
                     Spacer()
                     Image(systemName: "dollarsign.circle")
-                        .font(.system(size: 60))
+                        .font(.poppins(60))
                         .foregroundStyle(.gray)
                     Text("No data available")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .foregroundStyle(.secondary)
                         .padding(.top, 8)
                     Spacer()
@@ -357,19 +357,19 @@ struct LeaderboardRow: View {
                     .frame(width: 40, height: 40)
                 
                 Text("\(rank)")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.poppins(18))
                     .foregroundStyle(.white)
             }
             
             // Username
             VStack(alignment: .leading, spacing: 2) {
                 Text(username)
-                    .font(.headline)
+                    .font(.pHeadline)
                     .foregroundStyle(isCurrentUser ? .blue : .primary)
                 
                 if isCurrentUser {
                     Text("You")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.blue)
                 }
             }
@@ -379,18 +379,18 @@ struct LeaderboardRow: View {
             // Value
             HStack(spacing: 4) {
                 Text(value)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.poppins(20))
                     .foregroundStyle(.primary)
                 
                 Text(suffix)
-                    .font(.caption)
+                    .font(.pCaption)
                     .foregroundStyle(.secondary)
             }
             
             // Chevron for other users
             if !isCurrentUser {
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(.pCaption)
                     .foregroundStyle(.secondary)
             }
         }

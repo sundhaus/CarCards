@@ -444,7 +444,7 @@ struct CardDetailView: View {
                             }
                         }) {
                             Image(systemName: "xmark")
-                                .font(.title2)
+                                .font(.pTitle2)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white)
                                 .frame(width: 44, height: 44)
@@ -582,7 +582,7 @@ struct CardDetailView: View {
                             .font(.custom("Futura-Bold", size: 22))
                             .foregroundStyle(.white)
                         Text(card.year)
-                            .font(.subheadline)
+                            .font(.pSubheadline)
                             .foregroundStyle(.white.opacity(0.9))
                     }
                     Spacer()
@@ -597,7 +597,7 @@ struct CardDetailView: View {
                 HStack {
                     Spacer()
                     Text("Tap to flip")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.white.opacity(0.8))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
@@ -634,7 +634,7 @@ struct CardDetailView: View {
                         .foregroundStyle(.white)
                     
                     Text(currentCard.year)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.poppins(16))
                         .foregroundStyle(.white.opacity(0.8))
                 }
                 .padding(.top, 20)
@@ -646,7 +646,7 @@ struct CardDetailView: View {
                         ProgressView()
                             .tint(.white)
                         Text("Loading specs...")
-                            .font(.caption)
+                            .font(.pCaption)
                             .foregroundStyle(.white.opacity(0.8))
                     }
                     .frame(maxHeight: .infinity)
@@ -655,7 +655,7 @@ struct CardDetailView: View {
                         // Summary/Description
                         if let description = currentCard.specs?.description, !description.isEmpty {
                             Text(description)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.poppins(13))
                                 .foregroundStyle(.white.opacity(0.9))
                                 .multilineTextAlignment(.center)
                                 .lineLimit(3)
@@ -689,12 +689,12 @@ struct CardDetailView: View {
                 VStack(spacing: 4) {
                     if (currentCard.parseHP() == nil || currentCard.parseTorque() == nil) && !isFetchingSpecs {
                         Text("Some specs unavailable")
-                            .font(.system(size: 11))
+                            .font(.poppins(11))
                             .foregroundStyle(.white.opacity(0.5))
                     }
                     
                     Text("Tap to flip back")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 .padding(.bottom, 20)
@@ -720,13 +720,13 @@ struct CardDetailView: View {
     private func statItem(label: String, value: String, highlight: Bool, compact: Bool = false) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: compact ? 14 : 24, weight: .bold))
+                .font(.poppins(compact ? 14 : 24))
                 .foregroundStyle(highlight ? .white : .white.opacity(0.4))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.poppins(10))
                 .foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
@@ -743,12 +743,12 @@ struct CardDetailView: View {
     private func compactStatItem(label: String, value: String) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.poppins(11))
                 .foregroundStyle(.white.opacity(0.6))
                 .frame(width: 50, alignment: .leading)
             
             Text(value)
-                .font(.system(size: 15, weight: .bold))
+                .font(.poppins(15))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -764,11 +764,11 @@ struct DetailRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.subheadline)
+                .font(.pSubheadline)
                 .foregroundStyle(.white.opacity(0.7))
             Spacer()
             Text(value)
-                .font(.subheadline)
+                .font(.pSubheadline)
                 .fontWeight(.semibold)
                 .foregroundStyle(.white)
         }

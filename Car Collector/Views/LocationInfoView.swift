@@ -24,11 +24,11 @@ struct LocationInfoView: View {
                     // Header
                     VStack(spacing: 8) {
                         Text("Location Info")
-                            .font(.system(size: 32, weight: .bold))
+                            .font(.poppins(32))
                             .foregroundStyle(.primary)
                         
                         Text("Name this location")
-                            .font(.system(size: 16))
+                            .font(.poppins(16))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 60)
@@ -48,7 +48,7 @@ struct LocationInfoView: View {
                     VStack(spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Location Name")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.poppins(14))
                                 .foregroundStyle(.secondary)
                             
                             TextField("Enter location name", text: $locationName)
@@ -66,7 +66,7 @@ struct LocationInfoView: View {
                         dismiss()
                     }) {
                         Text("Save Location")
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.poppins(18))
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)

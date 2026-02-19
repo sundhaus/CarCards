@@ -82,11 +82,11 @@ struct DriverCaptureFlow: View {
             // Header
             VStack(spacing: 8) {
                 Text("Capture Driver")
-                    .font(.system(size: 42, weight: .bold))
+                    .font(.poppins(42))
                     .foregroundStyle(.white)
                 
                 Text("Choose capture type")
-                    .font(.system(size: 16))
+                    .font(.poppins(16))
                     .foregroundStyle(.white.opacity(0.7))
             }
             .padding(.top, 60)
@@ -128,7 +128,7 @@ struct DriverCaptureFlow: View {
         .overlay(alignment: .topLeading) {
             Button(action: { dismiss() }) {
                 Image(systemName: "xmark")
-                    .font(.title2)
+                    .font(.pTitle2)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
@@ -180,11 +180,11 @@ struct DriverInfoFormView: View {
             // Header
             VStack(spacing: 8) {
                 Text("Driver Info")
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.poppins(32))
                     .foregroundStyle(.white)
                 
                 Text("Add driver details")
-                    .font(.system(size: 16))
+                    .font(.poppins(16))
                     .foregroundStyle(.white.opacity(0.7))
             }
             .padding(.top, 60)
@@ -204,7 +204,7 @@ struct DriverInfoFormView: View {
             VStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("First Name")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.poppins(14))
                         .foregroundStyle(.white.opacity(0.7))
                     
                     TextField("Required", text: $firstName)
@@ -213,7 +213,7 @@ struct DriverInfoFormView: View {
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Last Name")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.poppins(14))
                         .foregroundStyle(.white.opacity(0.7))
                     
                     TextField("Required", text: $lastName)
@@ -222,7 +222,7 @@ struct DriverInfoFormView: View {
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Nickname (Optional)")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.poppins(14))
                         .foregroundStyle(.white.opacity(0.7))
                     
                     TextField("Optional", text: $nickname)
@@ -234,10 +234,10 @@ struct DriverInfoFormView: View {
                 }) {
                     HStack {
                         Image(systemName: signatureImage != nil ? "checkmark.circle.fill" : "signature")
-                            .font(.system(size: 20))
+                            .font(.poppins(20))
                         
                         Text(signatureImage != nil ? "Signature Added" : "Add Signature")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.poppins(16))
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -261,7 +261,7 @@ struct DriverInfoFormView: View {
                 onComplete?(firstName, lastName, nickname)
             }) {
                 Text("Save Driver")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.poppins(18))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
@@ -277,7 +277,7 @@ struct DriverInfoFormView: View {
         .overlay(alignment: .topLeading) {
             Button(action: { onBack?() }) {
                 Image(systemName: "chevron.left")
-                    .font(.title2)
+                    .font(.pTitle2)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)

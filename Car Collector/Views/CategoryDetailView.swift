@@ -62,7 +62,7 @@ struct CategoryDetailView: View {
             HStack {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .font(.pTitle3)
                         .foregroundStyle(.primary)
                 }
                 
@@ -72,28 +72,28 @@ struct CategoryDetailView: View {
                     HStack(spacing: 8) {
                         if let cat = category {
                             Text(cat.emoji)
-                                .font(.title3)
+                                .font(.pTitle3)
                             Text(cat.rawValue)
-                                .font(.title3)
+                                .font(.pTitle3)
                                 .fontWeight(.bold)
                         } else {
                             Text("🌟")
-                                .font(.title3)
+                                .font(.pTitle3)
                             Text("Featured")
-                                .font(.title3)
+                                .font(.pTitle3)
                                 .fontWeight(.bold)
                         }
                     }
                     
                     Text("\(allCards.count) cards")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.left")
-                    .font(.title3)
+                    .font(.pTitle3)
                     .opacity(0)
             }
             .padding(.horizontal)
@@ -193,10 +193,10 @@ struct CategoryDetailView: View {
     private var emptyView: some View {
         VStack(spacing: 16) {
             Image(systemName: "car.fill")
-                .font(.system(size: 60))
+                .font(.poppins(60))
                 .foregroundStyle(.gray)
             Text("No cards in this category yet")
-                .font(.subheadline)
+                .font(.pSubheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

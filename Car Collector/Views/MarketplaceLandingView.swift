@@ -23,11 +23,11 @@ struct MarketplaceLandingView: View {
                     // Header
                     VStack(spacing: 8) {
                         Text("Marketplace")
-                            .font(.system(size: 42, weight: .bold))
+                            .font(.poppins(42))
                             .foregroundStyle(.primary)
                         
                         Text("Trade & collect rare cards")
-                            .font(.system(size: 16))
+                            .font(.poppins(16))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 60)

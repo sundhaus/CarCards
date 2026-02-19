@@ -32,12 +32,12 @@ struct TransferListView: View {
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.title3)
+                            .font(.pTitle3)
                             .foregroundStyle(.primary)
                     }
                     
                     Text("TRANSFER LIST")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
                     
@@ -53,18 +53,18 @@ struct TransferListView: View {
                         // Selling Section (Active Listings)
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Selling (\(sellingListings.count))")
-                                .font(.headline)
+                                .font(.pHeadline)
                                 .padding(.horizontal)
                             
                             if sellingListings.isEmpty {
                                 VStack(spacing: 12) {
                                     Image(systemName: "tag")
-                                        .font(.system(size: 50))
+                                        .font(.poppins(50))
                                         .foregroundStyle(.gray)
                                     Text("No active listings")
                                         .foregroundStyle(.secondary)
                                     Text("List cards from the marketplace")
-                                        .font(.caption)
+                                        .font(.pCaption)
                                         .foregroundStyle(.secondary)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -83,13 +83,13 @@ struct TransferListView: View {
                         // Sold Section
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Sold (\(soldListings.count))")
-                                .font(.headline)
+                                .font(.pHeadline)
                                 .padding(.horizontal)
                             
                             if soldListings.isEmpty {
                                 VStack(spacing: 12) {
                                     Image(systemName: "checkmark.circle")
-                                        .font(.system(size: 50))
+                                        .font(.poppins(50))
                                         .foregroundStyle(.gray)
                                     Text("No sold listings")
                                         .foregroundStyle(.secondary)
@@ -156,9 +156,9 @@ struct TransferListingCard: View {
     var statusBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: listing.status == .active ? "clock.fill" : "checkmark.circle.fill")
-                .font(.caption)
+                .font(.pCaption)
             Text(listing.status == .active ? timeRemaining : "Sold")
-                .font(.caption)
+                .font(.pCaption)
                 .fontWeight(.semibold)
         }
         .padding(.horizontal, 8)
@@ -202,11 +202,11 @@ struct TransferListingCard: View {
                 // Card details
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(listing.year) \(listing.make)")
-                        .font(.headline)
+                        .font(.pHeadline)
                         .lineLimit(1)
                     
                     Text(listing.model.uppercased())
-                        .font(.subheadline)
+                        .font(.pSubheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                     
@@ -216,18 +216,18 @@ struct TransferListingCard: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "hammer.fill")
                                     .foregroundStyle(.orange)
-                                    .font(.caption)
+                                    .font(.pCaption)
                                 Text("\(Int(listing.currentBid))")
-                                    .font(.caption)
+                                    .font(.pCaption)
                                     .fontWeight(.semibold)
                             }
                         } else {
                             HStack(spacing: 4) {
                                 Image(systemName: "tag.fill")
                                     .foregroundStyle(.gray)
-                                    .font(.caption)
+                                    .font(.pCaption)
                                 Text("No bids")
-                                    .font(.caption)
+                                    .font(.pCaption)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -236,9 +236,9 @@ struct TransferListingCard: View {
                         HStack(spacing: 4) {
                             Image(systemName: "cart.fill")
                                 .foregroundStyle(.green)
-                                .font(.caption)
+                                .font(.pCaption)
                             Text("\(Int(listing.buyNowPrice))")
-                                .font(.caption)
+                                .font(.pCaption)
                                 .fontWeight(.semibold)
                         }
                     }

@@ -28,7 +28,7 @@ struct CardPreviewView: View {
                 
                 // Success icon
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 60))
+                    .font(.poppins(60))
                     .foregroundStyle(.green)
                 
                 // Card preview (horizontal 16:9)
@@ -42,18 +42,18 @@ struct CardPreviewView: View {
                 // Car details
                 VStack(spacing: 8) {
                     Text("\(make) \(model)")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .fontWeight(.bold)
                         .foregroundStyle(.white)
                     
                     Text(formatGeneration(generation))
-                        .font(.subheadline)
+                        .font(.pSubheadline)
                         .foregroundStyle(.white.opacity(0.8))
                 }
                 
                 // Success message
                 Text("Saved to Garage!")
-                    .font(.headline)
+                    .font(.pHeadline)
                     .foregroundStyle(.green)
                     .padding(.top, 20)
                 
@@ -65,7 +65,7 @@ struct CardPreviewView: View {
                     }
                 }) {
                     Text("Continue")
-                        .font(.headline)
+                        .font(.pHeadline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: 200)
                         .padding()
@@ -91,9 +91,9 @@ struct CardPreviewView: View {
                         }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.caption)
+                                    .font(.pCaption)
                                 Text("Not your vehicle?")
-                                    .font(.caption)
+                                    .font(.pCaption)
                                     .fontWeight(.semibold)
                             }
                             .foregroundStyle(.white)

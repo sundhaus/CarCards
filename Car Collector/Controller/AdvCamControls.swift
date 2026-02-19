@@ -73,7 +73,7 @@ struct AdvancedCameraControls: View {
                             if showExposureSlider {
                                 VStack(spacing: 8) {
                                     Text("+2.0")
-                                        .font(.caption2)
+                                        .font(.pCaption2)
                                         .foregroundStyle(.white.opacity(0.6))
                                         .padding(.top, 8)
                                     
@@ -91,13 +91,13 @@ struct AdvancedCameraControls: View {
                                     .frame(width: 40, height: 150)
                                     
                                     Text("-2.0")
-                                        .font(.caption2)
+                                        .font(.pCaption2)
                                         .foregroundStyle(.white.opacity(0.6))
                                         .padding(.bottom, 8)
                                     
                                     // Current value indicator
                                     Text(String(format: "%.1f", camera.exposureValue))
-                                        .font(.caption)
+                                        .font(.pCaption)
                                         .foregroundStyle(.yellow)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
@@ -117,7 +117,7 @@ struct AdvancedCameraControls: View {
                                             .font(.title3)
                                             .foregroundStyle(.white)
                                         Text(camera.captureMode.rawValue)
-                                            .font(.system(size: 8))
+                                            .font(.poppins(8))
                                             .foregroundStyle(.white)
                                     }
                                     .frame(width: 44, height: 44)
@@ -148,7 +148,7 @@ struct AdvancedCameraControls: View {
                 // Filter indicator at bottom
                 if currentFilterIndex != 0 {
                     Text(filters[currentFilterIndex].name)
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
@@ -301,7 +301,7 @@ struct ZoomBubble: View {
     
     var body: some View {
         Text(displayText + "×")
-            .font(.system(size: 13, weight: .medium))
+            .font(.poppins(13))
             .foregroundStyle(isActive ? .yellow : .white.opacity(0.85))
             .frame(width: 44, height: 28)
             .background(

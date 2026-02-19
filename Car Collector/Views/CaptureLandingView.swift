@@ -36,11 +36,11 @@ struct CaptureLandingView: View {
                     // Header
                     VStack(spacing: 8) {
                         Text("Capture")
-                            .font(.system(size: 42, weight: .bold))
+                            .font(.poppins(42))
                             .foregroundStyle(.primary)
                         
                         Text("Choose what to capture")
-                            .font(.system(size: 16))
+                            .font(.poppins(16))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 20)

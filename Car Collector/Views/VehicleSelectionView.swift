@@ -24,12 +24,12 @@ struct VehicleSelectionView: View {
                 // Header
                 VStack(spacing: 8) {
                     Text("Which car is this?")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .fontWeight(.bold)
                         .foregroundStyle(.white)
                     
                     Text("Tap the correct match")
-                        .font(.subheadline)
+                        .font(.pSubheadline)
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 .padding(.top, 50)
@@ -78,7 +78,7 @@ struct VehicleSelectionView: View {
                             Image(systemName: "arrow.clockwise")
                             Text("None of these")
                         }
-                        .font(.headline)
+                        .font(.pHeadline)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 16)
@@ -136,7 +136,7 @@ struct OptionCard: View {
                             .frame(width: 32, height: 32)
                         
                         Text("\(rank)")
-                            .font(.headline)
+                            .font(.pHeadline)
                             .foregroundStyle(.white)
                     }
                     .padding(10)
@@ -148,11 +148,11 @@ struct OptionCard: View {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(option.make)
-                                .font(.headline)
+                                .font(.pHeadline)
                                 .foregroundStyle(.white)
                             
                             Text(option.model)
-                                .font(.title3)
+                                .font(.pTitle3)
                                 .fontWeight(.bold)
                                 .foregroundStyle(.white)
                         }
@@ -161,7 +161,7 @@ struct OptionCard: View {
                         
                         // Confidence badge
                         Text(confidenceBadge)
-                            .font(.caption)
+                            .font(.pCaption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 10)
@@ -174,9 +174,9 @@ struct OptionCard: View {
                     if !option.generation.isEmpty {
                         HStack(spacing: 6) {
                             Image(systemName: "calendar")
-                                .font(.caption)
+                                .font(.pCaption)
                             Text(option.generation)
-                                .font(.subheadline)
+                                .font(.pSubheadline)
                         }
                         .foregroundStyle(.white.opacity(0.8))
                     }

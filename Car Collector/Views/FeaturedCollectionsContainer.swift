@@ -32,7 +32,7 @@ struct FeaturedCollectionsContainer: View {
     private var headerSection: some View {
         HStack {
             Text("Featured")
-                .font(.system(size: 20, weight: .bold))
+                .font(.poppins(20))
                 .foregroundStyle(.primary)
             
             Spacer()
@@ -47,11 +47,11 @@ struct FeaturedCollectionsContainer: View {
     private var timerBadge: some View {
         HStack(spacing: 6) {
             Image(systemName: "clock.fill")
-                .font(.system(size: 14))
+                .font(.poppins(14))
                 .foregroundStyle(.secondary)
             
             Text(hotCardsService.timeUntilNextRefresh)
-                .font(.system(size: 14, weight: .medium))
+                .font(.poppins(14))
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 12)

@@ -48,7 +48,7 @@ struct DriverInfoFormSheet: View {
                         VStack(spacing: 16) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("First Name *")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.poppins(14))
                                     .foregroundStyle(.secondary)
                                 
                                 TextField("Required", text: $firstName)
@@ -57,7 +57,7 @@ struct DriverInfoFormSheet: View {
                             
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Last Name *")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.poppins(14))
                                     .foregroundStyle(.secondary)
                                 
                                 TextField("Required", text: $lastName)
@@ -66,7 +66,7 @@ struct DriverInfoFormSheet: View {
                             
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Nickname")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.poppins(14))
                                     .foregroundStyle(.secondary)
                                 
                                 TextField("Optional", text: $nickname)
@@ -77,7 +77,7 @@ struct DriverInfoFormSheet: View {
                             if isDriverPlusVehicle {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Vehicle Name")
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.poppins(14))
                                         .foregroundStyle(.secondary)
                                     
                                     TextField("Optional", text: $vehicleName)
@@ -93,10 +93,10 @@ struct DriverInfoFormSheet: View {
                         }) {
                             HStack {
                                 Image(systemName: signatureImage != nil ? "checkmark.circle.fill" : "signature")
-                                    .font(.system(size: 20))
+                                    .font(.poppins(20))
                                 
                                 Text(signatureImage != nil ? "Signature Added" : "Add Signature")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(.poppins(16))
                             }
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
@@ -119,7 +119,7 @@ struct DriverInfoFormSheet: View {
                             onComplete?(finalCardImage, firstName, lastName, nickname, vehicleName)
                         }) {
                             Text("Save Driver")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.poppins(18))
                                 .foregroundStyle(.primary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 18)

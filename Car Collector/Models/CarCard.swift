@@ -18,7 +18,7 @@ struct CarCard: View {
             VStack {
                 Spacer()
                 Text("Car Name")
-                    .font(.headline)
+                    .font(.pHeadline)
                     .foregroundStyle(.white)
                     .padding()
             }

@@ -127,7 +127,7 @@ struct MarketplaceBuySellView: View {
                             selectedMarketTab = 0  // Instant switch, no animation
                         }) {
                             Text("Buy")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.poppins(18))
                                 .foregroundStyle(selectedMarketTab == 0 ? .primary : .secondary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
@@ -165,7 +165,7 @@ struct MarketplaceBuySellView: View {
                             selectedMarketTab = 1  // Instant switch, no animation
                         }) {
                             Text("Sell")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.poppins(18))
                                 .foregroundStyle(selectedMarketTab == 1 ? .primary : .secondary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
@@ -318,7 +318,7 @@ struct MarketplaceBuySellView: View {
                 // Price range
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Price")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                     HStack(spacing: 8) {
                         TextField("Min", text: $buyMinPrice)
@@ -399,7 +399,7 @@ struct MarketplaceBuySellView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.secondary)
             Menu {
                 Button("Any") { onSelect("Any") }
@@ -413,7 +413,7 @@ struct MarketplaceBuySellView: View {
                         .foregroundStyle(selection.wrappedValue == "Any" ? .secondary : .primary)
                     Spacer()
                     Image(systemName: "chevron.down")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 12)
@@ -442,19 +442,19 @@ struct BuyView: View {
                 VStack {
                     Spacer()
                     Image(systemName: hasUnfilteredListings ? "line.3.horizontal.decrease.circle" : "cart")
-                        .font(.system(size: 60))
+                        .font(.poppins(60))
                         .foregroundStyle(.gray)
                     Text(hasUnfilteredListings ? "No listings match filters" : "No listings available")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .foregroundStyle(.secondary)
                         .padding(.top, 8)
                     if hasUnfilteredListings {
                         Text("Try adjusting your filters")
-                            .font(.caption)
+                            .font(.pCaption)
                             .foregroundStyle(.secondary)
                     } else {
                         Text("Be the first to list a card!")
-                            .font(.caption)
+                            .font(.pCaption)
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -487,14 +487,14 @@ struct SellView: View {
                 VStack {
                     Spacer()
                     Image(systemName: "square.stack.3d.up.slash")
-                        .font(.system(size: 60))
+                        .font(.poppins(60))
                         .foregroundStyle(.gray)
                     Text("No cards in your garage")
-                        .font(.title2)
+                        .font(.pTitle2)
                         .foregroundStyle(.secondary)
                         .padding(.top, 8)
                     Text("Capture some cars to list them!")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                     Spacer()
                 }
@@ -527,10 +527,10 @@ struct ListingCardRow: View {
             HStack(spacing: 20) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Current Bid")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                     Text("$\(Int(listing.currentBid))")
-                        .font(.title3)
+                        .font(.pTitle3)
                         .fontWeight(.bold)
                 }
                 
@@ -538,10 +538,10 @@ struct ListingCardRow: View {
                 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("Buy Now")
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                     Text("$\(Int(listing.buyNowPrice))")
-                        .font(.title3)
+                        .font(.pTitle3)
                         .fontWeight(.bold)
                         .foregroundStyle(.green)
                 }
@@ -569,7 +569,7 @@ struct GarageCardRow: View {
                     Text("\(card.make.uppercased()) \(card.model.uppercased())")
                         .font(.custom("Futura-Bold", size: 17))
                     Text(card.year)
-                        .font(.caption)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -775,10 +775,10 @@ struct MarketplaceFIFACard: View {
                     Spacer()
                     VStack(spacing: 2) {
                         Text("FOR")
-                            .font(.system(size: 7, weight: .bold))
+                            .font(.poppins(7))
                             .foregroundStyle(.black.opacity(0.6))
                         Text("SALE")
-                            .font(.system(size: 9, weight: .black))
+                            .font(.poppins(9))
                             .foregroundStyle(.black)
                     }
                     .padding(.horizontal, 8)

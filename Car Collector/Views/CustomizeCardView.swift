@@ -31,14 +31,14 @@ struct CustomizeCardView: View {
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.title3)
+                            .font(.pTitle3)
                             .foregroundStyle(.primary)
                     }
                     
                     Spacer()
                     
                     Text("Customize Card")
-                        .font(.title3)
+                        .font(.pTitle3)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
                     
@@ -178,7 +178,7 @@ struct CustomizeCardView: View {
             VStack(spacing: 0) {
                 Spacer()
                 Text(title)
-                    .font(.subheadline)
+                    .font(.pSubheadline)
                     .fontWeight(selectedTab == index ? .semibold : .regular)
                     .foregroundStyle(selectedTab == index ? .white : .white.opacity(0.6))
                     .padding(.bottom, 8)
@@ -198,7 +198,7 @@ struct CustomizeCardView: View {
     private var borderTabContent: some View {
         VStack(spacing: 20) {
             Text("Border Color")
-                .font(.headline)
+                .font(.pHeadline)
                 .foregroundStyle(.primary)
                 .padding(.top, 20)
             
@@ -246,7 +246,7 @@ struct CustomizeCardView: View {
                 }
                 
                 Text(label)
-                    .font(.caption)
+                    .font(.pCaption)
                     .foregroundStyle(selectedFrame == frame ? .white : .white.opacity(0.6))
             }
         }
@@ -257,13 +257,13 @@ struct CustomizeCardView: View {
     private func placeholderTabContent(title: String, icon: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 40))
+                .font(.poppins(40))
                 .foregroundStyle(.tertiary)
             Text(title)
-                .font(.headline)
+                .font(.pHeadline)
                 .foregroundStyle(.tertiary)
             Text("Coming Soon")
-                .font(.caption)
+                .font(.pCaption)
                 .foregroundStyle(.tertiary)
         }
     }

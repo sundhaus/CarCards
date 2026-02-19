@@ -106,11 +106,11 @@ struct LocationInfoFormView: View {
             // Header
             VStack(spacing: 8) {
                 Text("Location Info")
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.poppins(32))
                     .foregroundStyle(.white)
                 
                 Text("Name this location")
-                    .font(.system(size: 16))
+                    .font(.poppins(16))
                     .foregroundStyle(.white.opacity(0.7))
             }
             .padding(.top, 60)
@@ -130,7 +130,7 @@ struct LocationInfoFormView: View {
             VStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Location Name")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.poppins(14))
                         .foregroundStyle(.white.opacity(0.7))
                     
                     TextField("Enter location name", text: $locationName)
@@ -146,7 +146,7 @@ struct LocationInfoFormView: View {
                 onComplete?(locationName)
             }) {
                 Text("Save Location")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.poppins(18))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
@@ -162,7 +162,7 @@ struct LocationInfoFormView: View {
         .overlay(alignment: .topLeading) {
             Button(action: { onCancel?() }) {
                 Image(systemName: "xmark")
-                    .font(.title2)
+                    .font(.pTitle2)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
