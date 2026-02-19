@@ -12,6 +12,7 @@ struct MarketplaceBuySellView: View {
     var savedCards: [SavedCard]
     var onCardListed: ((SavedCard) -> Void)? = nil
     @State private var selectedMarketTab = 0
+    @Environment(\.dismiss) private var dismiss
     
     // Buy tab filters (for marketplace listings)
     @State private var buyFilterMake = "Any"
@@ -116,6 +117,26 @@ struct MarketplaceBuySellView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
+                // Custom glass header
+                HStack {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.pTitle3)
+                            .foregroundStyle(.primary)
+                    }
+                    
+                    Text("BUY & SELL")
+                        .font(.pTitle2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.top, 18)
+                .padding(.bottom, 10)
+                .glassEffect(.regular, in: .rect)
+                
                 // Glass segmented tabs
                 HStack(spacing: 6) {
                     ForEach(["Buy", "Sell"], id: \.self) { tab in
@@ -176,9 +197,8 @@ struct MarketplaceBuySellView: View {
             marketplaceService.listenToActiveListings()
             print("📊 Listening to Firebase marketplace listings")
         }
-        .navigationTitle("Buy & Sell")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .fullScreenCover(item: $selectedCard) { card in
             CardDetailsView(
                 card: card,
