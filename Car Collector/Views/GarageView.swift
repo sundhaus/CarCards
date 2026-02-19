@@ -70,7 +70,7 @@ struct GarageView: View {
                     .glassEffect(.regular, in: .rect)
                     
                     // Spacer between header and cards
-                    Spacer().frame(height: 16)
+                    Spacer().frame(height: 12)
                     
                     // Content
                     if allCards.isEmpty {
@@ -122,6 +122,7 @@ struct GarageView: View {
                     )
                 }
             }
+            .coordinateSpace(name: "garageStack")
             .background { AppBackground() }
             .onAppear {
                 OrientationManager.lockOrientation(.portrait)
@@ -347,7 +348,7 @@ struct GarageView: View {
                                 }
                             }
                             .padding(.horizontal)
-                            .padding(.top, 8)
+                            .padding(.top, 12)
                             
                             Spacer()
                         }
@@ -383,9 +384,9 @@ struct GarageView: View {
                 GeometryReader { geo in
                     Color.clear
                         .onAppear {
-                            cardFrames[card.id] = geo.frame(in: .global)
+                            cardFrames[card.id] = geo.frame(in: .named("garageStack"))
                         }
-                        .onChange(of: geo.frame(in: .global)) { _, newFrame in
+                        .onChange(of: geo.frame(in: .named("garageStack"))) { _, newFrame in
                             cardFrames[card.id] = newFrame
                         }
                 }
@@ -396,7 +397,7 @@ struct GarageView: View {
                     showCardDetail = true
                 }
             }
-            .onLongPressGesture(minimumDuration: 0.25) {
+            .onLongPressGesture(minimumDuration: 0.15) {
                 let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                 impactFeedback.impactOccurred()
                 contextMenuCard = card
@@ -430,44 +431,40 @@ struct CardContextMenuOverlay: View {
     }
     
     var body: some View {
-        // Full-screen container starting from true top-left (0,0)
-        Color.clear
-            .ignoresSafeArea()
-            .overlay(alignment: .topLeading) {
-                // Dimmed background
-                Color.black.opacity(appeared ? 0.5 : 0)
-                    .ignoresSafeArea()
-                    .onTapGesture { dismissMenu() }
-            }
-            .overlay(alignment: .topLeading) {
-                // Card + panel positioned at exact global coords
-                HStack(spacing: 0) {
-                    if !cardIsOnLeft {
-                        // Right column card → panel on left
-                        actionPanel(roundedLeft: true)
-                            .frame(width: appeared ? cardFrame.width : 0)
-                            .clipped()
-                        
-                        cardPreview
-                    } else {
-                        // Left column card → panel on right
-                        cardPreview
-                        
-                        actionPanel(roundedLeft: false)
-                            .frame(width: appeared ? cardFrame.width : 0)
-                            .clipped()
-                    }
-                }
-                .offset(
-                    x: cardIsOnLeft ? cardFrame.minX : (appeared ? cardFrame.minX - cardFrame.width : cardFrame.minX),
-                    y: cardFrame.minY
-                )
-            }
-            .onAppear {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    appeared = true
+        ZStack(alignment: .topLeading) {
+            // Dimmed background - tap to dismiss
+            Color.black.opacity(appeared ? 0.5 : 0)
+                .ignoresSafeArea()
+                .onTapGesture { dismissMenu() }
+            
+            // Card + panel positioned at exact ZStack-relative coords
+            HStack(spacing: 0) {
+                if !cardIsOnLeft {
+                    // Right column card → panel on left
+                    actionPanel(roundedLeft: true)
+                        .frame(width: appeared ? cardFrame.width : 0)
+                        .clipped()
+                    
+                    cardPreview
+                } else {
+                    // Left column card → panel on right
+                    cardPreview
+                    
+                    actionPanel(roundedLeft: false)
+                        .frame(width: appeared ? cardFrame.width : 0)
+                        .clipped()
                 }
             }
+            .offset(
+                x: cardIsOnLeft ? cardFrame.minX : (appeared ? cardFrame.minX - cardFrame.width : cardFrame.minX),
+                y: cardFrame.minY
+            )
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                appeared = true
+            }
+        }
     }
     
     private var cardPreview: some View {
