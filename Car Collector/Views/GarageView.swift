@@ -18,6 +18,8 @@ struct GarageView: View {
     @State private var showCustomize = false
     @State private var showContextMenu = false
     @State private var contextMenuCard: AnyCard?
+    @State private var contextMenuCardFrame: CGRect = .zero
+    @State private var cardFrames: [String: CGRect] = [:]
     
     var body: some View {
         NavigationStack {
@@ -90,6 +92,7 @@ struct GarageView: View {
                 if showContextMenu, let card = contextMenuCard {
                     CardContextMenuOverlay(
                         card: card,
+                        cardFrame: contextMenuCardFrame,
                         isShowing: $showContextMenu,
                         onCustomize: {
                             showContextMenu = false
@@ -118,6 +121,7 @@ struct GarageView: View {
                 }
             }
             .background { AppBackground() }
+            .coordinateSpace(name: "garage")
             .onAppear {
                 OrientationManager.lockOrientation(.portrait)
                 loadAllCards()
@@ -338,6 +342,18 @@ struct GarageView: View {
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 15) {
                                 ForEach(pageCards) { card in
                                     UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)
+                                        .opacity(showContextMenu && contextMenuCard?.id == card.id ? 0 : 1)
+                                        .background(
+                                            GeometryReader { geo in
+                                                Color.clear
+                                                    .onAppear {
+                                                        cardFrames[card.id] = geo.frame(in: .named("garage"))
+                                                    }
+                                                    .onChange(of: geo.frame(in: .named("garage"))) { _, newFrame in
+                                                        cardFrames[card.id] = newFrame
+                                                    }
+                                            }
+                                        )
                                         .onTapGesture {
                                             selectedCard = card
                                             withAnimation {
@@ -348,6 +364,7 @@ struct GarageView: View {
                                             let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                                             impactFeedback.impactOccurred()
                                             contextMenuCard = card
+                                            contextMenuCardFrame = cardFrames[card.id] ?? .zero
                                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                                 showContextMenu = true
                                             }
@@ -388,6 +405,7 @@ struct GarageView: View {
 
 struct CardContextMenuOverlay: View {
     let card: AnyCard
+    let cardFrame: CGRect
     @Binding var isShowing: Bool
     let onCustomize: () -> Void
     let onQuickSell: () -> Void
@@ -399,103 +417,82 @@ struct CardContextMenuOverlay: View {
         return false
     }
     
+    // Height of the action panel
+    private var panelHeight: CGFloat {
+        isVehicle ? 100 : 52
+    }
+    
     var body: some View {
         ZStack {
-            // Blurred + dimmed background - tap to dismiss
+            // Blurred dimmed background - tap to dismiss
             Color.black.opacity(appeared ? 0.5 : 0)
                 .ignoresSafeArea()
                 .onTapGesture {
                     dismissMenu()
                 }
             
-            // Card + actions stack
+            // Card + sliding panel positioned at original card location
             VStack(spacing: 0) {
-                // The card itself - larger preview
-                UnifiedCardView(card: card, isLargeSize: false)
-                    .frame(width: 300, height: 300 / (16/9))
-                    .shadow(color: .black.opacity(0.6), radius: 30, x: 0, y: 15)
-                
-                // Actions container extending below card
+                // White panel slides out from behind the card
                 VStack(spacing: 0) {
-                    // Thin connector line
-                    Rectangle()
-                        .fill(.white.opacity(0.15))
-                        .frame(width: 1, height: 12)
-                    
-                    // Action buttons in a card-shaped container
-                    VStack(spacing: 2) {
-                        if isVehicle {
-                            actionButton(
-                                icon: "paintbrush.fill",
-                                label: "Customize",
-                                color: .blue,
-                                action: onCustomize
-                            )
-                        }
+                    if isVehicle {
+                        actionRow(label: "Customize", action: onCustomize)
                         
-                        actionButton(
-                            icon: "dollarsign.circle.fill",
-                            label: "Quick Sell",
-                            subtitle: "+250 coins",
-                            color: .orange,
-                            action: onQuickSell
-                        )
+                        Divider()
+                            .padding(.horizontal, 12)
                     }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 4)
-                    .frame(width: 200)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                    
+                    actionRow(label: "Quick Sell", action: onQuickSell)
                 }
-                .offset(y: appeared ? 0 : -20)
-                .opacity(appeared ? 1 : 0)
+                .frame(width: cardFrame.width)
+                .frame(height: appeared ? nil : 0, alignment: .top)
+                .clipped()
+                .background(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 0,
+                        bottomLeadingRadius: 12,
+                        bottomTrailingRadius: 12,
+                        topTrailingRadius: 0
+                    )
+                    .fill(.white)
+                )
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 0,
+                        bottomLeadingRadius: 12,
+                        bottomTrailingRadius: 12,
+                        topTrailingRadius: 0
+                    )
+                )
             }
-            .scaleEffect(appeared ? 1 : 0.85)
-            .opacity(appeared ? 1 : 0)
+            // Position so top edge overlaps card bottom by a few points
+            .position(
+                x: cardFrame.midX,
+                y: cardFrame.maxY - 4 + (appeared ? panelHeight / 2 : 0)
+            )
+            
+            // Card rendered on top at its exact position
+            UnifiedCardView(card: card, isLargeSize: false)
+                .frame(width: cardFrame.width, height: cardFrame.height)
+                .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
+                .position(x: cardFrame.midX, y: cardFrame.midY)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 appeared = true
             }
         }
     }
     
-    private func actionButton(
-        icon: String,
-        label: String,
-        subtitle: String? = nil,
-        color: Color,
-        action: @escaping () -> Void
-    ) -> some View {
+    private func actionRow(label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(color)
-                    .frame(width: 36, height: 36)
-                    .background(color.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(label)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    
-                    if let subtitle = subtitle {
-                        Text(subtitle)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .contentShape(Rectangle())
+            Text(label)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.black)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
