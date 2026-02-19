@@ -394,15 +394,18 @@ struct GarageView: View {
                     showCardDetail = true
                 }
             }
-            .onLongPressGesture(minimumDuration: 0.05) {
-                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                impactFeedback.impactOccurred()
-                contextMenuCard = card
-                contextMenuCardFrame = cardFrames[card.id] ?? .zero
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    showContextMenu = true
-                }
-            }
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.2)
+                    .onEnded { _ in
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        contextMenuCard = card
+                        contextMenuCardFrame = cardFrames[card.id] ?? .zero
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                            showContextMenu = true
+                        }
+                    }
+            )
     }
 }
 
@@ -432,6 +435,7 @@ struct CardContextMenuOverlay: View {
             let overlayOrigin = overlayGeo.frame(in: .global).origin
             let localX = cardFrame.minX - overlayOrigin.x
             let localY = cardFrame.minY - overlayOrigin.y
+            let panelWidth: CGFloat = cardFrame.width * 0.75
             
             ZStack(alignment: .topLeading) {
                 // Dimmed background - tap to dismiss
@@ -439,32 +443,43 @@ struct CardContextMenuOverlay: View {
                     .ignoresSafeArea()
                     .onTapGesture { dismissMenu() }
                 
-                // Card + panel positioned at exact coords
-                HStack(spacing: 0) {
-                    if !cardIsOnLeft {
-                        // Right column card → panel on left
-                        actionPanel(roundedLeft: true)
-                            .frame(width: appeared ? cardFrame.width : 0)
-                            .clipped()
-                        
-                        cardPreview
-                    } else {
-                        // Left column card → panel on right
-                        cardPreview
-                        
-                        actionPanel(roundedLeft: false)
-                            .frame(width: appeared ? cardFrame.width : 0)
-                            .clipped()
-                    }
+                // Panel behind card + card on top
+                ZStack(alignment: cardIsOnLeft ? .leading : .trailing) {
+                    // Action panel - sits behind and extends out
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.white)
+                        .frame(
+                            width: appeared ? cardFrame.width + panelWidth : cardFrame.width,
+                            height: cardFrame.height
+                        )
+                        .overlay(alignment: cardIsOnLeft ? .trailing : .leading) {
+                            // Action buttons on the exposed side
+                            VStack(spacing: 0) {
+                                Spacer()
+                                
+                                if isVehicle {
+                                    actionRow(label: "Customize", action: onCustomize)
+                                    Divider().padding(.horizontal, 12)
+                                }
+                                
+                                actionRow(label: "Quick Sell", action: onQuickSell)
+                                
+                                Spacer()
+                            }
+                            .frame(width: panelWidth)
+                        }
+                    
+                    // Card on top
+                    cardPreview
                 }
                 .offset(
-                    x: cardIsOnLeft ? localX : (appeared ? localX - cardFrame.width : localX),
+                    x: cardIsOnLeft ? localX : (appeared ? localX - panelWidth : localX),
                     y: localY
                 )
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                 appeared = true
             }
         }
@@ -475,45 +490,12 @@ struct CardContextMenuOverlay: View {
             .frame(width: cardFrame.width, height: cardFrame.height)
     }
     
-    private func actionPanel(roundedLeft: Bool) -> some View {
-        VStack(spacing: 0) {
-            Spacer()
-            
-            if isVehicle {
-                actionRow(label: "Customize", action: onCustomize)
-                Divider().padding(.horizontal, 12)
-            }
-            
-            actionRow(label: "Quick Sell", action: onQuickSell)
-            
-            Spacer()
-        }
-        .frame(height: cardFrame.height)
-        .background(
-            UnevenRoundedRectangle(
-                topLeadingRadius: roundedLeft ? 12 : 0,
-                bottomLeadingRadius: roundedLeft ? 12 : 0,
-                bottomTrailingRadius: roundedLeft ? 0 : 12,
-                topTrailingRadius: roundedLeft ? 0 : 12
-            ).fill(.white)
-        )
-        .clipShape(
-            UnevenRoundedRectangle(
-                topLeadingRadius: roundedLeft ? 12 : 0,
-                bottomLeadingRadius: roundedLeft ? 12 : 0,
-                bottomTrailingRadius: roundedLeft ? 0 : 12,
-                topTrailingRadius: roundedLeft ? 0 : 12
-            )
-        )
-    }
-    
     private func actionRow(label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(.black)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 14)
                 .contentShape(Rectangle())
         }
