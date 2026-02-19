@@ -153,8 +153,8 @@ struct FeaturedRow: View {
         NavigationLink {
             CategoryDetailView(category: nil, initialCards: cards)
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                // Featured header
+            VStack(alignment: .leading, spacing: 0) {
+                // Banner header
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("FEATURED")
@@ -172,24 +172,21 @@ struct FeaturedRow: View {
                         .font(.pCaption)
                         .foregroundStyle(.tertiary)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
                 
-                // Horizontal scrolling cards
+                // Full-width dark card container
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(cards) { card in
                             ExploreCardItem(card: card, height: 140)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                 }
+                .background(Color.white.opacity(0.04))
             }
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.06))
-            )
-            .padding(.horizontal, 12)
         }
         .buttonStyle(.plain)
         .onAppear {
@@ -209,8 +206,8 @@ struct CategoryRow: View {
         NavigationLink {
             CategoryDetailView(category: category, initialCards: cards)
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                // Category header
+            VStack(alignment: .leading, spacing: 0) {
+                // Banner header
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(category.rawValue.uppercased())
@@ -228,24 +225,21 @@ struct CategoryRow: View {
                         .font(.pCaption)
                         .foregroundStyle(.tertiary)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
                 
-                // Horizontal scrolling cards
+                // Full-width dark card container
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(cards) { card in
                             ExploreCardItem(card: card, height: 140)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                 }
+                .background(Color.white.opacity(0.04))
             }
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.06))
-            )
-            .padding(.horizontal, 12)
         }
         .buttonStyle(.plain)
     }
