@@ -823,7 +823,7 @@ struct CardBackView: View {
                 if !specs.description.isEmpty {
                     Text(specs.description)
                         .font(.poppins(6 * scale))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
                         .minimumScaleFactor(0.6)
@@ -847,7 +847,7 @@ struct CardBackView: View {
                         statItem(label: "DRIVE", value: specs.drivetrain, highlight: specs.drivetrain != "N/A")
                     }
                 }
-                .padding(.horizontal, 12 * scale)
+                .padding(.horizontal, 18 * scale)
                 .padding(.bottom, 10 * scale)
             }
             .frame(width: cardWidth, height: cardHeight)

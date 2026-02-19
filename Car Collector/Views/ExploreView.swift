@@ -42,8 +42,7 @@ struct ExploreView: View {
                     isShowing: Binding(
                         get: { fullScreenActivity != nil },
                         set: { if !$0 { fullScreenActivity = nil } }
-                    ),
-                    showUserInfo: true
+                    )
                 )
             }
         }

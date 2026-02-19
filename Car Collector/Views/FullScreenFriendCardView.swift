@@ -11,7 +11,6 @@ import SwiftUI
 struct FullScreenFriendCardView: View {
     let activity: FriendActivity
     @Binding var isShowing: Bool
-    var showUserInfo: Bool = false
     
     @State private var isFlipped = false
     @State private var flipDegrees: Double = 0
@@ -66,54 +65,42 @@ struct FullScreenFriendCardView: View {
                         
                         Spacer()
                         
-                        if showUserInfo {
-                            // User profile chip — tappable
-                            NavigationLink {
-                                UserProfileView(userId: activity.userId, username: activity.username)
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Text(activity.username)
-                                        .font(.pCaption)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.white)
-                                    
-                                    if let profileImage = profileImage {
-                                        Image(uiImage: profileImage)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 30, height: 30)
-                                            .clipShape(Circle())
-                                    } else {
-                                        Circle()
-                                            .fill(.white.opacity(0.3))
-                                            .frame(width: 30, height: 30)
-                                            .overlay {
-                                                Text(String(activity.username.prefix(1)).uppercased())
-                                                    .font(.poppins(13))
-                                                    .fontWeight(.semibold)
-                                                    .foregroundStyle(.white)
-                                            }
-                                    }
+                        // User profile chip — always visible, pfp first
+                        NavigationLink {
+                            UserProfileView(userId: activity.userId, username: activity.username)
+                        } label: {
+                            HStack(spacing: 8) {
+                                if let profileImage = profileImage {
+                                    Image(uiImage: profileImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 30, height: 30)
+                                        .clipShape(Circle())
+                                } else {
+                                    Circle()
+                                        .fill(.white.opacity(0.3))
+                                        .frame(width: 30, height: 30)
+                                        .overlay {
+                                            Text(String(activity.username.prefix(1)).uppercased())
+                                                .font(.poppins(13))
+                                                .fontWeight(.semibold)
+                                                .foregroundStyle(.white)
+                                        }
                                 }
-                                .padding(.leading, 12)
-                                .padding(.trailing, 6)
-                                .padding(.vertical, 6)
-                                .background(.black.opacity(0.6))
-                                .cornerRadius(20)
+                                
+                                Text(activity.username)
+                                    .font(.pCaption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white)
                             }
-                            .buttonStyle(.plain)
-                            .padding(.trailing, 20)
-                        } else if !isFetchingSpecs {
-                            // Flip hint (when no user info shown)
-                            Text(specsAreComplete(fetchedSpecs) ? "Tap card to flip" : "Tap to load stats")
-                                .font(.pCaption)
-                                .foregroundStyle(.white.opacity(0.7))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(.black.opacity(0.6))
-                                .cornerRadius(20)
-                                .padding(.trailing, 20)
+                            .padding(.leading, 6)
+                            .padding(.trailing, 12)
+                            .padding(.vertical, 6)
+                            .background(.black.opacity(0.6))
+                            .cornerRadius(20)
                         }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 20)
                     }
                     Spacer()
                 }
@@ -128,9 +115,7 @@ struct FullScreenFriendCardView: View {
         }
         .transition(.opacity)
         .task {
-            if showUserInfo {
-                await loadProfilePicture()
-            }
+            await loadProfilePicture()
         }
     }
     
