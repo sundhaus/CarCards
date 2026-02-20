@@ -16,6 +16,7 @@ class LiDARDepthScanner: NSObject, ARSessionDelegate {
     let isAvailable: Bool
     private var arSession: ARSession?
     private var latestDepthMap: CVPixelBuffer?
+    var hasDepthData: Bool { latestDepthMap != nil }
     
     override init() {
         isAvailable = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
@@ -681,20 +682,25 @@ struct CameraView: View {
         contentRejected = false
         rejectionMessage = ""
         
-        // Ensure LiDAR is running (starts on first capture, stays running after)
+        // Ensure LiDAR is running
         LiDARDepthScanner.shared.start()
         
-        // LiDAR check — is the scene a flat surface (screen)?
-        let isFlat = LiDARDepthScanner.shared.isSceneFlat()
+        // Give LiDAR time to get a depth frame if it just started
+        let hasDepth = LiDARDepthScanner.shared.hasDepthData
+        let delay: Double = hasDepth ? 0 : 1.5
         
-        isCheckingContent = false
-        
-        if isFlat {
-            contentRejected = true
-            rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
-            print("🚫 Image rejected: flat surface detected by LiDAR")
-        } else {
-            contentCheckedImage = image
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            let isFlat = LiDARDepthScanner.shared.isSceneFlat()
+            
+            self.isCheckingContent = false
+            
+            if isFlat {
+                self.contentRejected = true
+                self.rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
+                print("🚫 Image rejected: flat surface detected by LiDAR")
+            } else {
+                self.contentCheckedImage = image
+            }
         }
     }
 }
