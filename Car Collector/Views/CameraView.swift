@@ -565,25 +565,30 @@ struct CameraView: View {
         rejectionMessage = ""
         
         Task {
-            // Check 1: Is this a photo of a screen / downloaded image?
+            // Check 1: Depth-based screen detection (if available)
             if detectScreenPhoto(image: image) {
                 await MainActor.run {
                     isCheckingContent = false
                     contentRejected = true
                     rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
-                    print("🚫 Image rejected: screen photo detected")
+                    print("🚫 Image rejected: screen photo detected (depth)")
                 }
                 return
             }
             
-            // Check 2: Sensitive content (NSFW)
-            let isSafe = await performSensitivityCheck(image: image)
+            // Check 2: Vision classification (screens + NSFW combined)
+            let result = await performVisionCheck(image: image)
             
             await MainActor.run {
                 isCheckingContent = false
-                if isSafe {
+                switch result {
+                case .safe:
                     contentCheckedImage = image
-                } else {
+                case .screen:
+                    contentRejected = true
+                    rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
+                    print("🚫 Image rejected: screen detected by Vision")
+                case .sensitive:
                     contentRejected = true
                     rejectionMessage = "This image contains sensitive content."
                     print("🚫 Image rejected: sensitive content")
@@ -598,7 +603,7 @@ struct CameraView: View {
     /// Real scenes have varied depth; a screen is all at one distance.
     private func detectScreenPhoto(image: UIImage) -> Bool {
         guard let depthData = camera.lastDepthData else {
-            print("🔍 Screen detection: no depth data available — skipping check")
+            print("🔍 Screen detection: no depth data available — skipping depth check")
             return false
         }
         
@@ -657,7 +662,6 @@ struct CameraView: View {
         
         // A flat screen has very low depth variation (CoV < 0.05)
         // Real scenes have objects at different distances (CoV > 0.10)
-        // Threshold at 0.05 to catch screens while allowing real scenes
         if coeffOfVariation < 0.05 {
             print("🚫 Detected: flat depth profile — likely a screen (CoV=\(String(format: "%.4f", coeffOfVariation)))")
             return true
@@ -666,21 +670,27 @@ struct CameraView: View {
         return false
     }
     
-    // MARK: - Sensitive Content Check (Vision framework, no user opt-in needed)
+    // MARK: - Vision Classification Check (screen + sensitivity combined)
     
-    private func performSensitivityCheck(image: UIImage) async -> Bool {
-        guard let cgImage = image.cgImage else { return true }
+    private enum VisionResult {
+        case safe
+        case screen
+        case sensitive
+    }
+    
+    private func performVisionCheck(image: UIImage) async -> VisionResult {
+        guard let cgImage = image.cgImage else { return .safe }
         
         return await withCheckedContinuation { continuation in
             let request = VNClassifyImageRequest { request, error in
                 if let error = error {
                     print("⚠️ Vision classification error: \(error) — allowing image")
-                    continuation.resume(returning: true)
+                    continuation.resume(returning: .safe)
                     return
                 }
                 
                 guard let results = request.results as? [VNClassificationObservation] else {
-                    continuation.resume(returning: true)
+                    continuation.resume(returning: .safe)
                     return
                 }
                 
@@ -691,11 +701,30 @@ struct CameraView: View {
                     print("   \(result.identifier): \(String(format: "%.1f%%", result.confidence * 100))")
                 }
                 
-                // Check for NSFW-related classifications
+                // --- CHECK 1: Screen / document / screenshot detection ---
+                let screenKeywords = [
+                    "screenshot", "screen", "document", "computer_monitor",
+                    "monitor", "display", "webpage", "web_page", "text_document"
+                ]
+                
+                for result in results {
+                    let label = result.identifier.lowercased()
+                    let confidence = result.confidence
+                    
+                    for keyword in screenKeywords {
+                        if label.contains(keyword) && confidence > 0.6 {
+                            print("🚫 Vision screen detect: \(label) (\(String(format: "%.1f%%", confidence * 100)))")
+                            continuation.resume(returning: .screen)
+                            return
+                        }
+                    }
+                }
+                
+                // --- CHECK 2: NSFW / sensitive content ---
                 let sensitiveKeywords = [
                     "explicit", "nude", "nudity", "sexually", "underwear",
-                    "bikini", "lingerie", "brassiere", "swimwear", "skin",
-                    "chest", "topless", "erotic", "pornograph", "adult_content",
+                    "bikini", "lingerie", "brassiere", "swimwear",
+                    "topless", "erotic", "pornograph", "adult_content",
                     "nsfw", "intimate", "provocative"
                 ]
                 
@@ -706,14 +735,14 @@ struct CameraView: View {
                     for keyword in sensitiveKeywords {
                         if label.contains(keyword) && confidence > 0.5 {
                             print("🚫 Vision flagged: \(label) (\(String(format: "%.1f%%", confidence * 100)))")
-                            continuation.resume(returning: false)
+                            continuation.resume(returning: .sensitive)
                             return
                         }
                     }
                 }
                 
-                print("✅ Image passed Vision sensitivity check")
-                continuation.resume(returning: true)
+                print("✅ Image passed all Vision checks")
+                continuation.resume(returning: .safe)
             }
             
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
@@ -721,7 +750,7 @@ struct CameraView: View {
                 try handler.perform([request])
             } catch {
                 print("⚠️ Vision handler error: \(error) — allowing image")
-                continuation.resume(returning: true)
+                continuation.resume(returning: .safe)
             }
         }
     }
