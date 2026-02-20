@@ -76,8 +76,7 @@ struct FIFACardView: View {
             }
             
             // Heat indicator - bottom right
-            let displayCount = card.heatCount + heatDelta
-            if displayCount > 0 {
+            if displayHeatCount > 0 {
                 VStack {
                     Spacer()
                     HStack {
@@ -85,7 +84,7 @@ struct FIFACardView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "flame.fill")
                                 .font(.system(size: height * 0.09))
-                            Text("\(displayCount)")
+                            Text("\(displayHeatCount)")
                                 .font(.system(size: height * 0.09, weight: .bold))
                         }
                         .foregroundStyle(.orange)
@@ -123,12 +122,15 @@ struct FIFACardView: View {
         }
     }
     
-    /// +1 if we liked locally but server data doesn't reflect it yet, -1 if we unliked
     private var heatDelta: Int {
         let alreadyInServer = card.heatedBy.contains(currentUserId ?? "")
         if hasLiked && !alreadyInServer { return 1 }
         if !hasLiked && alreadyInServer { return -1 }
         return 0
+    }
+    
+    private var displayHeatCount: Int {
+        card.heatCount + heatDelta
     }
     
     private func toggleHeat() {
