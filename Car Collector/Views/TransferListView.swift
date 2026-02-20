@@ -13,6 +13,7 @@ struct TransferListView: View {
     @ObservedObject private var marketplaceService = MarketplaceService.shared
     @State private var useDoubleColumn = false
     @State private var selectedListing: CloudListing?
+    @State private var showSellFlow = false
     
     // Calculate selling listings (active)
     private var sellingListings: [CloudListing] {
@@ -59,6 +60,32 @@ struct TransferListView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 10)
                 .glassEffect(.regular, in: .rect)
+                
+                // Sell button
+                Button(action: {
+                    showSellFlow = true
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 16))
+                        Text("LIST A CARD")
+                            .font(.pSubheadline)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.green, Color.teal],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .glassEffect(.regular, in: .rect(cornerRadius: 10))
+                }
+                .padding(.horizontal)
+                .padding(.top, 10)
                 
                 ScrollView {
                     VStack(spacing: 16) {
@@ -153,6 +180,22 @@ struct TransferListView: View {
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $selectedListing) { listing in
             ListingDetailView(listing: listing)
+        }
+        .fullScreenCover(isPresented: $showSellFlow) {
+            // TODO: Replace with GarageSearchView when built
+            NavigationStack {
+                Text("Garage Search — Coming Soon")
+                    .font(.pTitle3)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button(action: { showSellFlow = false }) {
+                                Image(systemName: "xmark")
+                                    .font(.pBody)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                    }
+            }
         }
         .onAppear {
             // Listener already started in app startup

@@ -36,11 +36,11 @@ struct MarketplaceLandingView: View {
                     // Main content
                     ScrollView {
                         VStack(spacing: 16) {
-                            // Buy & Sell Card
+                            // Search Marketplace
                             NavigationButton(
-                                title: "BUY & SELL",
-                                subtitle: "Browse marketplace listings",
-                                icon: "cart.fill",
+                                title: "SEARCH MARKETPLACE",
+                                subtitle: "Find and buy cards",
+                                icon: "magnifyingglass",
                                 gradient: [Color.blue, Color.purple],
                                 action: {
                                     showBuySell = true
@@ -80,11 +80,7 @@ struct MarketplaceLandingView: View {
             }
             .background { AppBackground() }
             .navigationDestination(isPresented: $showBuySell) {
-                MarketplaceBuySellView(
-                    isLandscape: isLandscape,
-                    savedCards: savedCards,
-                    onCardListed: onCardListed
-                )
+                MarketplaceFilterView(isLandscape: isLandscape)
             }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
