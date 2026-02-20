@@ -46,11 +46,15 @@ struct ListingDetailView: View {
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 32, height: 32)
-                            .background(.clear)
-                            .glassEffect(.regular, in: .circle)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.55))
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.15), lineWidth: 0.75)
+                            )
                     }
                     
                     Spacer()
@@ -79,17 +83,14 @@ struct ListingDetailView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 10)
                 
-                // Card + pricing attached
+                // Card + pricing as one joined unit
                 VStack(spacing: 0) {
                     cardImageSection
                     
-                    Rectangle()
-                        .fill(Color.white.opacity(0.08))
-                        .frame(height: 0.5)
-                    
-                    // Pricing section directly attached
+                    // Pricing directly below card
                     pricingSection
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .glassEffect(.regular, in: .rect(cornerRadius: 12))
                 .padding(.horizontal)
                 .padding(.top, 8)
