@@ -7,7 +7,7 @@
 
 import SwiftUI
 import AVFoundation
-import SensitiveContentAnalysis
+import Vision
 
 // CAMERA SERVICE CLASS - MUST BE FIRST
 class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -665,39 +665,55 @@ struct CameraView: View {
         return false
     }
     
-    // MARK: - Sensitive Content Check
+    // MARK: - Sensitive Content Check (Vision framework, no user opt-in needed)
     
     private func performSensitivityCheck(image: UIImage) async -> Bool {
-        // Use Apple's SensitiveContentAnalysis (iOS 17+)
-        if #available(iOS 17.0, *) {
+        guard let cgImage = image.cgImage else { return true }
+        
+        return await withCheckedContinuation { continuation in
+            let request = VNClassifyImageRequest { request, error in
+                if let error = error {
+                    print("⚠️ Vision classification error: \(error) — allowing image")
+                    continuation.resume(returning: true)
+                    return
+                }
+                
+                guard let results = request.results as? [VNClassificationObservation] else {
+                    continuation.resume(returning: true)
+                    return
+                }
+                
+                // Check for NSFW-related classifications
+                // Vision's classifier includes identifiers for sensitive content
+                let sensitiveLabels: Set<String> = [
+                    "explicit", "nude", "nudity", "sexually_explicit",
+                    "underwear", "bikini", "lingerie", "brassiere"
+                ]
+                
+                for result in results {
+                    let label = result.identifier.lowercased()
+                    let confidence = result.confidence
+                    
+                    // Flag if a sensitive label has high confidence
+                    if sensitiveLabels.contains(label) && confidence > 0.7 {
+                        print("🚫 Vision flagged: \(label) (\(String(format: "%.1f%%", confidence * 100)))")
+                        continuation.resume(returning: false)
+                        return
+                    }
+                }
+                
+                print("✅ Image passed Vision sensitivity check")
+                continuation.resume(returning: true)
+            }
+            
+            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
-                let analyzer = SCSensitivityAnalyzer()
-                let policy = analyzer.analysisPolicy
-                
-                guard policy != .disabled else {
-                    print("🔍 Content analysis disabled by user settings — allowing")
-                    return true
-                }
-                
-                guard let cgImage = image.cgImage else { return true }
-                
-                let result = try await analyzer.analyzeImage(cgImage)
-                
-                if result.isSensitive {
-                    print("🚫 SensitiveContentAnalysis flagged image as sensitive")
-                    return false
-                }
-                
-                print("✅ Image passed sensitivity check")
-                return true
+                try handler.perform([request])
             } catch {
-                print("⚠️ SensitiveContentAnalysis error: \(error) — allowing image")
-                return true
+                print("⚠️ Vision handler error: \(error) — allowing image")
+                continuation.resume(returning: true)
             }
         }
-        
-        print("⚠️ SensitiveContentAnalysis unavailable — allowing image")
-        return true
     }
 }
 
