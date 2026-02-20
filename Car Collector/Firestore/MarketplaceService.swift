@@ -10,7 +10,7 @@ import Foundation
 import FirebaseFirestore
 
 // Cloud listing model
-struct CloudListing: Identifiable {
+struct CloudListing: Identifiable, Equatable {
     var id: String
     var cardId: String
     var sellerId: String
