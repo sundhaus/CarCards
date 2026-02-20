@@ -98,49 +98,53 @@ struct MarketplaceFilterView: View {
                 // Filter content
                 ScrollView {
                     VStack(spacing: 14) {
-                        // Filter pills — full width, single column (FIFA style)
-                        fullWidthPill(
-                            icon: "car.fill",
-                            label: "Make",
-                            value: filterMake,
-                            options: availableMakes,
-                            onSelect: { make in
-                                filterMake = make
-                                filterModel = "Any"
-                                filterYear = "Any"
-                            }
-                        )
+                        // Filter pills — 2 column grid
+                        HStack(spacing: 10) {
+                            fullWidthPill(
+                                icon: "car.fill",
+                                label: "Make",
+                                value: filterMake,
+                                options: availableMakes,
+                                onSelect: { make in
+                                    filterMake = make
+                                    filterModel = "Any"
+                                    filterYear = "Any"
+                                }
+                            )
+                            
+                            fullWidthPill(
+                                icon: "doc.text",
+                                label: "Model",
+                                value: filterModel,
+                                options: availableModels,
+                                onSelect: { model in
+                                    filterModel = model
+                                    filterYear = "Any"
+                                }
+                            )
+                        }
                         
-                        fullWidthPill(
-                            icon: "doc.text",
-                            label: "Model",
-                            value: filterModel,
-                            options: availableModels,
-                            onSelect: { model in
-                                filterModel = model
-                                filterYear = "Any"
-                            }
-                        )
-                        
-                        fullWidthPill(
-                            icon: "calendar",
-                            label: "Year",
-                            value: filterYear,
-                            options: availableYears,
-                            onSelect: { year in
-                                filterYear = year
-                            }
-                        )
-                        
-                        fullWidthPill(
-                            icon: "square.grid.2x2",
-                            label: "Category",
-                            value: filterCategory,
-                            options: availableCategories,
-                            onSelect: { cat in
-                                filterCategory = cat
-                            }
-                        )
+                        HStack(spacing: 10) {
+                            fullWidthPill(
+                                icon: "calendar",
+                                label: "Year",
+                                value: filterYear,
+                                options: availableYears,
+                                onSelect: { year in
+                                    filterYear = year
+                                }
+                            )
+                            
+                            fullWidthPill(
+                                icon: "square.grid.2x2",
+                                label: "Category",
+                                value: filterCategory,
+                                options: availableCategories,
+                                onSelect: { cat in
+                                    filterCategory = cat
+                                }
+                            )
+                        }
                         
                         // Bid Price range
                         priceRangeSection(title: "Bid Price:", minBinding: $bidMinPrice, maxBinding: $bidMaxPrice)
