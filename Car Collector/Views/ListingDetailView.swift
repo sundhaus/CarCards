@@ -84,7 +84,7 @@ struct ListingDetailView: View {
                 .padding(.bottom, 10)
                 
                 // Card + pricing joined
-                VStack(spacing: -20) {
+                VStack(spacing: -12) {
                     // Card image with proper clipping
                     cardImageSection
                         .zIndex(1)
