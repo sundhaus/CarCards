@@ -351,7 +351,7 @@ struct ListingDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 34)
         .background(.clear)
