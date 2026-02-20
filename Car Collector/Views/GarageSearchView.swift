@@ -424,13 +424,13 @@ struct GarageSearchView: View {
                 Text(isActive ? value : label)
                     .font(.pSubheadline)
                     .fontWeight(.medium)
-                    .foregroundStyle(isActive ? .white : isDisabled ? .secondary.opacity(0.4) : .secondary)
+                    .foregroundStyle(isActive ? Color.white : isDisabled ? Color.secondary.opacity(0.4) : Color.secondary)
                 
                 Spacer()
                 
                 Image(systemName: "arrowtriangle.down.fill")
                     .font(.system(size: 8))
-                    .foregroundStyle(isDisabled ? .secondary.opacity(0.3) : .secondary)
+                    .foregroundStyle(isDisabled ? Color.secondary.opacity(0.3) : Color.secondary)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
