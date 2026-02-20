@@ -7,50 +7,82 @@
 
 import SwiftUI
 import AVFoundation
-import ARKit
 
-// MARK: - LiDAR Depth Scanner (runs continuously alongside camera)
-class LiDARDepthScanner: NSObject, ARSessionDelegate {
+// MARK: - LiDAR Depth Scanner (AVFoundation only, no ARKit)
+class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
     static let shared = LiDARDepthScanner()
     
     let isAvailable: Bool
-    private var arSession: ARSession?
+    private var depthSession: AVCaptureSession?
     private var latestDepthMap: CVPixelBuffer?
     var hasDepthData: Bool { latestDepthMap != nil }
     
     override init() {
-        isAvailable = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
+        // Check if a LiDAR-capable depth camera exists
+        let discovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInLiDARDepthCamera],
+            mediaType: .video,
+            position: .back
+        )
+        isAvailable = !discovery.devices.isEmpty
         super.init()
         print("📐 LiDAR available: \(isAvailable)")
     }
     
     func start() {
-        guard isAvailable, arSession == nil else { return }
+        guard isAvailable, depthSession == nil else { return }
         
-        let session = ARSession()
-        session.delegate = self
+        let session = AVCaptureSession()
+        session.sessionPreset = .inputPriority
         
-        let config = ARWorldTrackingConfiguration()
-        config.frameSemantics = .sceneDepth
-        // Don't let ARKit fight the camera — we only want depth
-        config.providesAudioData = false
+        // Find LiDAR depth camera
+        guard let device = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInLiDARDepthCamera],
+            mediaType: .video,
+            position: .back
+        ).devices.first else {
+            print("📐 No LiDAR device found")
+            return
+        }
         
-        session.run(config, options: [])
-        arSession = session
-        print("📐 LiDAR scanning started")
+        do {
+            let input = try AVCaptureDeviceInput(device: device)
+            if session.canAddInput(input) {
+                session.addInput(input)
+            }
+            
+            let depthOutput = AVCaptureDepthDataOutput()
+            depthOutput.isFilteringEnabled = true
+            depthOutput.setDelegate(self, callbackQueue: DispatchQueue(label: "depthQueue"))
+            
+            if session.canAddOutput(depthOutput) {
+                session.addOutput(depthOutput)
+            }
+            
+            DispatchQueue.global(qos: .userInitiated).async {
+                session.startRunning()
+                print("📐 LiDAR depth session started (AVFoundation)")
+            }
+            
+            depthSession = session
+        } catch {
+            print("📐 LiDAR setup error: \(error)")
+        }
     }
     
     func stop() {
-        arSession?.pause()
-        arSession = nil
+        depthSession?.stopRunning()
+        depthSession = nil
         latestDepthMap = nil
-        print("📐 LiDAR scanning stopped")
     }
     
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        if let sceneDepth = frame.sceneDepth {
-            latestDepthMap = sceneDepth.depthMap
-        }
+    // AVCaptureDepthDataOutputDelegate
+    func depthDataOutput(_ output: AVCaptureDepthDataOutput,
+                         didOutput depthData: AVDepthData,
+                         timestamp: CMTime,
+                         connection: AVCaptureConnection) {
+        let converted = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32)
+        latestDepthMap = converted.depthDataMap
     }
     
     /// Check if the scene in front of the camera is flat (screen)
