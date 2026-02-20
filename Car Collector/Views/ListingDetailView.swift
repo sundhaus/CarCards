@@ -325,6 +325,7 @@ struct ListingDetailView: View {
                 .padding(.horizontal, 24)
                 .padding(.vertical, 10)
                 .background(Color.red.opacity(0.12))
+                .clipShape(Capsule())
                 .glassEffect(.regular, in: .capsule)
         }
     }

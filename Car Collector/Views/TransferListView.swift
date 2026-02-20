@@ -82,6 +82,7 @@ struct TransferListView: View {
                             endPoint: .trailing
                         )
                     )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                     .glassEffect(.regular, in: .rect(cornerRadius: 10))
                 }
                 .padding(.horizontal)
