@@ -186,7 +186,7 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     }
     
     func setupCamera() {
-        DispatchQueue.global(qos: .userInitiated).async {
+        DispatchQueue.main.async {
             do {
                 self.session.beginConfiguration()
                 self.discoverLenses()
@@ -206,9 +206,6 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 if self.session.canAddInput(input) {
                     self.session.addInput(input)
                 }
-                
-                // Remove and re-add outputs to reset configuration
-                self.session.outputs.forEach { self.session.removeOutput($0) }
                 
                 if self.session.canAddOutput(self.output) {
                     self.session.addOutput(self.output)
@@ -662,10 +659,6 @@ struct CameraView: View {
             OrientationManager.lockOrientation(.portrait)
             locationService.requestPermission()
             camera.checkPermissions()
-            // Start LiDAR after camera has fully initialized
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                LiDARDepthScanner.shared.start()
-            }
         }
         .onDisappear {
             camera.stopSession()
@@ -688,7 +681,10 @@ struct CameraView: View {
         contentRejected = false
         rejectionMessage = ""
         
-        // LiDAR-only check — is the scene a flat surface (screen)?
+        // Ensure LiDAR is running (starts on first capture, stays running after)
+        LiDARDepthScanner.shared.start()
+        
+        // LiDAR check — is the scene a flat surface (screen)?
         let isFlat = LiDARDepthScanner.shared.isSceneFlat()
         
         isCheckingContent = false
