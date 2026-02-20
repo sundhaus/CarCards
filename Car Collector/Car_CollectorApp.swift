@@ -42,7 +42,10 @@ struct CarCardCollectorApp: App {
                 UserDefaults.standard.set(true, forKey: "profileExists")
                 withAnimation {
                     showOnboarding = false
-                    startServices()
+                }
+                startServices()
+                withAnimation {
+                    isReady = true
                 }
             })
         } else if isReady {
