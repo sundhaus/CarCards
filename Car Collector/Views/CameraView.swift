@@ -146,17 +146,13 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
         
         // A screen held up to the camera:
         // - Very close: mean < 0.75m (arm's length)
-        // - Very flat: IQR < 0.05m (entire surface at same distance)
+        // - Flat: IQR < 0.12m (screen + bezel edge noise)
+        //   Real data: monitor at 0.47m → IQR=0.079m
         //
-        // A real car even at close range:
-        // - Has hood, windshield, roof, background at different depths
-        // - IQR will be > 0.15m even up close
-        //
-        // A person at close range:
-        // - Has face, shoulders, background at different depths
-        // - IQR will be > 0.10m
+        // A real car/person even at close range:
+        // - IQR > 0.20m (hood, windshield, background all different depths)
         
-        if iqr < 0.05 && mean < 0.75 {
+        if iqr < 0.12 && mean < 0.75 {
             print("🚫 LiDAR: flat surface — IQR \(String(format: "%.3f", iqr))m at \(String(format: "%.2f", mean))m (likely screen)")
             return true
         }
