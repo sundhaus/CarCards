@@ -83,20 +83,16 @@ struct ListingDetailView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 10)
                 
-                // Card + pricing as one joined unit
-                ZStack(alignment: .bottom) {
-                    // Pricing container — extends up behind the card
-                    VStack {
-                        Spacer()
-                        pricingSection
-                    }
-                    
-                    // Card image on top, with bottom padding to reveal pricing below
+                // Card + pricing joined
+                VStack(spacing: -20) {
+                    // Card image with proper clipping
                     cardImageSection
-                        .padding(.bottom, 70)
+                        .zIndex(1)
+                    
+                    // Pricing slides under the card's bottom edge
+                    pricingSection
+                        .padding(.top, 20)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .glassEffect(.regular, in: .rect(cornerRadius: 12))
                 .padding(.horizontal)
                 .padding(.top, 8)
                 
@@ -143,17 +139,20 @@ struct ListingDetailView: View {
     // MARK: - Card Image
     
     private var cardImageSection: some View {
-        ZStack {
+        let cardCornerRadius: CGFloat = 12
+        
+        return ZStack {
             if let image = cardImage {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 220)
-                    .clipped()
             } else {
-                ProgressView()
-                    .tint(.gray)
-                    .frame(height: 220)
+                Rectangle()
+                    .fill(Color.gray.opacity(0.2))
+                    .overlay(
+                        ProgressView()
+                            .tint(.gray)
+                    )
             }
             
             // Border overlay
@@ -161,7 +160,6 @@ struct ListingDetailView: View {
                 Image(borderImageName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 220)
                     .allowsHitTesting(false)
             }
             
@@ -172,9 +170,11 @@ struct ListingDetailView: View {
                     Text(listing.make.uppercased())
                         .font(.custom("Futura-Light", size: 14))
                         .foregroundStyle(config.textColor)
+                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     Text(listing.model.uppercased())
                         .font(.custom("Futura-Bold", size: 14))
                         .foregroundStyle(config.textColor)
+                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     Spacer()
                 }
                 .padding(12)
@@ -182,7 +182,7 @@ struct ListingDetailView: View {
             }
         }
         .aspectRatio(16/9, contentMode: .fit)
-        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
     }
     
     // MARK: - Pricing
@@ -251,6 +251,7 @@ struct ListingDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 16)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
     
     // MARK: - Action Section (Bid / Buy)
