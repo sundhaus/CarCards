@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import AuthenticationServices
+import CryptoKit
+import FirebaseFirestore
 
 struct ProfileView: View {
     @Binding var isShowing: Bool
@@ -19,6 +22,9 @@ struct ProfileView: View {
     @State private var profileImage: UIImage?
     @State private var isUploadingImage = false
     @State private var showOwnProfile = false
+    @State private var currentNonce: String?
+    @State private var showAppleSignInError = false
+    @State private var appleSignInErrorMessage = ""
     
     // Pull from Firebase
     private var username: String {
@@ -263,22 +269,25 @@ struct ProfileView: View {
                             }
                             .padding(.horizontal)
                             
-                            // Future: Apple Sign-In button will go here
-                            Button(action: {
-                                // TODO: Implement Apple Sign-In linking
-                            }) {
-                                HStack {
-                                    Image(systemName: "apple.logo")
-                                    Text("Sign in with Apple")
+                            // Apple Sign-In button
+                            SignInWithAppleButton(.signIn) { request in
+                                let nonce = randomNonceString()
+                                currentNonce = nonce
+                                request.requestedScopes = [.email]
+                                request.nonce = sha256(nonce)
+                            } onCompletion: { result in
+                                switch result {
+                                case .success(let auth):
+                                    handleAppleSignIn(auth)
+                                case .failure(let error):
+                                    print("❌ Apple Sign-In failed: \(error)")
+                                    appleSignInErrorMessage = error.localizedDescription
+                                    showAppleSignInError = true
                                 }
-                                .font(.pSubheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(.black)
-                                .cornerRadius(10)
                             }
+                            .signInWithAppleButtonStyle(.white)
+                            .frame(height: 44)
+                            .cornerRadius(10)
                             .padding(.horizontal, 24)
                         }
                     }
@@ -342,6 +351,11 @@ struct ProfileView: View {
                 }
             }
         }
+        .alert("Sign In Error", isPresented: $showAppleSignInError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(appleSignInErrorMessage)
+        }
         .task {
             // Load existing profile picture
             guard let urlString = profilePictureURL else { return }
@@ -355,6 +369,55 @@ struct ProfileView: View {
                 print("❌ Failed to load profile picture: \(error)")
             }
         }
+    }
+    
+    // MARK: - Apple Sign-In
+    
+    private func handleAppleSignIn(_ authorization: ASAuthorization) {
+        guard let appleCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let idTokenData = appleCredential.identityToken,
+              let idToken = String(data: idTokenData, encoding: .utf8),
+              let nonce = currentNonce else {
+            appleSignInErrorMessage = "Failed to get Apple credentials"
+            showAppleSignInError = true
+            return
+        }
+        
+        Task {
+            do {
+                try await FirebaseManager.shared.linkWithApple(idToken: idToken, nonce: nonce)
+                
+                // Update profile to mark as linked
+                UserService.shared.currentProfile?.linkedAccount = true
+                if let uid = FirebaseManager.shared.currentUserId {
+                    try? await Firestore.firestore().collection("users").document(uid).updateData([
+                        "linkedAccount": true
+                    ])
+                }
+                
+                print("✅ Apple account linked successfully")
+            } catch {
+                appleSignInErrorMessage = error.localizedDescription
+                showAppleSignInError = true
+            }
+        }
+    }
+    
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        var randomBytes = [UInt8](repeating: 0, count: length)
+        let errorCode = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        if errorCode != errSecSuccess {
+            fatalError("Unable to generate nonce. SecRandomCopyBytes failed with OSStatus \(errorCode)")
+        }
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        return String(randomBytes.map { charset[Int($0) % charset.count] })
+    }
+    
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        return hashedData.compactMap { String(format: "%02x", $0) }.joined()
     }
 }
 
