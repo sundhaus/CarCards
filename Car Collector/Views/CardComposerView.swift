@@ -325,9 +325,7 @@ struct CardComposerView: View {
             print("📊 showAlternatives changed: \(oldValue) → \(newValue)")
         }
         .onAppear {
-            // Downsample to max 2160px on longest edge (plenty for 1080x608 card)
-            // A 48MP RAW image is ~195MB in memory; this brings it to ~14MB
-            displayImage = Self.downsample(image: image, maxDimension: 2160)
+            displayImage = image
             OrientationManager.lockOrientation(.portrait)
             print("🎨 CardComposerView appeared")
             print("   captureType: \(captureType)")
