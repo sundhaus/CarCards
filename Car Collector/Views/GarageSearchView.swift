@@ -104,14 +104,6 @@ struct GarageSearchView: View {
                     .padding(.top, 18)
                     .padding(.bottom, 10)
                     
-                    // Subtitle
-                    Text("Garage Search")
-                        .font(.pBody)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .glassEffect(.regular, in: .rect)
-                    
                     // Filters
                     ScrollView {
                         VStack(spacing: 14) {
