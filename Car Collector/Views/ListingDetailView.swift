@@ -139,50 +139,65 @@ struct ListingDetailView: View {
     // MARK: - Card Image
     
     private var cardImageSection: some View {
-        let cardCornerRadius: CGFloat = 12
-        
-        return ZStack {
-            if let image = cardImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .overlay(
-                        ProgressView()
-                            .tint(.gray)
-                    )
-            }
+        GeometryReader { geo in
+            let cardWidth = geo.size.width
+            let cardHeight = cardWidth / (16.0/9.0)
+            let cornerRadius = cardHeight * 0.09
+            let fontSize = cardHeight * 0.08
+            let textPadding = cardHeight * 0.08
             
-            // Border overlay
-            if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .allowsHitTesting(false)
-            }
-            
-            // Make/Model overlay
-            VStack {
-                HStack {
-                    let config = CardBorderConfig.forFrame(listing.customFrame)
-                    Text(listing.make.uppercased())
-                        .font(.custom("Futura-Light", size: 14))
-                        .foregroundStyle(config.textColor)
-                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                    Text(listing.model.uppercased())
-                        .font(.custom("Futura-Bold", size: 14))
-                        .foregroundStyle(config.textColor)
-                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+            ZStack {
+                if let image = cardImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: cardWidth, height: cardHeight)
+                        .clipped()
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: cardWidth, height: cardHeight)
+                        .overlay(
+                            ProgressView()
+                                .tint(.gray)
+                        )
+                }
+                
+                // Border overlay
+                if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
+                    Image(borderImageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: cardWidth, height: cardHeight)
+                        .allowsHitTesting(false)
+                }
+                
+                // Make/Model overlay — matching UnifiedCardView
+                VStack {
+                    HStack {
+                        HStack(spacing: 6) {
+                            let config = CardBorderConfig.forFrame(listing.customFrame)
+                            Text(listing.make.uppercased())
+                                .font(.custom("Futura-Light", size: fontSize))
+                                .foregroundStyle(config.textColor)
+                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                            Text(listing.model.uppercased())
+                                .font(.custom("Futura-Bold", size: fontSize))
+                                .foregroundStyle(config.textColor)
+                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                                .lineLimit(1)
+                        }
+                        .padding(.top, textPadding)
+                        .padding(.leading, textPadding)
+                        Spacer()
+                    }
                     Spacer()
                 }
-                .padding(12)
-                Spacer()
             }
+            .frame(width: cardWidth, height: cardHeight)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }
         .aspectRatio(16/9, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
     }
     
     // MARK: - Pricing
