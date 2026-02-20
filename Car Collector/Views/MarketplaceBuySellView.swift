@@ -528,53 +528,47 @@ struct SellView: View {
 struct ListingCardRow: View {
     let listing: CloudListing
     
+    private let cardHeight: CGFloat = 202.5
+    private var cardWidth: CGFloat { cardHeight * (16/9) }
+    
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Info bar background — only visible below the card
-            VStack {
-                Spacer()
-                HStack(spacing: 0) {
-                    VStack(spacing: 4) {
-                        Text("CURRENT BID")
-                            .font(.pCaption2)
-                            .foregroundStyle(.secondary)
-                        Text(listing.currentBid > 0 ? "$\(Int(listing.currentBid))" : "None")
-                            .font(.pTitle3)
-                            .fontWeight(.bold)
-                            .foregroundStyle(listing.currentBid > 0 ? .orange : .secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    
-                    Rectangle()
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 1, height: 36)
-                    
-                    VStack(spacing: 4) {
-                        Text("BUY NOW")
-                            .font(.pCaption2)
-                            .foregroundStyle(.secondary)
-                        Text("$\(Int(listing.buyNowPrice))")
-                            .font(.pTitle3)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.green)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .padding(.vertical, 12)
-            }
-            .background(.clear)
-            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        VStack(spacing: 0) {
+            // Card on top
+            MarketplaceFIFACard(listing: listing)
             
-            // Card sits on top
-            VStack(spacing: 0) {
-                MarketplaceFIFACard(listing: listing)
-                    .padding(.horizontal, 4)
-                    .padding(.top, 4)
+            // Price bar below, same width as card
+            HStack(spacing: 0) {
+                VStack(spacing: 4) {
+                    Text("CURRENT BID")
+                        .font(.pCaption2)
+                        .foregroundStyle(.secondary)
+                    Text(listing.currentBid > 0 ? "$\(Int(listing.currentBid))" : "None")
+                        .font(.pTitle3)
+                        .fontWeight(.bold)
+                        .foregroundStyle(listing.currentBid > 0 ? .orange : .secondary)
+                }
+                .frame(maxWidth: .infinity)
                 
-                Color.clear
-                    .frame(height: 56)
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 1, height: 36)
+                
+                VStack(spacing: 4) {
+                    Text("BUY NOW")
+                        .font(.pCaption2)
+                        .foregroundStyle(.secondary)
+                    Text("$\(Int(listing.buyNowPrice))")
+                        .font(.pTitle3)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.green)
+                }
+                .frame(maxWidth: .infinity)
             }
+            .padding(.vertical, 12)
         }
+        .frame(width: cardWidth)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: cardHeight * 0.09))
     }
 }
 
@@ -583,41 +577,33 @@ struct ListingCardRow: View {
 struct GarageCardRow: View {
     let card: SavedCard
     
+    private let cardHeight: CGFloat = 202.5
+    private var cardWidth: CGFloat { cardHeight * (16/9) }
+    
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Info bar background — only visible below the card
-            VStack {
-                Spacer()
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(card.make.uppercased()) \(card.model.uppercased())")
-                            .font(.custom("Futura-Bold", size: 17))
-                        Text(card.year)
-                            .font(.pCaption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
+        VStack(spacing: 0) {
+            // Card on top
+            SellTabCardView(card: card)
+            
+            // Info bar below, same width as card
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(card.make.uppercased()) \(card.model.uppercased())")
+                        .font(.custom("Futura-Bold", size: 17))
+                    Text(card.year)
+                        .font(.pCaption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 12)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.secondary)
             }
-            .background(.clear)
-            .glassEffect(.regular, in: .rect(cornerRadius: 12))
-            
-            // Card sits on top, overlapping the info bar
-            VStack(spacing: 0) {
-                SellTabCardView(card: card)
-                    .padding(.horizontal, 4)
-                    .padding(.top, 4)
-                
-                // Spacer for the info bar height
-                Color.clear
-                    .frame(height: 52)
-            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
+        .frame(width: cardWidth)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: cardHeight * 0.09))
     }
 }
 
