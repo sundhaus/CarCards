@@ -50,8 +50,9 @@ struct MarketplaceFilterView: View {
     }
     
     private var availableCategories: [String] {
-        // Show all categories so users can filter even if results may be empty
-        return ["Any"] + VehicleCategory.allCases.map { $0.rawValue }
+        let categories = marketplaceService.activeListings.compactMap { $0.category }.filter { !$0.isEmpty }
+        guard !categories.isEmpty else { return ["Any"] }
+        return ["Any"] + Set(categories).sorted()
     }
     
     // Apply all filters
