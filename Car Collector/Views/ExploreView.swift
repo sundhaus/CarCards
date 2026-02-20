@@ -149,11 +149,11 @@ struct FeaturedRow: View {
     var onCardTap: (FriendActivity) -> Void
     
     var body: some View {
-        NavigationLink {
-            CategoryDetailView(category: nil, initialCards: cards)
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                // Floating glass header
+        VStack(alignment: .leading, spacing: 0) {
+            // Floating glass header — taps navigate to category
+            NavigationLink {
+                CategoryDetailView(category: nil, initialCards: cards)
+            } label: {
                 HStack(spacing: 8) {
                     Text("FEATURED")
                         .font(.pHeadline)
@@ -178,21 +178,24 @@ struct FeaturedRow: View {
                         .foregroundStyle(Color.white.opacity(0.08)),
                     alignment: .bottom
                 )
-                
-                // Card container
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(cards) { card in
-                            ExploreCardItem(card: card, height: 140)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                }
-                .background(Color.white.opacity(0.03))
             }
+            .buttonStyle(.plain)
+            
+            // Card container — individual cards handle taps
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(cards) { card in
+                        FIFACardView(card: card, height: 140, onSingleTap: {
+                            onCardTap(card)
+                        })
+                            .frame(width: 140 * (16/9), height: 140)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+            .background(Color.white.opacity(0.03))
         }
-        .buttonStyle(.plain)
         .onAppear {
             print("🌟 FEATURED ROW: Rendering with \(cards.count) cards")
         }
@@ -207,11 +210,11 @@ struct CategoryRow: View {
     var onCardTap: (FriendActivity) -> Void
     
     var body: some View {
-        NavigationLink {
-            CategoryDetailView(category: category, initialCards: cards)
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                // Floating glass header
+        VStack(alignment: .leading, spacing: 0) {
+            // Floating glass header — taps navigate to category
+            NavigationLink {
+                CategoryDetailView(category: category, initialCards: cards)
+            } label: {
                 HStack(spacing: 8) {
                     Text(category.rawValue.uppercased())
                         .font(.pHeadline)
@@ -236,21 +239,24 @@ struct CategoryRow: View {
                         .foregroundStyle(Color.white.opacity(0.08)),
                     alignment: .bottom
                 )
-                
-                // Card container
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(cards) { card in
-                            ExploreCardItem(card: card, height: 140)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                }
-                .background(Color.white.opacity(0.03))
             }
+            .buttonStyle(.plain)
+            
+            // Card container — individual cards handle taps
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(cards) { card in
+                        FIFACardView(card: card, height: 140, onSingleTap: {
+                            onCardTap(card)
+                        })
+                            .frame(width: 140 * (16/9), height: 140)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+            .background(Color.white.opacity(0.03))
         }
-        .buttonStyle(.plain)
     }
 }
 
