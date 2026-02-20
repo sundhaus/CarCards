@@ -110,21 +110,73 @@ struct GarageView: View {
                             quickSellCard(card)
                         },
                         onCrownToggle: {
-                            let cardId = card.firebaseId ?? card.id.uuidString
-                            if card.firebaseId == nil {
-                                print("⚠️ Crown toggle: card has no firebaseId, using local UUID — won't show on public profile")
+                            // If unstarring, just clear
+                            let currentId = card.firebaseId ?? card.id.uuidString
+                            let isCurrentlyCrowned = currentId == UserService.shared.crownCardId
+                            if isCurrentlyCrowned {
+                                UserService.shared.setCrownCard(nil)
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    showContextMenu = false
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                    loadAllCards()
+                                    currentPage = 0
+                                }
+                                return
                             }
-                            print("👑 Crown toggle: \(cardId)")
-                            let isCurrentlyCrowned = cardId == UserService.shared.crownCardId
-                            UserService.shared.setCrownCard(isCurrentlyCrowned ? nil : cardId)
                             
-                            // Dismiss menu with animation, then reload
-                            withAnimation(.easeOut(duration: 0.2)) {
-                                showContextMenu = false
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                                loadAllCards()
-                                currentPage = 0
+                            // Starring: need firebaseId
+                            if let fbId = card.firebaseId {
+                                print("⭐ Star toggle: using firebaseId \(fbId)")
+                                UserService.shared.setCrownCard(fbId)
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    showContextMenu = false
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                    loadAllCards()
+                                    currentPage = 0
+                                }
+                            } else {
+                                // Card not synced — upload to Firebase first
+                                print("⭐ Star toggle: no firebaseId, syncing to Firebase first...")
+                                if case .vehicle(let savedCard) = card {
+                                    Task {
+                                        do {
+                                            let image = savedCard.image ?? UIImage()
+                                            let cloudCard = try await CardService.shared.saveCard(
+                                                image: image,
+                                                make: savedCard.make,
+                                                model: savedCard.model,
+                                                color: savedCard.color,
+                                                year: savedCard.year,
+                                                capturedBy: savedCard.capturedBy,
+                                                capturedLocation: savedCard.capturedLocation,
+                                                previousOwners: savedCard.previousOwners,
+                                                customFrame: savedCard.customFrame
+                                            )
+                                            
+                                            // Update local card with firebaseId
+                                            var allSaved = CardStorage.loadCards()
+                                            if let idx = allSaved.firstIndex(where: { $0.id == savedCard.id }) {
+                                                allSaved[idx].firebaseId = cloudCard.id
+                                                CardStorage.saveCards(allSaved)
+                                            }
+                                            
+                                            print("⭐ Synced to Firebase: \(cloudCard.id), setting as star")
+                                            UserService.shared.setCrownCard(cloudCard.id)
+                                            
+                                            await MainActor.run {
+                                                loadAllCards()
+                                                currentPage = 0
+                                            }
+                                        } catch {
+                                            print("❌ Failed to sync card for starring: \(error)")
+                                        }
+                                    }
+                                }
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    showContextMenu = false
+                                }
                             }
                         }
                     )
