@@ -150,31 +150,24 @@ class ExploreService: ObservableObject {
     private func fetchFeaturedCards(completion: @escaping ([FriendActivity]) -> Void) {
         print("   🔎 Querying Featured (all-time from featured_cards)")
         
+        // Try all-time featured from HotCardsService memory first
         let allFeatured = HotCardsService.shared.allFeaturedCards
-        
         if !allFeatured.isEmpty {
             let deduped = Self.deduplicateByCardId(allFeatured)
             let sorted = deduped.sorted { $0.heatCount > $1.heatCount }
             let featured = Array(sorted.prefix(self.cardsPerCategory))
-            print("   ⭐ All-time featured: \(allFeatured.count) → deduped \(deduped.count) → showing \(featured.count)")
+            print("   ⭐ All-time featured (memory): \(featured.count)")
             completion(featured)
-        } else {
-            // Featured not loaded yet — load from Firestore directly
-            print("   ⏳ Featured not loaded yet, fetching from featured_cards collection")
-            db.collection("featured_cards")
-                .order(by: "heatCount", descending: true)
-                .getDocuments { snapshot, error in
-                    if let error = error {
-                        print("   ❌ Featured query error: \(error.localizedDescription)")
-                        completion([])
-                        return
-                    }
-                    
-                    guard let documents = snapshot?.documents else {
-                        completion([])
-                        return
-                    }
-                    
+            return
+        }
+        
+        // Try featured_cards collection in Firestore
+        db.collection("featured_cards")
+            .order(by: "heatCount", descending: true)
+            .getDocuments { [weak self] snapshot, error in
+                guard let self = self else { return }
+                
+                if let documents = snapshot?.documents, !documents.isEmpty {
                     let activities = documents.compactMap { doc -> FriendActivity? in
                         let data = doc.data()
                         return FriendActivity(
@@ -194,10 +187,27 @@ class ExploreService: ObservableObject {
                     }
                     let deduped = Self.deduplicateByCardId(activities)
                     let featured = Array(deduped.prefix(self.cardsPerCategory))
-                    print("   ⭐ Fallback: \(activities.count) → \(featured.count) featured")
+                    print("   ⭐ All-time featured (Firestore): \(featured.count)")
                     completion(featured)
+                    return
                 }
-        }
+                
+                // Fallback: featured_cards empty (first run) — use current hot cards
+                let hotCards = HotCardsService.shared.hotCards
+                if !hotCards.isEmpty {
+                    let deduped = Self.deduplicateByCardId(hotCards)
+                    let sorted = deduped.sorted { $0.heatCount > $1.heatCount }
+                    let featured = Array(sorted.prefix(self.cardsPerCategory))
+                    print("   🔥 Fallback to current hot cards: \(featured.count)")
+                    
+                    // Also seed the featured_cards collection
+                    HotCardsService.shared.loadAllFeatured()
+                    completion(featured)
+                } else {
+                    print("   ⚠️ No featured cards available yet")
+                    completion([])
+                }
+            }
     }
     
     // Fetch paginated featured cards (only hot cards with heat > 0)
