@@ -401,25 +401,40 @@ class MarketplaceService: ObservableObject {
             
             guard let documents = snapshot?.documents else { return }
             
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 var listings = documents.compactMap { CloudListing(document: $0) }
                     .filter { !$0.isExpired }
                 
-                // Backfill category for listings created before category was added
+                // Backfill category for listings missing it
                 let localCards = CardStorage.loadCards()
-                for i in listings.indices where listings[i].category == nil || listings[i].category?.isEmpty == true {
+                let listingsToBackfill = listings.indices.filter {
+                    listings[$0].category == nil || listings[$0].category?.isEmpty == true
+                }
+                
+                for i in listingsToBackfill {
                     let listing = listings[i]
-                    // Match by make+model+year against local cards with specs
+                    
+                    // Try 1: Match from local saved cards
                     if let match = localCards.first(where: {
                         $0.make == listing.make && $0.model == listing.model && $0.year == listing.year
                     }), let cat = match.specs?.category?.rawValue {
                         listings[i].category = cat
-                        // Patch Firestore in background
-                        let listingId = listing.id
-                        Task {
-                            try? await self?.listingsCollection.document(listingId).updateData([
-                                "category": cat
-                            ])
+                        let lid = listing.id
+                        Task { try? await self?.listingsCollection.document(lid).updateData(["category": cat]) }
+                        continue
+                    }
+                    
+                    // Try 2: Look up from friend_activities by cardId
+                    if !listing.cardId.isEmpty {
+                        let snap = try? await self?.db.collection("friend_activities")
+                            .whereField("cardId", isEqualTo: listing.cardId)
+                            .limit(to: 1)
+                            .getDocuments()
+                        if let doc = snap?.documents.first,
+                           let cat = doc.data()["category"] as? String, !cat.isEmpty {
+                            listings[i].category = cat
+                            let lid = listing.id
+                            Task { try? await self?.listingsCollection.document(lid).updateData(["category": cat]) }
                         }
                     }
                 }
