@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ImageIO
 
 struct CardComposerView: View {
     let image: UIImage
@@ -324,7 +325,9 @@ struct CardComposerView: View {
             print("📊 showAlternatives changed: \(oldValue) → \(newValue)")
         }
         .onAppear {
-            displayImage = image
+            // Downsample to max 2160px on longest edge (plenty for 1080x608 card)
+            // A 48MP RAW image is ~195MB in memory; this brings it to ~14MB
+            displayImage = Self.downsample(image: image, maxDimension: 2160)
             OrientationManager.lockOrientation(.portrait)
             print("🎨 CardComposerView appeared")
             print("   captureType: \(captureType)")
@@ -485,6 +488,33 @@ struct CardComposerView: View {
                 showAIError = true
             }
         }
+    }
+    
+    /// Efficiently downsample an image using ImageIO (doesn't decode full image into memory)
+    private static func downsample(image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        let longest = max(size.width, size.height)
+        
+        // Already small enough
+        if longest <= maxDimension { return image }
+        
+        guard let data = image.jpegData(compressionQuality: 0.95) else { return image }
+        
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxDimension,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true
+        ]
+        
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return image
+        }
+        
+        let result = UIImage(cgImage: cgImage, scale: 1.0, orientation: image.imageOrientation)
+        print("📐 Downsampled: \(Int(size.width))x\(Int(size.height)) → \(cgImage.width)x\(cgImage.height)")
+        return result
     }
 }
 
