@@ -14,6 +14,7 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     @Published var session = AVCaptureSession()
     @Published var capturedImage: UIImage?
     @Published var captureId: UUID? = nil  // Changes on each capture for onChange detection
+    @Published var lastDepthData: AVDepthData? = nil  // Depth map from capture
     @Published var zoomFactor: CGFloat = 1.0
     @Published var flashMode: AVCaptureDevice.FlashMode = .off
     @Published var exposureValue: Float = 0.0
@@ -93,6 +94,14 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 
                 self.session.sessionPreset = .photo
                 self.output.maxPhotoQualityPrioritization = .quality
+                
+                // Enable depth data for screen detection
+                if self.output.isDepthDataDeliverySupported {
+                    self.output.isDepthDataDeliveryEnabled = true
+                    print("📐 Depth data delivery enabled")
+                } else {
+                    print("⚠️ Depth data not supported on this device")
+                }
                 
                 if self.output.availableRawPhotoPixelFormatTypes.count > 0 {
                     self.output.isAppleProRAWEnabled = self.output.isAppleProRAWSupported
@@ -237,6 +246,14 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
         if let error = error {
             print("Photo capture error: \(error)")
             return
+        }
+        
+        // Store depth data for screen detection
+        self.lastDepthData = photo.depthData
+        if photo.depthData != nil {
+            print("📐 Depth data captured with photo")
+        } else {
+            print("⚠️ No depth data in this photo")
         }
         
         guard let imageData = photo.fileDataRepresentation(),
@@ -575,97 +592,74 @@ struct CameraView: View {
         }
     }
     
-    // MARK: - Screen Photo Detection (on-device, no AI)
+    // MARK: - Screen Photo Detection (depth-based)
     
-    /// Detects photos of screens by analyzing color variance, edge patterns, and pixel uniformity
+    /// Uses the camera's depth data to detect flat surfaces (screens).
+    /// Real scenes have varied depth; a screen is all at one distance.
     private func detectScreenPhoto(image: UIImage) -> Bool {
-        guard let cgImage = image.cgImage else { return false }
-        
-        let width = cgImage.width
-        let height = cgImage.height
-        
-        // Only analyze a center crop for performance
-        let sampleSize = 200
-        let cropX = max(0, (width - sampleSize) / 2)
-        let cropY = max(0, (height - sampleSize) / 2)
-        let cropW = min(sampleSize, width)
-        let cropH = min(sampleSize, height)
-        
-        guard let cropped = cgImage.cropping(to: CGRect(x: cropX, y: cropY, width: cropW, height: cropH)) else {
+        guard let depthData = camera.lastDepthData else {
+            print("🔍 Screen detection: no depth data available — skipping check")
             return false
         }
         
-        // Get pixel data
-        guard let data = cropped.dataProvider?.data,
-              let ptr = CFDataGetBytePtr(data) else {
+        // Convert to disparity float32 for analysis
+        let converted = depthData.converting(toDepthDataType: kCVPixelFormatType_DisparityFloat32)
+        let depthMap = converted.depthDataMap
+        
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        
+        let width = CVPixelBufferGetWidth(depthMap)
+        let height = CVPixelBufferGetHeight(depthMap)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+        
+        guard let baseAddress = CVPixelBufferGetBaseAddress(depthMap) else {
+            print("🔍 Screen detection: couldn't read depth buffer")
             return false
         }
         
-        let bytesPerPixel = cropped.bitsPerPixel / 8
-        let bytesPerRow = cropped.bytesPerRow
-        let totalPixels = cropW * cropH
-        guard totalPixels > 100 else { return false }
+        let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
+        let floatsPerRow = bytesPerRow / MemoryLayout<Float32>.size
         
-        // Analyze pixel patterns
-        var totalVariance: Double = 0
-        var identicalNeighborCount = 0
-        var totalComparisons = 0
+        // Sample a grid of depth values from the center region
+        let sampleCount = 20
+        let startX = width / 4
+        let endX = (width * 3) / 4
+        let startY = height / 4
+        let endY = (height * 3) / 4
+        let stepX = max(1, (endX - startX) / sampleCount)
+        let stepY = max(1, (endY - startY) / sampleCount)
         
-        // Sample rows for horizontal pixel uniformity (screens have unnaturally uniform rows)
-        let rowStep = max(1, cropH / 20)  // Sample ~20 rows
+        var depthValues: [Float] = []
         
-        for y in stride(from: 0, to: cropH - 1, by: rowStep) {
-            for x in 0..<(cropW - 1) {
-                let offset1 = y * bytesPerRow + x * bytesPerPixel
-                let offset2 = y * bytesPerRow + (x + 1) * bytesPerPixel
-                
-                guard offset1 + 2 < CFDataGetLength(data),
-                      offset2 + 2 < CFDataGetLength(data) else { continue }
-                
-                let r1 = Int(ptr[offset1])
-                let g1 = Int(ptr[offset1 + 1])
-                let b1 = Int(ptr[offset1 + 2])
-                let r2 = Int(ptr[offset2])
-                let g2 = Int(ptr[offset2 + 1])
-                let b2 = Int(ptr[offset2 + 2])
-                
-                let diff = abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2)
-                totalVariance += Double(diff)
-                totalComparisons += 1
-                
-                // Pixels that are exactly identical or differ by ≤1 per channel
-                if diff <= 3 {
-                    identicalNeighborCount += 1
+        for y in stride(from: startY, to: endY, by: stepY) {
+            for x in stride(from: startX, to: endX, by: stepX) {
+                let value = floatBuffer[y * floatsPerRow + x]
+                // Skip NaN/invalid values
+                if value.isFinite && value > 0 {
+                    depthValues.append(value)
                 }
             }
         }
         
-        guard totalComparisons > 0 else { return false }
-        
-        let avgVariance = totalVariance / Double(totalComparisons)
-        let uniformityRatio = Double(identicalNeighborCount) / Double(totalComparisons)
-        
-        print("🔍 Screen detection: avgVariance=\(String(format: "%.1f", avgVariance)), uniformity=\(String(format: "%.3f", uniformityRatio))")
-        
-        // Real-world photos taken with a camera have:
-        // - avgVariance typically 15-40+ (natural noise, texture, lighting)
-        // - uniformity typically 0.15-0.35 (diverse pixel patterns)
-        //
-        // Photos OF screens have:
-        // - avgVariance typically 3-12 (digital content is smoother)
-        // - uniformity typically 0.35-0.65 (more identical neighbor pixels)
-        //
-        // Screenshots / downloaded images have:
-        // - avgVariance typically 0-5 (perfectly rendered)
-        // - uniformity typically 0.60-0.95 (extremely uniform)
-        
-        if uniformityRatio > 0.55 && avgVariance < 15.0 {
-            print("🚫 Detected: likely screen photo (high uniformity + low variance)")
-            return true
+        guard depthValues.count > 10 else {
+            print("🔍 Screen detection: insufficient depth samples (\(depthValues.count))")
+            return false
         }
         
-        if avgVariance < 8.0 && uniformityRatio > 0.40 {
-            print("🚫 Detected: likely digital/screen image (very low variance)")
+        // Calculate depth variance
+        let mean = depthValues.reduce(0, +) / Float(depthValues.count)
+        let variance = depthValues.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Float(depthValues.count)
+        let stdDev = sqrt(variance)
+        let coeffOfVariation = mean != 0 ? stdDev / abs(mean) : 0
+        
+        print("🔍 Screen detection: depth samples=\(depthValues.count), mean=\(String(format: "%.4f", mean)), stdDev=\(String(format: "%.4f", stdDev)), CoV=\(String(format: "%.4f", coeffOfVariation))")
+        
+        // A flat screen has very low depth variation (CoV < 0.05)
+        // Real scenes have objects at different distances (CoV > 0.10)
+        // Threshold at 0.05 to catch screens while allowing real scenes
+        if coeffOfVariation < 0.05 {
+            print("🚫 Detected: flat depth profile — likely a screen (CoV=\(String(format: "%.4f", coeffOfVariation)))")
             return true
         }
         
