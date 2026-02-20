@@ -14,7 +14,8 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     @Published var session = AVCaptureSession()
     @Published var capturedImage: UIImage?
     @Published var captureId: UUID? = nil  // Changes on each capture for onChange detection
-    @Published var lastDepthData: AVDepthData? = nil  // Depth map from capture
+    // Store EXIF metadata from capture for screen detection
+    @Published var lastPhotoMetadata: [String: Any]? = nil
     @Published var zoomFactor: CGFloat = 1.0
     @Published var flashMode: AVCaptureDevice.FlashMode = .off
     @Published var exposureValue: Float = 0.0
@@ -95,30 +96,10 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                     self.session.addOutput(self.videoOutput)
                 }
                 
-                // Virtual devices need .inputPriority to control their own format
-                let isVirtualDevice = device.deviceType == .builtInDualCamera ||
-                                      device.deviceType == .builtInDualWideCamera ||
-                                      device.deviceType == .builtInTripleCamera
-                
-                if isVirtualDevice {
-                    self.session.sessionPreset = .inputPriority
-                    print("📐 Virtual device — using .inputPriority preset")
-                } else {
-                    self.session.sessionPreset = .photo
-                }
-                
+                self.session.sessionPreset = .photo
                 self.output.maxPhotoQualityPrioritization = .quality
                 
-                // Enable depth data for screen detection
-                if self.output.isDepthDataDeliverySupported {
-                    self.output.isDepthDataDeliveryEnabled = true
-                    print("📐 Depth data delivery enabled")
-                } else {
-                    print("⚠️ Depth data not supported on this device")
-                }
-                
-                // Only enable RAW on non-virtual devices (can cause crashes on virtual)
-                if !isVirtualDevice && self.output.availableRawPhotoPixelFormatTypes.count > 0 {
+                if self.output.availableRawPhotoPixelFormatTypes.count > 0 {
                     self.output.isAppleProRAWEnabled = self.output.isAppleProRAWSupported
                 }
                 
@@ -131,28 +112,6 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     }
     
     func discoverLenses() {
-        // Try virtual multi-camera devices first (required for depth data)
-        // These handle lens switching internally via zoom factor
-        let virtualTypes: [AVCaptureDevice.DeviceType] = [
-            .builtInTripleCamera,       // Ultra-wide + Wide + Telephoto
-            .builtInDualWideCamera,     // Ultra-wide + Wide
-            .builtInDualCamera          // Wide + Telephoto
-        ]
-        
-        let virtualDiscovery = AVCaptureDevice.DiscoverySession(
-            deviceTypes: virtualTypes,
-            mediaType: .video,
-            position: .back
-        )
-        
-        if let virtualDevice = virtualDiscovery.devices.first {
-            // Use virtual device — supports depth and handles zoom internally
-            availableLenses = [virtualDevice]
-            print("📐 Using virtual camera: \(virtualDevice.deviceType) — depth supported")
-            return
-        }
-        
-        // Fallback to individual lenses if no virtual device
         let deviceTypes: [AVCaptureDevice.DeviceType] = [
             .builtInUltraWideCamera,
             .builtInWideAngleCamera,
@@ -166,15 +125,9 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
         )
         
         availableLenses = discovery.devices
-        print("⚠️ No virtual camera available — using individual lenses (no depth)")
     }
     
     func switchLens(to index: Int) {
-        // With virtual camera (1 device), lens switching is handled by zoom factor
-        // The virtual device auto-switches physical lenses at threshold zoom levels
-        if availableLenses.count == 1 {
-            return  // Zoom handles it
-        }
         guard index < availableLenses.count else { return }
         currentLensIndex = index
         setupCamera()
@@ -255,30 +208,21 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     func capturePhoto() {
         let settings: AVCapturePhotoSettings
         
-        // Virtual devices don't support RAW — always use HEIF
-        let isVirtualDevice = currentDevice?.deviceType == .builtInDualCamera ||
-                              currentDevice?.deviceType == .builtInDualWideCamera ||
-                              currentDevice?.deviceType == .builtInTripleCamera
-        
-        if isVirtualDevice {
+        switch captureMode {
+        case .heif:
             settings = AVCapturePhotoSettings()
-        } else {
-            switch captureMode {
-            case .heif:
+        case .raw:
+            if let rawFormat = output.availableRawPhotoPixelFormatTypes.first {
+                settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat)
+            } else {
                 settings = AVCapturePhotoSettings()
-            case .raw:
-                if let rawFormat = output.availableRawPhotoPixelFormatTypes.first {
-                    settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat)
-                } else {
-                    settings = AVCapturePhotoSettings()
-                }
-            case .heifRaw:
-                if let rawFormat = output.availableRawPhotoPixelFormatTypes.first {
-                    settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat,
-                                                     processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
-                } else {
-                    settings = AVCapturePhotoSettings()
-                }
+            }
+        case .heifRaw:
+            if let rawFormat = output.availableRawPhotoPixelFormatTypes.first {
+                settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat,
+                                                 processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
+            } else {
+                settings = AVCapturePhotoSettings()
             }
         }
         
@@ -291,12 +235,6 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
         }
         
         settings.maxPhotoDimensions = output.maxPhotoDimensions
-        
-        // Request depth data for screen detection
-        if output.isDepthDataDeliveryEnabled {
-            settings.isDepthDataDeliveryEnabled = true
-        }
-        
         output.capturePhoto(with: settings, delegate: self)
     }
     
@@ -306,12 +244,13 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
             return
         }
         
-        // Store depth data for screen detection
-        self.lastDepthData = photo.depthData
-        if photo.depthData != nil {
-            print("📐 Depth data captured with photo")
-        } else {
-            print("⚠️ No depth data in this photo")
+        // Store photo metadata for screen detection
+        self.lastPhotoMetadata = photo.metadata
+        
+        // Also capture the current lens position (focus distance indicator)
+        if let device = currentDevice {
+            let lensPos = device.lensPosition  // 0.0 (far) to 1.0 (near)
+            print("📐 Lens position at capture: \(String(format: "%.3f", lensPos))")
         }
         
         guard let imageData = photo.fileDataRepresentation(),
@@ -655,79 +594,116 @@ struct CameraView: View {
         }
     }
     
-    // MARK: - Screen Photo Detection (depth-based)
+    // MARK: - Screen Photo Detection (lens focus + brightness)
     
-    /// Uses the camera's depth data to detect flat surfaces (screens).
-    /// Real scenes have varied depth; a screen is all at one distance.
+    /// Detects photos of screens using camera hardware metadata:
+    /// - Lens position (focus distance) — screens are flat and close
+    /// - EXIF subject distance — if available
+    /// - Brightness uniformity — screens emit uniform light
     private func detectScreenPhoto(image: UIImage) -> Bool {
-        guard let depthData = camera.lastDepthData else {
-            print("🔍 Screen detection: no depth data available — skipping depth check")
+        guard let device = camera.currentDevice else {
+            print("🔍 Screen detection: no device — skipping")
             return false
         }
         
-        // Convert to disparity float32 for analysis
-        let converted = depthData.converting(toDepthDataType: kCVPixelFormatType_DisparityFloat32)
-        let depthMap = converted.depthDataMap
+        let lensPosition = device.lensPosition  // 0.0 = infinity, 1.0 = nearest
         
-        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        // Extract EXIF data
+        var subjectDistance: Float? = nil
+        var brightnessValue: Float? = nil
         
-        let width = CVPixelBufferGetWidth(depthMap)
-        let height = CVPixelBufferGetHeight(depthMap)
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
-        
-        guard let baseAddress = CVPixelBufferGetBaseAddress(depthMap) else {
-            print("🔍 Screen detection: couldn't read depth buffer")
-            return false
+        if let metadata = camera.lastPhotoMetadata,
+           let exif = metadata["{Exif}"] as? [String: Any] {
+            subjectDistance = exif["SubjectDistance"] as? Float
+            brightnessValue = exif["BrightnessValue"] as? Float
+            print("🔍 EXIF: SubjectDistance=\(subjectDistance.map { String(format: "%.2f", $0) } ?? "nil"), Brightness=\(brightnessValue.map { String(format: "%.2f", $0) } ?? "nil")")
         }
         
-        let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
-        let floatsPerRow = bytesPerRow / MemoryLayout<Float32>.size
+        print("🔍 Screen detection: lensPosition=\(String(format: "%.3f", lensPosition))")
         
-        // Sample a grid of depth values from the center region
-        let sampleCount = 20
-        let startX = width / 4
-        let endX = (width * 3) / 4
-        let startY = height / 4
-        let endY = (height * 3) / 4
-        let stepX = max(1, (endX - startX) / sampleCount)
-        let stepY = max(1, (endY - startY) / sampleCount)
-        
-        var depthValues: [Float] = []
-        
-        for y in stride(from: startY, to: endY, by: stepY) {
-            for x in stride(from: startX, to: endX, by: stepX) {
-                let value = floatBuffer[y * floatsPerRow + x]
-                // Skip NaN/invalid values
-                if value.isFinite && value > 0 {
-                    depthValues.append(value)
-                }
+        // Check 1: Very close focus + screen-like brightness
+        if lensPosition > 0.65 {
+            if let brightness = brightnessValue, brightness > 4.0 {
+                print("🚫 Detected: close focus + high brightness (likely screen)")
+                return true
+            }
+            if let distance = subjectDistance, distance < 0.5 {
+                print("🚫 Detected: subject distance < 0.5m with close focus (likely screen)")
+                return true
             }
         }
         
-        guard depthValues.count > 10 else {
-            print("🔍 Screen detection: insufficient depth samples (\(depthValues.count))")
-            return false
-        }
-        
-        // Calculate depth variance
-        let mean = depthValues.reduce(0, +) / Float(depthValues.count)
-        let variance = depthValues.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Float(depthValues.count)
-        let stdDev = sqrt(variance)
-        let coeffOfVariation = mean != 0 ? stdDev / abs(mean) : 0
-        
-        print("🔍 Screen detection: depth samples=\(depthValues.count), mean=\(String(format: "%.4f", mean)), stdDev=\(String(format: "%.4f", stdDev)), CoV=\(String(format: "%.4f", coeffOfVariation))")
-        
-        // A flat screen has very low depth variation (CoV < 0.05)
-        // Real scenes have objects at different distances (CoV > 0.10)
-        if coeffOfVariation < 0.05 {
-            print("🚫 Detected: flat depth profile — likely a screen (CoV=\(String(format: "%.4f", coeffOfVariation)))")
-            return true
+        // Check 2: Brightness uniformity (screens emit uniform light)
+        if let cgImage = image.cgImage {
+            let isUniformBrightness = checkBrightnessUniformity(cgImage: cgImage)
+            if isUniformBrightness && lensPosition > 0.5 {
+                print("🚫 Detected: uniform brightness + moderate close focus (likely screen)")
+                return true
+            }
         }
         
         return false
     }
     
+    /// Check if the image has unnaturally uniform brightness (screen-like)
+    private func checkBrightnessUniformity(cgImage: CGImage) -> Bool {
+        let width = cgImage.width
+        let height = cgImage.height
+        
+        let regions: [(Int, Int)] = [
+            (width / 2, height / 2),
+            (width / 2, height / 4),
+            (width / 2, height * 3 / 4),
+            (width / 4, height / 2),
+            (width * 3 / 4, height / 2)
+        ]
+        
+        guard let data = cgImage.dataProvider?.data,
+              let ptr = CFDataGetBytePtr(data) else { return false }
+        
+        let bytesPerPixel = cgImage.bitsPerPixel / 8
+        let bytesPerRow = cgImage.bytesPerRow
+        
+        var brightnessValues: [Float] = []
+        
+        for (x, y) in regions {
+            var regionBrightness: Float = 0
+            var count: Float = 0
+            
+            for dy in -5..<5 {
+                for dx in -5..<5 {
+                    let px = min(max(x + dx, 0), width - 1)
+                    let py = min(max(y + dy, 0), height - 1)
+                    let offset = py * bytesPerRow + px * bytesPerPixel
+                    
+                    guard offset + 2 < CFDataGetLength(data) else { continue }
+                    
+                    let r = Float(ptr[offset])
+                    let g = Float(ptr[offset + 1])
+                    let b = Float(ptr[offset + 2])
+                    regionBrightness += (0.299 * r + 0.587 * g + 0.114 * b)
+                    count += 1
+                }
+            }
+            
+            if count > 0 {
+                brightnessValues.append(regionBrightness / count)
+            }
+        }
+        
+        guard brightnessValues.count >= 5 else { return false }
+        
+        let mean = brightnessValues.reduce(0, +) / Float(brightnessValues.count)
+        let maxDiff = brightnessValues.map { abs($0 - mean) }.max() ?? 0
+        let normalizedDiff = mean > 0 ? maxDiff / mean : 1.0
+        
+        print("🔍 Brightness uniformity: mean=\(String(format: "%.1f", mean)), maxDiff=\(String(format: "%.1f", maxDiff)), normalized=\(String(format: "%.3f", normalizedDiff))")
+        
+        // Screens: normalizedDiff < 0.15, mean > 80
+        // Real scenes: normalizedDiff > 0.20
+        return normalizedDiff < 0.15 && mean > 80
+    }
+
     // MARK: - Vision Classification Check (screen + sensitivity combined)
     
     private enum VisionResult {
