@@ -469,9 +469,27 @@ struct UserProfileView: View {
         do {
             userCards = try await CardService.shared.fetchUserCards(uid: userId)
             
-            // Extract crown card if profile has one
-            if let crownId = userProfile?.crownCardId {
+            // Determine crown card ID — prefer local data for own profile
+            let crownId: String? = {
+                if userId == UserService.shared.currentProfile?.id {
+                    // Own profile: use local crown ID (most up-to-date)
+                    return UserService.shared.crownCardId
+                } else {
+                    return userProfile?.crownCardId
+                }
+            }()
+            
+            if let crownId = crownId {
+                print("👑 Looking for crown card: '\(crownId)' among \(userCards.count) cards")
                 crownCard = userCards.first(where: { $0.id == crownId })
+                
+                if crownCard == nil {
+                    crownCard = userCards.first(where: { $0.id.lowercased() == crownId.lowercased() })
+                }
+                
+                print("👑 Crown card found: \(crownCard != nil)")
+            } else {
+                print("👑 No crownCardId for user \(userId)")
             }
             
             isLoadingCards = false

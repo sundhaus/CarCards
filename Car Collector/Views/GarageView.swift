@@ -112,6 +112,7 @@ struct GarageView: View {
                         onCrownToggle: {
                             // Get card ID — use firebaseId if available, fall back to local id
                             let cardId = card.firebaseId ?? card.id.uuidString
+                            print("👑 Crown toggle: firebaseId=\(card.firebaseId ?? "nil"), localId=\(card.id.uuidString), using=\(cardId)")
                             let isCurrentlyCrowned = cardId == UserService.shared.crownCardId
                             UserService.shared.setCrownCard(isCurrentlyCrowned ? nil : cardId)
                             

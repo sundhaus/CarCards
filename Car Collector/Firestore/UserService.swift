@@ -298,19 +298,29 @@ class UserService: ObservableObject {
     /// Set or remove the user's showcase crown card.
     /// Pass nil to remove the crown.
     func setCrownCard(_ cardId: String?) {
-        guard let uid = currentProfile?.id else { return }
+        guard let uid = currentProfile?.id else {
+            print("❌ setCrownCard: No current profile")
+            return
+        }
         
         currentProfile?.crownCardId = cardId
+        print("👑 setCrownCard: Setting to \(cardId ?? "nil") for user \(uid)")
         
         Task {
-            if let cardId = cardId {
-                try? await usersCollection.document(uid).updateData([
-                    "crownCardId": cardId
-                ])
-            } else {
-                try? await usersCollection.document(uid).updateData([
-                    "crownCardId": FieldValue.delete()
-                ])
+            do {
+                if let cardId = cardId {
+                    try await usersCollection.document(uid).updateData([
+                        "crownCardId": cardId
+                    ])
+                    print("👑 setCrownCard: Saved to Firestore ✅")
+                } else {
+                    try await usersCollection.document(uid).updateData([
+                        "crownCardId": FieldValue.delete()
+                    ])
+                    print("👑 setCrownCard: Removed from Firestore ✅")
+                }
+            } catch {
+                print("❌ setCrownCard: Firestore write failed: \(error)")
             }
         }
     }
