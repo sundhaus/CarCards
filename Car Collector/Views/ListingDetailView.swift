@@ -46,9 +46,11 @@ struct ListingDetailView: View {
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
-                            .font(.pBody)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.primary)
+                            .frame(width: 32, height: 32)
+                            .background(.clear)
+                            .glassEffect(.regular, in: .circle)
                     }
                     
                     Spacer()
@@ -76,32 +78,38 @@ struct ListingDetailView: View {
                 .padding(.horizontal)
                 .padding(.top, 18)
                 .padding(.bottom, 10)
-                .glassEffect(.regular, in: .rect)
                 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Card image
-                        cardImageSection
-                        
-                        // Card info
-                        cardInfoSection
-                        
-                        // Pricing section
-                        pricingSection
-                        
-                        // Bid / Buy section (not for own listings)
-                        if !isOwnListing && !listing.isExpired {
-                            actionSection
-                        } else if isOwnListing {
-                            ownerSection
-                        }
-                        
-                        // Seller info
-                        sellerSection
-                    }
-                    .padding()
-                    .padding(.bottom, 100)
+                // Card + pricing attached
+                VStack(spacing: 0) {
+                    cardImageSection
+                    
+                    Rectangle()
+                        .fill(Color.white.opacity(0.08))
+                        .frame(height: 0.5)
+                    
+                    // Pricing section directly attached
+                    pricingSection
                 }
+                .glassEffect(.regular, in: .rect(cornerRadius: 12))
+                .padding(.horizontal)
+                .padding(.top, 8)
+                
+                // Bid / Buy section (not for own listings)
+                if !isOwnListing && !listing.isExpired {
+                    actionSection
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                } else if isOwnListing {
+                    ownerSection
+                        .padding(.top, 16)
+                }
+                
+                Spacer()
+                
+                // Seller info pinned to bottom
+                sellerSection
+                    .padding(.horizontal)
+                    .padding(.bottom, 30)
             }
         }
         .alert("ERROR", isPresented: $showError) {
@@ -131,18 +139,6 @@ struct ListingDetailView: View {
     
     private var cardImageSection: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.85, green: 0.85, blue: 0.88),
-                            Color(red: 0.75, green: 0.75, blue: 0.78)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            
             if let image = cardImage {
                 Image(uiImage: image)
                     .resizable()
@@ -181,21 +177,7 @@ struct ListingDetailView: View {
             }
         }
         .aspectRatio(16/9, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-    
-    // MARK: - Card Info
-    
-    private var cardInfoSection: some View {
-        VStack(spacing: 8) {
-            Text("\(listing.year) \(listing.make)")
-                .font(.pTitle3)
-                .fontWeight(.bold)
-            
-            Text(listing.model.uppercased())
-                .font(.pHeadline)
-                .foregroundStyle(.secondary)
-        }
+        .clipped()
     }
     
     // MARK: - Pricing
@@ -264,8 +246,6 @@ struct ListingDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 16)
-        .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
     
     // MARK: - Action Section (Bid / Buy)
@@ -334,23 +314,17 @@ struct ListingDetailView: View {
     // MARK: - Owner Section
     
     private var ownerSection: some View {
-        VStack(spacing: 8) {
-            Text("THIS IS YOUR LISTING")
+        Button(action: {
+            Task { await cancelListing() }
+        }) {
+            Text("CANCEL LISTING")
                 .font(.pCaption)
-                .foregroundStyle(.secondary)
-            
-            Button(action: {
-                Task { await cancelListing() }
-            }) {
-                Text("CANCEL LISTING")
-                    .font(.pSubheadline)
-                    .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.red.opacity(0.15))
-                    .foregroundStyle(.red)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 10))
-            }
+                .fontWeight(.semibold)
+                .foregroundStyle(.red)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 10)
+                .background(Color.red.opacity(0.12))
+                .glassEffect(.regular, in: .capsule)
         }
     }
     
