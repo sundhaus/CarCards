@@ -641,24 +641,25 @@ struct CameraView: View {
         
         print("🔍 Screen detection: avgVariance=\(String(format: "%.1f", avgVariance)), uniformity=\(String(format: "%.3f", uniformityRatio))")
         
-        // Screen photos have very low variance between adjacent pixels
-        // and very high uniformity (digital images have flat color regions)
-        // Real photos have natural noise, texture, and gradients
+        // Real-world photos taken with a camera have:
+        // - avgVariance typically 15-40+ (natural noise, texture, lighting)
+        // - uniformity typically 0.15-0.35 (diverse pixel patterns)
         //
-        // Thresholds tuned to catch:
-        // - Phone/monitor photos (very uniform, low variance)
-        // - Downloaded/screenshot images (extremely uniform)
-        // While allowing:
-        // - Real car photos (have reflections, texture, environmental noise)
-        // - Studio photos (still have lens artifacts and natural gradients)
+        // Photos OF screens have:
+        // - avgVariance typically 3-12 (digital content is smoother)
+        // - uniformity typically 0.35-0.65 (more identical neighbor pixels)
+        //
+        // Screenshots / downloaded images have:
+        // - avgVariance typically 0-5 (perfectly rendered)
+        // - uniformity typically 0.60-0.95 (extremely uniform)
         
-        if uniformityRatio > 0.85 && avgVariance < 8.0 {
-            print("🚫 Detected: extremely uniform image (likely screenshot or solid screen)")
+        if uniformityRatio > 0.55 && avgVariance < 15.0 {
+            print("🚫 Detected: likely screen photo (high uniformity + low variance)")
             return true
         }
         
-        if uniformityRatio > 0.75 && avgVariance < 4.0 {
-            print("🚫 Detected: very low variance with high uniformity (likely screen photo)")
+        if avgVariance < 8.0 && uniformityRatio > 0.40 {
+            print("🚫 Detected: likely digital/screen image (very low variance)")
             return true
         }
         
@@ -683,22 +684,31 @@ struct CameraView: View {
                     return
                 }
                 
+                // Log top 10 labels for debugging
+                let topResults = results.prefix(10)
+                print("🔍 Vision top labels:")
+                for result in topResults {
+                    print("   \(result.identifier): \(String(format: "%.1f%%", result.confidence * 100))")
+                }
+                
                 // Check for NSFW-related classifications
-                // Vision's classifier includes identifiers for sensitive content
-                let sensitiveLabels: Set<String> = [
-                    "explicit", "nude", "nudity", "sexually_explicit",
-                    "underwear", "bikini", "lingerie", "brassiere"
+                let sensitiveKeywords = [
+                    "explicit", "nude", "nudity", "sexually", "underwear",
+                    "bikini", "lingerie", "brassiere", "swimwear", "skin",
+                    "chest", "topless", "erotic", "pornograph", "adult_content",
+                    "nsfw", "intimate", "provocative"
                 ]
                 
                 for result in results {
                     let label = result.identifier.lowercased()
                     let confidence = result.confidence
                     
-                    // Flag if a sensitive label has high confidence
-                    if sensitiveLabels.contains(label) && confidence > 0.7 {
-                        print("🚫 Vision flagged: \(label) (\(String(format: "%.1f%%", confidence * 100)))")
-                        continuation.resume(returning: false)
-                        return
+                    for keyword in sensitiveKeywords {
+                        if label.contains(keyword) && confidence > 0.5 {
+                            print("🚫 Vision flagged: \(label) (\(String(format: "%.1f%%", confidence * 100)))")
+                            continuation.resume(returning: false)
+                            return
+                        }
                     }
                 }
                 
