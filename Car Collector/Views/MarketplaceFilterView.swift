@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseFirestore
 
 struct MarketplaceFilterView: View {
     var isLandscape: Bool = false
@@ -49,33 +50,23 @@ struct MarketplaceFilterView: View {
         return ["Any"] + years.sorted()
     }
     
+    // Category lookup from Firestore vehicleSpecs
+    @State private var listingCategories: [String: String] = [:]  // listingId -> category
+    
     private var availableCategories: [String] {
-        // Look up categories from local card specs for cards on the market
-        let localCards = CardStorage.loadCards()
-        let categories = marketplaceService.activeListings.compactMap { listing -> String? in
-            if let match = localCards.first(where: {
-                $0.make == listing.make && $0.model == listing.model && $0.year == listing.year
-            }) {
-                return match.specs?.category?.rawValue
-            }
-            return nil
-        }
-        guard !categories.isEmpty else { return ["Any"] }
-        return ["Any"] + Set(categories).sorted()
+        let cats = Set(listingCategories.values).sorted()
+        guard !cats.isEmpty else { return ["Any"] }
+        return ["Any"] + cats
     }
     
     // Apply all filters
     private var filteredListings: [CloudListing] {
-        let localCards = CardStorage.loadCards()
-        return marketplaceService.activeListings.filter { listing in
+        marketplaceService.activeListings.filter { listing in
             if filterMake != "Any" && listing.make != filterMake { return false }
             if filterModel != "Any" && listing.model != filterModel { return false }
             if filterYear != "Any" && listing.year != filterYear { return false }
             if filterCategory != "Any" {
-                let cat = localCards.first(where: {
-                    $0.make == listing.make && $0.model == listing.model && $0.year == listing.year
-                })?.specs?.category?.rawValue
-                if cat != filterCategory { return false }
+                if listingCategories[listing.id] != filterCategory { return false }
             }
             if let min = Double(bidMinPrice), listing.currentBid < min && listing.currentBid > 0 { return false }
             if let max = Double(bidMaxPrice), listing.currentBid > max { return false }
@@ -180,6 +171,9 @@ struct MarketplaceFilterView: View {
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             marketplaceService.listenToActiveListings()
+        }
+        .onChange(of: marketplaceService.activeListings) { _, listings in
+            Task { await loadCategories(for: listings) }
         }
         .navigationDestination(isPresented: $showResults) {
             MarketplaceSearchResultsView(
@@ -396,5 +390,31 @@ struct MarketplaceFilterView: View {
         if filterYear != "Any" { parts.append(filterYear) }
         if filterCategory != "Any" { parts.append(filterCategory) }
         return parts.isEmpty ? "All Listings" : parts.joined(separator: " ")
+    }
+    
+    private func loadCategories(for listings: [CloudListing]) async {
+        let db = Firestore.firestore()
+        
+        for listing in listings {
+            // Skip if already loaded
+            guard listingCategories[listing.id] == nil else { continue }
+            
+            // Build the same docId format used by VehicleIdentificationService
+            let docId = "\(listing.make.lowercased())_\(listing.model.lowercased())_\(listing.year)"
+                .replacingOccurrences(of: " ", with: "_")
+                .replacingOccurrences(of: "-", with: "_")
+                .replacingOccurrences(of: "/", with: "_")
+            
+            do {
+                let doc = try await db.collection("vehicleSpecs").document(docId).getDocument()
+                if let data = doc.data(), let cat = data["category"] as? String, !cat.isEmpty {
+                    await MainActor.run {
+                        listingCategories[listing.id] = cat
+                    }
+                }
+            } catch {
+                print("⚠️ Failed to load specs for \(docId): \(error)")
+            }
+        }
     }
 }
