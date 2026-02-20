@@ -139,6 +139,7 @@ struct FullScreenFriendCardView: View {
             if !isFlipped {
                 FIFACardView(card: activity, height: cardHeight)
                     .frame(width: cardWidth, height: cardHeight)
+                    .allowsHitTesting(false)
                     .rotation3DEffect(
                         .degrees(flipDegrees),
                         axis: (x: 0, y: 1, z: 0)
