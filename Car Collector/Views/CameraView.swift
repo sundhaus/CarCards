@@ -116,6 +116,28 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     }
     
     func discoverLenses() {
+        // Try virtual multi-camera devices first (required for depth data)
+        // These handle lens switching internally via zoom factor
+        let virtualTypes: [AVCaptureDevice.DeviceType] = [
+            .builtInTripleCamera,       // Ultra-wide + Wide + Telephoto
+            .builtInDualWideCamera,     // Ultra-wide + Wide
+            .builtInDualCamera          // Wide + Telephoto
+        ]
+        
+        let virtualDiscovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: virtualTypes,
+            mediaType: .video,
+            position: .back
+        )
+        
+        if let virtualDevice = virtualDiscovery.devices.first {
+            // Use virtual device — supports depth and handles zoom internally
+            availableLenses = [virtualDevice]
+            print("📐 Using virtual camera: \(virtualDevice.deviceType) — depth supported")
+            return
+        }
+        
+        // Fallback to individual lenses if no virtual device
         let deviceTypes: [AVCaptureDevice.DeviceType] = [
             .builtInUltraWideCamera,
             .builtInWideAngleCamera,
@@ -129,9 +151,15 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
         )
         
         availableLenses = discovery.devices
+        print("⚠️ No virtual camera available — using individual lenses (no depth)")
     }
     
     func switchLens(to index: Int) {
+        // With virtual camera (1 device), lens switching is handled by zoom factor
+        // The virtual device auto-switches physical lenses at threshold zoom levels
+        if availableLenses.count == 1 {
+            return  // Zoom handles it
+        }
         guard index < availableLenses.count else { return }
         currentLensIndex = index
         setupCamera()
@@ -239,6 +267,12 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
         }
         
         settings.maxPhotoDimensions = output.maxPhotoDimensions
+        
+        // Request depth data for screen detection
+        if output.isDepthDataDeliveryEnabled {
+            settings.isDepthDataDeliveryEnabled = true
+        }
+        
         output.capturePhoto(with: settings, delegate: self)
     }
     
