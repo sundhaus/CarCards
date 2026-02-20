@@ -17,6 +17,12 @@ struct FullScreenFriendCardView: View {
     @State private var isFetchingSpecs = false
     @State private var fetchedSpecs: VehicleSpecs?
     @State private var profileImage: UIImage?
+    @State private var showHeartAnimation = false
+    @State private var hasLiked = false
+    
+    private var currentUserId: String? {
+        FirebaseManager.shared.currentUserId
+    }
     
     private func specsAreComplete(_ specs: VehicleSpecs?) -> Bool {
         guard let specs = specs else { return false }
@@ -155,7 +161,10 @@ struct FullScreenFriendCardView: View {
                 }
             }
         }
-        .onTapGesture {
+        .onTapGesture(count: 2) {
+            doubleTapLike()
+        }
+        .onTapGesture(count: 1) {
             guard !isFetchingSpecs else { return }
             
             if specsAreComplete(fetchedSpecs) {
@@ -171,6 +180,15 @@ struct FullScreenFriendCardView: View {
                 Task {
                     await fetchSpecs()
                 }
+            }
+        }
+        .overlay {
+            if showHeartAnimation {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 80))
+                    .foregroundStyle(.orange)
+                    .shadow(color: .black.opacity(0.5), radius: 10)
+                    .transition(.scale.combined(with: .opacity))
             }
         }
     }
@@ -205,6 +223,41 @@ struct FullScreenFriendCardView: View {
         } catch {
             print("❌ Failed to fetch specs: \(error)")
             await MainActor.run { isFetchingSpecs = false }
+        }
+    }
+    
+    // MARK: - Double Tap Like
+    
+    private func doubleTapLike() {
+        guard let uid = currentUserId else { return }
+        guard activity.userId != uid else { return }
+        guard !hasLiked && !activity.heatedBy.contains(uid) else {
+            triggerHeartAnimation()
+            return
+        }
+        
+        hasLiked = true
+        triggerHeartAnimation()
+        
+        Task {
+            do {
+                try await FriendsService.shared.addHeat(activityId: activity.id, userId: uid)
+                print("🔥 Liked \(activity.cardMake) \(activity.cardModel)")
+            } catch {
+                print("❌ Failed to like: \(error)")
+                await MainActor.run { hasLiked = false }
+            }
+        }
+    }
+    
+    private func triggerHeartAnimation() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+            showHeartAnimation = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                showHeartAnimation = false
+            }
         }
     }
     

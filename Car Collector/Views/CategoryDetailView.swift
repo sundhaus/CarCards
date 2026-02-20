@@ -121,7 +121,7 @@ struct CategoryDetailView: View {
             LazyVGrid(columns: gridColumns, spacing: 16) {
                 ForEach(allCards) { card in
                     CategoryCardItem(card: card)
-                        .onTapGesture {
+                        .onTapGesture(count: 1) {
                             fullScreenActivity = card
                         }
                         .onAppear {

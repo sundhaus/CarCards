@@ -277,10 +277,10 @@ struct FriendActivityCard: View {
             .padding(.horizontal)
             .padding(.top, 16)
             
-            // Card preview — tap opens fullscreen
+            // Card preview — single tap opens fullscreen, double tap likes
             FIFACardView(card: activity, height: 202.5)
                 .frame(width: 360, height: 202.5)
-                .onTapGesture {
+                .onTapGesture(count: 1) {
                     onCardTap()
                 }
                 .padding(.horizontal)

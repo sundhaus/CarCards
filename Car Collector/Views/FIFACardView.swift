@@ -12,8 +12,14 @@ struct FIFACardView: View {
     let height: CGFloat
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
+    @State private var showHeartAnimation = false
+    @State private var hasLiked = false
     
     private var cardWidth: CGFloat { height * (16/9) }
+    
+    private var currentUserId: String? {
+        FirebaseManager.shared.currentUserId
+    }
     
     var body: some View {
         ZStack {
@@ -68,7 +74,7 @@ struct FIFACardView: View {
             }
             
             // Heat indicator - bottom right if has heat
-            if card.heatCount > 0 {
+            if card.heatCount > 0 || hasLiked {
                 VStack {
                     Spacer()
                     HStack {
@@ -76,7 +82,7 @@ struct FIFACardView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "flame.fill")
                                 .font(.system(size: height * 0.09))
-                            Text("\(card.heatCount)")
+                            Text("\(card.heatCount + (hasLiked && !card.heatedBy.contains(currentUserId ?? "") ? 1 : 0))")
                                 .font(.system(size: height * 0.09, weight: .bold))
                         }
                         .foregroundStyle(.orange)
@@ -86,12 +92,66 @@ struct FIFACardView: View {
                     }
                 }
             }
+            
+            // Heart animation overlay
+            if showHeartAnimation {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: height * 0.4))
+                    .foregroundStyle(.orange)
+                    .shadow(color: .black.opacity(0.5), radius: 8)
+                    .transition(.scale.combined(with: .opacity))
+            }
         }
         .frame(width: cardWidth, height: height)
         .clipShape(RoundedRectangle(cornerRadius: height * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
+        .onTapGesture(count: 2) {
+            doubleTapLike()
+        }
         .onAppear {
             loadImage()
+            // Check if already liked
+            if let uid = currentUserId {
+                hasLiked = card.heatedBy.contains(uid)
+            }
+        }
+    }
+    
+    // MARK: - Double Tap Like
+    
+    private func doubleTapLike() {
+        guard let uid = currentUserId else { return }
+        // Don't like your own cards
+        guard card.userId != uid else { return }
+        // Already liked
+        guard !hasLiked && !card.heatedBy.contains(uid) else {
+            // Still show animation as feedback
+            triggerHeartAnimation()
+            return
+        }
+        
+        hasLiked = true
+        triggerHeartAnimation()
+        
+        Task {
+            do {
+                try await FriendsService.shared.addHeat(activityId: card.id, userId: uid)
+                print("🔥 Liked \(card.cardMake) \(card.cardModel)")
+            } catch {
+                print("❌ Failed to like: \(error)")
+                await MainActor.run { hasLiked = false }
+            }
+        }
+    }
+    
+    private func triggerHeartAnimation() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+            showHeartAnimation = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                showHeartAnimation = false
+            }
         }
     }
     
