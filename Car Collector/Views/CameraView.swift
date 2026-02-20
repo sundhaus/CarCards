@@ -712,12 +712,34 @@ struct CameraView: View {
                     let confidence = result.confidence
                     
                     for keyword in screenKeywords {
-                        if label.contains(keyword) && confidence > 0.6 {
+                        if label.contains(keyword) && confidence > 0.5 {
                             print("🚫 Vision screen detect: \(label) (\(String(format: "%.1f%%", confidence * 100)))")
                             continuation.resume(returning: .screen)
                             return
                         }
                     }
+                }
+                
+                // --- CHECK 1b: Photo-of-photo detection ---
+                // When the top labels are art/painting/poster, it means
+                // Vision sees a picture within the photo (screen, print, poster)
+                let photoOfPhotoLabels: Set<String> = [
+                    "art", "painting", "poster", "graphic_design", "illustration",
+                    "drawing", "cartoon", "comic", "print", "photograph",
+                    "picture_frame", "collage", "mural"
+                ]
+                
+                // Check if top-2 labels are both photo-of-photo indicators
+                let top3 = results.prefix(3)
+                let photoOfPhotoHits = top3.filter { result in
+                    photoOfPhotoLabels.contains(result.identifier.lowercased()) && result.confidence > 0.10
+                }
+                
+                if photoOfPhotoHits.count >= 2 {
+                    let labels = photoOfPhotoHits.map { "\($0.identifier) \(String(format: "%.1f%%", $0.confidence * 100))" }.joined(separator: ", ")
+                    print("🚫 Vision photo-of-photo detect: \(labels)")
+                    continuation.resume(returning: .screen)
+                    return
                 }
                 
                 // --- CHECK 2: NSFW / sensitive content ---
