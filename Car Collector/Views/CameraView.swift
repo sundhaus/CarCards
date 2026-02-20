@@ -10,59 +10,85 @@ import AVFoundation
 import Vision
 import ARKit
 
-// MARK: - LiDAR Depth Scanner (runs independently from camera)
-class LiDARDepthScanner: NSObject, ObservableObject, ARSessionDelegate {
+// MARK: - LiDAR Depth Scanner (single-shot after capture)
+class LiDARDepthScanner: NSObject, ARSessionDelegate {
     static let shared = LiDARDepthScanner()
     
-    private var arSession: ARSession?
-    @Published var isAvailable = false
-    @Published var latestDepthMap: CVPixelBuffer?
+    let isAvailable: Bool
+    private var continuation: CheckedContinuation<Bool, Never>?
     
     override init() {
-        super.init()
         isAvailable = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
+        super.init()
         print("📐 LiDAR available: \(isAvailable)")
     }
     
-    func start() {
+    /// Pauses camera, fires LiDAR for one depth frame, analyzes flatness, resumes camera.
+    func checkForFlatSurface(cameraSession: AVCaptureSession) async -> Bool {
         guard isAvailable else {
-            print("📐 LiDAR not available on this device")
-            return
-        }
-        
-        let session = ARSession()
-        session.delegate = self
-        
-        let config = ARWorldTrackingConfiguration()
-        config.frameSemantics = .sceneDepth
-        
-        session.run(config)
-        arSession = session
-        print("📐 LiDAR depth scanning started")
-    }
-    
-    func stop() {
-        arSession?.pause()
-        arSession = nil
-        latestDepthMap = nil
-        print("📐 LiDAR depth scanning stopped")
-    }
-    
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        // Grab depth map every frame — lightweight, just stores the reference
-        if let sceneDepth = frame.sceneDepth {
-            latestDepthMap = sceneDepth.depthMap
-        }
-    }
-    
-    /// Analyze the latest depth map for flatness (screen detection)
-    /// Returns true if the scene appears flat (like a screen)
-    func isSceneFlat() -> Bool {
-        guard let depthMap = latestDepthMap else {
-            print("🔍 LiDAR: no depth map available")
+            print("📐 LiDAR not available — skipping")
             return false
         }
         
+        // 1. Pause the camera so ARKit can use the hardware
+        cameraSession.stopRunning()
+        print("📐 Camera paused for LiDAR scan")
+        
+        // 2. Run ARKit, grab one depth frame
+        let isFlat = await grabSingleDepthFrame()
+        
+        // 3. Resume camera
+        DispatchQueue.global(qos: .userInitiated).async {
+            cameraSession.startRunning()
+            print("📐 Camera resumed after LiDAR scan")
+        }
+        
+        return isFlat
+    }
+    
+    private func grabSingleDepthFrame() async -> Bool {
+        return await withCheckedContinuation { cont in
+            self.continuation = cont
+            
+            let session = ARSession()
+            session.delegate = self
+            
+            let config = ARWorldTrackingConfiguration()
+            config.frameSemantics = .sceneDepth
+            session.run(config)
+            
+            // Timeout after 2 seconds if no depth frame arrives
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                if let pending = self?.continuation {
+                    self?.continuation = nil
+                    session.pause()
+                    print("📐 LiDAR timeout — no depth frame received")
+                    pending.resume(returning: false)
+                }
+            }
+        }
+    }
+    
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        // Got a frame — grab depth and stop immediately
+        guard let cont = continuation else { return }
+        continuation = nil
+        
+        guard let sceneDepth = frame.sceneDepth else {
+            session.pause()
+            print("📐 ARFrame has no depth data")
+            cont.resume(returning: false)
+            return
+        }
+        
+        // Stop ARKit immediately — we only needed one frame
+        session.pause()
+        
+        let isFlat = analyzeDepthMap(sceneDepth.depthMap)
+        cont.resume(returning: isFlat)
+    }
+    
+    private func analyzeDepthMap(_ depthMap: CVPixelBuffer) -> Bool {
         CVPixelBufferLockBaseAddress(depthMap, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
         
@@ -78,7 +104,7 @@ class LiDARDepthScanner: NSObject, ObservableObject, ARSessionDelegate {
         let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
         let floatsPerRow = bytesPerRow / MemoryLayout<Float32>.size
         
-        // Sample center 50% of the depth map
+        // Sample center 50%
         let startX = width / 4
         let endX = (width * 3) / 4
         let startY = height / 4
@@ -108,10 +134,10 @@ class LiDARDepthScanner: NSObject, ObservableObject, ARSessionDelegate {
         
         print("🔍 LiDAR depth: samples=\(depthValues.count), mean=\(String(format: "%.3f", mean))m, stdDev=\(String(format: "%.4f", stdDev)), CoV=\(String(format: "%.4f", coeffOfVariation))")
         
-        // A flat screen: everything at same distance → CoV < 0.05
-        // Real scene: objects at different distances → CoV > 0.10
+        // Flat screen: CoV < 0.06, within 1.5m
+        // Real scene: CoV > 0.10
         if coeffOfVariation < 0.06 && mean < 1.5 {
-            print("🚫 LiDAR: flat surface detected at \(String(format: "%.2f", mean))m (likely screen)")
+            print("🚫 LiDAR: flat surface at \(String(format: "%.2f", mean))m — likely a screen")
             return true
         }
         
@@ -650,12 +676,10 @@ struct CameraView: View {
             camera.checkPermissions()
             OrientationManager.lockOrientation(.portrait)
             locationService.requestPermission()
-            LiDARDepthScanner.shared.start()
         }
         .onDisappear {
             camera.stopSession()
             OrientationManager.unlockOrientation()
-            LiDARDepthScanner.shared.stop()
         }
         .onChange(of: camera.captureId) { _, newId in
             guard let newId = newId, newId != lastCheckedId else { return }
@@ -675,7 +699,7 @@ struct CameraView: View {
         
         Task {
             // Check 1: Depth-based screen detection (if available)
-            if detectScreenPhoto(image: image) {
+            if await detectScreenPhoto(image: image) {
                 await MainActor.run {
                     isCheckingContent = false
                     contentRejected = true
@@ -708,8 +732,8 @@ struct CameraView: View {
     
     // MARK: - Screen Photo Detection (LiDAR)
     
-    private func detectScreenPhoto(image: UIImage) -> Bool {
-        return LiDARDepthScanner.shared.isSceneFlat()
+    private func detectScreenPhoto(image: UIImage) async -> Bool {
+        return await LiDARDepthScanner.shared.checkForFlatSurface(cameraSession: camera.session)
     }
     
     // MARK: - Vision Classification Check (screen + sensitivity combined)
