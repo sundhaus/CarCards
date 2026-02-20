@@ -38,7 +38,7 @@ struct MarketplaceLandingView: View {
                         VStack(spacing: 16) {
                             // Search Marketplace
                             NavigationButton(
-                                title: "SEARCH MARKETPLACE",
+                                title: "SEARCH",
                                 subtitle: "Find and buy cards",
                                 icon: "magnifyingglass",
                                 gradient: [Color.blue, Color.purple],
