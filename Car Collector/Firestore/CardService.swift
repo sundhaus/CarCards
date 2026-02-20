@@ -144,6 +144,35 @@ class CardService: ObservableObject {
         return card
     }
     
+    // MARK: - Quiet Sync (for starring — no activity post, no card count increment)
+    
+    func syncCardQuietly(image: UIImage, savedCard: SavedCard) async throws -> CloudCard {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
+        let cardId = UUID().uuidString
+        let imageURL = try await uploadCardImage(image, uid: uid, cardId: cardId)
+        
+        let card = CloudCard(
+            id: cardId,
+            ownerId: uid,
+            make: savedCard.make,
+            model: savedCard.model,
+            color: savedCard.color,
+            year: savedCard.year,
+            imageURL: imageURL,
+            capturedBy: savedCard.capturedBy,
+            capturedLocation: savedCard.capturedLocation,
+            previousOwners: savedCard.previousOwners,
+            customFrame: savedCard.customFrame
+        )
+        
+        try await cardsCollection.document(cardId).setData(card.dictionary)
+        print("⭐ Quiet sync complete: \(savedCard.make) \(savedCard.model)")
+        return card
+    }
+    
     // MARK: - Update Custom Frame
     
     func updateCustomFrame(cardId: String, customFrame: String?) async throws {

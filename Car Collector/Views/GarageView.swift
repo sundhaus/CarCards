@@ -137,22 +137,15 @@ struct GarageView: View {
                                     currentPage = 0
                                 }
                             } else {
-                                // Card not synced — upload to Firebase first
-                                print("⭐ Star toggle: no firebaseId, syncing to Firebase first...")
+                                // Card not synced — upload to Firebase quietly (no activity post)
+                                print("⭐ Star toggle: no firebaseId, syncing to Firebase...")
                                 if case .vehicle(let savedCard) = card {
                                     Task {
                                         do {
                                             let image = savedCard.image ?? UIImage()
-                                            let cloudCard = try await CardService.shared.saveCard(
+                                            let cloudCard = try await CardService.shared.syncCardQuietly(
                                                 image: image,
-                                                make: savedCard.make,
-                                                model: savedCard.model,
-                                                color: savedCard.color,
-                                                year: savedCard.year,
-                                                capturedBy: savedCard.capturedBy,
-                                                capturedLocation: savedCard.capturedLocation,
-                                                previousOwners: savedCard.previousOwners,
-                                                customFrame: savedCard.customFrame
+                                                savedCard: savedCard
                                             )
                                             
                                             // Update local card with firebaseId
@@ -162,7 +155,7 @@ struct GarageView: View {
                                                 CardStorage.saveCards(allSaved)
                                             }
                                             
-                                            print("⭐ Synced to Firebase: \(cloudCard.id), setting as star")
+                                            print("⭐ Synced: \(cloudCard.id), setting as star")
                                             UserService.shared.setCrownCard(cloudCard.id)
                                             
                                             await MainActor.run {
