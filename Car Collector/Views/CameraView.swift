@@ -341,7 +341,12 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
             settings.photoQualityPrioritization = .quality
         }
         
-        settings.maxPhotoDimensions = output.maxPhotoDimensions
+        // Set max dimensions from the device's current active format
+        // (ARKit can change the active format, making output.maxPhotoDimensions invalid)
+        if let device = currentDevice,
+           let maxDim = device.activeFormat.supportedMaxPhotoDimensions.last {
+            settings.maxPhotoDimensions = maxDim
+        }
         output.capturePhoto(with: settings, delegate: self)
     }
     
@@ -647,7 +652,10 @@ struct CameraView: View {
             camera.checkPermissions()
             OrientationManager.lockOrientation(.portrait)
             locationService.requestPermission()
-            LiDARDepthScanner.shared.start()
+            // Start LiDAR after camera has time to initialize
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                LiDARDepthScanner.shared.start()
+            }
         }
         .onDisappear {
             camera.stopSession()
