@@ -186,10 +186,13 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     }
     
     func setupCamera() {
-        DispatchQueue.main.async {
+        DispatchQueue.global(qos: .userInitiated).async {
             do {
                 self.session.beginConfiguration()
-                self.discoverLenses()
+                
+                DispatchQueue.main.sync {
+                    self.discoverLenses()
+                }
                 
                 guard self.currentLensIndex < self.availableLenses.count,
                       !self.availableLenses.isEmpty else {
@@ -198,7 +201,10 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 }
                 
                 let device = self.availableLenses[self.currentLensIndex]
-                self.currentDevice = device
+                
+                DispatchQueue.main.async {
+                    self.currentDevice = device
+                }
                 
                 let input = try AVCaptureDeviceInput(device: device)
                 self.session.inputs.forEach { self.session.removeInput($0) }
