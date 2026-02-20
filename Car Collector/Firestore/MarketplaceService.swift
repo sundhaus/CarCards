@@ -402,8 +402,29 @@ class MarketplaceService: ObservableObject {
             guard let documents = snapshot?.documents else { return }
             
             Task { @MainActor in
-                self?.activeListings = documents.compactMap { CloudListing(document: $0) }
+                var listings = documents.compactMap { CloudListing(document: $0) }
                     .filter { !$0.isExpired }
+                
+                // Backfill category for listings created before category was added
+                let localCards = CardStorage.loadCards()
+                for i in listings.indices where listings[i].category == nil || listings[i].category?.isEmpty == true {
+                    let listing = listings[i]
+                    // Match by make+model+year against local cards with specs
+                    if let match = localCards.first(where: {
+                        $0.make == listing.make && $0.model == listing.model && $0.year == listing.year
+                    }), let cat = match.specs?.category?.rawValue {
+                        listings[i].category = cat
+                        // Patch Firestore in background
+                        let listingId = listing.id
+                        Task {
+                            try? await self?.listingsCollection.document(listingId).updateData([
+                                "category": cat
+                            ])
+                        }
+                    }
+                }
+                
+                self?.activeListings = listings
                 self?.isLoading = false
             }
         }
