@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVFoundation
+import SensitiveContentAnalysis
 
 // CAMERA SERVICE CLASS - MUST BE FIRST
 class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -341,6 +342,10 @@ struct CameraView: View {
     @State private var lastZoomFactor: CGFloat = 1.0
     @ObservedObject private var locationService = LocationService.shared
     
+    @State private var isCheckingContent = false
+    @State private var contentRejected = false
+    @State private var contentCheckedImage: UIImage? = nil
+    
     init(isPresented: Binding<Bool>, onCardSaved: @escaping (SavedCard) -> Void, captureType: CaptureType = .vehicle) {
         self._isPresented = isPresented
         self.onCardSaved = onCardSaved
@@ -415,8 +420,67 @@ struct CameraView: View {
                     }
             )
             
-            // Composer overlays on top when image is captured
-            if let image = camera.capturedImage {
+            // Content safety check overlay
+            if isCheckingContent {
+                ZStack {
+                    Color.black.opacity(0.85)
+                        .ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                        Text("CHECKING IMAGE...")
+                            .font(.pCaption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                .transition(.opacity)
+            }
+            
+            // Content rejected overlay
+            if contentRejected {
+                ZStack {
+                    Color.black.opacity(0.9)
+                        .ignoresSafeArea()
+                    VStack(spacing: 20) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 50))
+                            .foregroundStyle(.red)
+                        
+                        Text("IMAGE REJECTED")
+                            .font(.pTitle3)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                        
+                        Text("This image contains sensitive content and cannot be used to create a card.")
+                            .font(.pSubheadline)
+                            .foregroundStyle(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                        
+                        Button(action: {
+                            contentRejected = false
+                            camera.capturedImage = nil
+                            contentCheckedImage = nil
+                        }) {
+                            Text("RETAKE PHOTO")
+                                .font(.pSubheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 32)
+                                .padding(.vertical, 12)
+                                .background(Color.red.opacity(0.3))
+                                .clipShape(Capsule())
+                        }
+                        .padding(.top, 8)
+                    }
+                }
+                .transition(.opacity)
+            }
+            
+            // Composer overlays on top when image passes content check
+            if let image = contentCheckedImage {
                 CardComposerView(
                     image: image,
                     onSave: { image, make, model, color, year, specs in
@@ -436,6 +500,7 @@ struct CameraView: View {
                     onRetake: {
                         // Just clear the image - camera is already running underneath
                         camera.capturedImage = nil
+                        contentCheckedImage = nil
                     },
                     captureType: captureType
                 )
@@ -450,6 +515,69 @@ struct CameraView: View {
             camera.stopSession()
             OrientationManager.unlockOrientation()
         }
+        .onChange(of: camera.capturedImage) { _, newImage in
+            guard let image = newImage else {
+                contentCheckedImage = nil
+                return
+            }
+            checkContentSafety(image: image)
+        }
+    }
+    
+    // MARK: - Content Safety Check (on-device)
+    
+    private func checkContentSafety(image: UIImage) {
+        isCheckingContent = true
+        contentRejected = false
+        
+        Task {
+            let isSafe = await performSafetyCheck(image: image)
+            
+            await MainActor.run {
+                isCheckingContent = false
+                if isSafe {
+                    contentCheckedImage = image
+                } else {
+                    contentRejected = true
+                    print("🚫 Image rejected by content safety check")
+                }
+            }
+        }
+    }
+    
+    private func performSafetyCheck(image: UIImage) async -> Bool {
+        // Use Apple's SensitiveContentAnalysis (iOS 17+)
+        if #available(iOS 17.0, *) {
+            do {
+                let analyzer = SCSensitivityAnalyzer()
+                let policy = analyzer.analysisPolicy
+                
+                // If analysis is disabled by the user, allow the image
+                guard policy != .disabled else {
+                    print("🔍 Content analysis disabled by user settings — allowing")
+                    return true
+                }
+                
+                guard let cgImage = image.cgImage else { return true }
+                
+                let result = try await analyzer.analyzeImage(cgImage)
+                
+                if result.isSensitive {
+                    print("🚫 SensitiveContentAnalysis flagged image as sensitive")
+                    return false
+                }
+                
+                print("✅ Image passed content safety check")
+                return true
+            } catch {
+                print("⚠️ SensitiveContentAnalysis error: \(error) — allowing image")
+                return true
+            }
+        }
+        
+        // Fallback for iOS < 17: allow all images
+        print("⚠️ SensitiveContentAnalysis unavailable — allowing image")
+        return true
     }
 }
 
