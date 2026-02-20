@@ -13,6 +13,7 @@ import Vision
 class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
     @Published var session = AVCaptureSession()
     @Published var capturedImage: UIImage?
+    @Published var captureId: UUID? = nil  // Changes on each capture for onChange detection
     @Published var zoomFactor: CGFloat = 1.0
     @Published var flashMode: AVCaptureDevice.FlashMode = .off
     @Published var exposureValue: Float = 0.0
@@ -258,12 +259,15 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
         
         SubjectLifter.blurPrivacyRegions(in: image) { result in
             DispatchQueue.main.async {
+                let newId = UUID()
                 switch result {
                 case .success(let blurredImage):
                     self.capturedImage = blurredImage
                 case .failure:
                     self.capturedImage = image
                 }
+                self.captureId = newId
+                print("📸 Capture complete, captureId=\(newId)")
             }
         }
     }
@@ -346,6 +350,7 @@ struct CameraView: View {
     @State private var contentRejected = false
     @State private var rejectionMessage = ""
     @State private var contentCheckedImage: UIImage? = nil
+    @State private var lastCheckedId: UUID? = nil
     
     init(isPresented: Binding<Bool>, onCardSaved: @escaping (SavedCard) -> Void, captureType: CaptureType = .vehicle) {
         self._isPresented = isPresented
@@ -421,16 +426,6 @@ struct CameraView: View {
                     }
             )
             
-            // Content safety gate — triggers when image is captured
-            if camera.capturedImage != nil && contentCheckedImage == nil && !isCheckingContent && !contentRejected {
-                Color.clear
-                    .onAppear {
-                        if let image = camera.capturedImage {
-                            checkContentSafety(image: image)
-                        }
-                    }
-            }
-            
             // Checking overlay
             if isCheckingContent {
                 ZStack {
@@ -479,7 +474,9 @@ struct CameraView: View {
                         Button(action: {
                             contentRejected = false
                             camera.capturedImage = nil
+                            camera.captureId = nil
                             contentCheckedImage = nil
+                            lastCheckedId = nil
                         }) {
                             Text("RETAKE PHOTO")
                                 .font(.pSubheadline)
@@ -517,7 +514,9 @@ struct CameraView: View {
                     onRetake: {
                         // Just clear the image - camera is already running underneath
                         camera.capturedImage = nil
+                        camera.captureId = nil
                         contentCheckedImage = nil
+                        lastCheckedId = nil
                     },
                     captureType: captureType
                 )
@@ -531,6 +530,13 @@ struct CameraView: View {
         .onDisappear {
             camera.stopSession()
             OrientationManager.unlockOrientation()
+        }
+        .onChange(of: camera.captureId) { _, newId in
+            guard let newId = newId, newId != lastCheckedId else { return }
+            guard let image = camera.capturedImage else { return }
+            lastCheckedId = newId
+            print("🔒 Content check triggered for captureId=\(newId), type=\(captureType)")
+            checkContentSafety(image: image)
         }
     }
     
