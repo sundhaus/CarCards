@@ -19,6 +19,8 @@ struct FullScreenFriendCardView: View {
     @State private var profileImage: UIImage?
     @State private var showHeartAnimation = false
     @State private var hasLiked = false
+    @State private var tapCount = 0
+    @State private var tapWorkItem: DispatchWorkItem?
     
     private var currentUserId: String? {
         FirebaseManager.shared.currentUserId
@@ -122,6 +124,9 @@ struct FullScreenFriendCardView: View {
         .transition(.opacity)
         .task {
             await loadProfilePicture()
+            if let uid = currentUserId {
+                hasLiked = activity.heatedBy.contains(uid)
+            }
         }
     }
     
@@ -161,26 +166,9 @@ struct FullScreenFriendCardView: View {
                 }
             }
         }
-        .onTapGesture(count: 2) {
-            doubleTapLike()
-        }
-        .onTapGesture(count: 1) {
-            guard !isFetchingSpecs else { return }
-            
-            if specsAreComplete(fetchedSpecs) {
-                // Flip
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    flipDegrees += 180
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        isFlipped.toggle()
-                    }
-                }
-            } else {
-                // Fetch specs, then auto-flip
-                Task {
-                    await fetchSpecs()
-                }
-            }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            handleTap()
         }
         .overlay {
             if showHeartAnimation {
@@ -190,6 +178,34 @@ struct FullScreenFriendCardView: View {
                     .shadow(color: .black.opacity(0.5), radius: 10)
                     .transition(.scale.combined(with: .opacity))
             }
+        }
+    }
+    
+    private func handleTap() {
+        tapCount += 1
+        tapWorkItem?.cancel()
+        
+        if tapCount == 2 {
+            tapCount = 0
+            toggleHeat()
+        } else {
+            let work = DispatchWorkItem {
+                tapCount = 0
+                // Single tap — flip card
+                guard !isFetchingSpecs else { return }
+                if specsAreComplete(fetchedSpecs) {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        flipDegrees += 180
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            isFlipped.toggle()
+                        }
+                    }
+                } else {
+                    Task { await fetchSpecs() }
+                }
+            }
+            tapWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
         }
     }
     
@@ -226,26 +242,34 @@ struct FullScreenFriendCardView: View {
         }
     }
     
-    // MARK: - Double Tap Like
+    // MARK: - Heat Toggle
     
-    private func doubleTapLike() {
+    private func toggleHeat() {
         guard let uid = currentUserId else { return }
         guard activity.userId != uid else { return }
-        guard !hasLiked && !activity.heatedBy.contains(uid) else {
+        
+        if hasLiked {
+            hasLiked = false
+            Task {
+                do {
+                    try await FriendsService.shared.removeHeat(activityId: activity.id, userId: uid)
+                    print("🔥 Removed heat from \(activity.cardMake) \(activity.cardModel)")
+                } catch {
+                    print("❌ Failed to remove heat: \(error)")
+                    await MainActor.run { hasLiked = true }
+                }
+            }
+        } else {
+            hasLiked = true
             triggerHeartAnimation()
-            return
-        }
-        
-        hasLiked = true
-        triggerHeartAnimation()
-        
-        Task {
-            do {
-                try await FriendsService.shared.addHeat(activityId: activity.id, userId: uid)
-                print("🔥 Liked \(activity.cardMake) \(activity.cardModel)")
-            } catch {
-                print("❌ Failed to like: \(error)")
-                await MainActor.run { hasLiked = false }
+            Task {
+                do {
+                    try await FriendsService.shared.addHeat(activityId: activity.id, userId: uid)
+                    print("🔥 Added heat to \(activity.cardMake) \(activity.cardModel)")
+                } catch {
+                    print("❌ Failed to add heat: \(error)")
+                    await MainActor.run { hasLiked = false }
+                }
             }
         }
     }

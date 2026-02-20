@@ -120,10 +120,9 @@ struct CategoryDetailView: View {
         ScrollView(.vertical, showsIndicators: true) {
             LazyVGrid(columns: gridColumns, spacing: 16) {
                 ForEach(allCards) { card in
-                    CategoryCardItem(card: card)
-                        .onTapGesture(count: 1) {
-                            fullScreenActivity = card
-                        }
+                    CategoryCardItem(card: card, onSingleTap: {
+                        fullScreenActivity = card
+                    })
                         .onAppear {
                             // Load more when last few cards appear
                             if card.id == allCards.last?.id && hasMorePages && !isLoadingMore {
@@ -206,13 +205,14 @@ struct CategoryDetailView: View {
 
 struct CategoryCardItem: View {
     let card: FriendActivity
+    var onSingleTap: (() -> Void)? = nil
     
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
             let height = width * (9.0 / 16.0)
             
-            FIFACardView(card: card, height: height)
+            FIFACardView(card: card, height: height, onSingleTap: onSingleTap)
                 .frame(width: width, height: height)
         }
         .aspectRatio(16/9, contentMode: .fit)
