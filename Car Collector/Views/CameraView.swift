@@ -232,9 +232,19 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 
                 // Attach LiDAR depth output to this session
                 if LiDARDepthScanner.shared.isAvailable {
+                    // Remove first in case it's already attached
+                    self.session.removeOutput(LiDARDepthScanner.shared.depthOutput)
                     if self.session.canAddOutput(LiDARDepthScanner.shared.depthOutput) {
                         self.session.addOutput(LiDARDepthScanner.shared.depthOutput)
-                        print("📐 LiDAR depth output attached to camera session")
+                        // Check if depth data is actually being delivered
+                        if let connection = LiDARDepthScanner.shared.depthOutput.connection(with: .depthData) {
+                            connection.isEnabled = true
+                            print("📐 LiDAR depth output attached + connected")
+                        } else {
+                            print("⚠️ LiDAR depth output added but no depth connection available for this lens")
+                        }
+                    } else {
+                        print("⚠️ Could not add LiDAR depth output to session")
                     }
                 }
                 
