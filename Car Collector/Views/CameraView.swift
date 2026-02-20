@@ -7,7 +7,6 @@
 
 import SwiftUI
 import AVFoundation
-import Vision
 import ARKit
 
 // MARK: - LiDAR Depth Scanner (runs continuously alongside camera)
@@ -98,17 +97,30 @@ class LiDARDepthScanner: NSObject, ARSessionDelegate {
             return false
         }
         
+        let sorted = depthValues.sorted()
         let mean = depthValues.reduce(0, +) / Float(depthValues.count)
-        let variance = depthValues.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Float(depthValues.count)
-        let stdDev = sqrt(variance)
-        let coeffOfVariation = mean > 0 ? stdDev / mean : 0
         
-        print("🔍 LiDAR depth: samples=\(depthValues.count), mean=\(String(format: "%.3f", mean))m, stdDev=\(String(format: "%.4f", stdDev)), CoV=\(String(format: "%.4f", coeffOfVariation))")
+        // Use interquartile range to ignore edge noise (bezels, desk)
+        let q1 = sorted[sorted.count / 4]
+        let q3 = sorted[(sorted.count * 3) / 4]
+        let iqr = q3 - q1
         
-        // Flat screen: CoV < 0.06, within 1.5m
-        // Real scene: CoV > 0.10
-        if coeffOfVariation < 0.06 && mean < 1.5 {
-            print("🚫 LiDAR: flat surface at \(String(format: "%.2f", mean))m — likely a screen")
+        let minDepth = sorted.first!
+        let maxDepth = sorted.last!
+        let fullRange = maxDepth - minDepth
+        
+        print("🔍 LiDAR depth: samples=\(depthValues.count), mean=\(String(format: "%.3f", mean))m, range=\(String(format: "%.3f", fullRange))m, IQR=\(String(format: "%.3f", iqr))m, min=\(String(format: "%.3f", minDepth))m, max=\(String(format: "%.3f", maxDepth))m")
+        
+        // A screen is a flat surface:
+        // - IQR (middle 50% of depths) should be very tight (< 0.10m)
+        // - Mean distance typically < 1.5m (arm's length to a monitor)
+        //
+        // A real scene (car, person, outdoors):
+        // - IQR will be large (> 0.20m) because objects are at varied distances
+        // - Even a car close up has hood, windshield, background at different depths
+        
+        if iqr < 0.10 && mean < 1.5 {
+            print("🚫 LiDAR: flat surface — IQR \(String(format: "%.3f", iqr))m at \(String(format: "%.2f", mean))m (likely screen)")
             return true
         }
         
@@ -676,149 +688,17 @@ struct CameraView: View {
         contentRejected = false
         rejectionMessage = ""
         
-        Task {
-            // Check 1: Depth-based screen detection (if available)
-            if detectScreenPhoto(image: image) {
-                await MainActor.run {
-                    isCheckingContent = false
-                    contentRejected = true
-                    rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
-                    print("🚫 Image rejected: screen photo detected (depth)")
-                }
-                return
-            }
-            
-            // Check 2: Vision classification (screens + NSFW combined)
-            let result = await performVisionCheck(image: image)
-            
-            await MainActor.run {
-                isCheckingContent = false
-                switch result {
-                case .safe:
-                    contentCheckedImage = image
-                case .screen:
-                    contentRejected = true
-                    rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
-                    print("🚫 Image rejected: screen detected by Vision")
-                case .sensitive:
-                    contentRejected = true
-                    rejectionMessage = "This image contains sensitive content."
-                    print("🚫 Image rejected: sensitive content")
-                }
-            }
-        }
-    }
-    
-    // MARK: - Screen Photo Detection (LiDAR)
-    
-    private func detectScreenPhoto(image: UIImage) -> Bool {
-        return LiDARDepthScanner.shared.isSceneFlat()
-    }
-    
-    // MARK: - Vision Classification Check (screen + sensitivity combined)
-    
-    private enum VisionResult {
-        case safe
-        case screen
-        case sensitive
-    }
-    
-    private func performVisionCheck(image: UIImage) async -> VisionResult {
-        guard let cgImage = image.cgImage else { return .safe }
+        // LiDAR-only check — is the scene a flat surface (screen)?
+        let isFlat = LiDARDepthScanner.shared.isSceneFlat()
         
-        return await withCheckedContinuation { continuation in
-            let request = VNClassifyImageRequest { request, error in
-                if let error = error {
-                    print("⚠️ Vision classification error: \(error) — allowing image")
-                    continuation.resume(returning: .safe)
-                    return
-                }
-                
-                guard let results = request.results as? [VNClassificationObservation] else {
-                    continuation.resume(returning: .safe)
-                    return
-                }
-                
-                // Log top 10 labels for debugging
-                let topResults = results.prefix(10)
-                print("🔍 Vision top labels:")
-                for result in topResults {
-                    print("   \(result.identifier): \(String(format: "%.1f%%", result.confidence * 100))")
-                }
-                
-                // --- CHECK 1: Screen / document / screenshot detection ---
-                let screenKeywords = [
-                    "screenshot", "screen", "document", "computer_monitor",
-                    "monitor", "display", "webpage", "web_page", "text_document"
-                ]
-                
-                for result in results {
-                    let label = result.identifier.lowercased()
-                    let confidence = result.confidence
-                    
-                    for keyword in screenKeywords {
-                        if label.contains(keyword) && confidence > 0.5 {
-                            print("🚫 Vision screen detect: \(label) (\(String(format: "%.1f%%", confidence * 100)))")
-                            continuation.resume(returning: .screen)
-                            return
-                        }
-                    }
-                }
-                
-                // --- CHECK 1b: Photo-of-photo detection ---
-                // When the top labels are art/painting/poster, it means
-                // Vision sees a picture within the photo (screen, print, poster)
-                let photoOfPhotoLabels: Set<String> = [
-                    "art", "painting", "poster", "graphic_design", "illustration",
-                    "drawing", "cartoon", "comic", "print", "photograph",
-                    "picture_frame", "collage", "mural"
-                ]
-                
-                // Check if top-2 labels are both photo-of-photo indicators
-                let top3 = results.prefix(3)
-                let photoOfPhotoHits = top3.filter { result in
-                    photoOfPhotoLabels.contains(result.identifier.lowercased()) && result.confidence > 0.10
-                }
-                
-                if photoOfPhotoHits.count >= 2 {
-                    let labels = photoOfPhotoHits.map { "\($0.identifier) \(String(format: "%.1f%%", $0.confidence * 100))" }.joined(separator: ", ")
-                    print("🚫 Vision photo-of-photo detect: \(labels)")
-                    continuation.resume(returning: .screen)
-                    return
-                }
-                
-                // --- CHECK 2: NSFW / sensitive content ---
-                let sensitiveKeywords = [
-                    "explicit", "nude", "nudity", "sexually", "underwear",
-                    "bikini", "lingerie", "brassiere", "swimwear",
-                    "topless", "erotic", "pornograph", "adult_content",
-                    "nsfw", "intimate", "provocative"
-                ]
-                
-                for result in results {
-                    let label = result.identifier.lowercased()
-                    let confidence = result.confidence
-                    
-                    for keyword in sensitiveKeywords {
-                        if label.contains(keyword) && confidence > 0.5 {
-                            print("🚫 Vision flagged: \(label) (\(String(format: "%.1f%%", confidence * 100)))")
-                            continuation.resume(returning: .sensitive)
-                            return
-                        }
-                    }
-                }
-                
-                print("✅ Image passed all Vision checks")
-                continuation.resume(returning: .safe)
-            }
-            
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            do {
-                try handler.perform([request])
-            } catch {
-                print("⚠️ Vision handler error: \(error) — allowing image")
-                continuation.resume(returning: .safe)
-            }
+        isCheckingContent = false
+        
+        if isFlat {
+            contentRejected = true
+            rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
+            print("🚫 Image rejected: flat surface detected by LiDAR")
+        } else {
+            contentCheckedImage = image
         }
     }
 }
