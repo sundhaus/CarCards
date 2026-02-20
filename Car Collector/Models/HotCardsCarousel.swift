@@ -25,7 +25,7 @@ struct HotCardsCarousel: View {
         }
         .frame(maxWidth: .infinity)
         .onAppear {
-            hotCardsService.fetchHotCardsIfNeeded(limit: 20)
+            hotCardsService.fetchHotCardsIfNeeded()
         }
     }
     

@@ -146,25 +146,23 @@ class ExploreService: ObservableObject {
         }
     }
     
-    // Fetch featured cards — only cards that appeared in the hot cards carousel
+    // Fetch featured cards — all cards that have EVER been in the hot carousel
     private func fetchFeaturedCards(completion: @escaping ([FriendActivity]) -> Void) {
-        print("   🔎 Querying Featured (from hot cards carousel)")
+        print("   🔎 Querying Featured (all-time from featured_cards)")
         
-        let hotCards = HotCardsService.shared.hotCards
+        let allFeatured = HotCardsService.shared.allFeaturedCards
         
-        if !hotCards.isEmpty {
-            // Deduplicate by cardId
-            let deduped = Self.deduplicateByCardId(hotCards)
+        if !allFeatured.isEmpty {
+            let deduped = Self.deduplicateByCardId(allFeatured)
             let sorted = deduped.sorted { $0.heatCount > $1.heatCount }
             let featured = Array(sorted.prefix(self.cardsPerCategory))
-            print("   ✅ Hot cards: \(hotCards.count) → deduped \(deduped.count) → featured \(featured.count)")
+            print("   ⭐ All-time featured: \(allFeatured.count) → deduped \(deduped.count) → showing \(featured.count)")
             completion(featured)
         } else {
-            // Hot cards not loaded yet — fetch from Firestore with heat threshold
-            print("   ⏳ Hot cards not loaded yet, fetching top heat cards")
-            db.collection("friend_activities")
+            // Featured not loaded yet — load from Firestore directly
+            print("   ⏳ Featured not loaded yet, fetching from featured_cards collection")
+            db.collection("featured_cards")
                 .order(by: "heatCount", descending: true)
-                .limit(to: 20)
                 .getDocuments { snapshot, error in
                     if let error = error {
                         print("   ❌ Featured query error: \(error.localizedDescription)")
@@ -177,11 +175,26 @@ class ExploreService: ObservableObject {
                         return
                     }
                     
-                    let activities = documents.compactMap { FriendActivity(document: $0) }
-                        .filter { $0.heatCount > 0 }
+                    let activities = documents.compactMap { doc -> FriendActivity? in
+                        let data = doc.data()
+                        return FriendActivity(
+                            id: data["activityId"] as? String ?? doc.documentID,
+                            userId: data["userId"] as? String ?? "",
+                            username: data["username"] as? String ?? "",
+                            cardId: data["cardId"] as? String ?? "",
+                            cardMake: data["cardMake"] as? String ?? "",
+                            cardModel: data["cardModel"] as? String ?? "",
+                            cardYear: data["cardYear"] as? String ?? "",
+                            imageURL: data["imageURL"] as? String ?? "",
+                            heatCount: data["heatCount"] as? Int ?? 0,
+                            heatedBy: data["heatedBy"] as? [String] ?? [],
+                            customFrame: data["customFrame"] as? String,
+                            timestamp: (data["addedToFeatured"] as? Timestamp)?.dateValue() ?? Date()
+                        )
+                    }
                     let deduped = Self.deduplicateByCardId(activities)
                     let featured = Array(deduped.prefix(self.cardsPerCategory))
-                    print("   ✅ Fallback: \(activities.count) → \(featured.count) featured")
+                    print("   ⭐ Fallback: \(activities.count) → \(featured.count) featured")
                     completion(featured)
                 }
         }

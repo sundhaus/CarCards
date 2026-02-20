@@ -71,6 +71,24 @@ struct FriendActivity: Identifiable {
         self.category = data["category"] as? String  // NEW: Read category from Firebase
     }
     
+    /// Manual init for loading from featured_cards collection
+    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date) {
+        self.id = id
+        self.userId = userId
+        self.username = username
+        self.level = 1
+        self.cardId = cardId
+        self.cardMake = cardMake
+        self.cardModel = cardModel
+        self.cardYear = cardYear
+        self.imageURL = imageURL
+        self.createdAt = timestamp
+        self.heatedBy = heatedBy
+        self.heatCount = heatCount
+        self.customFrame = customFrame
+        self.category = nil
+    }
+    
     var dictionary: [String: Any] {
         var dict: [String: Any] = [
             "userId": userId,

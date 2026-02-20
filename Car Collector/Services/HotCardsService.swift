@@ -3,10 +3,9 @@
 //  CarCardCollector
 //
 //  Service to fetch cards with the most heat (likes) globally
-//  - Shows top 20 most liked cards from ALL users
-//  - Updates in real-time as likes change (snapshot listener)
-//  - Full refresh twice daily at 12:00 PM and 12:00 AM EST
-//  - Cards can move in/out of top 20 as other cards get more likes
+//  - Carousel shows top 10 most liked cards, refreshes every 12 hours
+//  - Once a card appears in the carousel, it's added to the "featured" collection permanently
+//  - The Explore featured page shows ALL cards that have ever been in the carousel
 //
 
 import SwiftUI
@@ -15,7 +14,8 @@ import FirebaseFirestore
 class HotCardsService: ObservableObject {
     static let shared = HotCardsService()
     
-    @Published var hotCards: [FriendActivity] = []
+    @Published var hotCards: [FriendActivity] = []  // Current carousel (max 10)
+    @Published var allFeaturedCards: [FriendActivity] = []  // All-time featured
     @Published var isLoading = false
     @Published var timeUntilNextRefresh: String = ""
     
@@ -23,46 +23,23 @@ class HotCardsService: ObservableObject {
     private var listener: ListenerRegistration?
     private var countdownTimer: Timer?
     
-    // UserDefaults key for last refresh timestamp
     private let lastRefreshKey = "hotCardsLastRefresh"
+    private let refreshInterval: TimeInterval = 12 * 60 * 60  // 12 hours
+    private let carouselLimit = 10
     
     private var timerStarted = false
     
-    init() {
-        // Timer deferred to first fetch to avoid startup cost
-    }
+    init() {}
     
-    // Calculate next refresh time (noon or midnight EST)
+    // MARK: - Timer
+    
     private func nextRefreshTime() -> Date {
-        let calendar = Calendar.current
-        let estTimeZone = TimeZone(identifier: "America/New_York")!
-        
-        // Get current time in EST
-        var components = calendar.dateComponents(in: estTimeZone, from: Date())
-        
-        // Determine if we should refresh at next noon or midnight
-        let currentHour = components.hour ?? 0
-        
-        if currentHour < 12 {
-            // Before noon - next refresh is noon today
-            components.hour = 12
-            components.minute = 0
-            components.second = 0
-        } else {
-            // After noon - next refresh is midnight tonight
-            components.hour = 0
-            components.minute = 0
-            components.second = 0
-            // Add one day
-            if let date = calendar.date(from: components) {
-                return calendar.date(byAdding: .day, value: 1, to: date) ?? Date()
-            }
+        guard let lastRefresh = UserDefaults.standard.object(forKey: lastRefreshKey) as? Date else {
+            return Date()  // Never refreshed, refresh now
         }
-        
-        return calendar.date(from: components) ?? Date()
+        return lastRefresh.addingTimeInterval(refreshInterval)
     }
     
-    // Format countdown string
     private func formatCountdown(seconds: TimeInterval) -> String {
         let hours = Int(seconds) / 3600
         let minutes = (Int(seconds) % 3600) / 60
@@ -77,7 +54,6 @@ class HotCardsService: ObservableObject {
         }
     }
     
-    // Start countdown timer (updates every second)
     private func startCountdownTimer() {
         countdownTimer?.invalidate()
         
@@ -88,85 +64,63 @@ class HotCardsService: ObservableObject {
             let timeRemaining = nextRefresh.timeIntervalSince(Date())
             
             if timeRemaining <= 0 {
-                // Time for refresh!
                 self.timeUntilNextRefresh = "Refreshing..."
                 self.forceRefresh()
             } else {
                 self.timeUntilNextRefresh = self.formatCountdown(seconds: timeRemaining)
             }
         }
-        
-        // Trigger immediate update
         countdownTimer?.fire()
     }
     
-    // Check if we should refresh based on noon/midnight EST schedule
     private func shouldRefresh() -> Bool {
         guard let lastRefresh = UserDefaults.standard.object(forKey: lastRefreshKey) as? Date else {
-            return true // Never refreshed
+            return true
         }
-        
-        let nextRefresh = nextRefreshTime()
-        
-        // If last refresh was before the most recent noon/midnight, we should refresh
-        return lastRefresh < nextRefresh
+        return Date() >= lastRefresh.addingTimeInterval(refreshInterval)
     }
     
-    // Check if cards need refresh and fetch if needed
-    func fetchHotCardsIfNeeded(limit: Int = 20) {
-        // Start countdown timer on first access
+    // MARK: - Public API
+    
+    func fetchHotCardsIfNeeded() {
         if !timerStarted {
             timerStarted = true
             startCountdownTimer()
         }
         
-        // Always refresh if we have no cards OR if it's time for scheduled refresh
         if hotCards.isEmpty || shouldRefresh() {
-            if hotCards.isEmpty {
-                print("🔄 No hot cards loaded - fetching fresh data")
-            } else {
-                print("🔄 Scheduled refresh time - refreshing hot cards")
-            }
-            fetchHotCards(limit: limit, updateTimestamp: true)
+            print("🔄 Refreshing hot cards carousel")
+            fetchHotCards()
         } else {
-            print("⏱️ Hot cards still fresh - next refresh at \(nextRefreshTime())")
+            print("⏱️ Carousel still fresh — next refresh at \(nextRefreshTime())")
+        }
+        
+        // Always load the all-time featured list
+        if allFeaturedCards.isEmpty {
+            loadAllFeatured()
         }
     }
     
-    // Force refresh (call this to trigger immediate refresh)
-    func forceRefresh(limit: Int = 20) {
+    func forceRefresh() {
         print("🔄 Force refreshing hot cards")
-        fetchHotCards(limit: limit, updateTimestamp: true)
+        fetchHotCards()
     }
     
-    // Reset the refresh timer (will trigger refresh on next fetchHotCardsIfNeeded call)
-    func resetRefreshTimer() {
-        UserDefaults.standard.removeObject(forKey: lastRefreshKey)
-        print("🔄 Reset hot cards refresh timer")
-    }
+    // MARK: - Fetch Carousel (top 10 by heat)
     
-    // Fetch top cards with most heat from all users
-    private func fetchHotCards(limit: Int = 20, updateTimestamp: Bool = true) {
+    private func fetchHotCards() {
         isLoading = true
+        UserDefaults.standard.set(Date(), forKey: lastRefreshKey)
         
-        // Update timestamp if requested
-        if updateTimestamp {
-            UserDefaults.standard.set(Date(), forKey: lastRefreshKey)
-            print("✅ Updated hot cards refresh timestamp")
-        }
-        
-        // Remove existing listener
         listener?.remove()
         
-        print("🔍 Fetching top \(limit) cards globally by heat count (likes > 0)...")
+        print("🔍 Fetching top \(carouselLimit) cards by heat...")
         
-        // Query ALL activities from ALL users ordered by heat count (likes)
-        // Filter for heatCount > 0 to exclude cards with no heat
-        listener = db.collection("friend_activities")
+        db.collection("friend_activities")
             .whereField("heatCount", isGreaterThan: 0)
             .order(by: "heatCount", descending: true)
-            .limit(to: limit)
-            .addSnapshotListener { [weak self] snapshot, error in
+            .limit(to: carouselLimit)
+            .getDocuments { [weak self] snapshot, error in
                 guard let self = self else { return }
                 
                 if let error = error {
@@ -180,27 +134,91 @@ class HotCardsService: ObservableObject {
                     return
                 }
                 
-                // Filter out any cards with 0 heat (double-check on client side)
                 self.hotCards = documents.compactMap { doc -> FriendActivity? in
                     guard let activity = FriendActivity(document: doc) else { return nil }
-                    // Only include cards with heat > 0
                     return activity.heatCount > 0 ? activity : nil
                 }
                 
                 self.isLoading = false
-                print("🔥 Loaded \(self.hotCards.count) hot cards globally (filtered for heat > 0)")
-                if let topCard = self.hotCards.first {
-                    print("🔥 Top card: \(topCard.cardMake) \(topCard.cardModel) with \(topCard.heatCount) likes")
-                }
+                print("🔥 Carousel: \(self.hotCards.count) cards")
                 
-                // Real-time updates enabled - cards will update as likes change
-                if !updateTimestamp {
-                    print("📡 Real-time updates active - cards will refresh as likes change")
-                }
+                // Persist these cards to the featured collection
+                self.persistToFeatured(self.hotCards)
             }
     }
     
-    // Clean up listener and timer
+    // MARK: - Featured Persistence
+    
+    /// Add current carousel cards to the all-time featured collection
+    private func persistToFeatured(_ cards: [FriendActivity]) {
+        let batch = db.batch()
+        
+        for card in cards {
+            // Use activityId as doc ID so duplicates just overwrite
+            let docRef = db.collection("featured_cards").document(card.id)
+            batch.setData([
+                "activityId": card.id,
+                "cardId": card.cardId,
+                "userId": card.userId,
+                "username": card.username,
+                "cardMake": card.cardMake,
+                "cardModel": card.cardModel,
+                "cardYear": card.cardYear,
+                "imageURL": card.imageURL,
+                "heatCount": card.heatCount,
+                "heatedBy": card.heatedBy,
+                "customFrame": card.customFrame ?? "",
+                "addedToFeatured": FieldValue.serverTimestamp()
+            ], forDocument: docRef, merge: true)
+        }
+        
+        batch.commit { error in
+            if let error = error {
+                print("❌ Failed to persist featured cards: \(error)")
+            } else {
+                print("⭐ Persisted \(cards.count) cards to featured collection")
+                // Reload the full featured list
+                self.loadAllFeatured()
+            }
+        }
+    }
+    
+    /// Load ALL cards that have ever been featured
+    func loadAllFeatured() {
+        db.collection("featured_cards")
+            .order(by: "heatCount", descending: true)
+            .getDocuments { [weak self] snapshot, error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    print("❌ Failed to load all featured: \(error)")
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else { return }
+                
+                self.allFeaturedCards = documents.compactMap { doc -> FriendActivity? in
+                    let data = doc.data()
+                    return FriendActivity(
+                        id: data["activityId"] as? String ?? doc.documentID,
+                        userId: data["userId"] as? String ?? "",
+                        username: data["username"] as? String ?? "",
+                        cardId: data["cardId"] as? String ?? "",
+                        cardMake: data["cardMake"] as? String ?? "",
+                        cardModel: data["cardModel"] as? String ?? "",
+                        cardYear: data["cardYear"] as? String ?? "",
+                        imageURL: data["imageURL"] as? String ?? "",
+                        heatCount: data["heatCount"] as? Int ?? 0,
+                        heatedBy: data["heatedBy"] as? [String] ?? [],
+                        customFrame: data["customFrame"] as? String,
+                        timestamp: (data["addedToFeatured"] as? Timestamp)?.dateValue() ?? Date()
+                    )
+                }
+                
+                print("⭐ All-time featured: \(self.allFeaturedCards.count) cards")
+            }
+    }
+    
     deinit {
         listener?.remove()
         countdownTimer?.invalidate()
