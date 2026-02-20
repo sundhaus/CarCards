@@ -421,7 +421,17 @@ struct CameraView: View {
                     }
             )
             
-            // Content safety check overlay
+            // Content safety gate — triggers when image is captured
+            if camera.capturedImage != nil && contentCheckedImage == nil && !isCheckingContent && !contentRejected {
+                Color.clear
+                    .onAppear {
+                        if let image = camera.capturedImage {
+                            checkContentSafety(image: image)
+                        }
+                    }
+            }
+            
+            // Checking overlay
             if isCheckingContent {
                 ZStack {
                     Color.black.opacity(0.85)
@@ -521,13 +531,6 @@ struct CameraView: View {
         .onDisappear {
             camera.stopSession()
             OrientationManager.unlockOrientation()
-        }
-        .onChange(of: camera.capturedImage) { _, newImage in
-            guard let image = newImage else {
-                contentCheckedImage = nil
-                return
-            }
-            checkContentSafety(image: image)
         }
     }
     
