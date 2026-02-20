@@ -111,15 +111,19 @@ class LiDARDepthScanner: NSObject, ARSessionDelegate {
         
         print("🔍 LiDAR depth: samples=\(depthValues.count), mean=\(String(format: "%.3f", mean))m, range=\(String(format: "%.3f", fullRange))m, IQR=\(String(format: "%.3f", iqr))m, min=\(String(format: "%.3f", minDepth))m, max=\(String(format: "%.3f", maxDepth))m")
         
-        // A screen is a flat surface:
-        // - IQR (middle 50% of depths) should be very tight (< 0.10m)
-        // - Mean distance typically < 1.5m (arm's length to a monitor)
+        // A screen held up to the camera:
+        // - Very close: mean < 0.75m (arm's length)
+        // - Very flat: IQR < 0.05m (entire surface at same distance)
         //
-        // A real scene (car, person, outdoors):
-        // - IQR will be large (> 0.20m) because objects are at varied distances
-        // - Even a car close up has hood, windshield, background at different depths
+        // A real car even at close range:
+        // - Has hood, windshield, roof, background at different depths
+        // - IQR will be > 0.15m even up close
+        //
+        // A person at close range:
+        // - Has face, shoulders, background at different depths
+        // - IQR will be > 0.10m
         
-        if iqr < 0.10 && mean < 1.5 {
+        if iqr < 0.05 && mean < 0.75 {
             print("🚫 LiDAR: flat surface — IQR \(String(format: "%.3f", iqr))m at \(String(format: "%.2f", mean))m (likely screen)")
             return true
         }
@@ -657,9 +661,10 @@ struct CameraView: View {
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
             locationService.requestPermission()
-            // Start LiDAR first, then camera after ARKit has settled
-            if LiDARDepthScanner.shared.isAvailable {
-                LiDARDepthScanner.shared.start()
+            // Start LiDAR (idempotent — won't restart if already running)
+            LiDARDepthScanner.shared.start()
+            // Start camera after LiDAR has settled
+            if LiDARDepthScanner.shared.isAvailable && !camera.session.isRunning {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     camera.checkPermissions()
                 }
@@ -670,7 +675,7 @@ struct CameraView: View {
         .onDisappear {
             camera.stopSession()
             OrientationManager.unlockOrientation()
-            LiDARDepthScanner.shared.stop()
+            // Don't stop LiDAR — keeps running for next camera open
         }
         .onChange(of: camera.captureId) { _, newId in
             guard let newId = newId, newId != lastCheckedId else { return }
