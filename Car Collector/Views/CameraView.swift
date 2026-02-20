@@ -8,6 +8,116 @@
 import SwiftUI
 import AVFoundation
 import Vision
+import ARKit
+
+// MARK: - LiDAR Depth Scanner (runs independently from camera)
+class LiDARDepthScanner: NSObject, ObservableObject, ARSessionDelegate {
+    static let shared = LiDARDepthScanner()
+    
+    private var arSession: ARSession?
+    @Published var isAvailable = false
+    @Published var latestDepthMap: CVPixelBuffer?
+    
+    override init() {
+        super.init()
+        isAvailable = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
+        print("📐 LiDAR available: \(isAvailable)")
+    }
+    
+    func start() {
+        guard isAvailable else {
+            print("📐 LiDAR not available on this device")
+            return
+        }
+        
+        let session = ARSession()
+        session.delegate = self
+        
+        let config = ARWorldTrackingConfiguration()
+        config.frameSemantics = .sceneDepth
+        
+        session.run(config)
+        arSession = session
+        print("📐 LiDAR depth scanning started")
+    }
+    
+    func stop() {
+        arSession?.pause()
+        arSession = nil
+        latestDepthMap = nil
+        print("📐 LiDAR depth scanning stopped")
+    }
+    
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        // Grab depth map every frame — lightweight, just stores the reference
+        if let sceneDepth = frame.sceneDepth {
+            latestDepthMap = sceneDepth.depthMap
+        }
+    }
+    
+    /// Analyze the latest depth map for flatness (screen detection)
+    /// Returns true if the scene appears flat (like a screen)
+    func isSceneFlat() -> Bool {
+        guard let depthMap = latestDepthMap else {
+            print("🔍 LiDAR: no depth map available")
+            return false
+        }
+        
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        
+        let width = CVPixelBufferGetWidth(depthMap)
+        let height = CVPixelBufferGetHeight(depthMap)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+        
+        guard let baseAddress = CVPixelBufferGetBaseAddress(depthMap) else {
+            print("🔍 LiDAR: couldn't read depth buffer")
+            return false
+        }
+        
+        let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
+        let floatsPerRow = bytesPerRow / MemoryLayout<Float32>.size
+        
+        // Sample center 50% of the depth map
+        let startX = width / 4
+        let endX = (width * 3) / 4
+        let startY = height / 4
+        let endY = (height * 3) / 4
+        let step = max(1, (endX - startX) / 15)
+        
+        var depthValues: [Float] = []
+        
+        for y in stride(from: startY, to: endY, by: step) {
+            for x in stride(from: startX, to: endX, by: step) {
+                let value = floatBuffer[y * floatsPerRow + x]
+                if value.isFinite && value > 0 && value < 10 {
+                    depthValues.append(value)
+                }
+            }
+        }
+        
+        guard depthValues.count > 20 else {
+            print("🔍 LiDAR: insufficient samples (\(depthValues.count))")
+            return false
+        }
+        
+        let mean = depthValues.reduce(0, +) / Float(depthValues.count)
+        let variance = depthValues.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Float(depthValues.count)
+        let stdDev = sqrt(variance)
+        let coeffOfVariation = mean > 0 ? stdDev / mean : 0
+        
+        print("🔍 LiDAR depth: samples=\(depthValues.count), mean=\(String(format: "%.3f", mean))m, stdDev=\(String(format: "%.4f", stdDev)), CoV=\(String(format: "%.4f", coeffOfVariation))")
+        
+        // A flat screen: everything at same distance → CoV < 0.05
+        // Real scene: objects at different distances → CoV > 0.10
+        if coeffOfVariation < 0.06 && mean < 1.5 {
+            print("🚫 LiDAR: flat surface detected at \(String(format: "%.2f", mean))m (likely screen)")
+            return true
+        }
+        
+        return false
+    }
+}
 
 // CAMERA SERVICE CLASS - MUST BE FIRST
 class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -540,10 +650,12 @@ struct CameraView: View {
             camera.checkPermissions()
             OrientationManager.lockOrientation(.portrait)
             locationService.requestPermission()
+            LiDARDepthScanner.shared.start()
         }
         .onDisappear {
             camera.stopSession()
             OrientationManager.unlockOrientation()
+            LiDARDepthScanner.shared.stop()
         }
         .onChange(of: camera.captureId) { _, newId in
             guard let newId = newId, newId != lastCheckedId else { return }
@@ -594,116 +706,12 @@ struct CameraView: View {
         }
     }
     
-    // MARK: - Screen Photo Detection (lens focus + brightness)
+    // MARK: - Screen Photo Detection (LiDAR)
     
-    /// Detects photos of screens using camera hardware metadata:
-    /// - Lens position (focus distance) — screens are flat and close
-    /// - EXIF subject distance — if available
-    /// - Brightness uniformity — screens emit uniform light
     private func detectScreenPhoto(image: UIImage) -> Bool {
-        guard let device = camera.currentDevice else {
-            print("🔍 Screen detection: no device — skipping")
-            return false
-        }
-        
-        let lensPosition = device.lensPosition  // 0.0 = infinity, 1.0 = nearest
-        
-        // Extract EXIF data
-        var subjectDistance: Float? = nil
-        var brightnessValue: Float? = nil
-        
-        if let metadata = camera.lastPhotoMetadata,
-           let exif = metadata["{Exif}"] as? [String: Any] {
-            subjectDistance = exif["SubjectDistance"] as? Float
-            brightnessValue = exif["BrightnessValue"] as? Float
-            print("🔍 EXIF: SubjectDistance=\(subjectDistance.map { String(format: "%.2f", $0) } ?? "nil"), Brightness=\(brightnessValue.map { String(format: "%.2f", $0) } ?? "nil")")
-        }
-        
-        print("🔍 Screen detection: lensPosition=\(String(format: "%.3f", lensPosition))")
-        
-        // Check 1: Very close focus + screen-like brightness
-        if lensPosition > 0.65 {
-            if let brightness = brightnessValue, brightness > 4.0 {
-                print("🚫 Detected: close focus + high brightness (likely screen)")
-                return true
-            }
-            if let distance = subjectDistance, distance < 0.5 {
-                print("🚫 Detected: subject distance < 0.5m with close focus (likely screen)")
-                return true
-            }
-        }
-        
-        // Check 2: Brightness uniformity (screens emit uniform light)
-        if let cgImage = image.cgImage {
-            let isUniformBrightness = checkBrightnessUniformity(cgImage: cgImage)
-            if isUniformBrightness && lensPosition > 0.5 {
-                print("🚫 Detected: uniform brightness + moderate close focus (likely screen)")
-                return true
-            }
-        }
-        
-        return false
+        return LiDARDepthScanner.shared.isSceneFlat()
     }
     
-    /// Check if the image has unnaturally uniform brightness (screen-like)
-    private func checkBrightnessUniformity(cgImage: CGImage) -> Bool {
-        let width = cgImage.width
-        let height = cgImage.height
-        
-        let regions: [(Int, Int)] = [
-            (width / 2, height / 2),
-            (width / 2, height / 4),
-            (width / 2, height * 3 / 4),
-            (width / 4, height / 2),
-            (width * 3 / 4, height / 2)
-        ]
-        
-        guard let data = cgImage.dataProvider?.data,
-              let ptr = CFDataGetBytePtr(data) else { return false }
-        
-        let bytesPerPixel = cgImage.bitsPerPixel / 8
-        let bytesPerRow = cgImage.bytesPerRow
-        
-        var brightnessValues: [Float] = []
-        
-        for (x, y) in regions {
-            var regionBrightness: Float = 0
-            var count: Float = 0
-            
-            for dy in -5..<5 {
-                for dx in -5..<5 {
-                    let px = min(max(x + dx, 0), width - 1)
-                    let py = min(max(y + dy, 0), height - 1)
-                    let offset = py * bytesPerRow + px * bytesPerPixel
-                    
-                    guard offset + 2 < CFDataGetLength(data) else { continue }
-                    
-                    let r = Float(ptr[offset])
-                    let g = Float(ptr[offset + 1])
-                    let b = Float(ptr[offset + 2])
-                    regionBrightness += (0.299 * r + 0.587 * g + 0.114 * b)
-                    count += 1
-                }
-            }
-            
-            if count > 0 {
-                brightnessValues.append(regionBrightness / count)
-            }
-        }
-        
-        guard brightnessValues.count >= 5 else { return false }
-        
-        let mean = brightnessValues.reduce(0, +) / Float(brightnessValues.count)
-        let maxDiff = brightnessValues.map { abs($0 - mean) }.max() ?? 0
-        let normalizedDiff = mean > 0 ? maxDiff / mean : 1.0
-        
-        print("🔍 Brightness uniformity: mean=\(String(format: "%.1f", mean)), maxDiff=\(String(format: "%.1f", maxDiff)), normalized=\(String(format: "%.3f", normalizedDiff))")
-        
-        // Screens: normalizedDiff < 0.15, mean > 80
-        // Real scenes: normalizedDiff > 0.20
-        return normalizedDiff < 0.15 && mean > 80
-    }
-
     // MARK: - Vision Classification Check (screen + sensitivity combined)
     
     private enum VisionResult {
