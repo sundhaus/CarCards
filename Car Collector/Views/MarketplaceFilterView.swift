@@ -50,18 +50,33 @@ struct MarketplaceFilterView: View {
     }
     
     private var availableCategories: [String] {
-        let categories = marketplaceService.activeListings.compactMap { $0.category }.filter { !$0.isEmpty }
+        // Look up categories from local card specs for cards on the market
+        let localCards = CardStorage.loadCards()
+        let categories = marketplaceService.activeListings.compactMap { listing -> String? in
+            if let match = localCards.first(where: {
+                $0.make == listing.make && $0.model == listing.model && $0.year == listing.year
+            }) {
+                return match.specs?.category?.rawValue
+            }
+            return nil
+        }
         guard !categories.isEmpty else { return ["Any"] }
         return ["Any"] + Set(categories).sorted()
     }
     
     // Apply all filters
     private var filteredListings: [CloudListing] {
-        marketplaceService.activeListings.filter { listing in
+        let localCards = CardStorage.loadCards()
+        return marketplaceService.activeListings.filter { listing in
             if filterMake != "Any" && listing.make != filterMake { return false }
             if filterModel != "Any" && listing.model != filterModel { return false }
             if filterYear != "Any" && listing.year != filterYear { return false }
-            if filterCategory != "Any" && listing.category != filterCategory { return false }
+            if filterCategory != "Any" {
+                let cat = localCards.first(where: {
+                    $0.make == listing.make && $0.model == listing.model && $0.year == listing.year
+                })?.specs?.category?.rawValue
+                if cat != filterCategory { return false }
+            }
             if let min = Double(bidMinPrice), listing.currentBid < min && listing.currentBid > 0 { return false }
             if let max = Double(bidMaxPrice), listing.currentBid > max { return false }
             if let min = Double(buyMinPrice), listing.buyNowPrice < min { return false }

@@ -29,7 +29,6 @@ struct CloudListing: Identifiable {
     var expirationDate: Date
     var status: ListingStatus
     var customFrame: String?  // Custom border: "None", "White", "Black"
-    var category: String?  // VehicleCategory raw value for filtering
     
     enum ListingStatus: String, Codable {
         case active
@@ -60,7 +59,6 @@ struct CloudListing: Identifiable {
         self.expirationDate = (data["expirationDate"] as? Timestamp)?.dateValue() ?? Date()
         self.status = ListingStatus(rawValue: data["status"] as? String ?? "active") ?? .active
         self.customFrame = data["customFrame"] as? String
-        self.category = data["category"] as? String
     }
     
     var dictionary: [String: Any] {
@@ -144,8 +142,7 @@ class MarketplaceService: ObservableObject {
         card: CloudCard,
         minStartBid: Double,
         buyNowPrice: Double,
-        duration: Int,
-        category: String? = nil
+        duration: Int
     ) async throws -> CloudListing {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
@@ -179,11 +176,6 @@ class MarketplaceService: ObservableObject {
         // Add customFrame if present
         if let frame = card.customFrame {
             data["customFrame"] = frame
-        }
-        
-        // Add category if present
-        if let category = category {
-            data["category"] = category
         }
         
         try await listingsCollection.document(listingId).setData(data)
@@ -401,45 +393,9 @@ class MarketplaceService: ObservableObject {
             
             guard let documents = snapshot?.documents else { return }
             
-            Task { @MainActor [weak self] in
-                var listings = documents.compactMap { CloudListing(document: $0) }
+            Task { @MainActor in
+                self?.activeListings = documents.compactMap { CloudListing(document: $0) }
                     .filter { !$0.isExpired }
-                
-                // Backfill category for listings missing it
-                let localCards = CardStorage.loadCards()
-                let listingsToBackfill = listings.indices.filter {
-                    listings[$0].category == nil || listings[$0].category?.isEmpty == true
-                }
-                
-                for i in listingsToBackfill {
-                    let listing = listings[i]
-                    
-                    // Try 1: Match from local saved cards
-                    if let match = localCards.first(where: {
-                        $0.make == listing.make && $0.model == listing.model && $0.year == listing.year
-                    }), let cat = match.specs?.category?.rawValue {
-                        listings[i].category = cat
-                        let lid = listing.id
-                        Task { try? await self?.listingsCollection.document(lid).updateData(["category": cat]) }
-                        continue
-                    }
-                    
-                    // Try 2: Look up from friend_activities by cardId
-                    if !listing.cardId.isEmpty {
-                        let snap = try? await self?.db.collection("friend_activities")
-                            .whereField("cardId", isEqualTo: listing.cardId)
-                            .limit(to: 1)
-                            .getDocuments()
-                        if let doc = snap?.documents.first,
-                           let cat = doc.data()["category"] as? String, !cat.isEmpty {
-                            listings[i].category = cat
-                            let lid = listing.id
-                            Task { try? await self?.listingsCollection.document(lid).updateData(["category": cat]) }
-                        }
-                    }
-                }
-                
-                self?.activeListings = listings
                 self?.isLoading = false
             }
         }
