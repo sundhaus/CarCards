@@ -470,17 +470,18 @@ struct UserProfileView: View {
             userCards = try await CardService.shared.fetchUserCards(uid: userId)
             
             // Determine crown card ID — prefer local data for own profile
+            let isOwnProfile = userId == UserService.shared.currentProfile?.id
             let crownId: String? = {
-                if userId == UserService.shared.currentProfile?.id {
-                    // Own profile: use local crown ID (most up-to-date)
+                if isOwnProfile {
                     return UserService.shared.crownCardId
                 } else {
                     return userProfile?.crownCardId
                 }
             }()
             
+            print("⭐ Profile crown lookup: isOwn=\(isOwnProfile), crownId=\(crownId ?? "nil"), cards=\(userCards.count)")
             if let crownId = crownId {
-                print("👑 Looking for crown card: '\(crownId)' among \(userCards.count) cards")
+                print("⭐ Card IDs: \(userCards.prefix(5).map { $0.id })")
                 crownCard = userCards.first(where: { $0.id == crownId })
                 
                 if crownCard == nil {
