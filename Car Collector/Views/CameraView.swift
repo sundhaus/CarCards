@@ -8,17 +8,18 @@
 import SwiftUI
 import AVFoundation
 
-// MARK: - LiDAR Depth Scanner (AVFoundation only, no ARKit)
+// MARK: - LiDAR Depth Scanner (uses main camera session's depth output)
 class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
     static let shared = LiDARDepthScanner()
     
     let isAvailable: Bool
-    private var depthSession: AVCaptureSession?
     private var latestDepthMap: CVPixelBuffer?
+    private var isAttached = false
     var hasDepthData: Bool { latestDepthMap != nil }
+    let depthOutput = AVCaptureDepthDataOutput()
     
     override init() {
-        // Check if a LiDAR-capable depth camera exists
+        // Check if device has LiDAR
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.builtInLiDARDepthCamera],
             mediaType: .video,
@@ -26,57 +27,34 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
         )
         isAvailable = !discovery.devices.isEmpty
         super.init()
+        depthOutput.isFilteringEnabled = true
+        depthOutput.setDelegate(self, callbackQueue: DispatchQueue(label: "depthQueue"))
         print("📐 LiDAR available: \(isAvailable)")
     }
     
+    /// Attach depth output to an existing camera session
+    func attachToSession(_ session: AVCaptureSession) {
+        guard isAvailable, !isAttached else { return }
+        
+        session.beginConfiguration()
+        if session.canAddOutput(depthOutput) {
+            session.addOutput(depthOutput)
+            isAttached = true
+            print("📐 LiDAR depth output attached to camera session")
+        } else {
+            print("⚠️ Could not add depth output to session")
+        }
+        session.commitConfiguration()
+    }
+    
     func start() {
-        guard isAvailable, depthSession == nil else { return }
-        
-        let session = AVCaptureSession()
-        session.sessionPreset = .inputPriority
-        
-        // Find LiDAR depth camera
-        guard let device = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.builtInLiDARDepthCamera],
-            mediaType: .video,
-            position: .back
-        ).devices.first else {
-            print("📐 No LiDAR device found")
-            return
-        }
-        
-        do {
-            let input = try AVCaptureDeviceInput(device: device)
-            if session.canAddInput(input) {
-                session.addInput(input)
-            }
-            
-            let depthOutput = AVCaptureDepthDataOutput()
-            depthOutput.isFilteringEnabled = true
-            depthOutput.setDelegate(self, callbackQueue: DispatchQueue(label: "depthQueue"))
-            
-            if session.canAddOutput(depthOutput) {
-                session.addOutput(depthOutput)
-            }
-            
-            DispatchQueue.global(qos: .userInitiated).async {
-                session.startRunning()
-                print("📐 LiDAR depth session started (AVFoundation)")
-            }
-            
-            depthSession = session
-        } catch {
-            print("📐 LiDAR setup error: \(error)")
-        }
+        // No-op — depth comes from main camera session
     }
     
     func stop() {
-        depthSession?.stopRunning()
-        depthSession = nil
         latestDepthMap = nil
     }
     
-    // AVCaptureDepthDataOutputDelegate
     func depthDataOutput(_ output: AVCaptureDepthDataOutput,
                          didOutput depthData: AVDepthData,
                          timestamp: CMTime,
@@ -250,6 +228,14 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 
                 if self.output.availableRawPhotoPixelFormatTypes.count > 0 {
                     self.output.isAppleProRAWEnabled = self.output.isAppleProRAWSupported
+                }
+                
+                // Attach LiDAR depth output to this session
+                if LiDARDepthScanner.shared.isAvailable {
+                    if self.session.canAddOutput(LiDARDepthScanner.shared.depthOutput) {
+                        self.session.addOutput(LiDARDepthScanner.shared.depthOutput)
+                        print("📐 LiDAR depth output attached to camera session")
+                    }
                 }
                 
                 self.session.commitConfiguration()
@@ -710,25 +696,17 @@ struct CameraView: View {
         contentRejected = false
         rejectionMessage = ""
         
-        // Ensure LiDAR is running
-        LiDARDepthScanner.shared.start()
+        // LiDAR depth check — is the scene flat (screen)?
+        let isFlat = LiDARDepthScanner.shared.isSceneFlat()
         
-        // Give LiDAR time to get a depth frame if it just started
-        let hasDepth = LiDARDepthScanner.shared.hasDepthData
-        let delay: Double = hasDepth ? 0 : 1.5
+        isCheckingContent = false
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            let isFlat = LiDARDepthScanner.shared.isSceneFlat()
-            
-            self.isCheckingContent = false
-            
-            if isFlat {
-                self.contentRejected = true
-                self.rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
-                print("🚫 Image rejected: flat surface detected by LiDAR")
-            } else {
-                self.contentCheckedImage = image
-            }
+        if isFlat {
+            contentRejected = true
+            rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
+            print("🚫 Image rejected: flat surface detected by LiDAR")
+        } else {
+            contentCheckedImage = image
         }
     }
 }
