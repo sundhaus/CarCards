@@ -29,6 +29,7 @@ struct CloudListing: Identifiable {
     var expirationDate: Date
     var status: ListingStatus
     var customFrame: String?  // Custom border: "None", "White", "Black"
+    var category: String?  // VehicleCategory raw value for filtering
     
     enum ListingStatus: String, Codable {
         case active
@@ -59,6 +60,7 @@ struct CloudListing: Identifiable {
         self.expirationDate = (data["expirationDate"] as? Timestamp)?.dateValue() ?? Date()
         self.status = ListingStatus(rawValue: data["status"] as? String ?? "active") ?? .active
         self.customFrame = data["customFrame"] as? String
+        self.category = data["category"] as? String
     }
     
     var dictionary: [String: Any] {
@@ -142,7 +144,8 @@ class MarketplaceService: ObservableObject {
         card: CloudCard,
         minStartBid: Double,
         buyNowPrice: Double,
-        duration: Int
+        duration: Int,
+        category: String? = nil
     ) async throws -> CloudListing {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
@@ -176,6 +179,11 @@ class MarketplaceService: ObservableObject {
         // Add customFrame if present
         if let frame = card.customFrame {
             data["customFrame"] = frame
+        }
+        
+        // Add category if present
+        if let category = category {
+            data["category"] = category
         }
         
         try await listingsCollection.document(listingId).setData(data)

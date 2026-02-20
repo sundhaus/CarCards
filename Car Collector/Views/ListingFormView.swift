@@ -176,7 +176,8 @@ struct ListingFormView: View {
                 card: cloudCard,
                 minStartBid: minBid,
                 buyNowPrice: buyNow,
-                duration: selectedDuration
+                duration: selectedDuration,
+                category: card.specs?.category?.rawValue
             )
             
             print("✅ Successfully created listing for \(cloudCard.make) \(cloudCard.model)")

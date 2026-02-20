@@ -16,6 +16,7 @@ struct MarketplaceFilterView: View {
     @State private var filterMake = "Any"
     @State private var filterModel = "Any"
     @State private var filterYear = "Any"
+    @State private var filterCategory = "Any"
     @State private var bidMinPrice = ""
     @State private var bidMaxPrice = ""
     @State private var buyMinPrice = ""
@@ -48,12 +49,18 @@ struct MarketplaceFilterView: View {
         return ["Any"] + years.sorted()
     }
     
+    private var availableCategories: [String] {
+        // Show all categories so users can filter even if results may be empty
+        return ["Any"] + VehicleCategory.allCases.map { $0.rawValue }
+    }
+    
     // Apply all filters
     private var filteredListings: [CloudListing] {
         marketplaceService.activeListings.filter { listing in
             if filterMake != "Any" && listing.make != filterMake { return false }
             if filterModel != "Any" && listing.model != filterModel { return false }
             if filterYear != "Any" && listing.year != filterYear { return false }
+            if filterCategory != "Any" && listing.category != filterCategory { return false }
             if let min = Double(bidMinPrice), listing.currentBid < min && listing.currentBid > 0 { return false }
             if let max = Double(bidMaxPrice), listing.currentBid > max { return false }
             if let min = Double(buyMinPrice), listing.buyNowPrice < min { return false }
@@ -90,12 +97,50 @@ struct MarketplaceFilterView: View {
                 
                 // Filter content
                 ScrollView {
-                    VStack(spacing: 16) {
-                        // Search by name
-                        searchNameSection
+                    VStack(spacing: 14) {
+                        // Filter pills — full width, single column (FIFA style)
+                        fullWidthPill(
+                            icon: "car.fill",
+                            label: "Make",
+                            value: filterMake,
+                            options: availableMakes,
+                            onSelect: { make in
+                                filterMake = make
+                                filterModel = "Any"
+                                filterYear = "Any"
+                            }
+                        )
                         
-                        // Filter dropdowns — 2 column grid
-                        filterDropdownGrid
+                        fullWidthPill(
+                            icon: "doc.text",
+                            label: "Model",
+                            value: filterModel,
+                            options: availableModels,
+                            onSelect: { model in
+                                filterModel = model
+                                filterYear = "Any"
+                            }
+                        )
+                        
+                        fullWidthPill(
+                            icon: "calendar",
+                            label: "Year",
+                            value: filterYear,
+                            options: availableYears,
+                            onSelect: { year in
+                                filterYear = year
+                            }
+                        )
+                        
+                        fullWidthPill(
+                            icon: "square.grid.2x2",
+                            label: "Category",
+                            value: filterCategory,
+                            options: availableCategories,
+                            onSelect: { cat in
+                                filterCategory = cat
+                            }
+                        )
                         
                         // Bid Price range
                         priceRangeSection(title: "Bid Price:", minBinding: $bidMinPrice, maxBinding: $bidMaxPrice)
@@ -125,111 +170,48 @@ struct MarketplaceFilterView: View {
         }
     }
     
-    // MARK: - Search Name Section
+    // MARK: - Full Width Filter Pill
     
-    private var searchNameSection: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.pTitle3)
-                .foregroundStyle(.secondary)
-            
-            Text("Search by Make or Model")
-                .font(.pBody)
-                .foregroundStyle(.secondary)
-            
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
-    }
-    
-    // MARK: - Filter Dropdown Grid
-    
-    private var filterDropdownGrid: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 10) {
-                filterPill(
-                    icon: "car.fill",
-                    label: filterMake == "Any" ? "Make" : filterMake,
-                    isActive: filterMake != "Any",
-                    options: availableMakes,
-                    onSelect: { make in
-                        filterMake = make
-                        filterModel = "Any"
-                        filterYear = "Any"
-                    }
-                )
-                
-                filterPill(
-                    icon: "doc.text",
-                    label: filterModel == "Any" ? "Model" : filterModel,
-                    isActive: filterModel != "Any",
-                    options: availableModels,
-                    onSelect: { model in
-                        filterModel = model
-                        filterYear = "Any"
-                    }
-                )
-            }
-            
-            HStack(spacing: 10) {
-                filterPill(
-                    icon: "calendar",
-                    label: filterYear == "Any" ? "Year" : filterYear,
-                    isActive: filterYear != "Any",
-                    options: availableYears,
-                    onSelect: { year in
-                        filterYear = year
-                    }
-                )
-                
-                // Placeholder for future filter
-                Color.clear
-                    .frame(height: 48)
-            }
-        }
-    }
-    
-    // MARK: - Filter Pill
-    
-    private func filterPill(
+    private func fullWidthPill(
         icon: String,
         label: String,
-        isActive: Bool,
+        value: String,
         options: [String],
         onSelect: @escaping (String) -> Void
     ) -> some View {
-        Menu {
+        let isActive = value != "Any"
+        let isDisabled = options.count <= 1
+        
+        return Menu {
             Button("Any") { onSelect("Any") }
             Divider()
             ForEach(options.filter { $0 != "Any" }, id: \.self) { option in
                 Button(option) { onSelect(option) }
             }
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.system(size: 16))
                     .foregroundStyle(isActive ? .white : .secondary)
+                    .frame(width: 24)
                 
-                Text(label)
+                Text(isActive ? value : label)
                     .font(.pSubheadline)
                     .fontWeight(.medium)
-                    .foregroundStyle(isActive ? .white : .secondary)
-                    .lineLimit(1)
+                    .foregroundStyle(isActive ? Color.white : isDisabled ? Color.secondary.opacity(0.4) : Color.secondary)
                 
                 Spacer()
                 
                 Image(systemName: "arrowtriangle.down.fill")
                     .font(.system(size: 8))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isDisabled ? Color.secondary.opacity(0.3) : Color.secondary)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
             .background(.clear)
             .glassEffect(.regular, in: .rect(cornerRadius: 10))
         }
+        .disabled(isDisabled)
     }
     
     // MARK: - Price Range Section
@@ -378,6 +360,7 @@ struct MarketplaceFilterView: View {
         filterMake = "Any"
         filterModel = "Any"
         filterYear = "Any"
+        filterCategory = "Any"
         bidMinPrice = ""
         bidMaxPrice = ""
         buyMinPrice = ""
@@ -389,6 +372,7 @@ struct MarketplaceFilterView: View {
         if filterMake != "Any" { parts.append(filterMake) }
         if filterModel != "Any" { parts.append(filterModel) }
         if filterYear != "Any" { parts.append(filterYear) }
+        if filterCategory != "Any" { parts.append(filterCategory) }
         return parts.isEmpty ? "All Listings" : parts.joined(separator: " ")
     }
 }
