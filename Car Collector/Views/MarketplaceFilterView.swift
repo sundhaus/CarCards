@@ -193,24 +193,26 @@ struct MarketplaceFilterView: View {
                 Button(option) { onSelect(option) }
             }
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.system(size: 14))
                     .foregroundStyle(isActive ? .white : .secondary)
-                    .frame(width: 24)
+                    .frame(width: 20)
                 
                 Text(isActive ? value : label)
                     .font(.pSubheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(isActive ? Color.white : isDisabled ? Color.secondary.opacity(0.4) : Color.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 
-                Spacer()
+                Spacer(minLength: 4)
                 
                 Image(systemName: "arrowtriangle.down.fill")
                     .font(.system(size: 8))
                     .foregroundStyle(isDisabled ? Color.secondary.opacity(0.3) : Color.secondary)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
             .padding(.vertical, 14)
             .background(.clear)
             .glassEffect(.regular, in: .rect(cornerRadius: 10))
