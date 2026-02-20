@@ -667,8 +667,11 @@ struct CameraView: View {
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
             locationService.requestPermission()
-            LiDARDepthScanner.shared.start()
             camera.checkPermissions()
+            // Start LiDAR after camera has fully initialized
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                LiDARDepthScanner.shared.start()
+            }
         }
         .onDisappear {
             camera.stopSession()
