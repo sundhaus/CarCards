@@ -83,6 +83,9 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                     self.session.addInput(input)
                 }
                 
+                // Remove and re-add outputs to reset configuration
+                self.session.outputs.forEach { self.session.removeOutput($0) }
+                
                 if self.session.canAddOutput(self.output) {
                     self.session.addOutput(self.output)
                 }
@@ -92,7 +95,18 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                     self.session.addOutput(self.videoOutput)
                 }
                 
-                self.session.sessionPreset = .photo
+                // Virtual devices need .inputPriority to control their own format
+                let isVirtualDevice = device.deviceType == .builtInDualCamera ||
+                                      device.deviceType == .builtInDualWideCamera ||
+                                      device.deviceType == .builtInTripleCamera
+                
+                if isVirtualDevice {
+                    self.session.sessionPreset = .inputPriority
+                    print("📐 Virtual device — using .inputPriority preset")
+                } else {
+                    self.session.sessionPreset = .photo
+                }
+                
                 self.output.maxPhotoQualityPrioritization = .quality
                 
                 // Enable depth data for screen detection
@@ -103,7 +117,8 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                     print("⚠️ Depth data not supported on this device")
                 }
                 
-                if self.output.availableRawPhotoPixelFormatTypes.count > 0 {
+                // Only enable RAW on non-virtual devices (can cause crashes on virtual)
+                if !isVirtualDevice && self.output.availableRawPhotoPixelFormatTypes.count > 0 {
                     self.output.isAppleProRAWEnabled = self.output.isAppleProRAWSupported
                 }
                 
@@ -240,21 +255,30 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     func capturePhoto() {
         let settings: AVCapturePhotoSettings
         
-        switch captureMode {
-        case .heif:
+        // Virtual devices don't support RAW — always use HEIF
+        let isVirtualDevice = currentDevice?.deviceType == .builtInDualCamera ||
+                              currentDevice?.deviceType == .builtInDualWideCamera ||
+                              currentDevice?.deviceType == .builtInTripleCamera
+        
+        if isVirtualDevice {
             settings = AVCapturePhotoSettings()
-        case .raw:
-            if let rawFormat = output.availableRawPhotoPixelFormatTypes.first {
-                settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat)
-            } else {
+        } else {
+            switch captureMode {
+            case .heif:
                 settings = AVCapturePhotoSettings()
-            }
-        case .heifRaw:
-            if let rawFormat = output.availableRawPhotoPixelFormatTypes.first {
-                settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat,
-                                                 processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
-            } else {
-                settings = AVCapturePhotoSettings()
+            case .raw:
+                if let rawFormat = output.availableRawPhotoPixelFormatTypes.first {
+                    settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat)
+                } else {
+                    settings = AVCapturePhotoSettings()
+                }
+            case .heifRaw:
+                if let rawFormat = output.availableRawPhotoPixelFormatTypes.first {
+                    settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat,
+                                                     processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
+                } else {
+                    settings = AVCapturePhotoSettings()
+                }
             }
         }
         
