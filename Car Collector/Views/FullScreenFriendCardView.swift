@@ -19,8 +19,6 @@ struct FullScreenFriendCardView: View {
     @State private var profileImage: UIImage?
     @State private var showHeartAnimation = false
     @State private var hasLiked = false
-    @State private var tapCount = 0
-    @State private var tapWorkItem: DispatchWorkItem?
     
     private var currentUserId: String? {
         FirebaseManager.shared.currentUserId
@@ -167,8 +165,23 @@ struct FullScreenFriendCardView: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            handleTap()
+        .onTapGesture(count: 2) {
+            toggleHeat()
+        }
+        .onTapGesture(count: 1) {
+            guard !isFetchingSpecs else { return }
+            if specsAreComplete(fetchedSpecs) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    flipDegrees += 180
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isFlipped.toggle()
+                    }
+                }
+            } else {
+                Task {
+                    await fetchSpecs()
+                }
+            }
         }
         .overlay {
             if showHeartAnimation {
@@ -178,34 +191,6 @@ struct FullScreenFriendCardView: View {
                     .shadow(color: .black.opacity(0.5), radius: 10)
                     .transition(.scale.combined(with: .opacity))
             }
-        }
-    }
-    
-    private func handleTap() {
-        tapCount += 1
-        tapWorkItem?.cancel()
-        
-        if tapCount == 2 {
-            tapCount = 0
-            toggleHeat()
-        } else {
-            let work = DispatchWorkItem {
-                tapCount = 0
-                // Single tap — flip card
-                guard !isFetchingSpecs else { return }
-                if specsAreComplete(fetchedSpecs) {
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                        flipDegrees += 180
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            isFlipped.toggle()
-                        }
-                    }
-                } else {
-                    Task { await fetchSpecs() }
-                }
-            }
-            tapWorkItem = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
         }
     }
     

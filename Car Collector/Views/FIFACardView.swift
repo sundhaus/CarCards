@@ -16,8 +16,6 @@ struct FIFACardView: View {
     @State private var isLoadingImage = false
     @State private var showHeartAnimation = false
     @State private var hasLiked = false
-    @State private var tapCount = 0
-    @State private var tapWorkItem: DispatchWorkItem?
     
     private var cardWidth: CGFloat { height * (16/9) }
     
@@ -111,8 +109,11 @@ struct FIFACardView: View {
         .clipShape(RoundedRectangle(cornerRadius: height * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
         .contentShape(Rectangle())
-        .onTapGesture {
-            handleTap()
+        .onTapGesture(count: 2) {
+            toggleHeat()
+        }
+        .onTapGesture(count: 1) {
+            onSingleTap?()
         }
         .onAppear {
             loadImage()
@@ -128,28 +129,6 @@ struct FIFACardView: View {
         if hasLiked && !alreadyInServer { return 1 }
         if !hasLiked && alreadyInServer { return -1 }
         return 0
-    }
-    
-    // MARK: - Tap Handling (Instagram-style)
-    
-    private func handleTap() {
-        tapCount += 1
-        tapWorkItem?.cancel()
-        
-        if tapCount == 2 {
-            // Double tap — toggle heat
-            tapCount = 0
-            toggleHeat()
-        } else {
-            // Wait briefly for potential second tap
-            let work = DispatchWorkItem {
-                // Single tap — fire callback
-                tapCount = 0
-                onSingleTap?()
-            }
-            tapWorkItem = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
-        }
     }
     
     private func toggleHeat() {
