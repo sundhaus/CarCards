@@ -182,20 +182,11 @@ struct TransferListView: View {
             ListingDetailView(listing: listing)
         }
         .fullScreenCover(isPresented: $showSellFlow) {
-            // TODO: Replace with GarageSearchView when built
-            NavigationStack {
-                Text("Garage Search — Coming Soon")
-                    .font(.pTitle3)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button(action: { showSellFlow = false }) {
-                                Image(systemName: "xmark")
-                                    .font(.pBody)
-                                    .fontWeight(.semibold)
-                            }
-                        }
-                    }
-            }
+            GarageSearchView(onCardListed: {
+                showSellFlow = false
+                // Refresh transfer list
+                marketplaceService.listenToActiveListings()
+            })
         }
         .onAppear {
             // Listener already started in app startup
