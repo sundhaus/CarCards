@@ -79,7 +79,7 @@ struct ListingDetailView: View {
                     .foregroundStyle(listing.isExpired ? .red : .orange)
                     .cornerRadius(8)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 16)
                 .padding(.top, 18)
                 .padding(.bottom, 10)
                 
@@ -109,8 +109,7 @@ struct ListingDetailView: View {
                 
                 // Seller info pinned to bottom
                 sellerSection
-                    .padding(.horizontal)
-                    .padding(.bottom, 30)
+                    .padding(.bottom, 0)
             }
         }
         .alert("ERROR", isPresented: $showError) {
@@ -352,9 +351,10 @@ struct ListingDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .glassEffect(.regular, in: .rect)
     }
     
     // MARK: - Actions
