@@ -95,7 +95,7 @@ struct GarageView: View {
                         screenWidth: screenGeo.size.width,
                         isShowing: $showContextMenu,
                         isCrowned: {
-                            guard let cardId = card.firebaseId else { return false }
+                            let cardId = card.firebaseId ?? card.id.uuidString
                             return cardId == UserService.shared.crownCardId
                         }(),
                         onCustomize: {
@@ -110,15 +110,11 @@ struct GarageView: View {
                             quickSellCard(card)
                         },
                         onCrownToggle: {
-                            // Must use firebaseId — local UUIDs won't match CloudCard IDs on public profile
-                            guard let cardId = card.firebaseId else {
-                                print("👑 Crown toggle skipped: card has no firebaseId")
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    showContextMenu = false
-                                }
-                                return
+                            let cardId = card.firebaseId ?? card.id.uuidString
+                            if card.firebaseId == nil {
+                                print("⚠️ Crown toggle: card has no firebaseId, using local UUID — won't show on public profile")
                             }
-                            print("👑 Crown toggle: firebaseId=\(cardId)")
+                            print("👑 Crown toggle: \(cardId)")
                             let isCurrentlyCrowned = cardId == UserService.shared.crownCardId
                             UserService.shared.setCrownCard(isCurrentlyCrowned ? nil : cardId)
                             
@@ -200,8 +196,10 @@ struct GarageView: View {
         // Sort: crowned card first, then newest first
         let crownId = UserService.shared.crownCardId
         allCards = cards.sorted { card1, card2 in
-            let card1Crowned = card1.firebaseId == crownId
-            let card2Crowned = card2.firebaseId == crownId
+            let id1 = card1.firebaseId ?? card1.id.uuidString
+            let id2 = card2.firebaseId ?? card2.id.uuidString
+            let card1Crowned = id1 == crownId
+            let card2Crowned = id2 == crownId
             if card1Crowned != card2Crowned { return card1Crowned }
             return card1.capturedDate > card2.capturedDate
         }
@@ -406,7 +404,7 @@ struct GarageView: View {
     
     @ViewBuilder
     private func garageCardCell(card: AnyCard) -> some View {
-        let isCrowned = card.firebaseId != nil && card.firebaseId == UserService.shared.crownCardId
+        let isCrowned = (card.firebaseId ?? card.id.uuidString) == UserService.shared.crownCardId
         
         ZStack(alignment: .topTrailing) {
             UnifiedCardView(card: card, isLargeSize: cardsPerRow == 1)

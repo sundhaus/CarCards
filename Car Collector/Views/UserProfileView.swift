@@ -487,6 +487,19 @@ struct UserProfileView: View {
                     crownCard = userCards.first(where: { $0.id.lowercased() == crownId.lowercased() })
                 }
                 
+                // Fallback: crownId might be a local UUID — resolve via local storage
+                if crownCard == nil {
+                    let localCards = CardStorage.loadCards()
+                    if let localCard = localCards.first(where: { $0.id.uuidString == crownId }),
+                       let fbId = localCard.firebaseId {
+                        crownCard = userCards.first(where: { $0.id == fbId })
+                        if crownCard != nil {
+                            print("👑 Resolved local UUID → firebaseId: \(fbId), auto-fixing")
+                            UserService.shared.setCrownCard(fbId)
+                        }
+                    }
+                }
+                
                 print("👑 Crown card found: \(crownCard != nil)")
             } else {
                 print("👑 No crownCardId for user \(userId)")
