@@ -479,31 +479,40 @@ struct UserProfileView: View {
                 }
             }()
             
-            print("⭐ Profile crown lookup: isOwn=\(isOwnProfile), crownId=\(crownId ?? "nil"), cards=\(userCards.count)")
-            if let crownId = crownId {
-                print("⭐ Card IDs: \(userCards.prefix(5).map { $0.id })")
-                crownCard = userCards.first(where: { $0.id == crownId })
+            print("⭐ Profile crown lookup: isOwn=\(isOwnProfile), crownId='\(crownId ?? "nil")', cards=\(userCards.count)")
+            print("⭐ userId=\(userId), currentProfileId=\(UserService.shared.currentProfile?.id ?? "nil")")
+            
+            if let crownId = crownId, !crownId.isEmpty {
+                print("⭐ Card IDs: \(userCards.map { $0.id })")
                 
-                if crownCard == nil {
-                    crownCard = userCards.first(where: { $0.id.lowercased() == crownId.lowercased() })
+                // Direct match
+                if let match = userCards.first(where: { $0.id == crownId }) {
+                    crownCard = match
+                    print("⭐ Direct match found: \(match.make) \(match.model)")
+                }
+                
+                // Case-insensitive fallback
+                if crownCard == nil, let match = userCards.first(where: { $0.id.lowercased() == crownId.lowercased() }) {
+                    crownCard = match
+                    print("⭐ Case-insensitive match found: \(match.make) \(match.model)")
                 }
                 
                 // Fallback: crownId might be a local UUID — resolve via local storage
                 if crownCard == nil {
                     let localCards = CardStorage.loadCards()
                     if let localCard = localCards.first(where: { $0.id.uuidString == crownId }),
-                       let fbId = localCard.firebaseId {
-                        crownCard = userCards.first(where: { $0.id == fbId })
-                        if crownCard != nil {
-                            print("👑 Resolved local UUID → firebaseId: \(fbId), auto-fixing")
-                            UserService.shared.setCrownCard(fbId)
-                        }
+                       let fbId = localCard.firebaseId,
+                       let match = userCards.first(where: { $0.id == fbId }) {
+                        crownCard = match
+                        print("⭐ Resolved local UUID → firebaseId: \(fbId), auto-fixing")
+                        UserService.shared.setCrownCard(fbId)
                     }
                 }
                 
-                print("👑 Crown card found: \(crownCard != nil)")
+                print("⭐ Crown card result: \(crownCard != nil ? "\(crownCard!.make) \(crownCard!.model)" : "NOT FOUND")")
             } else {
-                print("👑 No crownCardId for user \(userId)")
+                print("⭐ No crownCardId set for user")
+                crownCard = nil
             }
             
             isLoadingCards = false
