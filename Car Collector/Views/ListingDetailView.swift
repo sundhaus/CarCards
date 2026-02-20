@@ -84,11 +84,16 @@ struct ListingDetailView: View {
                 .padding(.bottom, 10)
                 
                 // Card + pricing as one joined unit
-                VStack(spacing: 0) {
-                    cardImageSection
+                ZStack(alignment: .bottom) {
+                    // Pricing container — extends up behind the card
+                    VStack {
+                        Spacer()
+                        pricingSection
+                    }
                     
-                    // Pricing directly below card
-                    pricingSection
+                    // Card image on top, with bottom padding to reveal pricing below
+                    cardImageSection
+                        .padding(.bottom, 70)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .glassEffect(.regular, in: .rect(cornerRadius: 12))
