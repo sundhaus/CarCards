@@ -145,38 +145,13 @@ class UserService: ObservableObject {
     
     // MARK: - Check if Username is Taken
     
-    /// Checks the usernames collection first (fast), falls back to users query
+    /// Checks the usernames collection (no auth required)
     func isUsernameTaken(_ username: String) async throws -> Bool {
         let lowercased = username.lowercased()
         
-        // Primary check: dedicated usernames collection (O(1) lookup)
+        // Check dedicated usernames collection (O(1) lookup, no auth required)
         let usernameDoc = try await usernamesCollection.document(lowercased).getDocument()
-        if usernameDoc.exists {
-            return true
-        }
-        
-        // Fallback: query users collection for backward compatibility
-        // (catches usernames created before the usernames collection existed)
-        let snapshot = try await usersCollection
-            .whereField("usernameLowercase", isEqualTo: lowercased)
-            .limit(to: 1)
-            .getDocuments()
-        
-        if !snapshot.documents.isEmpty {
-            return true
-        }
-        
-        // Also check original username field (for older profiles without usernameLowercase)
-        let legacySnapshot = try await usersCollection
-            .limit(to: 200)
-            .getDocuments()
-        
-        let taken = legacySnapshot.documents.contains { doc in
-            let existingUsername = doc.data()["username"] as? String ?? ""
-            return existingUsername.lowercased() == lowercased
-        }
-        
-        return taken
+        return usernameDoc.exists
     }
     
     // MARK: - Load Profile (with real-time listener)
