@@ -37,16 +37,7 @@ struct CarCardCollectorApp: App {
     private var rootView: some View {
         if showOnboarding {
             OnboardingView(onComplete: {
-                // Cache that onboarding is done and profile exists
-                UserDefaults.standard.set(true, forKey: "onboardingComplete")
-                UserDefaults.standard.set(true, forKey: "profileExists")
-                withAnimation {
-                    showOnboarding = false
-                }
-                startServices()
-                withAnimation {
-                    isReady = true
-                }
+                completeOnboarding()
             })
         } else if isReady {
             ContentView()
@@ -74,6 +65,14 @@ struct CarCardCollectorApp: App {
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
         }
+    }
+    
+    private func completeOnboarding() {
+        UserDefaults.standard.set(true, forKey: "onboardingComplete")
+        UserDefaults.standard.set(true, forKey: "profileExists")
+        startServices()
+        showOnboarding = false
+        isReady = true
     }
     
     private func checkAuthState() async {
@@ -150,8 +149,6 @@ struct CarCardCollectorApp: App {
         // Marketplace listeners — my listings (Transfer List) and my bids (Transfer Targets)
         MarketplaceService.shared.listenToMyListings(uid: uid)
         MarketplaceService.shared.listenToMyBids(uid: uid)
-        
-        isReady = true
         // LevelSystem syncs via UserService listener, no sleep needed
     }
 }
