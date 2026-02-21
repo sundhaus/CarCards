@@ -207,6 +207,7 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 
                 let device = self.availableLenses[self.currentLensIndex]
                 self.currentDevice = device
+                print("📷 Using camera device: \(device.localizedName) (\(device.deviceType.rawValue))")
                 
                 let input = try AVCaptureDeviceInput(device: device)
                 self.session.inputs.forEach { self.session.removeInput($0) }
@@ -258,6 +259,37 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     }
     
     func discoverLenses() {
+        // If LiDAR is available, use the LiDAR depth camera as the primary device
+        // This provides both camera feed AND depth data simultaneously
+        if LiDARDepthScanner.shared.isAvailable {
+            let lidarDiscovery = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [.builtInLiDARDepthCamera],
+                mediaType: .video,
+                position: .back
+            )
+            if let lidarDevice = lidarDiscovery.devices.first {
+                // LiDAR camera is primary, also offer other lenses
+                var lenses: [AVCaptureDevice] = [lidarDevice]
+                
+                let otherDiscovery = AVCaptureDevice.DiscoverySession(
+                    deviceTypes: [.builtInUltraWideCamera, .builtInTelephotoCamera],
+                    mediaType: .video,
+                    position: .back
+                )
+                // Add non-duplicate lenses
+                for device in otherDiscovery.devices {
+                    if device.uniqueID != lidarDevice.uniqueID {
+                        lenses.append(device)
+                    }
+                }
+                
+                availableLenses = lenses
+                print("📐 Using LiDAR depth camera as primary + \(lenses.count - 1) other lenses")
+                return
+            }
+        }
+        
+        // Fallback: no LiDAR, use individual lenses
         let deviceTypes: [AVCaptureDevice.DeviceType] = [
             .builtInUltraWideCamera,
             .builtInWideAngleCamera,
