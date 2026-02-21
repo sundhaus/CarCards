@@ -240,34 +240,43 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                     if self.session.canAddOutput(LiDARDepthScanner.shared.depthOutput) {
                         self.session.addOutput(LiDARDepthScanner.shared.depthOutput)
                         
-                        // Select the best depth format for this device
+                        // For LiDAR depth camera, we may need to select a format with depth support
+                        if device.deviceType == .builtInLiDARDepthCamera {
+                            // Find a format that supports both good video and depth
+                            let formatsWithDepth = device.formats.filter { format in
+                                let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+                                let hasDepth = !format.supportedDepthDataFormats.isEmpty
+                                return hasDepth && dims.width >= 1920
+                            }
+                            
+                            if let bestFormat = formatsWithDepth.last {
+                                try device.lockForConfiguration()
+                                device.activeFormat = bestFormat
+                                
+                                // Select the highest-resolution depth format
+                                if let bestDepth = bestFormat.supportedDepthDataFormats.max(by: {
+                                    CMVideoFormatDescriptionGetDimensions($0.formatDescription).width <
+                                    CMVideoFormatDescriptionGetDimensions($1.formatDescription).width
+                                }) {
+                                    device.activeDepthDataFormat = bestDepth
+                                    let depthDims = CMVideoFormatDescriptionGetDimensions(bestDepth.formatDescription)
+                                    print("📐 Selected depth format: \(depthDims.width)x\(depthDims.height)")
+                                }
+                                
+                                device.unlockForConfiguration()
+                            } else {
+                                print("⚠️ No formats with depth support found at 1920+ width")
+                            }
+                        }
+                        
                         if let depthConnection = LiDARDepthScanner.shared.depthOutput.connection(with: .depthData) {
                             depthConnection.isEnabled = true
-                            print("📐 LiDAR depth output attached + connected ✅")
+                            print("📐 LiDAR depth connected ✅")
                         } else {
-                            // Try selecting a format that supports depth
+                            print("⚠️ No depth connection available")
+                            // Log available depth formats for debugging
                             let depthFormats = device.activeFormat.supportedDepthDataFormats
-                            if let bestDepth = depthFormats.max(by: {
-                                CMVideoFormatDescriptionGetDimensions($0.formatDescription).width <
-                                CMVideoFormatDescriptionGetDimensions($1.formatDescription).width
-                            }) {
-                                try device.lockForConfiguration()
-                                device.activeDepthDataFormat = bestDepth
-                                device.unlockForConfiguration()
-                                print("📐 Set active depth format: \(CMVideoFormatDescriptionGetDimensions(bestDepth.formatDescription))")
-                                
-                                if let depthConnection = LiDARDepthScanner.shared.depthOutput.connection(with: .depthData) {
-                                    depthConnection.isEnabled = true
-                                    print("📐 LiDAR depth connected after format selection ✅")
-                                } else {
-                                    print("⚠️ Still no depth connection after format selection")
-                                }
-                            } else {
-                                print("⚠️ No supported depth formats for this device/format")
-                                print("   Device: \(device.localizedName)")
-                                print("   Active format: \(device.activeFormat)")
-                                print("   Depth formats count: \(depthFormats.count)")
-                            }
+                            print("   Active format depth support: \(depthFormats.count) formats")
                         }
                     } else {
                         print("⚠️ Could not add LiDAR depth output to session")
@@ -283,37 +292,45 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     }
     
     func discoverLenses() {
-        // If LiDAR is available, use the LiDAR depth camera as the primary device
-        // This provides both camera feed AND depth data simultaneously
+        // For LiDAR depth, we need to use the LiDAR depth camera device
+        // which is a virtual device combining wide-angle + LiDAR
         if LiDARDepthScanner.shared.isAvailable {
             let lidarDiscovery = AVCaptureDevice.DiscoverySession(
                 deviceTypes: [.builtInLiDARDepthCamera],
                 mediaType: .video,
                 position: .back
             )
+            
+            // Also get individual lenses
+            let individualDiscovery = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [.builtInUltraWideCamera, .builtInWideAngleCamera, .builtInTelephotoCamera],
+                mediaType: .video,
+                position: .back
+            )
+            
+            // Put LiDAR depth camera first (it provides wide-angle + depth)
+            // Then add ultra-wide and telephoto as alternatives
+            var lenses: [AVCaptureDevice] = []
+            
             if let lidarDevice = lidarDiscovery.devices.first {
-                // LiDAR camera is primary, also offer other lenses
-                var lenses: [AVCaptureDevice] = [lidarDevice]
-                
-                let otherDiscovery = AVCaptureDevice.DiscoverySession(
-                    deviceTypes: [.builtInUltraWideCamera, .builtInTelephotoCamera],
-                    mediaType: .video,
-                    position: .back
-                )
-                // Add non-duplicate lenses
-                for device in otherDiscovery.devices {
-                    if device.uniqueID != lidarDevice.uniqueID {
-                        lenses.append(device)
-                    }
-                }
-                
+                lenses.append(lidarDevice)
+                print("📐 Found LiDAR depth camera: \(lidarDevice.localizedName)")
+            }
+            
+            for device in individualDiscovery.devices {
+                // Skip the regular wide-angle since LiDAR device covers it
+                if device.deviceType == .builtInWideAngleCamera { continue }
+                lenses.append(device)
+            }
+            
+            if !lenses.isEmpty {
                 availableLenses = lenses
-                print("📐 Using LiDAR depth camera as primary + \(lenses.count - 1) other lenses")
+                print("📐 Lenses: \(lenses.map { $0.localizedName })")
                 return
             }
         }
         
-        // Fallback: no LiDAR, use individual lenses
+        // Fallback: no LiDAR
         let deviceTypes: [AVCaptureDevice.DeviceType] = [
             .builtInUltraWideCamera,
             .builtInWideAngleCamera,
