@@ -720,31 +720,58 @@ struct CameraView: View {
             
             // Composer overlays on top when image passes content check
             if let image = contentCheckedImage {
-                CardComposerView(
-                    image: image,
-                    onSave: { image, make, model, color, year, specs in
-                        let card = SavedCard(
-                            image: image,
-                            make: make,
-                            model: model,
-                            color: color,
-                            year: year,
-                            specs: specs,
-                            capturedBy: UserService.shared.currentProfile?.username,
-                            capturedLocation: locationService.currentCity,
-                            previousOwners: 0
-                        )
-                        onCardSaved(card)
-                    },
-                    onRetake: {
-                        // Just clear the image - camera is already running underneath
-                        camera.capturedImage = nil
-                        camera.captureId = nil
-                        contentCheckedImage = nil
-                        lastCheckedId = nil
-                    },
-                    captureType: captureType
-                )
+                if captureType == .driver {
+                    // Driver-only: portrait composer
+                    DriverCardComposerView(
+                        image: image,
+                        onSave: { cardImage in
+                            let card = SavedCard(
+                                image: cardImage,
+                                make: "",
+                                model: "",
+                                color: "",
+                                year: "",
+                                specs: nil,
+                                capturedBy: UserService.shared.currentProfile?.username,
+                                capturedLocation: locationService.currentCity,
+                                previousOwners: 0
+                            )
+                            onCardSaved(card)
+                        },
+                        onRetake: {
+                            camera.capturedImage = nil
+                            camera.captureId = nil
+                            contentCheckedImage = nil
+                            lastCheckedId = nil
+                        }
+                    )
+                } else {
+                    // Vehicle, Driver+Vehicle, Location: landscape composer
+                    CardComposerView(
+                        image: image,
+                        onSave: { image, make, model, color, year, specs in
+                            let card = SavedCard(
+                                image: image,
+                                make: make,
+                                model: model,
+                                color: color,
+                                year: year,
+                                specs: specs,
+                                capturedBy: UserService.shared.currentProfile?.username,
+                                capturedLocation: locationService.currentCity,
+                                previousOwners: 0
+                            )
+                            onCardSaved(card)
+                        },
+                        onRetake: {
+                            camera.capturedImage = nil
+                            camera.captureId = nil
+                            contentCheckedImage = nil
+                            lastCheckedId = nil
+                        },
+                        captureType: captureType
+                    )
+                }
             }
         }
         .onAppear {
