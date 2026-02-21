@@ -775,6 +775,7 @@ struct CameraView: View {
             guard let image = camera.capturedImage else { return }
             lastCheckedId = newId
             print("🔒 Content check triggered for captureId=\(newId), type=\(captureType)")
+            print("🔒 captureType == .driver: \(captureType == .driver)")
             checkContentSafety(image: image)
         }
     }
