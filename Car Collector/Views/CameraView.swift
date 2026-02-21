@@ -15,12 +15,11 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
     
     let isAvailable: Bool
     private var latestDepthMap: CVPixelBuffer?
-    private var isAttached = false
     var hasDepthData: Bool { latestDepthMap != nil }
-    let depthOutput = AVCaptureDepthDataOutput()
+    private var currentDepthOutput: AVCaptureDepthDataOutput?
+    private let depthQueue = DispatchQueue(label: "depthQueue")
     
     override init() {
-        // Check if device has LiDAR
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.builtInLiDARDepthCamera],
             mediaType: .video,
@@ -28,28 +27,33 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
         )
         isAvailable = !discovery.devices.isEmpty
         super.init()
-        depthOutput.isFilteringEnabled = true
-        depthOutput.setDelegate(self, callbackQueue: DispatchQueue(label: "depthQueue"))
         print("📐 LiDAR available: \(isAvailable)")
     }
     
-    /// Attach depth output to an existing camera session
-    func attachToSession(_ session: AVCaptureSession) {
-        guard isAvailable, !isAttached else { return }
+    /// Create and attach a fresh depth output to the session
+    /// Call this DURING session.beginConfiguration/commitConfiguration
+    func createAndAttachOutput(to session: AVCaptureSession) -> AVCaptureDepthDataOutput? {
+        guard isAvailable else { return nil }
         
-        session.beginConfiguration()
-        if session.canAddOutput(depthOutput) {
-            session.addOutput(depthOutput)
-            isAttached = true
-            print("📐 LiDAR depth output attached to camera session")
+        // Remove old output if it exists
+        if let old = currentDepthOutput {
+            session.removeOutput(old)
+        }
+        
+        let newOutput = AVCaptureDepthDataOutput()
+        newOutput.isFilteringEnabled = true
+        newOutput.setDelegate(self, callbackQueue: depthQueue)
+        
+        if session.canAddOutput(newOutput) {
+            session.addOutput(newOutput)
+            currentDepthOutput = newOutput
+            latestDepthMap = nil
+            print("📐 Fresh depth output created and attached")
+            return newOutput
         } else {
             print("⚠️ Could not add depth output to session")
+            return nil
         }
-        session.commitConfiguration()
-    }
-    
-    func start() {
-        // No-op — depth comes from main camera session
     }
     
     func stop() {
@@ -237,12 +241,9 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 
                 // Attach LiDAR depth output
                 if LiDARDepthScanner.shared.isAvailable {
-                    if self.session.canAddOutput(LiDARDepthScanner.shared.depthOutput) {
-                        self.session.addOutput(LiDARDepthScanner.shared.depthOutput)
-                        
-                        // For LiDAR depth camera, we may need to select a format with depth support
+                    if let depthOutput = LiDARDepthScanner.shared.createAndAttachOutput(to: self.session) {
+                        // For LiDAR depth camera, select a format with depth support
                         if device.deviceType == .builtInLiDARDepthCamera {
-                            // Find a format that supports both good video and depth
                             let formatsWithDepth = device.formats.filter { format in
                                 let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
                                 let hasDepth = !format.supportedDepthDataFormats.isEmpty
@@ -253,7 +254,6 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                                 try device.lockForConfiguration()
                                 device.activeFormat = bestFormat
                                 
-                                // Select the highest-resolution depth format
                                 if let bestDepth = bestFormat.supportedDepthDataFormats.max(by: {
                                     CMVideoFormatDescriptionGetDimensions($0.formatDescription).width <
                                     CMVideoFormatDescriptionGetDimensions($1.formatDescription).width
@@ -264,22 +264,15 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                                 }
                                 
                                 device.unlockForConfiguration()
-                            } else {
-                                print("⚠️ No formats with depth support found at 1920+ width")
                             }
                         }
                         
-                        if let depthConnection = LiDARDepthScanner.shared.depthOutput.connection(with: .depthData) {
+                        if let depthConnection = depthOutput.connection(with: .depthData) {
                             depthConnection.isEnabled = true
                             print("📐 LiDAR depth connected ✅")
                         } else {
                             print("⚠️ No depth connection available")
-                            // Log available depth formats for debugging
-                            let depthFormats = device.activeFormat.supportedDepthDataFormats
-                            print("   Active format depth support: \(depthFormats.count) formats")
                         }
-                    } else {
-                        print("⚠️ Could not add LiDAR depth output to session")
                     }
                 }
                 
