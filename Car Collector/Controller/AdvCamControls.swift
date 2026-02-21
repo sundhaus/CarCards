@@ -157,12 +157,8 @@ struct AdvancedCameraControls: View {
                         .padding(.bottom, 100)
                 }
                 
-                // Lens selector and zoom
-                VStack(spacing: 10) {
-                    // Zoom bubbles (iOS style)
-                    ZoomControl(camera: camera)
-                }
-                .padding(.bottom, 20)
+                // Zoom control removed — LiDAR requires staying on primary camera device
+                // Users can pinch-zoom in the composer after capture
             }
         }
         .onAppear {
