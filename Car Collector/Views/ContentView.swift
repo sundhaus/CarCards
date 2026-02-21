@@ -209,10 +209,16 @@ struct ContentView: View {
                 savedCards = CardStorage.loadCards()
                 
                 // One-time sync of locally modified images to Firebase
+                // Skip if no local cards (fresh install / new device)
                 if !UserDefaults.standard.bool(forKey: "hasCompletedImageSync_v1") {
                     let cardsToSync = savedCards
-                    Task {
-                        await CardService.shared.syncModifiedImages(localCards: cardsToSync)
+                    if !cardsToSync.isEmpty {
+                        Task {
+                            await CardService.shared.syncModifiedImages(localCards: cardsToSync)
+                            UserDefaults.standard.set(true, forKey: "hasCompletedImageSync_v1")
+                        }
+                    } else {
+                        // No local cards — mark as done so we don't check again
                         UserDefaults.standard.set(true, forKey: "hasCompletedImageSync_v1")
                     }
                 }

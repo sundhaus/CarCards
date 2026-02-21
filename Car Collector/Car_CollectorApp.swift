@@ -144,15 +144,17 @@ struct CarCardCollectorApp: App {
     }
     
     private func startServices() {
+        let start = Date()
         guard let uid = firebaseManager.currentUserId else { return }
         
-        // Start real-time listeners immediately — no artificial delay
         UserService.shared.loadProfile(uid: uid)
-        CardService.shared.listenToMyCards(uid: uid)
+        print("🕐 loadProfile started: \(Int(Date().timeIntervalSince(start) * 1000))ms")
         
-        // Marketplace listeners — my listings (Transfer List) and my bids (Transfer Targets)
+        CardService.shared.listenToMyCards(uid: uid)
+        print("🕐 listenToMyCards started: \(Int(Date().timeIntervalSince(start) * 1000))ms")
+        
         MarketplaceService.shared.listenToMyListings(uid: uid)
         MarketplaceService.shared.listenToMyBids(uid: uid)
-        // LevelSystem syncs via UserService listener, no sleep needed
+        print("🕐 marketplace listeners started: \(Int(Date().timeIntervalSince(start) * 1000))ms")
     }
 }
