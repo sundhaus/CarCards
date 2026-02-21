@@ -228,10 +228,12 @@ struct OnboardingView: View {
             guard !Task.isCancelled else { return }
             
             do {
+                print("🔍 Checking username availability: '\(trimmed)'")
                 let taken = try await UserService.shared.isUsernameTaken(trimmed)
                 
                 guard !Task.isCancelled else { return }
                 
+                print("🔍 Username '\(trimmed)' taken: \(taken)")
                 await MainActor.run {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         isAvailable = !taken
@@ -240,8 +242,14 @@ struct OnboardingView: View {
                 }
             } catch {
                 guard !Task.isCancelled else { return }
+                print("❌ Username check failed: \(error)")
                 await MainActor.run {
-                    isChecking = false
+                    // On error, assume available so user isn't stuck
+                    // createAccount() will do a final check anyway
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isAvailable = true
+                        isChecking = false
+                    }
                 }
             }
         }
@@ -252,19 +260,25 @@ struct OnboardingView: View {
     private func createAccount() {
         let trimmed = username.trimmingCharacters(in: .whitespaces)
         
-        guard canProceed else { return }
+        guard canProceed else {
+            print("❌ createAccount: canProceed=false (isValid=\(isValid), isAvailable=\(String(describing: isAvailable)), isChecking=\(isChecking))")
+            return
+        }
         
         isCreating = true
         errorMessage = nil
+        print("🚀 Creating account for: '\(trimmed)'")
         
         Task {
             do {
                 // 1. Sign in anonymously (silent — no UI)
+                print("🔐 Signing in anonymously...")
                 try await firebaseManager.signInAnonymously()
                 
                 guard let uid = firebaseManager.currentUserId else {
                     throw FirebaseError.notAuthenticated
                 }
+                print("✅ Got uid: \(uid)")
                 
                 // 2. Double-check username is still available (race condition guard)
                 let taken = try await UserService.shared.isUsernameTaken(trimmed)
@@ -278,17 +292,20 @@ struct OnboardingView: View {
                 }
                 
                 // 3. Create user profile + reserve username atomically
+                print("📝 Creating profile...")
                 try await UserService.shared.createProfile(uid: uid, username: trimmed)
                 
                 // 4. Mark onboarding complete locally
                 UserDefaults.standard.set(true, forKey: "onboardingComplete")
                 
+                print("✅ Account created successfully!")
                 await MainActor.run {
                     isCreating = false
                     onComplete()
                 }
                 
             } catch {
+                print("❌ createAccount error: \(error)")
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     isCreating = false
