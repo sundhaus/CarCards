@@ -76,17 +76,17 @@ struct CarCardCollectorApp: App {
     }
     
     private func checkAuthState() async {
-        // Poll for auth listener to fire (typically < 100ms, no fixed delay)
+        let startTime = Date()
+        print("🕐 checkAuthState started")
+        
+        // Poll for auth listener to fire (typically < 100ms)
         var waitCount = 0
-        while firebaseManager.isLoading && waitCount < 40 {
+        while firebaseManager.isLoading && waitCount < 20 {
             try? await Task.sleep(nanoseconds: 25_000_000) // 25ms intervals
             waitCount += 1
         }
         
-        // Safety: if still loading after 1s, force proceed
-        if firebaseManager.isLoading {
-            print("⚠️ Auth listener slow, checking cached state")
-        }
+        print("🕐 Auth listener resolved in \(Int(Date().timeIntervalSince(startTime) * 1000))ms (waited \(waitCount) cycles)")
         
         if firebaseManager.isAuthenticated,
            let _ = firebaseManager.currentUserId {
@@ -95,48 +95,52 @@ struct CarCardCollectorApp: App {
             
             if hasProfile {
                 // FAST PATH: no network call, show UI immediately
+                print("🕐 Fast path: cached profile exists")
                 startServices()
-                withAnimation { isReady = true }
+                isReady = true
+                print("🕐 Ready in \(Int(Date().timeIntervalSince(startTime) * 1000))ms")
             } else {
                 // First time or cache miss — one-time server check
+                print("🕐 Slow path: checking Firestore for profile...")
                 do {
                     let exists = try await UserService.shared.profileExists(uid: firebaseManager.currentUserId!)
+                    print("🕐 profileExists returned in \(Int(Date().timeIntervalSince(startTime) * 1000))ms")
                     if exists {
                         UserDefaults.standard.set(true, forKey: "profileExists")
                         startServices()
-                        withAnimation { isReady = true }
+                        isReady = true
                     } else {
-                        withAnimation { showOnboarding = true }
+                        showOnboarding = true
                     }
                 } catch {
-                    print("❌ Auth check failed: \(error)")
-                    // Optimistic: if onboarding was done before, trust the cache
+                    print("❌ Auth check failed in \(Int(Date().timeIntervalSince(startTime) * 1000))ms: \(error)")
                     let completedBefore = UserDefaults.standard.bool(forKey: "onboardingComplete")
                     if completedBefore {
                         UserDefaults.standard.set(true, forKey: "profileExists")
                         startServices()
-                        withAnimation { isReady = true }
+                        isReady = true
                     } else {
-                        withAnimation { showOnboarding = true }
+                        showOnboarding = true
                     }
                 }
             }
         } else {
-            // Not authenticated
+            print("🕐 Not authenticated after \(Int(Date().timeIntervalSince(startTime) * 1000))ms")
             let completedBefore = UserDefaults.standard.bool(forKey: "onboardingComplete")
             if !completedBefore {
-                withAnimation { showOnboarding = true }
+                showOnboarding = true
             } else {
-                // Had account but signed out — try re-auth
                 do {
                     try await firebaseManager.signInAnonymously()
+                    print("🕐 Re-auth done in \(Int(Date().timeIntervalSince(startTime) * 1000))ms")
                     startServices()
-                    withAnimation { isReady = true }
+                    isReady = true
                 } catch {
-                    withAnimation { showOnboarding = true }
+                    showOnboarding = true
                 }
             }
         }
+        print("🕐 checkAuthState complete in \(Int(Date().timeIntervalSince(startTime) * 1000))ms")
     }
     
     private func startServices() {
