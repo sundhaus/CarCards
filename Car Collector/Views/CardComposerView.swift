@@ -213,6 +213,7 @@ struct CardComposerView: View {
                 
                 Spacer()
             }
+            .allowsHitTesting(false)
             
             // AI Processing overlay
             if aiService.isIdentifying {
