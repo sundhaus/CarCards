@@ -254,6 +254,7 @@ struct GarageSearchView: View {
                             endPoint: .trailing
                         )
                     )
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
                     .glassEffect(.regular, in: .rect(cornerRadius: 24))
             }
             .foregroundStyle(.white)
