@@ -106,11 +106,16 @@ struct CaptureLandingView: View {
                 print("📤 Camera dismissed. pendingDriverForm=\(pendingDriverForm), pendingLocationForm=\(pendingLocationForm)")
                 if pendingDriverForm {
                     pendingDriverForm = false
-                    showDriverForm = true
-                    print("🟢 showDriverForm = true")
+                    // Delay to let the camera dismiss animation fully complete before presenting driver form
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showDriverForm = true
+                        print("🟢 showDriverForm = true (after delay)")
+                    }
                 } else if pendingLocationForm {
                     pendingLocationForm = false
-                    showLocationForm = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showLocationForm = true
+                    }
                 }
             }) {
                 CameraView(
@@ -144,7 +149,11 @@ struct CaptureLandingView: View {
                 // If a driver type was picked, open camera now that sheet is fully gone
                 if pendingCameraOpen {
                     pendingCameraOpen = false
-                    showCamera = true
+                    // Delay one frame to ensure captureType state is committed before fullScreenCover evaluates
+                    DispatchQueue.main.async {
+                        print("📷 Opening camera with captureType: \(captureType)")
+                        showCamera = true
+                    }
                 }
             }) {
                 DriverTypeSelectorView(
