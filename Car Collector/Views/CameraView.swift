@@ -230,8 +230,13 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 
                 self.output.maxPhotoQualityPrioritization = .quality
                 
-                if self.output.availableRawPhotoPixelFormatTypes.count > 0 {
+                let rawFormats = self.output.availableRawPhotoPixelFormatTypes
+                print("📷 RAW formats available: \(rawFormats.count)")
+                if rawFormats.count > 0 {
                     self.output.isAppleProRAWEnabled = self.output.isAppleProRAWSupported
+                    print("📷 ProRAW supported: \(self.output.isAppleProRAWSupported), enabled: \(self.output.isAppleProRAWEnabled)")
+                } else {
+                    print("⚠️ No RAW formats available on this device — using processed output")
                 }
                 
                 self.videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
@@ -629,27 +634,8 @@ struct CameraView: View {
                     }
                 }
             }
-            .gesture(
-                MagnificationGesture(minimumScaleDelta: 0.0)
-                    .onChanged { value in
-                        guard camera.capturedImage == nil else { return }
-                        let delta = value / lastZoomFactor
-                        lastZoomFactor = value
-                        let newZoom = camera.zoomFactor * delta
-                        camera.setZoom(newZoom)
-                        
-                        if newZoom < 1 && camera.availableLenses.count > 0 {
-                            camera.switchLens(to: 0)
-                        } else if newZoom >= 1 && newZoom < 2.5 && camera.availableLenses.count > 1 {
-                            camera.switchLens(to: 1)
-                        } else if newZoom >= 2.5 && camera.availableLenses.count > 2 {
-                            camera.switchLens(to: 2)
-                        }
-                    }
-                    .onEnded { _ in
-                        lastZoomFactor = 1.0
-                    }
-            )
+            // Zoom gesture removed — LiDAR depth requires staying on LiDAR camera device
+            // Users can pinch-zoom in the composer instead
             
             // Checking overlay
             if isCheckingContent {
