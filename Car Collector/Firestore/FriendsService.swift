@@ -603,15 +603,30 @@ class FriendsService: ObservableObject {
         print("   CustomFrame: \(customFrame ?? "none")")
         print("   Category: \(category?.rawValue ?? "none")")
         
-        // Check if activity already exists for this card
-        let existingActivity = try await activitiesCollection
+        // Check if activity already exists for this card by cardId
+        let existingById = try await activitiesCollection
             .whereField("userId", isEqualTo: uid)
             .whereField("cardId", isEqualTo: cardId)
             .limit(to: 1)
             .getDocuments()
         
-        if !existingActivity.documents.isEmpty {
+        if !existingById.documents.isEmpty {
             print("ℹ️  Activity already exists for card \(cardId)")
+            return
+        }
+        
+        // Also dedup by make+model+year to prevent duplicate feed entries
+        // (e.g. same car saved through different flows with different cardIds)
+        let existingByVehicle = try await activitiesCollection
+            .whereField("userId", isEqualTo: uid)
+            .whereField("cardMake", isEqualTo: make)
+            .whereField("cardModel", isEqualTo: model)
+            .whereField("cardYear", isEqualTo: year)
+            .limit(to: 1)
+            .getDocuments()
+        
+        if !existingByVehicle.documents.isEmpty {
+            print("ℹ️  Activity already exists for \(make) \(model) \(year) - skipping duplicate")
             return
         }
         
