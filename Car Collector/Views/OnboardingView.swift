@@ -26,9 +26,10 @@ struct OnboardingView: View {
         return trimmed.count >= 3 && trimmed.count <= 20
     }
     
-    /// Can only proceed if username is valid AND confirmed available
+    /// Can proceed if username is valid and not actively checking
+    /// Availability check is advisory — createAccount does a final server check
     private var canProceed: Bool {
-        isValid && isAvailable == true && !isChecking
+        isValid && !isChecking && isAvailable != false
     }
     
     var body: some View {
