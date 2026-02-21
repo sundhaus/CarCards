@@ -211,6 +211,10 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                 
                 let input = try AVCaptureDeviceInput(device: device)
                 self.session.inputs.forEach { self.session.removeInput($0) }
+                self.session.outputs.forEach { self.session.removeOutput($0) }
+                
+                // Use inputPriority to allow depth data delivery
+                self.session.sessionPreset = .inputPriority
                 
                 if self.session.canAddInput(input) {
                     self.session.addInput(input)
@@ -220,30 +224,50 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
                     self.session.addOutput(self.output)
                 }
                 
-                self.videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
-                if self.session.canAddOutput(self.videoOutput) {
-                    self.session.addOutput(self.videoOutput)
-                }
-                
-                self.session.sessionPreset = .photo
                 self.output.maxPhotoQualityPrioritization = .quality
                 
                 if self.output.availableRawPhotoPixelFormatTypes.count > 0 {
                     self.output.isAppleProRAWEnabled = self.output.isAppleProRAWSupported
                 }
                 
-                // Attach LiDAR depth output to this session
+                self.videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
+                if self.session.canAddOutput(self.videoOutput) {
+                    self.session.addOutput(self.videoOutput)
+                }
+                
+                // Attach LiDAR depth output
                 if LiDARDepthScanner.shared.isAvailable {
-                    // Remove first in case it's already attached
-                    self.session.removeOutput(LiDARDepthScanner.shared.depthOutput)
                     if self.session.canAddOutput(LiDARDepthScanner.shared.depthOutput) {
                         self.session.addOutput(LiDARDepthScanner.shared.depthOutput)
-                        // Check if depth data is actually being delivered
-                        if let connection = LiDARDepthScanner.shared.depthOutput.connection(with: .depthData) {
-                            connection.isEnabled = true
-                            print("📐 LiDAR depth output attached + connected")
+                        
+                        // Select the best depth format for this device
+                        if let depthConnection = LiDARDepthScanner.shared.depthOutput.connection(with: .depthData) {
+                            depthConnection.isEnabled = true
+                            print("📐 LiDAR depth output attached + connected ✅")
                         } else {
-                            print("⚠️ LiDAR depth output added but no depth connection available for this lens")
+                            // Try selecting a format that supports depth
+                            let depthFormats = device.activeFormat.supportedDepthDataFormats
+                            if let bestDepth = depthFormats.max(by: {
+                                CMVideoFormatDescriptionGetDimensions($0.formatDescription).width <
+                                CMVideoFormatDescriptionGetDimensions($1.formatDescription).width
+                            }) {
+                                try device.lockForConfiguration()
+                                device.activeDepthDataFormat = bestDepth
+                                device.unlockForConfiguration()
+                                print("📐 Set active depth format: \(CMVideoFormatDescriptionGetDimensions(bestDepth.formatDescription))")
+                                
+                                if let depthConnection = LiDARDepthScanner.shared.depthOutput.connection(with: .depthData) {
+                                    depthConnection.isEnabled = true
+                                    print("📐 LiDAR depth connected after format selection ✅")
+                                } else {
+                                    print("⚠️ Still no depth connection after format selection")
+                                }
+                            } else {
+                                print("⚠️ No supported depth formats for this device/format")
+                                print("   Device: \(device.localizedName)")
+                                print("   Active format: \(device.activeFormat)")
+                                print("   Depth formats count: \(depthFormats.count)")
+                            }
                         }
                     } else {
                         print("⚠️ Could not add LiDAR depth output to session")
