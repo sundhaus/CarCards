@@ -155,7 +155,7 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     @Published var aspectRatio: AspectRatio = .wide
     @Published var captureMode: CaptureMode = .heif
     @Published var availableLenses: [AVCaptureDevice] = []
-    @Published var currentLensIndex = 1
+    @Published var currentLensIndex = 0
     
     var output = AVCapturePhotoOutput()
     var videoOutput = AVCaptureVideoDataOutput()
