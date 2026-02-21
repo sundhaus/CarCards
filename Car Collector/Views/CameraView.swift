@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 import AVFoundation
 
 // MARK: - LiDAR Depth Scanner (uses main camera session's depth output)

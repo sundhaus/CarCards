@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+import Combine
 import FirebaseFirestore
 
 class HotCardsService: ObservableObject {

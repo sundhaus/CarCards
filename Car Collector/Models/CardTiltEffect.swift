@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import Combine
 import CoreMotion
 
 // MARK: - Motion Manager (Singleton)
