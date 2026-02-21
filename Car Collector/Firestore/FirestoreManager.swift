@@ -31,7 +31,10 @@ class FirebaseManager: ObservableObject {
     private var authStateListener: AuthStateDidChangeListenerHandle?
     
     private init() {
-        // Firebase should be configured in App init before this is accessed
+        // Ensure Firebase is configured before accessing any services
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
         self.db = Firestore.firestore()
         self.storage = Storage.storage()
         self.auth = Auth.auth()
