@@ -137,6 +137,7 @@ struct CaptureLandingView: View {
                     },
                     captureType: captureType
                 )
+                .id(captureType.description) // Force SwiftUI to recreate when captureType changes
             }
             // Driver type selector
             .sheet(isPresented: $showDriverTypeSelector, onDismiss: {
