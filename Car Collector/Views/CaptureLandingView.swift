@@ -103,9 +103,11 @@ struct CaptureLandingView: View {
             // Camera for all capture types
             .fullScreenCover(isPresented: $showCamera, onDismiss: {
                 // Fires AFTER camera fullScreenCover dismiss animation completes
+                print("📤 Camera dismissed. pendingDriverForm=\(pendingDriverForm), pendingLocationForm=\(pendingLocationForm)")
                 if pendingDriverForm {
                     pendingDriverForm = false
                     showDriverForm = true
+                    print("🟢 showDriverForm = true")
                 } else if pendingLocationForm {
                     pendingLocationForm = false
                     showLocationForm = true
@@ -122,8 +124,10 @@ struct CaptureLandingView: View {
                         } else {
                             // Driver or Location - store image, flag pending form, dismiss camera
                             capturedImage = card.image
+                            print("📸 Stored capturedImage: \(capturedImage != nil ? "\(capturedImage!.size)" : "NIL")")
                             if captureType == .driver || captureType == .driverPlusVehicle {
                                 pendingDriverForm = true
+                                print("🏁 pendingDriverForm = true")
                             } else if captureType == .location {
                                 pendingLocationForm = true
                             }
