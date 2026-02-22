@@ -396,6 +396,9 @@ struct ProfileView: View {
                 }
                 
                 print("✅ Apple account linked successfully")
+                
+                // Refresh profile so UI updates immediately
+                await UserService.shared.fetchProfile()
             } catch {
                 appleSignInErrorMessage = error.localizedDescription
                 showAppleSignInError = true
