@@ -128,13 +128,6 @@ struct MarketplaceBuySellView: View {
             }
             return true
         }
-    }: [SavedCard] {
-        savedCards.filter { card in
-            if sellFilterMake != "Any" && card.make != sellFilterMake { return false }
-            if sellFilterModel != "Any" && card.model != sellFilterModel { return false }
-            if sellFilterYear != "Any" && card.year != sellFilterYear { return false }
-            return true
-        }
     }
     
     var body: some View {
