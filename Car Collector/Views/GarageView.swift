@@ -745,35 +745,36 @@ struct UnifiedCardDetailView: View {
                 // Card container - portrait mode: rotate card landscape
                 VStack {
                     Spacer()
-                    cardContent(screenSize: geometry.size)
-                        .rotationEffect(.degrees(90))
-                        .cardTilt()
+                    ZStack(alignment: .topLeading) {
+                        cardContent(screenSize: geometry.size)
+                            .rotationEffect(.degrees(90))
+                        
+                        // Driver name overlay — inside tilt container but outside rotation
+                        if case .driver(let driverCard) = card {
+                            let config = CardBorderConfig.forFrame(card.customFrame)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(driverCard.firstName.uppercased())
+                                    .font(.custom("Futura-Light", size: 28))
+                                
+                                if !driverCard.nickname.isEmpty {
+                                    Text("\"\(driverCard.nickname.uppercased())\"")
+                                        .font(.custom("Futura-Bold", size: 18))
+                                        .opacity(0.8)
+                                }
+                                
+                                Text(driverCard.lastName.uppercased())
+                                    .font(.custom("Futura-Bold", size: 28))
+                            }
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: .black, radius: 4, x: 0, y: 2)
+                            .padding(.top, geometry.size.height * 0.12)
+                            .padding(.leading, geometry.size.width * 0.18)
+                        }
+                    }
+                    .cardTilt()
                     Spacer()
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
-                
-                // Driver name overlay — on portrait screen, NOT inside rotated card
-                if case .driver(let driverCard) = card {
-                    let config = CardBorderConfig.forFrame(card.customFrame)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(driverCard.firstName.uppercased())
-                            .font(.custom("Futura-Light", size: 28))
-                        
-                        if !driverCard.nickname.isEmpty {
-                            Text("\"\(driverCard.nickname.uppercased())\"")
-                                .font(.custom("Futura-Bold", size: 18))
-                                .opacity(0.8)
-                        }
-                        
-                        Text(driverCard.lastName.uppercased())
-                            .font(.custom("Futura-Bold", size: 28))
-                    }
-                    .foregroundStyle(config.textColor)
-                    .shadow(color: .black, radius: 4, x: 0, y: 2)
-                    .padding(.top, geometry.size.height * 0.12)
-                    .padding(.leading, geometry.size.width * 0.18)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
                 
                 // X button
                 VStack {
