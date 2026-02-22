@@ -109,54 +109,35 @@ struct SignatureView: View {
             cardSize = CGSize(width: cardSize.width * ratio, height: cardSize.height * ratio)
         }
         
-        let canvasSize = canvas.bounds.size
-        
-        // Calculate where the card image appears within the canvas (scaledToFit)
-        let cardAspect = cardSize.width / cardSize.height
-        let canvasAspect = canvasSize.width / canvasSize.height
-        
-        let visibleRect: CGRect
-        if cardAspect > canvasAspect {
-            // Card is wider than canvas — fits to width
-            let fitHeight = canvasSize.width / cardAspect
-            let yOffset = (canvasSize.height - fitHeight) / 2
-            visibleRect = CGRect(x: 0, y: yOffset, width: canvasSize.width, height: fitHeight)
-        } else {
-            // Card is taller than canvas — fits to height
-            let fitWidth = canvasSize.height * cardAspect
-            let xOffset = (canvasSize.width - fitWidth) / 2
-            visibleRect = CGRect(x: xOffset, y: 0, width: fitWidth, height: canvasSize.height)
-        }
+        // The card is displayed rotated 90° CW in the signature view (portrait),
+        // but stored as landscape. We need to rotate the signature -90° to match.
+        let scale = UITraitCollection.current.displayScale
+        let signatureFullImage = canvas.drawing.image(from: canvas.bounds, scale: scale)
         
         let renderer = UIGraphicsImageRenderer(size: cardSize)
         return renderer.image { context in
-            // Draw card image scaled to capped size
+            let cgContext = context.cgContext
+            
+            // Draw card image
             cardImage.draw(in: CGRect(origin: .zero, size: cardSize))
             
-            // Get the full canvas drawing at screen scale
-            let scale = UITraitCollection.current.displayScale
-            let signatureFullImage = canvas.drawing.image(from: canvas.bounds, scale: scale)
+            // Rotate signature -90° (counter-clockwise) to match landscape orientation
+            cgContext.saveGState()
+            cgContext.translateBy(x: cardSize.width / 2, y: cardSize.height / 2)
+            cgContext.rotate(by: -.pi / 2)
             
-            // Map canvas visible rect to card image coordinates
-            // The signature needs to be cropped to just the visible card area,
-            // then scaled to fill the card image
-            let scaleX = cardSize.width / visibleRect.width
-            let scaleY = cardSize.height / visibleRect.height
+            // After -90° rotation, the signature needs to be drawn in portrait dimensions
+            // centered at origin
+            let sigDrawWidth = cardSize.height  // portrait width maps to landscape height
+            let sigDrawHeight = cardSize.width  // portrait height maps to landscape width
             
-            // Crop the signature to just the card-visible portion
-            let cropRect = CGRect(
-                x: visibleRect.origin.x * scale,
-                y: visibleRect.origin.y * scale,
-                width: visibleRect.width * scale,
-                height: visibleRect.height * scale
-            )
-            
-            if let cgImage = signatureFullImage.cgImage,
-               let croppedCG = cgImage.cropping(to: cropRect) {
-                let croppedSignature = UIImage(cgImage: croppedCG)
-                // Draw cropped signature scaled to fill entire card
-                croppedSignature.draw(in: CGRect(origin: .zero, size: cardSize))
-            }
+            signatureFullImage.draw(in: CGRect(
+                x: -sigDrawWidth / 2,
+                y: -sigDrawHeight / 2,
+                width: sigDrawWidth,
+                height: sigDrawHeight
+            ))
+            cgContext.restoreGState()
         }
     }
 }
