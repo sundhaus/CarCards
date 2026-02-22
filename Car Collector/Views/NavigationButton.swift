@@ -61,8 +61,7 @@ struct NavigationButton: View {
             .padding(.vertical, 16)
             .frame(height: 92)
             .contentShape(Rectangle())
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .glassEffect(.regular, in: .rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)
     }
