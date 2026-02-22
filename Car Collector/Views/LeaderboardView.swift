@@ -302,7 +302,12 @@ struct LeaderboardRow: View {
             }
         }
         .padding()
-        .background(isCurrentUser ? Color.blue.opacity(0.15) : .clear)
+        .background(
+            isCurrentUser ?
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.blue.opacity(0.15)) : nil
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
     
