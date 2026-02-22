@@ -256,10 +256,10 @@ class CardService: ObservableObject {
     func fetchUserCards(uid: String) async throws -> [CloudCard] {
         let snapshot = try await cardsCollection
             .whereField("ownerId", isEqualTo: uid)
-            .order(by: "createdAt", descending: true)
             .getDocuments()
         
         return snapshot.documents.compactMap { CloudCard(document: $0) }
+            .sorted { $0.createdAt > $1.createdAt }
     }
     
     // MARK: - Download Card Image (with caching)

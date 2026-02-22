@@ -280,19 +280,7 @@ struct UserProfileView: View {
                                                 Task {
                                                     isLoadingCardImage = true
                                                     let image = (try? await CardService.shared.loadImage(from: crown.imageURL)) ?? UIImage()
-                                                    let savedCard = SavedCard(
-                                                        image: image,
-                                                        make: crown.make,
-                                                        model: crown.model,
-                                                        color: crown.color,
-                                                        year: crown.year,
-                                                        capturedBy: crown.capturedBy,
-                                                        capturedLocation: crown.capturedLocation,
-                                                        previousOwners: crown.previousOwners,
-                                                        customFrame: crown.customFrame,
-                                                        firebaseId: crown.id
-                                                    )
-                                                    selectedCard = .vehicle(savedCard)
+                                                    selectedCard = Self.anyCardFrom(cloud: crown, image: image)
                                                     isLoadingCardImage = false
                                                     withAnimation { showCardDetail = true }
                                                 }
@@ -350,19 +338,7 @@ struct UserProfileView: View {
                                                 Task {
                                                     isLoadingCardImage = true
                                                     let image = (try? await CardService.shared.loadImage(from: card.imageURL)) ?? UIImage()
-                                                    let savedCard = SavedCard(
-                                                        image: image,
-                                                        make: card.make,
-                                                        model: card.model,
-                                                        color: card.color,
-                                                        year: card.year,
-                                                        capturedBy: card.capturedBy,
-                                                        capturedLocation: card.capturedLocation,
-                                                        previousOwners: card.previousOwners,
-                                                        customFrame: card.customFrame,
-                                                        firebaseId: card.id
-                                                    )
-                                                    selectedCard = .vehicle(savedCard)
+                                                    selectedCard = Self.anyCardFrom(cloud: card, image: image)
                                                     isLoadingCardImage = false
                                                     withAnimation {
                                                         showCardDetail = true
@@ -462,6 +438,45 @@ struct UserProfileView: View {
         } catch {
             print("❌ Failed to load profile: \(error)")
             isLoadingProfile = false
+        }
+    }
+    
+    static func anyCardFrom(cloud: CloudCard, image: UIImage) -> AnyCard {
+        switch cloud.cardType {
+        case "driver":
+            var dc = DriverCard(
+                image: image,
+                firstName: cloud.firstName ?? cloud.make,
+                lastName: cloud.lastName ?? cloud.model,
+                nickname: cloud.nickname ?? ""
+            )
+            dc.capturedBy = cloud.capturedBy
+            dc.capturedLocation = cloud.capturedLocation
+            dc.firebaseId = cloud.id
+            return .driver(dc)
+        case "location":
+            var lc = LocationCard(
+                image: image,
+                locationName: cloud.locationName ?? cloud.make
+            )
+            lc.capturedBy = cloud.capturedBy
+            lc.capturedLocation = cloud.capturedLocation
+            lc.firebaseId = cloud.id
+            return .location(lc)
+        default:
+            let sc = SavedCard(
+                image: image,
+                make: cloud.make,
+                model: cloud.model,
+                color: cloud.color,
+                year: cloud.year,
+                capturedBy: cloud.capturedBy,
+                capturedLocation: cloud.capturedLocation,
+                previousOwners: cloud.previousOwners,
+                customFrame: cloud.customFrame,
+                firebaseId: cloud.id
+            )
+            return .vehicle(sc)
         }
     }
     
@@ -607,7 +622,7 @@ struct UserCardView: View {
                     Rectangle()
                         .fill(Color.white.opacity(0.3))
                         .overlay(
-                            Image(systemName: "car.fill")
+                            Image(systemName: card.cardType == "driver" ? "person.fill" : card.cardType == "location" ? "mappin.circle.fill" : "car.fill")
                                 .font(.system(size: isLargeSize ? 30 : 20))
                                 .foregroundStyle(.gray.opacity(0.4))
                         )
