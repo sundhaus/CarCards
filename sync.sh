@@ -6,6 +6,7 @@
 PROJECT_DIR="/Users/jbsund/Documents/HeatCheck/HeatCheck"
 SCHEME="HeatCheck"
 XCODEPROJ="$PROJECT_DIR/HeatCheck.xcodeproj"
+REPO_URL="https://github.com/sundhaus/CarCards.git"
 
 echo ""
 echo "🔥 HeatCheck Sync & Build"
@@ -14,6 +15,18 @@ echo ""
 
 # Navigate to project
 cd "$PROJECT_DIR" || { echo "❌ Project directory not found"; exit 1; }
+
+# Ensure git is initialized and remote is set
+if [ ! -d ".git" ]; then
+  echo "📦 Initializing git repo..."
+  git init
+  git remote add origin "$REPO_URL"
+elif ! git remote get-url origin &>/dev/null; then
+  echo "🔗 Adding remote..."
+  git remote add origin "$REPO_URL"
+else
+  git remote set-url origin "$REPO_URL"
+fi
 
 # Pull latest
 echo "⬇️  Pulling latest from GitHub..."
