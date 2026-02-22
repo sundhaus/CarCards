@@ -231,26 +231,6 @@ struct MarketplaceBuySellView: View {
         .onAppear {
             marketplaceService.listenToActiveListings()
             print("📊 Listening to Firebase marketplace listings")
-            
-            // Check for compare price request from garage
-            if let compare = NavigationController.shared.comparePriceCard {
-                selectedMarketTab = 0
-                buyFilterMake = compare.make
-                buyFilterModel = compare.model
-                buyFilterYear = compare.year
-                NavigationController.shared.comparePriceCard = nil
-                print("📊 Compare Price: Showing similar \(compare.make) \(compare.model) \(compare.year)")
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ComparePrice"))) { _ in
-            if let compare = NavigationController.shared.comparePriceCard {
-                selectedMarketTab = 0
-                buyFilterMake = compare.make
-                buyFilterModel = compare.model
-                buyFilterYear = compare.year
-                NavigationController.shared.comparePriceCard = nil
-                print("📊 Compare Price: Showing similar \(compare.make) \(compare.model) \(compare.year)")
-            }
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)

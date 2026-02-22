@@ -14,7 +14,11 @@ struct MarketplaceLandingView: View {
     @State private var showBuySell = false
     @State private var showTransferList = false
     @State private var showTransferTargets = false
+    @State private var showCompareResults = false
+    @State private var compareListings: [CloudListing] = []
+    @State private var compareSummary = ""
     @ObservedObject private var navigationController = NavigationController.shared
+    @ObservedObject private var marketplaceService = MarketplaceService.shared
     
     var body: some View {
         NavigationStack(path: $navigationController.marketplaceNavigationPath) {
@@ -88,9 +92,21 @@ struct MarketplaceLandingView: View {
             .navigationDestination(isPresented: $showTransferTargets) {
                 TransferTargetsView(isLandscape: isLandscape)
             }
+            .navigationDestination(isPresented: $showCompareResults) {
+                MarketplaceSearchResultsView(
+                    listings: compareListings,
+                    hasUnfilteredListings: !marketplaceService.activeListings.isEmpty,
+                    filterSummary: compareSummary
+                )
+            }
         }
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
+            marketplaceService.listenToActiveListings()
+            checkForComparePrice()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ComparePrice"))) { _ in
+            checkForComparePrice()
         }
         .onDisappear {
             OrientationManager.unlockOrientation()
@@ -101,6 +117,7 @@ struct MarketplaceLandingView: View {
                 showBuySell = false
                 showTransferList = false
                 showTransferTargets = false
+                showCompareResults = false
             }
         }
         .onChange(of: showBuySell) { _, isBuySellOpen in
@@ -117,8 +134,38 @@ struct MarketplaceLandingView: View {
             showBuySell = false
             showTransferList = false
             showTransferTargets = false
+            showCompareResults = false
             navigationController.unpreserveTab(3)
             print("🏪 MarketplaceLandingView: Reset all navigation booleans from trigger")
+        }
+    }
+    
+    private func checkForComparePrice() {
+        guard let compare = NavigationController.shared.comparePriceCard else { return }
+        NavigationController.shared.comparePriceCard = nil
+        
+        // Filter listings to match the card
+        let filtered = marketplaceService.activeListings.filter { listing in
+            if !compare.make.isEmpty && listing.make != compare.make { return false }
+            if !compare.model.isEmpty && listing.model != compare.model { return false }
+            // Only filter year if it's an actual year (not "Driver" or "Location")
+            if !compare.year.isEmpty && compare.year != "Driver" && compare.year != "Location" {
+                if listing.year != compare.year { return false }
+            }
+            return true
+        }
+        
+        var parts: [String] = []
+        if !compare.make.isEmpty { parts.append(compare.make) }
+        if !compare.model.isEmpty { parts.append(compare.model) }
+        if !compare.year.isEmpty && compare.year != "Driver" && compare.year != "Location" { parts.append(compare.year) }
+        compareSummary = parts.isEmpty ? "All Listings" : parts.joined(separator: " ")
+        compareListings = filtered
+        
+        print("📊 Compare Price: Found \(filtered.count) matching listings for \(compareSummary)")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            showCompareResults = true
         }
     }
 }
