@@ -88,8 +88,7 @@ struct GarageSearchView: View {
     }
     
     private var availableLastNames: [String] {
-        var driverCards = CardStorage.loadDriverCards()
-        if filterFirstName != "Any" { driverCards = driverCards.filter { $0.firstName == filterFirstName } }
+        let driverCards = CardStorage.loadDriverCards()
         return ["Any"] + Set(driverCards.map { $0.lastName }).sorted()
     }
     
@@ -110,10 +109,7 @@ struct GarageSearchView: View {
             cards = cards.filter { $0.specs?.category?.rawValue == filterCategory }
         }
         
-        // Driver filters — match on make (firstName) and model (lastName) for driver-wrapped cards
-        if filterFirstName != "Any" {
-            cards = cards.filter { $0.color == "Driver" && $0.make == filterFirstName }
-        }
+        // Driver filter — match on model (lastName) for driver-wrapped cards
         if filterLastName != "Any" {
             cards = cards.filter { $0.color == "Driver" && $0.model == filterLastName }
         }
@@ -189,12 +185,7 @@ struct GarageSearchView: View {
                                 filterCategory = val
                             }
                             
-                            // Driver filters
-                            fullWidthPill(icon: "person.fill", label: "First Name", value: filterFirstName, options: availableFirstNames) { val in
-                                filterFirstName = val
-                                filterLastName = "Any"
-                            }
-                            
+                            // Driver filter
                             fullWidthPill(icon: "person.text.rectangle", label: "Last Name", value: filterLastName, options: availableLastNames) { val in
                                 filterLastName = val
                             }
