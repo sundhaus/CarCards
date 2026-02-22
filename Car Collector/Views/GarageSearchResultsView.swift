@@ -126,78 +126,19 @@ struct GarageResultCard: View {
     var body: some View {
         let cardHeight: CGFloat = 202.5
         let cardWidth = cardHeight * 16 / 9
-        let config = CardBorderConfig.forFrame(card.customFrame)
         
-        ZStack {
-            if let image = card.thumbnail ?? card.image {
-                Image(uiImage: image)
+        Group {
+            if let rendered = CardRenderer.shared.landscapeCard(for: card.asAnyCard, height: 400) {
+                Image(uiImage: rendered)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .aspectRatio(contentMode: .fit)
                     .frame(width: cardWidth, height: cardHeight)
-                    .clipped()
             } else {
-                Rectangle()
+                RoundedRectangle(cornerRadius: cardHeight * 0.09)
                     .fill(Color.gray.opacity(0.3))
                     .frame(width: cardWidth, height: cardHeight)
             }
-            
-            // Border overlay
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: cardWidth, height: cardHeight)
-                    .allowsHitTesting(false)
-            }
-            
-            // Text overlay — matches garage style
-            if card.color == "Driver" {
-                // Driver: stacked first/last name
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(card.make.uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
-                    Text(card.model.uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
-                }
-                .foregroundStyle(config.textColor)
-                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                .padding(.top, cardHeight * 0.08)
-                .padding(.leading, cardHeight * 0.08)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else if card.color == "Location" {
-                // Location: location name
-                Text(card.make.uppercased())
-                    .font(.custom("Futura-Bold", size: cardHeight * 0.08))
-                    .foregroundStyle(config.textColor)
-                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                    .padding(.top, cardHeight * 0.08)
-                    .padding(.leading, cardHeight * 0.08)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else {
-                // Vehicle: make (light) + model (bold) horizontal
-                VStack {
-                    HStack {
-                        HStack(spacing: 6) {
-                            Text(card.make.uppercased())
-                                .font(.custom("Futura-Light", size: cardHeight * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            
-                            Text(card.model.uppercased())
-                                .font(.custom("Futura-Bold", size: cardHeight * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                .lineLimit(1)
-                        }
-                        .padding(.top, cardHeight * 0.08)
-                        .padding(.leading, cardHeight * 0.08)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            }
         }
-        .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
     }

@@ -170,4 +170,8 @@ struct SavedCard: Identifiable, Codable {
         guard let specs = specs, specs.drivetrain != "N/A" else { return nil }
         return specs.drivetrain
     }
+    
+    var asAnyCard: AnyCard {
+        return .vehicle(self)
+    }
 }

@@ -52,7 +52,6 @@ struct CardOptionsView: View {
                     VStack(spacing: 20) {
                         // Card preview — centered
                         cardPreview
-                            .frame(height: isDriver ? 340 : 240)
                             .padding(.horizontal, 30)
                         
                         // Action buttons
@@ -118,99 +117,38 @@ struct CardOptionsView: View {
     }
     
     private var cardPreview: some View {
-        GeometryReader { geo in
-            let maxW = geo.size.width
-            let maxH = geo.size.height
-            
+        Group {
             if isDriver {
-                // Driver: fixed portrait size, rotate landscape image 90°
-                let portraitW: CGFloat = min(maxW * 0.65, 220)
-                let portraitH: CGFloat = portraitW * 16.0 / 9.0
-                let landscapeW: CGFloat = portraitH
-                let landscapeH: CGFloat = portraitW
-                
-                ZStack {
-                    ZStack {
-                        if let image = card.image {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: landscapeW, height: landscapeH)
-                        }
-                        
-                        if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                            Image(borderName)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: landscapeW, height: landscapeH)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .rotationEffect(.degrees(90))
-                    
-                    // Name overlay
-                    if case .driver(let dc) = card {
-                        let config = CardBorderConfig.forFrame(card.customFrame)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(dc.firstName.uppercased())
-                                .font(.custom("Futura-Light", size: 16))
-                            
-                            if !dc.nickname.isEmpty {
-                                Text("\"\(dc.nickname.uppercased())\"")
-                                    .font(.custom("Futura-Bold", size: 10))
-                                    .opacity(0.8)
-                            }
-                            
-                            Text(dc.lastName.uppercased())
-                                .font(.custom("Futura-Bold", size: 16))
-                        }
-                        .foregroundStyle(config.textColor)
-                        .shadow(color: .black, radius: 4, x: 0, y: 2)
-                        .padding(.top, 8)
-                        .padding(.leading, 8)
-                        .frame(width: portraitW, height: portraitH, alignment: .topLeading)
-                    }
+                // Portrait driver card — rendered flat
+                if let portrait = CardRenderer.shared.portraitCard(for: card, width: 220) {
+                    Image(uiImage: portrait)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxHeight: 340)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 180, height: 320)
                 }
-                .frame(width: portraitW, height: portraitH)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                // Vehicle/Location: landscape card, no rotation
-                let aspect: CGFloat = 16.0 / 9.0
-                let w = min(maxW, maxH * aspect)
-                let h = w / aspect
-                
-                VStack {
-                    Spacer()
-                    ZStack {
-                        if let image = card.image {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: w, height: h)
-                                .clipped()
-                        } else {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: w, height: h)
-                        }
-                        
-                        if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                            Image(borderName)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: w, height: h)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
-                    Spacer()
+                // Landscape vehicle/location card — rendered flat
+                if let landscape = CardRenderer.shared.landscapeCard(for: card, height: 300) {
+                    Image(uiImage: landscape)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxHeight: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 320, height: 180)
                 }
-                .frame(maxWidth: .infinity)
             }
         }
+        .frame(maxWidth: .infinity)
     }
     
     // MARK: - Option Button
