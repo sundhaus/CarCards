@@ -772,7 +772,7 @@ struct UnifiedCardDetailView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                             .frame(width: cardVisibleWidth, height: cardVisibleHeight)
                             .padding(.top, 30)
-                            .padding(.leading, 35)
+                            .padding(.leading, 55)
                         }
                     }
                     .cardTilt()
