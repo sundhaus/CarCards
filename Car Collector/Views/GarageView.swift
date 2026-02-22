@@ -446,7 +446,7 @@ struct CardContextMenuOverlay: View {
                 }) {
                     Image(systemName: isCrowned ? "star.fill" : "star")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isCrowned ? Color.yellow : Color.white.opacity(0.5))
+                        .foregroundStyle(isCrowned ? Color.yellow : Color.secondary)
                         .frame(width: crownTabWidth, height: crownTabHeight)
                         .background(
                             UnevenRoundedRectangle(

@@ -32,20 +32,21 @@ struct LeaderboardView: View {
                                 Text(tab.uppercased())
                                     .font(.pSubheadline)
                                     .fontWeight(selectedTab == index ? .semibold : .regular)
-                                    .foregroundStyle(selectedTab == index ? .white : .white.opacity(0.5))
+                                    .foregroundStyle(selectedTab == index ? Color.primary : Color.secondary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 10)
                                     .background {
                                         if selectedTab == index {
                                             Capsule()
-                                                .fill(.white.opacity(0.15))
+                                                .fill(Color(.systemGray5))
                                         }
                                     }
                             }
                         }
                     }
                     .padding(4)
-                    .glassEffect(.regular, in: .capsule)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(Capsule())
                     .padding(.horizontal)
                     .padding(.top, 12)
                     .padding(.bottom, 8)
@@ -301,7 +302,7 @@ struct LeaderboardRow: View {
             }
         }
         .padding()
-        .background(isCurrentUser ? Color.blue.opacity(0.15) : Color.white.opacity(0.08))
+        .background(isCurrentUser ? Color.blue.opacity(0.15) : Color(.secondarySystemGroupedBackground))
         .cornerRadius(12)
     }
     
