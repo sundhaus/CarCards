@@ -131,8 +131,15 @@ struct CaptureLandingView: View {
                 CameraView(
                     isPresented: $showDriverCamera,
                     onCardSaved: { card in
-                        driverCapturedImage = card.image
-                        print("📸 Driver image captured: \(card.image?.size.debugDescription ?? "nil")")
+                        // Store the raw image directly — don't rely on SavedCard round-trip
+                        if let img = card.image {
+                            driverCapturedImage = img
+                            print("📸 Driver image stored: \(img.size)")
+                        } else {
+                            // Fallback: try to get from imageData directly
+                            driverCapturedImage = UIImage(data: card.imageData)
+                            print("📸 Driver image from data: \(driverCapturedImage?.size.debugDescription ?? "nil")")
+                        }
                         showDriverCamera = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                             showDriverForm = true
@@ -214,7 +221,11 @@ struct CaptureLandingView: View {
                 CameraView(
                     isPresented: $showLocationCamera,
                     onCardSaved: { card in
-                        locationCapturedImage = card.image
+                        if let img = card.image {
+                            locationCapturedImage = img
+                        } else {
+                            locationCapturedImage = UIImage(data: card.imageData)
+                        }
                         showLocationCamera = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                             showLocationForm = true
