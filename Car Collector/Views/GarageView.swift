@@ -220,7 +220,7 @@ struct GarageView: View {
                             case .vehicle(let vc):
                                 make = vc.make; model = vc.model; year = vc.year
                             case .driver(let dc):
-                                make = dc.firstName; model = dc.lastName; year = dc.nickname.isEmpty ? "Driver" : dc.nickname
+                                make = dc.firstName; model = dc.lastName; year = ""
                             case .location(let lc):
                                 make = lc.locationName; model = ""; year = "Location"
                             }
