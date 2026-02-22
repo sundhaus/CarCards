@@ -755,13 +755,13 @@ struct UnifiedCardDetailView: View {
                 // Driver name overlay — on portrait screen, NOT inside rotated card
                 if case .driver(let driverCard) = card {
                     let config = CardBorderConfig.forFrame(card.customFrame)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 1) {
                         Text(driverCard.firstName.uppercased())
-                            .font(.custom("Futura-Bold", size: 28))
+                            .font(.custom("Futura-Light", size: 28))
                         
                         if !driverCard.nickname.isEmpty {
                             Text("\"\(driverCard.nickname.uppercased())\"")
-                                .font(.custom("Futura-Light", size: 18))
+                                .font(.custom("Futura-Bold", size: 18))
                                 .opacity(0.8)
                         }
                         
