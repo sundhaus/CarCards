@@ -109,70 +109,58 @@ struct CardOptionsView: View {
     
     // MARK: - Card Preview
     
+    private func cardSize(in geo: GeometryProxy) -> CGSize {
+        let isDriver: Bool = { if case .driver = card { return true }; return false }()
+        let maxW = geo.size.width
+        let maxH = geo.size.height
+        let aspect: CGFloat = isDriver ? 9.0 / 16.0 : 16.0 / 9.0
+        if isDriver {
+            let h = min(maxH, maxW / aspect)
+            return CGSize(width: h * aspect, height: h)
+        } else {
+            let w = min(maxW, maxH * aspect)
+            return CGSize(width: w, height: w / aspect)
+        }
+    }
+    
     private var cardPreview: some View {
         GeometryReader { geo in
-            let isDriver = {
-                if case .driver = card { return true }
-                return false
-            }()
+            let size = cardSize(in: geo)
             
-            let maxWidth = geo.size.width
-            let maxHeight = geo.size.height
-            
-            let cardAspect: CGFloat = isDriver ? 9.0 / 16.0 : 16.0 / 9.0
-            let cardWidth: CGFloat
-            let cardHeight: CGFloat
-            
-            if isDriver {
-                // Portrait card — fit by height
-                cardHeight = min(maxHeight, maxWidth / cardAspect)
-                cardWidth = cardHeight * cardAspect
-            } else {
-                // Landscape card — fit by width
-                cardWidth = min(maxWidth, maxHeight * cardAspect)
-                cardHeight = cardWidth / cardAspect
-            }
-            
-            HStack {
+            VStack(spacing: 8) {
                 Spacer()
-                VStack {
-                    Spacer()
-                    
-                    ZStack {
-                        if let image = card.image {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: cardWidth, height: cardHeight)
-                                .clipped()
-                        } else {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: cardWidth, height: cardHeight)
-                        }
-                        
-                        // Border overlay
-                        if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                            Image(borderName)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: cardWidth, height: cardHeight)
-                                .allowsHitTesting(false)
-                        }
+                
+                ZStack {
+                    if let image = card.image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: size.width, height: size.height)
+                            .clipped()
+                    } else {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: size.width, height: size.height)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
                     
-                    // Card title
-                    Text(card.displayTitle)
-                        .font(.poppins(16))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 8)
-                    
-                    Spacer()
+                    if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                        Image(borderName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: size.width, height: size.height)
+                            .allowsHitTesting(false)
+                    }
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                
+                Text(card.displayTitle)
+                    .font(.poppins(16))
+                    .foregroundStyle(.secondary)
+                
                 Spacer()
             }
+            .frame(maxWidth: .infinity)
         }
     }
     
