@@ -237,8 +237,8 @@ struct GarageSearchView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .background(.clear)
+                .glassEffect(.regular, in: .rect(cornerRadius: 10))
             }
         }
     }
@@ -281,8 +281,8 @@ struct GarageSearchView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .background(.clear)
+            .glassEffect(.regular, in: .rect(cornerRadius: 10))
         }
         .disabled(isDisabled)
     }
