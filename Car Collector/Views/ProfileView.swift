@@ -398,7 +398,9 @@ struct ProfileView: View {
                 print("✅ Apple account linked successfully")
                 
                 // Refresh profile so UI updates immediately
-                await UserService.shared.fetchProfile()
+                if let uid = FirebaseManager.shared.currentUserId {
+                    let _ = try? await UserService.shared.fetchProfile(uid: uid)
+                }
             } catch {
                 appleSignInErrorMessage = error.localizedDescription
                 showAppleSignInError = true
