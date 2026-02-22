@@ -106,13 +106,15 @@ struct SignatureView: View {
                                     if selectedColor == color {
                                         Circle()
                                             .stroke(Color.white, lineWidth: 3)
-                                            .frame(width: 44, height: 44)
+                                            .frame(width: 48, height: 48)
                                     }
                                 }
+                                .frame(width: 52, height: 52)
                             }
                         }
                     }
                     .padding(.horizontal, 20)
+                    .padding(.vertical, 6)
                 }
                 .padding(.vertical, 24)
                 .padding(.horizontal, 4)
