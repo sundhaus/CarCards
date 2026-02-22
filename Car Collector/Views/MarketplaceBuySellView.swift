@@ -234,7 +234,7 @@ struct MarketplaceBuySellView: View {
             
             // Check for compare price request from garage
             if let compare = NavigationController.shared.comparePriceCard {
-                selectedMarketTab = 0  // Buy tab
+                selectedMarketTab = 0
                 buyFilterMake = compare.make
                 buyFilterModel = compare.model
                 buyFilterYear = compare.year
@@ -242,8 +242,8 @@ struct MarketplaceBuySellView: View {
                 print("📊 Compare Price: Showing similar \(compare.make) \(compare.model) \(compare.year)")
             }
         }
-        .onChange(of: NavigationController.shared.comparePriceCard) { _, newValue in
-            if let compare = newValue {
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ComparePrice"))) { _ in
+            if let compare = NavigationController.shared.comparePriceCard {
                 selectedMarketTab = 0
                 buyFilterMake = compare.make
                 buyFilterModel = compare.model

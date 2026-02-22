@@ -227,6 +227,9 @@ struct GarageView: View {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                 NavigationController.shared.comparePriceCard = (make: make, model: model, year: year)
                                 NavigationController.shared.selectedTab = 3
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    NotificationCenter.default.post(name: NSNotification.Name("ComparePrice"), object: nil)
+                                }
                             }
                         },
                         onReplicate: {
