@@ -745,12 +745,14 @@ struct UnifiedCardDetailView: View {
                 // Card container - portrait mode: rotate card landscape
                 VStack {
                     Spacer()
-                    ZStack(alignment: .topLeading) {
+                    ZStack {
                         cardContent(screenSize: geometry.size)
                             .rotationEffect(.degrees(90))
                         
-                        // Driver name overlay — inside tilt container but outside rotation
+                        // Driver name overlay — positioned from card's visible top-left
                         if case .driver(let driverCard) = card {
+                            let cardVisibleWidth = geometry.size.width * 0.85
+                            let cardVisibleHeight = geometry.size.height * 0.75
                             let config = CardBorderConfig.forFrame(card.customFrame)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(driverCard.firstName.uppercased())
@@ -767,8 +769,10 @@ struct UnifiedCardDetailView: View {
                             }
                             .foregroundStyle(config.textColor)
                             .shadow(color: .black, radius: 4, x: 0, y: 2)
-                            .padding(.top, geometry.size.height * 0.12)
-                            .padding(.leading, geometry.size.width * 0.18)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .frame(width: cardVisibleWidth, height: cardVisibleHeight)
+                            .padding(.top, 20)
+                            .padding(.leading, 20)
                         }
                     }
                     .cardTilt()
