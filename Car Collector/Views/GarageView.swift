@@ -17,6 +17,7 @@ struct GarageView: View {
     @State private var selectedCard: AnyCard?
     @State private var showCustomize = false
     @State private var showContextMenu = false
+    @State private var showCardOptions = false
     @State private var contextMenuCard: AnyCard?
     @State private var contextMenuCardFrame: CGRect = .zero
     @State private var cardFrames: [UUID: CGRect] = [:]
@@ -83,9 +84,12 @@ struct GarageView: View {
                                 showCustomize = true
                             }
                         },
-                        onQuickSell: {
+                        onOptions: {
                             showContextMenu = false
-                            quickSellCard(card)
+                            selectedCard = card
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                showCardOptions = true
+                            }
                         },
                         onCrownToggle: {
                             // If unstarring, just clear
@@ -191,8 +195,26 @@ struct GarageView: View {
                 if let card = selectedCard {
                     CustomizeCardView(card: card)
                         .onDisappear {
-                            loadAllCards() // Reload to show updates
+                            loadAllCards()
                         }
+                }
+            }
+            .fullScreenCover(isPresented: $showCardOptions) {
+                if let card = selectedCard {
+                    CardOptionsView(
+                        card: card,
+                        onQuickSell: {
+                            showCardOptions = false
+                            quickSellCard(card)
+                        },
+                        onListOnMarket: {
+                            showCardOptions = false
+                            // TODO: Navigate to listing form
+                        },
+                        onReplicate: {
+                            // TODO: Replicate functionality
+                        }
+                    )
                 }
             }
             } // GeometryReader
@@ -366,7 +388,7 @@ struct CardContextMenuOverlay: View {
     @Binding var isShowing: Bool
     let isCrowned: Bool
     let onCustomize: () -> Void
-    let onQuickSell: () -> Void
+    let onOptions: () -> Void
     let onCrownToggle: () -> Void
     
     @State private var appeared = false
@@ -433,7 +455,7 @@ struct CardContextMenuOverlay: View {
                                 Spacer()
                                 actionRow(label: "Customize", action: onCustomize)
                                 Divider().padding(.horizontal, 12)
-                                actionRow(label: "Quick Sell", action: onQuickSell)
+                                actionRow(label: "Options", action: onOptions)
                                 Spacer()
                             }
                             .frame(width: panelWidth)
