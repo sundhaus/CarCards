@@ -92,7 +92,11 @@ struct CloudCard: Identifiable, Codable {
         capturedBy: String? = nil,
         capturedLocation: String? = nil,
         previousOwners: Int = 0,
-        customFrame: String? = nil
+        customFrame: String? = nil,
+        firstName: String? = nil,
+        lastName: String? = nil,
+        nickname: String? = nil,
+        locationName: String? = nil
     ) {
         self.id = id
         self.ownerId = ownerId
@@ -107,11 +111,16 @@ struct CloudCard: Identifiable, Codable {
         self.capturedLocation = capturedLocation
         self.previousOwners = previousOwners
         self.customFrame = customFrame
+        self.firstName = firstName
+        self.lastName = lastName
+        self.nickname = nickname
+        self.locationName = locationName
     }
     
     var dictionary: [String: Any] {
         var dict: [String: Any] = [
             "ownerId": ownerId,
+            "type": cardType,
             "make": make,
             "model": model,
             "color": color,
@@ -120,6 +129,18 @@ struct CloudCard: Identifiable, Codable {
             "createdAt": Timestamp(date: createdAt),
             "previousOwners": previousOwners
         ]
+        
+        // Driver-specific fields
+        if cardType == "driver" {
+            dict["firstName"] = firstName ?? make
+            dict["lastName"] = lastName ?? model
+            if let nickname = nickname { dict["nickname"] = nickname }
+        }
+        
+        // Location-specific fields
+        if cardType == "location" {
+            dict["locationName"] = locationName ?? make
+        }
         
         // ADDED: Include metadata if present
         if let capturedBy = capturedBy {

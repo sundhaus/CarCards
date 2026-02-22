@@ -351,6 +351,7 @@ class CardService: ObservableObject {
         let card = CloudCard(
             id: cardId,
             ownerId: uid,
+            cardType: "driver",
             make: driverCard.firstName,
             model: driverCard.lastName,
             color: "Driver",
@@ -359,7 +360,10 @@ class CardService: ObservableObject {
             capturedBy: driverCard.capturedBy,
             capturedLocation: driverCard.capturedLocation,
             previousOwners: 0,
-            customFrame: driverCard.customFrame?.rawValue
+            customFrame: driverCard.customFrame?.rawValue,
+            firstName: driverCard.firstName,
+            lastName: driverCard.lastName,
+            nickname: driverCard.nickname
         )
         
         try await cardsCollection.document(cardId).setData(card.dictionary)
@@ -380,6 +384,7 @@ class CardService: ObservableObject {
         let card = CloudCard(
             id: cardId,
             ownerId: uid,
+            cardType: "location",
             make: locationCard.locationName,
             model: "",
             color: "Location",
@@ -388,7 +393,8 @@ class CardService: ObservableObject {
             capturedBy: locationCard.capturedBy,
             capturedLocation: locationCard.capturedLocation,
             previousOwners: 0,
-            customFrame: locationCard.customFrame?.rawValue
+            customFrame: locationCard.customFrame?.rawValue,
+            locationName: locationCard.locationName
         )
         
         try await cardsCollection.document(cardId).setData(card.dictionary)
