@@ -338,6 +338,64 @@ class CardService: ObservableObject {
         print("✅ Transferred card \(cardId) to \(toUserId)")
     }
     
+    // MARK: - Sync Driver Card to Firebase
+    
+    func syncDriverCard(image: UIImage, driverCard: DriverCard) async throws -> CloudCard {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
+        let cardId = UUID().uuidString
+        let imageURL = try await uploadCardImage(image, uid: uid, cardId: cardId)
+        
+        let card = CloudCard(
+            id: cardId,
+            ownerId: uid,
+            make: driverCard.firstName,
+            model: driverCard.lastName,
+            color: "Driver",
+            year: driverCard.nickname.isEmpty ? "Driver" : driverCard.nickname,
+            imageURL: imageURL,
+            capturedBy: driverCard.capturedBy,
+            capturedLocation: driverCard.capturedLocation,
+            previousOwners: 0,
+            customFrame: driverCard.customFrame?.rawValue
+        )
+        
+        try await cardsCollection.document(cardId).setData(card.dictionary)
+        print("⭐ Driver card synced: \(driverCard.firstName) \(driverCard.lastName)")
+        return card
+    }
+    
+    // MARK: - Sync Location Card to Firebase
+    
+    func syncLocationCard(image: UIImage, locationCard: LocationCard) async throws -> CloudCard {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
+        let cardId = UUID().uuidString
+        let imageURL = try await uploadCardImage(image, uid: uid, cardId: cardId)
+        
+        let card = CloudCard(
+            id: cardId,
+            ownerId: uid,
+            make: locationCard.locationName,
+            model: "",
+            color: "Location",
+            year: "Location",
+            imageURL: imageURL,
+            capturedBy: locationCard.capturedBy,
+            capturedLocation: locationCard.capturedLocation,
+            previousOwners: 0,
+            customFrame: locationCard.customFrame?.rawValue
+        )
+        
+        try await cardsCollection.document(cardId).setData(card.dictionary)
+        print("⭐ Location card synced: \(locationCard.locationName)")
+        return card
+    }
+    
     // MARK: - Stop Listening
     
     func stopListening() {

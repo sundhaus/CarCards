@@ -640,27 +640,53 @@ struct UserCardView: View {
                     .allowsHitTesting(false)
             }
             
-            // Car name overlay - top left, horizontal
-            VStack {
-                HStack {
-                    HStack(spacing: isLargeSize ? 6 : 3) {
-                        let config = CardBorderConfig.forFrame(card.customFrame)
-                        Text(card.make.uppercased())
-                            .font(.custom("Futura-Light", size: cardHeight * 0.08))
-                            .foregroundStyle(config.textColor)
-                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                        
-                        Text(card.model.uppercased())
-                            .font(.custom("Futura-Bold", size: cardHeight * 0.08))
-                            .foregroundStyle(config.textColor)
-                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            .lineLimit(1)
-                    }
+            // Car name overlay
+            if card.cardType == "driver" {
+                // Driver: top-left in landscape, name stacked
+                let config = CardBorderConfig.forFrame(card.customFrame)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text((card.firstName ?? card.make).uppercased())
+                        .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                    Text((card.lastName ?? card.model).uppercased())
+                        .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                }
+                .foregroundStyle(config.textColor)
+                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                .padding(.top, cardHeight * 0.08)
+                .padding(.leading, cardHeight * 0.08)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            } else if card.cardType == "location" {
+                let config = CardBorderConfig.forFrame(card.customFrame)
+                Text((card.locationName ?? card.make).uppercased())
+                    .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                    .foregroundStyle(config.textColor)
+                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     .padding(.top, cardHeight * 0.08)
                     .padding(.leading, cardHeight * 0.08)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            } else {
+                // Vehicle: make + model horizontal
+                VStack {
+                    HStack {
+                        HStack(spacing: isLargeSize ? 6 : 3) {
+                            let config = CardBorderConfig.forFrame(card.customFrame)
+                            Text(card.make.uppercased())
+                                .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                                .foregroundStyle(config.textColor)
+                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                            
+                            Text(card.model.uppercased())
+                                .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                                .foregroundStyle(config.textColor)
+                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                                .lineLimit(1)
+                        }
+                        .padding(.top, cardHeight * 0.08)
+                        .padding(.leading, cardHeight * 0.08)
+                        Spacer()
+                    }
                     Spacer()
                 }
-                Spacer()
             }
         }
         .frame(width: cardWidth, height: cardHeight)
