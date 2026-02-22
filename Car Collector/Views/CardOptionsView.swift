@@ -28,14 +28,9 @@ struct CardOptionsView: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.55))
+                            .foregroundStyle(.secondary)
                             .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.08))
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.15), lineWidth: 0.75)
-                            )
+                            .glassEffect(.regular, in: .circle)
                     }
                     
                     Spacer()
@@ -175,9 +170,9 @@ struct CardOptionsView: View {
                         }
                         .foregroundStyle(config.textColor)
                         .shadow(color: .black, radius: 4, x: 0, y: 2)
-                        .frame(width: displayW * scale, height: displayH * scale, alignment: .topLeading)
                         .padding(.top, 10)
                         .padding(.leading, 10)
+                        .frame(width: displayW * scale, height: displayH * scale, alignment: .topLeading)
                     }
                 }
                 .frame(width: displayW * scale, height: displayH * scale)
