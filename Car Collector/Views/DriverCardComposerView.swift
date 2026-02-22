@@ -164,45 +164,39 @@ struct DriverCardComposerView: View {
         }
     }
     
-    // MARK: - Render Portrait Card
+    // MARK: - Render Card
     
     private func renderPortraitCard() -> UIImage {
-        // Portrait 9:16 aspect ratio
-        let renderWidth: CGFloat = 1080
-        let renderHeight: CGFloat = 1920
-        let renderSize = CGSize(width: renderWidth, height: renderHeight)
+        // Step 1: Render what the user framed in the portrait 9:16 composer
+        let portraitWidth: CGFloat = 1080
+        let portraitHeight: CGFloat = 1920
+        let portraitSize = CGSize(width: portraitWidth, height: portraitHeight)
         
-        // Scale factor from display to render
-        let scaleX = renderWidth / cardWidth
-        let scaleY = renderHeight / cardHeight
+        let scaleX = portraitWidth / cardWidth
+        let scaleY = portraitHeight / cardHeight
         
-        let renderer = UIGraphicsImageRenderer(size: renderSize)
-        
-        return renderer.image { context in
+        let portraitRenderer = UIGraphicsImageRenderer(size: portraitSize)
+        let portraitImage = portraitRenderer.image { context in
             let cgContext = context.cgContext
             
             cgContext.saveGState()
-            cgContext.clip(to: CGRect(origin: .zero, size: renderSize))
+            cgContext.clip(to: CGRect(origin: .zero, size: portraitSize))
+            cgContext.translateBy(x: portraitSize.width / 2, y: portraitSize.height / 2)
             
-            // Move to center for transformations
-            cgContext.translateBy(x: renderSize.width / 2, y: renderSize.height / 2)
-            
-            // Apply transformations scaled to render size
             cgContext.translateBy(x: offset.width * scaleX, y: offset.height * scaleY)
             cgContext.scaleBy(x: scale, y: scale)
             cgContext.rotate(by: rotation.radians)
             cgContext.scaleBy(x: isFlippedHorizontally ? -1 : 1, y: isFlippedVertically ? -1 : 1)
             
-            // Calculate image size to fill the frame
             let imageSize = displayImage.size
             let imageAspect = imageSize.width / imageSize.height
-            let frameAspect = renderSize.width / renderSize.height
+            let frameAspect = portraitSize.width / portraitSize.height
             
             var drawSize: CGSize
             if imageAspect > frameAspect {
-                drawSize = CGSize(width: renderSize.height * imageAspect, height: renderSize.height)
+                drawSize = CGSize(width: portraitSize.height * imageAspect, height: portraitSize.height)
             } else {
-                drawSize = CGSize(width: renderSize.width, height: renderSize.width / imageAspect)
+                drawSize = CGSize(width: portraitSize.width, height: portraitSize.width / imageAspect)
             }
             
             let imageRect = CGRect(
@@ -211,9 +205,23 @@ struct DriverCardComposerView: View {
                 width: drawSize.width,
                 height: drawSize.height
             )
-            
             displayImage.draw(in: imageRect)
             cgContext.restoreGState()
+        }
+        
+        // Step 2: Rotate 90° clockwise to produce 16:9 landscape card (1920x1080)
+        let landscapeSize = CGSize(width: portraitHeight, height: portraitWidth)
+        let landscapeRenderer = UIGraphicsImageRenderer(size: landscapeSize)
+        return landscapeRenderer.image { context in
+            let cgContext = context.cgContext
+            cgContext.translateBy(x: landscapeSize.width / 2, y: landscapeSize.height / 2)
+            cgContext.rotate(by: .pi / 2)
+            portraitImage.draw(in: CGRect(
+                x: -portraitSize.width / 2,
+                y: -portraitSize.height / 2,
+                width: portraitSize.width,
+                height: portraitSize.height
+            ))
         }
     }
     
