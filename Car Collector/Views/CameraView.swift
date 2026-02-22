@@ -591,6 +591,8 @@ struct CameraView: View {
     
     var body: some View {
         ZStack {
+            Color.black.ignoresSafeArea()
+            
             // Camera preview is ALWAYS alive underneath
             ZStack {
                 CameraPreview(camera: camera)
