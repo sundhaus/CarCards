@@ -752,6 +752,29 @@ struct UnifiedCardDetailView: View {
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 
+                // Driver name overlay — on portrait screen, NOT inside rotated card
+                if case .driver(let driverCard) = card {
+                    let config = CardBorderConfig.forFrame(card.customFrame)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(driverCard.firstName.uppercased())
+                            .font(.custom("Futura-Bold", size: 28))
+                        
+                        if !driverCard.nickname.isEmpty {
+                            Text("\"\(driverCard.nickname.uppercased())\"")
+                                .font(.custom("Futura-Light", size: 18))
+                                .opacity(0.8)
+                        }
+                        
+                        Text(driverCard.lastName.uppercased())
+                            .font(.custom("Futura-Bold", size: 28))
+                    }
+                    .foregroundStyle(config.textColor)
+                    .shadow(color: .black, radius: 4, x: 0, y: 2)
+                    .padding(.top, geometry.size.height * 0.18)
+                    .padding(.leading, geometry.size.width * 0.12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                
                 // X button
                 VStack {
                     HStack {
@@ -936,32 +959,9 @@ struct AnyCardDetailsFrontView: View {
                 }
                 
                 // Title overlay
-                if case .driver(let driverCard) = card {
-                    let config = CardBorderConfig.forFrame(card.customFrame)
-                    let fontSize = cardHeight * 0.13
-                    let nickSize = cardHeight * 0.08
-                    let inset = cardHeight * 0.1
-                    
-                    // Text at top-left in landscape coordinates
-                    // After fullscreen 90° CW rotation, this becomes top-left in portrait
-                    VStack(alignment: .leading, spacing: cardHeight * 0.01) {
-                        Text(driverCard.firstName.uppercased())
-                            .font(.custom("Futura-Bold", size: fontSize))
-                        
-                        if !driverCard.nickname.isEmpty {
-                            Text("\"\(driverCard.nickname.uppercased())\"")
-                                .font(.custom("Futura-Light", size: nickSize))
-                                .opacity(0.8)
-                        }
-                        
-                        Text(driverCard.lastName.uppercased())
-                            .font(.custom("Futura-Bold", size: fontSize))
-                    }
-                    .foregroundStyle(config.textColor)
-                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                    .padding(.top, inset)
-                    .padding(.leading, inset)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                if case .driver = card {
+                    // Driver text is overlaid separately outside rotation in UnifiedCardDetailView
+                    EmptyView()
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
