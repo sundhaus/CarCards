@@ -147,12 +147,7 @@ struct CaptureLandingView: View {
             }
             
             // Step 3: Driver info form — item-based so image is passed directly
-            .fullScreenCover(item: $driverFormImage, onDismiss: {
-                // Only show preview after form is fully dismissed
-                if previewCardImage != nil {
-                    showCardPreview = true
-                }
-            }) { wrapper in
+            .fullScreenCover(item: $driverFormImage) { wrapper in
                 DriverInfoFormSheet(
                     capturedImage: wrapper.image,
                     isDriverPlusVehicle: driverCaptureType == .driverPlusVehicle,
@@ -187,11 +182,8 @@ struct CaptureLandingView: View {
                                 levelSystem.addXP(10)
                                 print("✅ Driver card saved")
                                 await MainActor.run {
-                                    previewCardImage = cardImage
-                                    previewMake = firstName
-                                    previewModel = lastName
-                                    previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
                                     driverFormImage = nil
+                                    selectedTab = 4
                                 }
                             } catch {
                                 print("❌ Driver save failed: \(error)")
