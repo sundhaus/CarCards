@@ -127,76 +127,45 @@ struct GarageResultCard: View {
         let cardHeight: CGFloat = 202.5
         let cardWidth = cardHeight * 16 / 9
         
-        VStack(spacing: 0) {
-            // Card image
-            ZStack {
-                if let image = card.thumbnail ?? card.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: cardWidth, height: cardHeight)
-                        .clipped()
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: cardWidth, height: cardHeight)
-                }
-                
-                // Border overlay
-                if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                    Image(borderImageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: cardWidth, height: cardHeight)
-                        .allowsHitTesting(false)
-                }
-                
-                // Make/Model overlay
-                VStack {
-                    HStack {
-                        let config = CardBorderConfig.forFrame(card.customFrame)
-                        Text(card.make.uppercased())
-                            .font(.custom("Futura-Light", size: 11))
-                            .foregroundStyle(config.textColor)
-                        Text(card.model.uppercased())
-                            .font(.custom("Futura-Bold", size: 11))
-                            .foregroundStyle(config.textColor)
-                        Spacer()
-                    }
-                    .padding(8)
+        ZStack {
+            if let image = card.thumbnail ?? card.image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: cardWidth, height: cardHeight)
+                    .clipped()
+            } else {
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: cardWidth, height: cardHeight)
+            }
+            
+            // Border overlay
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                Image(borderImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: cardWidth, height: cardHeight)
+                    .allowsHitTesting(false)
+            }
+            
+            // Make/Model overlay
+            VStack {
+                HStack {
+                    let config = CardBorderConfig.forFrame(card.customFrame)
+                    Text(card.make.uppercased())
+                        .font(.custom("Futura-Light", size: 11))
+                        .foregroundStyle(config.textColor)
+                    Text(card.model.uppercased())
+                        .font(.custom("Futura-Bold", size: 11))
+                        .foregroundStyle(config.textColor)
                     Spacer()
                 }
-            }
-            .frame(width: cardWidth, height: cardHeight)
-            .clipped()
-            
-            // Info bar
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(card.year) \(card.make)")
-                        .font(.pCaption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
-                    
-                    Text(card.model)
-                        .font(.pCaption2)
-                        .foregroundStyle(.secondary)
-                }
-                
+                .padding(8)
                 Spacer()
-                
-                if let hp = card.parseHP() {
-                    Text("\(hp) HP")
-                        .font(.pCaption)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.orange)
-                }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
         }
-        .frame(width: cardWidth)
+        .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .glassEffect(.regular, in: .rect(cornerRadius: cardHeight * 0.09))
     }
 }
