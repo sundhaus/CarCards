@@ -11,9 +11,36 @@ struct GarageSearchView: View {
     @Environment(\.dismiss) private var dismiss
     var onCardListed: (() -> Void)? = nil
     
-    // All local cards
+    // All local cards (vehicles + drivers + locations)
     private var allCards: [SavedCard] {
-        CardStorage.loadCards()
+        var all = CardStorage.loadCards()
+        for dc in CardStorage.loadDriverCards() {
+            all.append(SavedCard(
+                id: dc.id,
+                image: dc.image ?? UIImage(),
+                make: dc.firstName,
+                model: dc.lastName,
+                color: "Driver",
+                year: dc.nickname.isEmpty ? "Driver" : dc.nickname,
+                capturedBy: dc.capturedBy,
+                capturedLocation: dc.capturedLocation,
+                firebaseId: dc.firebaseId
+            ))
+        }
+        for lc in CardStorage.loadLocationCards() {
+            all.append(SavedCard(
+                id: lc.id,
+                image: lc.image ?? UIImage(),
+                make: lc.locationName,
+                model: "",
+                color: "Location",
+                year: "Location",
+                capturedBy: lc.capturedBy,
+                capturedLocation: lc.capturedLocation,
+                firebaseId: lc.firebaseId
+            ))
+        }
+        return all
     }
     
     // Sort
