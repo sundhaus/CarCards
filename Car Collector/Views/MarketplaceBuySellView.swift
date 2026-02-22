@@ -722,6 +722,7 @@ struct SellTabCardView: View {
             }
         }
         .frame(width: cardWidth, height: cardHeight)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
     }
