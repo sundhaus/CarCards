@@ -59,13 +59,14 @@ struct SignatureView: View {
                 }
                 .padding()
                 
-                // Card with signature overlay
+                // Card with signature overlay — rotated to portrait for driver cards
                 GeometryReader { geometry in
                     ZStack {
-                        // Card image
+                        // Card image rotated to portrait
                         Image(uiImage: cardImage)
                             .resizable()
                             .scaledToFit()
+                            .rotationEffect(.degrees(-90))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         
                         // Signature canvas overlay
