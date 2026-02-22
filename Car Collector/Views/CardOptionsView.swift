@@ -123,33 +123,30 @@ struct CardOptionsView: View {
             let maxH = geo.size.height
             
             if isDriver {
-                // Driver: rotate landscape image 90° to show portrait, with name overlay
-                let landscapeW = maxH
-                let landscapeH = landscapeW * 9.0 / 16.0
-                let displayW = landscapeH  // portrait width = landscape height
-                let displayH = landscapeW  // portrait height = landscape width
-                let scale = min(maxW / displayW, maxH / displayH, 1.0)
+                // Driver: fixed portrait size, rotate landscape image 90°
+                let portraitW: CGFloat = min(maxW * 0.65, 220)
+                let portraitH: CGFloat = portraitW * 16.0 / 9.0
+                let landscapeW: CGFloat = portraitH
+                let landscapeH: CGFloat = portraitW
                 
                 ZStack {
-                    // Rotated card image
                     ZStack {
                         if let image = card.image {
                             Image(uiImage: image)
                                 .resizable()
-                                .aspectRatio(contentMode: .fit)
+                                .aspectRatio(contentMode: .fill)
                                 .frame(width: landscapeW, height: landscapeH)
+                                .clipped()
                         }
                         
                         if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
                             Image(borderName)
                                 .resizable()
-                                .aspectRatio(contentMode: .fit)
+                                .aspectRatio(contentMode: .fill)
                                 .frame(width: landscapeW, height: landscapeH)
                                 .allowsHitTesting(false)
                         }
                     }
-                    .frame(width: landscapeW, height: landscapeH)
-                    .clipped()
                     .rotationEffect(.degrees(90))
                     
                     // Name overlay
@@ -170,14 +167,14 @@ struct CardOptionsView: View {
                         }
                         .foregroundStyle(config.textColor)
                         .shadow(color: .black, radius: 4, x: 0, y: 2)
-                        .padding(.top, 8)
-                        .padding(.leading, 10)
-                        .frame(width: displayW * scale, height: displayH * scale, alignment: .topLeading)
+                        .padding(.top, 10)
+                        .padding(.leading, 12)
+                        .frame(width: portraitW, height: portraitH, alignment: .topLeading)
                     }
                 }
-                .frame(width: displayW * scale, height: displayH * scale)
+                .frame(width: portraitW, height: portraitH)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 // Vehicle/Location: landscape card, no rotation
