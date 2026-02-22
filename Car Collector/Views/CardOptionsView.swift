@@ -122,54 +122,106 @@ struct CardOptionsView: View {
     
     // MARK: - Card Preview
     
-    private func cardSize(in geo: GeometryProxy) -> CGSize {
-        let isDriver: Bool = { if case .driver = card { return true }; return false }()
-        let maxW = geo.size.width
-        let maxH = geo.size.height
-        let aspect: CGFloat = isDriver ? 9.0 / 16.0 : 16.0 / 9.0
-        if isDriver {
-            let h = min(maxH, maxW / aspect)
-            return CGSize(width: h * aspect, height: h)
-        } else {
-            let w = min(maxW, maxH * aspect)
-            return CGSize(width: w, height: w / aspect)
-        }
+    private var isDriver: Bool {
+        if case .driver = card { return true }
+        return false
     }
     
     private var cardPreview: some View {
         GeometryReader { geo in
-            let size = cardSize(in: geo)
+            let maxW = geo.size.width
+            let maxH = geo.size.height
             
-            VStack(spacing: 8) {
-                Spacer()
+            if isDriver {
+                // Driver: rotate landscape image 90° to show portrait, with name overlay
+                let landscapeW = maxH  // after rotation, height becomes width
+                let landscapeH = landscapeW * 9.0 / 16.0
+                let displayW = landscapeH  // portrait width = landscape height
+                let displayH = landscapeW  // portrait height = landscape width
+                let scale = min(maxW / displayW, maxH / displayH, 1.0)
                 
                 ZStack {
-                    if let image = card.image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: size.width, height: size.height)
-                            .clipped()
-                    } else {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(width: size.width, height: size.height)
+                    // Rotated card image
+                    ZStack {
+                        if let image = card.image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: landscapeW, height: landscapeH)
+                                .clipped()
+                        }
+                        
+                        if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                            Image(borderName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: landscapeW, height: landscapeH)
+                                .allowsHitTesting(false)
+                        }
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .rotationEffect(.degrees(90))
                     
-                    if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                        Image(borderName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: size.width, height: size.height)
-                            .allowsHitTesting(false)
+                    // Name overlay (un-rotated)
+                    if case .driver(let dc) = card {
+                        let config = CardBorderConfig.forFrame(card.customFrame)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(dc.firstName.uppercased())
+                                .font(.custom("Futura-Light", size: 18))
+                            
+                            if !dc.nickname.isEmpty {
+                                Text("\"\(dc.nickname.uppercased())\"")
+                                    .font(.custom("Futura-Bold", size: 12))
+                                    .opacity(0.8)
+                            }
+                            
+                            Text(dc.lastName.uppercased())
+                                .font(.custom("Futura-Bold", size: 18))
+                        }
+                        .foregroundStyle(config.textColor)
+                        .shadow(color: .black, radius: 4, x: 0, y: 2)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .padding(.top, 12)
+                        .padding(.leading, displayW * 0.35)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                .frame(width: displayW * scale, height: displayH * scale)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                // Vehicle/Location: landscape card, no rotation
+                let aspect: CGFloat = 16.0 / 9.0
+                let w = min(maxW, maxH * aspect)
+                let h = w / aspect
                 
-                Spacer()
+                VStack {
+                    Spacer()
+                    ZStack {
+                        if let image = card.image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: w, height: h)
+                                .clipped()
+                        } else {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: w, height: h)
+                        }
+                        
+                        if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                            Image(borderName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: w, height: h)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
         }
     }
     
