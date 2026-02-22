@@ -134,15 +134,14 @@ struct CardOptionsView: View {
                         if let image = card.image {
                             Image(uiImage: image)
                                 .resizable()
-                                .aspectRatio(contentMode: .fill)
+                                .aspectRatio(contentMode: .fit)
                                 .frame(width: landscapeW, height: landscapeH)
-                                .clipped()
                         }
                         
                         if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
                             Image(borderName)
                                 .resizable()
-                                .aspectRatio(contentMode: .fill)
+                                .aspectRatio(contentMode: .fit)
                                 .frame(width: landscapeW, height: landscapeH)
                                 .allowsHitTesting(false)
                         }
@@ -167,8 +166,8 @@ struct CardOptionsView: View {
                         }
                         .foregroundStyle(config.textColor)
                         .shadow(color: .black, radius: 4, x: 0, y: 2)
-                        .padding(.top, 10)
-                        .padding(.leading, 12)
+                        .padding(.top, 8)
+                        .padding(.leading, 8)
                         .frame(width: portraitW, height: portraitH, alignment: .topLeading)
                     }
                 }
