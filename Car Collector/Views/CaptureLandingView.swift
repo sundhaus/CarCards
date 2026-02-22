@@ -172,65 +172,75 @@ struct CaptureLandingView: View {
                     showCardPreview = true
                 }
             }) {
-                if let image = capturedImage {
-                    DriverInfoFormSheet(
-                        capturedImage: image,
-                        isDriverPlusVehicle: captureType == .driverPlusVehicle,
-                        onComplete: { cardImage, firstName, lastName, nickname, vehicleName in
-                            print("📝 Driver saved: \(firstName) \(lastName)" + (nickname.isEmpty ? "" : " (\(nickname))"))
-                            
-                            // Save to Firebase and local storage
-                            Task {
-                                do {
-                                    let firebaseId = try await CardService.shared.saveDriverCard(
-                                        image: cardImage,
-                                        firstName: firstName,
-                                        lastName: lastName,
-                                        nickname: nickname,
-                                        vehicleName: vehicleName,
-                                        isDriverPlusVehicle: captureType == .driverPlusVehicle,
-                                        capturedBy: UserService.shared.currentProfile?.username,
-                                        capturedLocation: locationService.currentCity
-                                    )
-                                    
-                                    let driverCard = DriverCard(
-                                        image: cardImage,
-                                        firstName: firstName,
-                                        lastName: lastName,
-                                        nickname: nickname,
-                                        vehicleName: vehicleName,
-                                        isDriverPlusVehicle: captureType == .driverPlusVehicle,
-                                        capturedBy: UserService.shared.currentProfile?.username,
-                                        capturedLocation: locationService.currentCity,
-                                        firebaseId: firebaseId
-                                    )
-                                    
-                                    var localCards = CardStorage.loadDriverCards()
-                                    localCards.append(driverCard)
-                                    CardStorage.saveDriverCards(localCards)
-                                    
-                                    levelSystem.addXP(10)
-                                    print("✅ Driver card saved successfully")
-                                    
-                                    await MainActor.run {
-                                        previewCardImage = cardImage
-                                        previewMake = firstName
-                                        previewModel = lastName
-                                        previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
+                Group {
+                    if let image = capturedImage {
+                        DriverInfoFormSheet(
+                            capturedImage: image,
+                            isDriverPlusVehicle: captureType == .driverPlusVehicle,
+                            onComplete: { cardImage, firstName, lastName, nickname, vehicleName in
+                                print("📝 Driver saved: \(firstName) \(lastName)" + (nickname.isEmpty ? "" : " (\(nickname))"))
+                                
+                                // Save to Firebase and local storage
+                                Task {
+                                    do {
+                                        let firebaseId = try await CardService.shared.saveDriverCard(
+                                            image: cardImage,
+                                            firstName: firstName,
+                                            lastName: lastName,
+                                            nickname: nickname,
+                                            vehicleName: vehicleName,
+                                            isDriverPlusVehicle: captureType == .driverPlusVehicle,
+                                            capturedBy: UserService.shared.currentProfile?.username,
+                                            capturedLocation: locationService.currentCity
+                                        )
                                         
-                                        pendingCardPreview = true
-                                        showDriverForm = false
-                                        // Preview will show via onDismiss callback above
-                                    }
-                                } catch {
-                                    print("❌ Failed to save driver card: \(error)")
-                                    await MainActor.run {
-                                        showDriverForm = false
+                                        let driverCard = DriverCard(
+                                            image: cardImage,
+                                            firstName: firstName,
+                                            lastName: lastName,
+                                            nickname: nickname,
+                                            vehicleName: vehicleName,
+                                            isDriverPlusVehicle: captureType == .driverPlusVehicle,
+                                            capturedBy: UserService.shared.currentProfile?.username,
+                                            capturedLocation: locationService.currentCity,
+                                            firebaseId: firebaseId
+                                        )
+                                        
+                                        var localCards = CardStorage.loadDriverCards()
+                                        localCards.append(driverCard)
+                                        CardStorage.saveDriverCards(localCards)
+                                        
+                                        levelSystem.addXP(10)
+                                        print("✅ Driver card saved successfully")
+                                        
+                                        await MainActor.run {
+                                            previewCardImage = cardImage
+                                            previewMake = firstName
+                                            previewModel = lastName
+                                            previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
+                                            
+                                            pendingCardPreview = true
+                                            showDriverForm = false
+                                            // Preview will show via onDismiss callback above
+                                        }
+                                    } catch {
+                                        print("❌ Failed to save driver card: \(error)")
+                                        await MainActor.run {
+                                            showDriverForm = false
+                                        }
                                     }
                                 }
                             }
-                        }
-                    )
+                        )
+                    } else {
+                        // Fallback — should not happen but prevents black screen
+                        Color.appBackgroundSolid
+                            .ignoresSafeArea()
+                            .onAppear {
+                                print("❌ Driver form: capturedImage is nil!")
+                                showDriverForm = false
+                            }
+                    }
                 }
             }
             // Location info form — fullScreenCover
