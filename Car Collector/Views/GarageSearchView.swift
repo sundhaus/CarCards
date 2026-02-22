@@ -134,14 +134,10 @@ struct GarageSearchView: View {
                         Button(action: { dismiss() }) {
                             Image(systemName: "xmark")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.55))
+                                .foregroundStyle(.secondary)
                                 .frame(width: 36, height: 36)
-                                .background(Color.white.opacity(0.08))
+                                .background(Color(.systemGray5))
                                 .clipShape(Circle())
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.white.opacity(0.15), lineWidth: 0.75)
-                                )
                         }
                         
                         Spacer()
@@ -231,7 +227,7 @@ struct GarageSearchView: View {
                 HStack {
                     Text(sortOption)
                         .font(.pSubheadline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     
                     Spacer()
                     
@@ -241,8 +237,8 @@ struct GarageSearchView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(.clear)
-                .glassEffect(.regular, in: .rect(cornerRadius: 10))
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
     }
@@ -285,8 +281,8 @@ struct GarageSearchView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(.clear)
-            .glassEffect(.regular, in: .rect(cornerRadius: 10))
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .disabled(isDisabled)
     }
@@ -301,10 +297,10 @@ struct GarageSearchView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(.clear)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
+                    .background(Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             
             Button(action: { showResults = true }) {
                 Text("Search")
@@ -320,7 +316,6 @@ struct GarageSearchView: View {
                         )
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 24))
-                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
             }
             .foregroundStyle(.white)
         }
