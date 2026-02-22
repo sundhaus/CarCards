@@ -52,6 +52,9 @@ struct GarageSearchView: View {
     @State private var filterModel = "Any"
     @State private var filterYear = "Any"
     @State private var filterCategory = "Any"
+    @State private var filterFirstName = "Any"
+    @State private var filterLastName = "Any"
+    @State private var filterLocation = "Any"
     
     // Navigation
     @State private var showResults = false
@@ -79,6 +82,22 @@ struct GarageSearchView: View {
         ["Any"] + VehicleCategory.allCases.map { $0.rawValue }
     }
     
+    private var availableFirstNames: [String] {
+        let driverCards = CardStorage.loadDriverCards()
+        return ["Any"] + Set(driverCards.map { $0.firstName }).sorted()
+    }
+    
+    private var availableLastNames: [String] {
+        var driverCards = CardStorage.loadDriverCards()
+        if filterFirstName != "Any" { driverCards = driverCards.filter { $0.firstName == filterFirstName } }
+        return ["Any"] + Set(driverCards.map { $0.lastName }).sorted()
+    }
+    
+    private var availableLocations: [String] {
+        let locCards = CardStorage.loadLocationCards()
+        return ["Any"] + Set(locCards.map { $0.locationName }).sorted()
+    }
+    
     // Filtered results
     private var filteredCards: [SavedCard] {
         var cards = allCards
@@ -89,6 +108,19 @@ struct GarageSearchView: View {
         
         if filterCategory != "Any" {
             cards = cards.filter { $0.specs?.category?.rawValue == filterCategory }
+        }
+        
+        // Driver filters — match on make (firstName) and model (lastName) for driver-wrapped cards
+        if filterFirstName != "Any" {
+            cards = cards.filter { $0.color == "Driver" && $0.make == filterFirstName }
+        }
+        if filterLastName != "Any" {
+            cards = cards.filter { $0.color == "Driver" && $0.model == filterLastName }
+        }
+        
+        // Location filter
+        if filterLocation != "Any" {
+            cards = cards.filter { $0.color == "Location" && $0.make == filterLocation }
         }
         
         return sortCards(cards)
@@ -155,6 +187,21 @@ struct GarageSearchView: View {
                             
                             fullWidthPill(icon: "square.grid.2x2", label: "Category", value: filterCategory, options: availableCategories) { val in
                                 filterCategory = val
+                            }
+                            
+                            // Driver filters
+                            fullWidthPill(icon: "person.fill", label: "First Name", value: filterFirstName, options: availableFirstNames) { val in
+                                filterFirstName = val
+                                filterLastName = "Any"
+                            }
+                            
+                            fullWidthPill(icon: "person.text.rectangle", label: "Last Name", value: filterLastName, options: availableLastNames) { val in
+                                filterLastName = val
+                            }
+                            
+                            // Location filter
+                            fullWidthPill(icon: "mappin.circle.fill", label: "Location", value: filterLocation, options: availableLocations) { val in
+                                filterLocation = val
                             }
                         }
                         .padding()
