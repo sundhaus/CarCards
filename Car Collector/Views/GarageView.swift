@@ -211,6 +211,11 @@ struct GarageView: View {
                             showCardOptions = false
                             // TODO: Navigate to listing form
                         },
+                        onComparePrice: {
+                            showCardOptions = false
+                            // Navigate to Market tab with filters pre-set
+                            NavigationController.shared.selectedTab = 3
+                        },
                         onReplicate: {
                             // TODO: Replicate functionality
                         }

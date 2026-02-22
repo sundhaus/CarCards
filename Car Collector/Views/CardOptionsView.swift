@@ -11,6 +11,7 @@ struct CardOptionsView: View {
     let card: AnyCard
     let onQuickSell: () -> Void
     let onListOnMarket: () -> Void
+    let onComparePrice: () -> Void
     let onReplicate: () -> Void
     
     @Environment(\.dismiss) private var dismiss
@@ -45,56 +46,68 @@ struct CardOptionsView: View {
                     
                     Spacer()
                     
-                    // Balance spacer
                     Color.clear.frame(width: 36, height: 36)
                 }
                 .padding(.horizontal)
                 .padding(.top, 18)
-                .padding(.bottom, 20)
+                .padding(.bottom, 12)
                 
-                Spacer()
-                
-                // Card preview — centered and prominent
-                cardPreview
-                    .padding(.horizontal, 40)
-                
-                Spacer()
-                
-                // Action buttons
-                VStack(spacing: 12) {
-                    // List on Market
-                    optionButton(
-                        icon: "chart.line.uptrend.xyaxis",
-                        label: "List on Market",
-                        subtitle: "Set a price and sell to other players",
-                        colors: [Color.blue, Color.purple]
-                    ) {
-                        onListOnMarket()
+                // Scrollable content
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Card preview — centered
+                        cardPreview
+                            .frame(height: 240)
+                            .padding(.horizontal, 30)
+                        
+                        // Card title
+                        Text(card.displayTitle)
+                            .font(.poppins(18))
+                            .foregroundStyle(.secondary)
+                        
+                        // Action buttons
+                        VStack(spacing: 10) {
+                            optionButton(
+                                icon: "chart.line.uptrend.xyaxis",
+                                label: "List on Market",
+                                subtitle: "Set a price and sell to other players",
+                                colors: [Color.blue, Color.purple]
+                            ) {
+                                onListOnMarket()
+                            }
+                            
+                            optionButton(
+                                icon: "chart.bar.fill",
+                                label: "Compare Price",
+                                subtitle: "See similar listings on the market",
+                                colors: [Color.teal, Color.cyan]
+                            ) {
+                                onComparePrice()
+                            }
+                            
+                            optionButton(
+                                icon: "bolt.fill",
+                                label: "Quick Sell",
+                                subtitle: "Instantly sell for 250 coins",
+                                colors: [Color.orange, Color.red]
+                            ) {
+                                showQuickSellConfirm = true
+                            }
+                            
+                            optionButton(
+                                icon: "doc.on.doc.fill",
+                                label: "Replicate",
+                                subtitle: "Coming soon",
+                                colors: [Color.gray, Color.gray.opacity(0.6)],
+                                disabled: true
+                            ) {
+                                onReplicate()
+                            }
+                        }
+                        .padding(.horizontal, 20)
                     }
-                    
-                    // Quick Sell
-                    optionButton(
-                        icon: "bolt.fill",
-                        label: "Quick Sell",
-                        subtitle: "Instantly sell for 250 coins",
-                        colors: [Color.orange, Color.red]
-                    ) {
-                        showQuickSellConfirm = true
-                    }
-                    
-                    // Replicate
-                    optionButton(
-                        icon: "doc.on.doc.fill",
-                        label: "Replicate",
-                        subtitle: "Coming soon",
-                        colors: [Color.gray, Color.gray.opacity(0.6)],
-                        disabled: true
-                    ) {
-                        onReplicate()
-                    }
+                    .padding(.bottom, 40)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 40)
             }
         }
         .alert("Quick Sell?", isPresented: $showQuickSellConfirm) {
@@ -153,10 +166,6 @@ struct CardOptionsView: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
-                
-                Text(card.displayTitle)
-                    .font(.poppins(16))
-                    .foregroundStyle(.secondary)
                 
                 Spacer()
             }
@@ -231,6 +240,7 @@ struct CardOptionsView: View {
         card: card,
         onQuickSell: {},
         onListOnMarket: {},
+        onComparePrice: {},
         onReplicate: {}
     )
 }
