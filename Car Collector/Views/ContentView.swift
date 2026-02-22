@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedTab = 1 // Start on Home
     @State private var showCamera = false
     @State private var savedCards: [SavedCard] = []
     @State private var driverCards: [DriverCard] = []
@@ -56,7 +55,7 @@ struct ContentView: View {
     }
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $navigationController.selectedTab) {
             // Shop Tab - lazy
             Tab("Shop", systemImage: "bag", value: 0) {
                 if visitedTabs.contains(0) {
@@ -83,7 +82,7 @@ struct ContentView: View {
                     CaptureLandingView(
                         isLandscape: false,
                         levelSystem: levelSystem,
-                        selectedTab: $selectedTab,
+                        selectedTab: $navigationController.selectedTab,
                         onCardSaved: { card in
                             savedCards.append(card)
                             CardStorage.saveCards(savedCards)
@@ -227,7 +226,7 @@ struct ContentView: View {
                 }
             )
         }
-        .onChange(of: selectedTab) { oldValue, newValue in
+        .onChange(of: navigationController.selectedTab) { oldValue, newValue in
             OrientationManager.lockToPortrait()
             // Mark tab as visited for lazy loading
             if !visitedTabs.contains(newValue) {

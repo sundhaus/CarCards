@@ -213,8 +213,10 @@ struct GarageView: View {
                         },
                         onComparePrice: {
                             showCardOptions = false
-                            // Navigate to Market tab with filters pre-set
-                            NavigationController.shared.selectedTab = 3
+                            // Navigate to Market tab
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                NavigationController.shared.selectedTab = 3
+                            }
                         },
                         onReplicate: {
                             // TODO: Replicate functionality

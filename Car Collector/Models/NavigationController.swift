@@ -18,6 +18,9 @@ class NavigationController: ObservableObject {
     @Published var marketplaceNavigationPath = NavigationPath()
     @Published var shopNavigationPath = NavigationPath()
     
+    // Selected tab — allows programmatic tab switching from anywhere
+    @Published var selectedTab: Int = 1
+    
     // Tabs that should NOT be reset on next tab switch
     // Views add their tab here when on a deep page worth preserving
     @Published var preservedTabs: Set<Int> = []
