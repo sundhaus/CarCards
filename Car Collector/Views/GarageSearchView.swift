@@ -136,8 +136,7 @@ struct GarageSearchView: View {
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .frame(width: 36, height: 36)
-                                .background(Color(.systemGray5))
-                                .clipShape(Circle())
+                                .glassEffect(.regular, in: .circle)
                         }
                         
                         Spacer()
@@ -297,8 +296,7 @@ struct GarageSearchView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color(.systemGray5))
-                    .clipShape(RoundedRectangle(cornerRadius: 24))
+                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
             }
             .foregroundStyle(.primary)
             

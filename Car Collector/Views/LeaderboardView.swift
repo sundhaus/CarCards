@@ -302,8 +302,8 @@ struct LeaderboardRow: View {
             }
         }
         .padding()
-        .background(isCurrentUser ? Color.blue.opacity(0.15) : Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(isCurrentUser ? Color.blue.opacity(0.15) : .clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
     
     private var rankColor: Color {
