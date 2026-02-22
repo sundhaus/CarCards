@@ -114,7 +114,8 @@ struct SignatureView: View {
                     }
                     .padding(.horizontal, 20)
                 }
-                .padding(.vertical, 16)
+                .padding(.vertical, 24)
+                .padding(.horizontal, 4)
                 
                 // Save button
                 Button(action: {
