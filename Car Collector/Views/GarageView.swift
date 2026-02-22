@@ -259,7 +259,7 @@ struct GarageView: View {
         let locationCards = CardStorage.loadLocationCards()
         cards.append(contentsOf: locationCards.map { AnyCard.location($0) })
         
-        // Sort: crowned card first, then newest first
+        // Sort: crowned card first, then oldest first (new cards at end)
         let crownId = UserService.shared.crownCardId
         allCards = cards.sorted { card1, card2 in
             let id1 = card1.firebaseId ?? card1.id.uuidString
@@ -267,7 +267,7 @@ struct GarageView: View {
             let card1Crowned = id1 == crownId
             let card2Crowned = id2 == crownId
             if card1Crowned != card2Crowned { return card1Crowned }
-            return card1.capturedDate > card2.capturedDate
+            return card1.capturedDate < card2.capturedDate
         }
         
         print("📦 Loaded \(vehicleCards.count) vehicles, \(driverCards.count) drivers, \(locationCards.count) locations")
