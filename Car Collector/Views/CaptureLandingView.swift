@@ -187,7 +187,7 @@ struct CaptureLandingView: View {
                                     previewModel = lastName
                                     previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
                                     driverFormImage = nil
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                                         showCardPreview = true
                                     }
                                 }

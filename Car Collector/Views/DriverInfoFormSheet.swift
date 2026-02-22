@@ -18,6 +18,7 @@ struct DriverInfoFormSheet: View {
     @State private var vehicleName = ""
     @State private var showSignature = false
     @State private var signatureImage: UIImage?
+    @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
     
     var isFormValid: Bool {
@@ -114,22 +115,29 @@ struct DriverInfoFormSheet: View {
                         .padding(.top, 8)
                         
                         Button(action: {
-                            // Use signature image if available, otherwise use original
+                            guard !isSaving else { return }
+                            isSaving = true
                             let finalCardImage = signatureImage ?? capturedImage
                             onComplete?(finalCardImage, firstName, lastName, nickname, vehicleName)
                         }) {
-                            Text("SAVE DRIVER")
-                                .font(.poppins(18))
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 18)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(isFormValid ? Color.blue : Color.gray)
-                                )
+                            HStack(spacing: 10) {
+                                if isSaving {
+                                    ProgressView()
+                                        .tint(.white)
+                                }
+                                Text(isSaving ? "SAVING..." : "SAVE DRIVER")
+                                    .font(.poppins(18))
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(isFormValid && !isSaving ? Color.blue : Color.gray)
+                            )
                         }
-                        .disabled(!isFormValid)
+                        .disabled(!isFormValid || isSaving)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 40)
                     }
