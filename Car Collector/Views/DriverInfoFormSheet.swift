@@ -33,17 +33,42 @@ struct DriverInfoFormSheet: View {
                 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Preview image — show signature composite if available
-                        Image(uiImage: signatureImage ?? capturedImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 200, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 2)
-                            )
-                            .padding(.top, 20)
+                        // Portrait card preview — rotated 90° like garage fullscreen
+                        ZStack {
+                            Image(uiImage: signatureImage ?? capturedImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 280, height: 158)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .rotationEffect(.degrees(90))
+                            
+                            // Name overlay (un-rotated, on top)
+                            if !firstName.isEmpty || !lastName.isEmpty {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(firstName.uppercased())
+                                        .font(.custom("Futura-Light", size: 16))
+                                    
+                                    if !nickname.isEmpty {
+                                        Text("\"\(nickname.uppercased())\"")
+                                            .font(.custom("Futura-Bold", size: 11))
+                                            .opacity(0.8)
+                                    }
+                                    
+                                    Text(lastName.uppercased())
+                                        .font(.custom("Futura-Bold", size: 16))
+                                }
+                                .foregroundStyle(.white)
+                                .shadow(color: .black, radius: 4, x: 0, y: 2)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                .padding(.top, 12)
+                                .padding(.leading, 56)
+                            }
+                        }
+                        .frame(width: 158, height: 280)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
+                        .padding(.top, 20)
                         
                         // Form fields
                         VStack(spacing: 16) {
