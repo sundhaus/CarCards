@@ -66,7 +66,7 @@ struct SignatureView: View {
                         Image(uiImage: cardImage)
                             .resizable()
                             .scaledToFit()
-                            .rotationEffect(.degrees(-90))
+                            .rotationEffect(.degrees(90))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         
                         // Signature canvas overlay

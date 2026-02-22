@@ -937,18 +937,18 @@ struct AnyCardDetailsFrontView: View {
                 
                 // Title overlay
                 if case .driver(let driverCard) = card {
-                    // Driver: names positioned bottom-right in landscape coordinates
-                    // so after 90° rotation in fullscreen they appear top-left in portrait
+                    // Driver: text rotated 90° in bottom-left of landscape card
+                    // After fullscreen 90° CW rotation, reads left-to-right at bottom
                     let config = CardBorderConfig.forFrame(card.customFrame)
-                    VStack(alignment: .trailing, spacing: cardHeight * 0.02) {
+                    HStack(spacing: cardHeight * 0.04) {
                         Text(driverCard.firstName.uppercased())
                             .font(.custom("Futura-Bold", size: cardHeight * 0.12))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         
                         if !driverCard.nickname.isEmpty {
-                            Text(driverCard.nickname.uppercased())
-                                .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                            Text("\"\(driverCard.nickname.uppercased())\"")
+                                .font(.custom("Futura-Light", size: cardHeight * 0.09))
                                 .foregroundStyle(config.textColor.opacity(0.8))
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         }
@@ -958,9 +958,11 @@ struct AnyCardDetailsFrontView: View {
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     }
+                    .rotationEffect(.degrees(-90))
+                    .fixedSize()
+                    .padding(.leading, cardHeight * 0.08)
                     .padding(.bottom, cardHeight * 0.08)
-                    .padding(.trailing, cardHeight * 0.08)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
@@ -1157,22 +1159,23 @@ struct UnifiedCardView: View {
             
             // Title overlay
             if case .driver(let driverCard) = card {
-                // Driver: bottom-right for portrait viewing after rotation
                 let config = CardBorderConfig.forFrame(card.customFrame)
-                VStack(alignment: .trailing, spacing: isLargeSize ? 2 : 1) {
+                HStack(spacing: 2) {
                     Text(driverCard.firstName.uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.1))
+                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
                         .foregroundStyle(config.textColor)
                         .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     
                     Text(driverCard.lastName.uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.1))
+                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
                         .foregroundStyle(config.textColor)
                         .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                 }
-                .padding(.bottom, cardHeight * 0.06)
-                .padding(.trailing, cardHeight * 0.06)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .rotationEffect(.degrees(-90))
+                .fixedSize()
+                .padding(.leading, cardHeight * 0.04)
+                .padding(.bottom, cardHeight * 0.04)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
             } else {
                 // Vehicle / Location: existing top-left layout
                 VStack {

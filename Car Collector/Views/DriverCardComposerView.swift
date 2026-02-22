@@ -209,13 +209,14 @@ struct DriverCardComposerView: View {
             cgContext.restoreGState()
         }
         
-        // Step 2: Rotate 90° clockwise to produce 16:9 landscape card (1920x1080)
+        // Step 2: Rotate 90° counter-clockwise to produce 16:9 landscape card (1920x1080)
+        // Fullscreen view adds 90° clockwise, so this restores portrait orientation
         let landscapeSize = CGSize(width: portraitHeight, height: portraitWidth)
         let landscapeRenderer = UIGraphicsImageRenderer(size: landscapeSize)
         return landscapeRenderer.image { context in
             let cgContext = context.cgContext
             cgContext.translateBy(x: landscapeSize.width / 2, y: landscapeSize.height / 2)
-            cgContext.rotate(by: .pi / 2)
+            cgContext.rotate(by: -.pi / 2)
             portraitImage.draw(in: CGRect(
                 x: -portraitSize.width / 2,
                 y: -portraitSize.height / 2,
