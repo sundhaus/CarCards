@@ -940,25 +940,30 @@ struct AnyCardDetailsFrontView: View {
                     let config = CardBorderConfig.forFrame(card.customFrame)
                     let fontSize = cardHeight * 0.11
                     let nickSize = cardHeight * 0.07
-                    let inset = cardHeight * 0.06
+                    let inset = cardHeight * 0.08
                     
-                    VStack(alignment: .leading, spacing: cardHeight * 0.01) {
-                        Text(driverCard.firstName.uppercased())
-                            .font(.custom("Futura-Bold", size: fontSize))
-                        
-                        if !driverCard.nickname.isEmpty {
-                            Text("\"\(driverCard.nickname.uppercased())\"")
-                                .font(.custom("Futura-Light", size: nickSize))
-                                .opacity(0.8)
+                    ZStack(alignment: .bottomLeading) {
+                        Color.clear
+                        VStack(alignment: .leading, spacing: cardHeight * 0.01) {
+                            Text(driverCard.firstName.uppercased())
+                                .font(.custom("Futura-Bold", size: fontSize))
+                            
+                            if !driverCard.nickname.isEmpty {
+                                Text("\"\(driverCard.nickname.uppercased())\"")
+                                    .font(.custom("Futura-Light", size: nickSize))
+                                    .opacity(0.8)
+                            }
+                            
+                            Text(driverCard.lastName.uppercased())
+                                .font(.custom("Futura-Bold", size: fontSize))
                         }
-                        
-                        Text(driverCard.lastName.uppercased())
-                            .font(.custom("Futura-Bold", size: fontSize))
+                        .foregroundStyle(config.textColor)
+                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                        .fixedSize()
+                        .rotationEffect(.degrees(-90), anchor: .bottomLeading)
+                        .padding(.leading, inset)
+                        .padding(.bottom, inset)
                     }
-                    .foregroundStyle(config.textColor)
-                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                    .rotationEffect(.degrees(-90), anchor: .bottomLeading)
-                    .position(x: inset, y: cardHeight - inset)
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
@@ -1156,24 +1161,29 @@ struct UnifiedCardView: View {
             // Title overlay
             if case .driver(let driverCard) = card {
                 let config = CardBorderConfig.forFrame(card.customFrame)
-                let inset = cardHeight * 0.06
+                let inset = cardHeight * 0.08
                 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(driverCard.firstName.uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
-                    
-                    if !driverCard.nickname.isEmpty {
-                        Text("\"\(driverCard.nickname.uppercased())\"")
-                            .font(.custom("Futura-Light", size: cardHeight * 0.06))
+                ZStack(alignment: .bottomLeading) {
+                    Color.clear
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(driverCard.firstName.uppercased())
+                            .font(.custom("Futura-Bold", size: cardHeight * 0.09))
+                        
+                        if !driverCard.nickname.isEmpty {
+                            Text("\"\(driverCard.nickname.uppercased())\"")
+                                .font(.custom("Futura-Light", size: cardHeight * 0.06))
+                        }
+                        
+                        Text(driverCard.lastName.uppercased())
+                            .font(.custom("Futura-Bold", size: cardHeight * 0.09))
                     }
-                    
-                    Text(driverCard.lastName.uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
+                    .foregroundStyle(config.textColor)
+                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                    .fixedSize()
+                    .rotationEffect(.degrees(-90), anchor: .bottomLeading)
+                    .padding(.leading, inset)
+                    .padding(.bottom, inset)
                 }
-                .foregroundStyle(config.textColor)
-                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                .rotationEffect(.degrees(-90), anchor: .bottomLeading)
-                .position(x: inset, y: cardHeight - inset)
             } else {
                 // Vehicle / Location: existing top-left layout
                 VStack {
