@@ -360,7 +360,7 @@ class CardService: ObservableObject {
             capturedBy: driverCard.capturedBy,
             capturedLocation: driverCard.capturedLocation,
             previousOwners: 0,
-            customFrame: driverCard.customFrame?.rawValue,
+            customFrame: driverCard.customFrame,
             firstName: driverCard.firstName,
             lastName: driverCard.lastName,
             nickname: driverCard.nickname
@@ -393,7 +393,7 @@ class CardService: ObservableObject {
             capturedBy: locationCard.capturedBy,
             capturedLocation: locationCard.capturedLocation,
             previousOwners: 0,
-            customFrame: locationCard.customFrame?.rawValue,
+            customFrame: locationCard.customFrame,
             locationName: locationCard.locationName
         )
         
