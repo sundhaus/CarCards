@@ -168,6 +168,7 @@ struct GarageResultCard: View {
                 }
             }
             .frame(width: cardWidth, height: cardHeight)
+            .clipped()
             
             // Info bar
             HStack {
