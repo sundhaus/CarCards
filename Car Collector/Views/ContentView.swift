@@ -11,6 +11,8 @@ struct ContentView: View {
     @State private var selectedTab = 1 // Start on Home
     @State private var showCamera = false
     @State private var savedCards: [SavedCard] = []
+    @State private var driverCards: [DriverCard] = []
+    @State private var locationCards: [LocationCard] = []
     @State private var showCardDetail = false
     @State private var selectedCard: SavedCard?
     @State private var forceOrientationUpdate = false
@@ -20,6 +22,38 @@ struct ContentView: View {
     // Track which tabs have been visited (for lazy loading)
     @State private var visitedTabs: Set<Int> = [1] // Home is pre-loaded
     @ObservedObject private var navigationController = NavigationController.shared
+    
+    // Merge all card types for marketplace
+    private var allSellableCards: [SavedCard] {
+        var all = savedCards
+        for dc in driverCards {
+            all.append(SavedCard(
+                id: dc.id,
+                image: dc.image ?? UIImage(),
+                make: dc.firstName,
+                model: dc.lastName,
+                color: "Driver",
+                year: dc.nickname.isEmpty ? "Driver" : dc.nickname,
+                capturedBy: dc.capturedBy,
+                capturedLocation: dc.capturedLocation,
+                firebaseId: dc.firebaseId
+            ))
+        }
+        for lc in locationCards {
+            all.append(SavedCard(
+                id: lc.id,
+                image: lc.image ?? UIImage(),
+                make: lc.locationName,
+                model: "",
+                color: "Location",
+                year: "Location",
+                capturedBy: lc.capturedBy,
+                capturedLocation: lc.capturedLocation,
+                firebaseId: lc.firebaseId
+            ))
+        }
+        return all
+    }
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -92,7 +126,7 @@ struct ContentView: View {
                 if visitedTabs.contains(3) {
                     MarketplaceLandingView(
                         isLandscape: false,
-                        savedCards: savedCards,
+                        savedCards: allSellableCards,
                         onCardListed: { card in
                             if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
                                 savedCards.remove(at: index)
@@ -207,6 +241,8 @@ struct ContentView: View {
             // Defer card loading off the init path
             DispatchQueue.main.async {
                 savedCards = CardStorage.loadCards()
+                driverCards = CardStorage.loadDriverCards()
+                locationCards = CardStorage.loadLocationCards()
                 
                 // One-time sync of locally modified images to Firebase
                 // Skip if no local cards (fresh install / new device)
