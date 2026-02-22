@@ -126,6 +126,7 @@ struct GarageResultCard: View {
     var body: some View {
         let cardHeight: CGFloat = 202.5
         let cardWidth = cardHeight * 16 / 9
+        let config = CardBorderConfig.forFrame(card.customFrame)
         
         ZStack {
             if let image = card.thumbnail ?? card.image {
@@ -149,20 +150,51 @@ struct GarageResultCard: View {
                     .allowsHitTesting(false)
             }
             
-            // Make/Model overlay
-            VStack {
-                HStack {
-                    let config = CardBorderConfig.forFrame(card.customFrame)
+            // Text overlay — matches garage style
+            if card.color == "Driver" {
+                // Driver: stacked first/last name
+                VStack(alignment: .leading, spacing: 1) {
                     Text(card.make.uppercased())
-                        .font(.custom("Futura-Light", size: 11))
-                        .foregroundStyle(config.textColor)
+                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
                     Text(card.model.uppercased())
-                        .font(.custom("Futura-Bold", size: 11))
-                        .foregroundStyle(config.textColor)
+                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
+                }
+                .foregroundStyle(config.textColor)
+                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                .padding(.top, cardHeight * 0.08)
+                .padding(.leading, cardHeight * 0.08)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            } else if card.color == "Location" {
+                // Location: location name
+                Text(card.make.uppercased())
+                    .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                    .foregroundStyle(config.textColor)
+                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                    .padding(.top, cardHeight * 0.08)
+                    .padding(.leading, cardHeight * 0.08)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            } else {
+                // Vehicle: make (light) + model (bold) horizontal
+                VStack {
+                    HStack {
+                        HStack(spacing: 6) {
+                            Text(card.make.uppercased())
+                                .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                                .foregroundStyle(config.textColor)
+                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                            
+                            Text(card.model.uppercased())
+                                .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                                .foregroundStyle(config.textColor)
+                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                                .lineLimit(1)
+                        }
+                        .padding(.top, cardHeight * 0.08)
+                        .padding(.leading, cardHeight * 0.08)
+                        Spacer()
+                    }
                     Spacer()
                 }
-                .padding(8)
-                Spacer()
             }
         }
         .frame(width: cardWidth, height: cardHeight)
