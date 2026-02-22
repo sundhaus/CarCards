@@ -938,13 +938,13 @@ struct AnyCardDetailsFrontView: View {
                 // Title overlay
                 if case .driver(let driverCard) = card {
                     let config = CardBorderConfig.forFrame(card.customFrame)
-                    let fontSize = cardHeight * 0.11
-                    let nickSize = cardHeight * 0.07
+                    let fontSize = cardHeight * 0.08
+                    let nickSize = cardHeight * 0.05
                     let inset = cardHeight * 0.08
                     
                     ZStack(alignment: .bottomLeading) {
                         Color.clear
-                        VStack(alignment: .leading, spacing: cardHeight * 0.01) {
+                        VStack(alignment: .leading, spacing: cardHeight * 0.005) {
                             Text(driverCard.firstName.uppercased())
                                 .font(.custom("Futura-Bold", size: fontSize))
                             
@@ -964,6 +964,7 @@ struct AnyCardDetailsFrontView: View {
                         .padding(.leading, inset)
                         .padding(.bottom, inset)
                     }
+                    .clipped()
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
