@@ -213,8 +213,19 @@ struct GarageView: View {
                         },
                         onComparePrice: {
                             showCardOptions = false
-                            // Navigate to Market tab
+                            let make: String
+                            let model: String
+                            let year: String
+                            switch card {
+                            case .vehicle(let vc):
+                                make = vc.make; model = vc.model; year = vc.year
+                            case .driver(let dc):
+                                make = dc.firstName; model = dc.lastName; year = dc.nickname.isEmpty ? "Driver" : dc.nickname
+                            case .location(let lc):
+                                make = lc.locationName; model = ""; year = "Location"
+                            }
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                NavigationController.shared.comparePriceCard = (make: make, model: model, year: year)
                                 NavigationController.shared.selectedTab = 3
                             }
                         },

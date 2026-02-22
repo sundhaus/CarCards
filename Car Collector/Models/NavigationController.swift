@@ -21,6 +21,9 @@ class NavigationController: ObservableObject {
     // Selected tab — allows programmatic tab switching from anywhere
     @Published var selectedTab: Int = 1
     
+    // Compare Price — pass card info from garage to marketplace
+    @Published var comparePriceCard: (make: String, model: String, year: String)? = nil
+    
     // Tabs that should NOT be reset on next tab switch
     // Views add their tab here when on a deep page worth preserving
     @Published var preservedTabs: Set<Int> = []
