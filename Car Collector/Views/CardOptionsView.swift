@@ -131,20 +131,19 @@ struct CardOptionsView: View {
                 let scale = min(maxW / displayW, maxH / displayH, 1.0)
                 
                 ZStack {
-                    // Rotated card image — clip both before AND after rotation
+                    // Rotated card image
                     ZStack {
                         if let image = card.image {
                             Image(uiImage: image)
                                 .resizable()
-                                .aspectRatio(contentMode: .fill)
+                                .aspectRatio(contentMode: .fit)
                                 .frame(width: landscapeW, height: landscapeH)
-                                .clipped()
                         }
                         
                         if let borderName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
                             Image(borderName)
                                 .resizable()
-                                .aspectRatio(contentMode: .fill)
+                                .aspectRatio(contentMode: .fit)
                                 .frame(width: landscapeW, height: landscapeH)
                                 .allowsHitTesting(false)
                         }
@@ -152,10 +151,8 @@ struct CardOptionsView: View {
                     .frame(width: landscapeW, height: landscapeH)
                     .clipped()
                     .rotationEffect(.degrees(90))
-                    .frame(width: displayW, height: displayH)
-                    .clipped()
                     
-                    // Name overlay — constrained to portrait card bounds
+                    // Name overlay
                     if case .driver(let dc) = card {
                         let config = CardBorderConfig.forFrame(card.customFrame)
                         VStack(alignment: .leading, spacing: 1) {
@@ -173,8 +170,8 @@ struct CardOptionsView: View {
                         }
                         .foregroundStyle(config.textColor)
                         .shadow(color: .black, radius: 4, x: 0, y: 2)
-                        .padding(.top, 10)
-                        .padding(.leading, 14)
+                        .padding(.top, 8)
+                        .padding(.leading, 10)
                         .frame(width: displayW * scale, height: displayH * scale, alignment: .topLeading)
                     }
                 }
