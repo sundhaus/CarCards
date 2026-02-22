@@ -265,12 +265,7 @@ struct CardOptionsView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(16)
-            .background(Color.white.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-            )
+            .glassEffect(.regular, in: .rect(cornerRadius: 14))
         }
         .disabled(disabled)
         .opacity(disabled ? 0.5 : 1)
