@@ -35,16 +35,8 @@ struct OnboardingView: View {
     var body: some View {
         ZStack {
             // Background
-            LinearGradient(
-                colors: [
-                    Color(red: 0.05, green: 0.08, blue: 0.15),
-                    Color(red: 0.1, green: 0.15, blue: 0.25),
-                    Color(red: 0.05, green: 0.1, blue: 0.2)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            AppBackground(animateShapes: true)
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 Spacer()
