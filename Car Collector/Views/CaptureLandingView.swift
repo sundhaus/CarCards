@@ -20,8 +20,7 @@ struct CaptureLandingView: View {
     @State private var showDriverTypeSelector = false
     @State private var showDriverCamera = false
     @State private var driverCaptureType: CaptureType = .driver
-    @State private var driverCapturedImage: UIImage?
-    @State private var showDriverForm = false
+    @State private var driverFormImage: IdentifiableImage? = nil
     
     // Location flow — separate
     @State private var showLocationCamera = false
@@ -131,87 +130,74 @@ struct CaptureLandingView: View {
                 CameraView(
                     isPresented: $showDriverCamera,
                     onCardSaved: { card in
-                        // Try every way to get the image
                         let img = card.image ?? UIImage(data: card.imageData)
                         if let img = img {
-                            driverCapturedImage = img
-                            print("📸 Driver image stored: \(img.size), data size: \(card.imageData.count)")
+                            print("📸 Driver image: \(img.size)")
+                            showDriverCamera = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                driverFormImage = IdentifiableImage(image: img)
+                            }
                         } else {
-                            print("❌ Could not extract image. imageData size: \(card.imageData.count)")
-                        }
-                        showDriverCamera = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                            print("🟢 Showing driver form, image exists: \(driverCapturedImage != nil)")
-                            showDriverForm = true
+                            print("❌ No driver image")
+                            showDriverCamera = false
                         }
                     },
                     captureType: driverCaptureType
                 )
             }
             
-            // Step 3: Driver info form
-            .fullScreenCover(isPresented: $showDriverForm) {
-                Group {
-                    if let image = driverCapturedImage {
-                        DriverInfoFormSheet(
-                            capturedImage: image,
-                            isDriverPlusVehicle: driverCaptureType == .driverPlusVehicle,
-                            onComplete: { cardImage, firstName, lastName, nickname, vehicleName in
-                                print("📝 Driver: \(firstName) \(lastName)")
-                                Task {
-                                    do {
-                                        let firebaseId = try await CardService.shared.saveDriverCard(
-                                            image: cardImage,
-                                            firstName: firstName,
-                                            lastName: lastName,
-                                            nickname: nickname,
-                                            vehicleName: vehicleName,
-                                            isDriverPlusVehicle: driverCaptureType == .driverPlusVehicle,
-                                            capturedBy: UserService.shared.currentProfile?.username,
-                                            capturedLocation: locationService.currentCity
-                                        )
-                                        let driverCard = DriverCard(
-                                            image: cardImage,
-                                            firstName: firstName,
-                                            lastName: lastName,
-                                            nickname: nickname,
-                                            vehicleName: vehicleName,
-                                            isDriverPlusVehicle: driverCaptureType == .driverPlusVehicle,
-                                            capturedBy: UserService.shared.currentProfile?.username,
-                                            capturedLocation: locationService.currentCity,
-                                            firebaseId: firebaseId
-                                        )
-                                        var localCards = CardStorage.loadDriverCards()
-                                        localCards.append(driverCard)
-                                        CardStorage.saveDriverCards(localCards)
-                                        levelSystem.addXP(10)
-                                        print("✅ Driver card saved")
-                                        await MainActor.run {
-                                            previewCardImage = cardImage
-                                            previewMake = firstName
-                                            previewModel = lastName
-                                            previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
-                                            showDriverForm = false
-                                            driverCapturedImage = nil
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                                                showCardPreview = true
-                                            }
-                                        }
-                                    } catch {
-                                        print("❌ Driver save failed: \(error)")
-                                        await MainActor.run { showDriverForm = false }
+            // Step 3: Driver info form — item-based so image is passed directly
+            .fullScreenCover(item: $driverFormImage) { wrapper in
+                DriverInfoFormSheet(
+                    capturedImage: wrapper.image,
+                    isDriverPlusVehicle: driverCaptureType == .driverPlusVehicle,
+                    onComplete: { cardImage, firstName, lastName, nickname, vehicleName in
+                        print("📝 Driver: \(firstName) \(lastName)")
+                        Task {
+                            do {
+                                let firebaseId = try await CardService.shared.saveDriverCard(
+                                    image: cardImage,
+                                    firstName: firstName,
+                                    lastName: lastName,
+                                    nickname: nickname,
+                                    vehicleName: vehicleName,
+                                    isDriverPlusVehicle: driverCaptureType == .driverPlusVehicle,
+                                    capturedBy: UserService.shared.currentProfile?.username,
+                                    capturedLocation: locationService.currentCity
+                                )
+                                let driverCard = DriverCard(
+                                    image: cardImage,
+                                    firstName: firstName,
+                                    lastName: lastName,
+                                    nickname: nickname,
+                                    vehicleName: vehicleName,
+                                    isDriverPlusVehicle: driverCaptureType == .driverPlusVehicle,
+                                    capturedBy: UserService.shared.currentProfile?.username,
+                                    capturedLocation: locationService.currentCity,
+                                    firebaseId: firebaseId
+                                )
+                                var localCards = CardStorage.loadDriverCards()
+                                localCards.append(driverCard)
+                                CardStorage.saveDriverCards(localCards)
+                                levelSystem.addXP(10)
+                                print("✅ Driver card saved")
+                                await MainActor.run {
+                                    previewCardImage = cardImage
+                                    previewMake = firstName
+                                    previewModel = lastName
+                                    previewGeneration = nickname.isEmpty ? "" : "(\(nickname))"
+                                    driverFormImage = nil
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                        showCardPreview = true
                                     }
                                 }
+                            } catch {
+                                print("❌ Driver save failed: \(error)")
+                                await MainActor.run { driverFormImage = nil }
                             }
-                        )
-                    } else {
-                        Color.appBackgroundSolid.ignoresSafeArea()
-                            .onAppear {
-                                print("❌ Driver form: no image!")
-                                showDriverForm = false
-                            }
+                        }
                     }
-                }
+                )
             }
             
             // ===========================================================
@@ -311,4 +297,10 @@ struct CaptureLandingView: View {
 
 #Preview {
     CaptureLandingView(levelSystem: LevelSystem(), selectedTab: .constant(2))
+}
+
+// Wrapper to pass UIImage through fullScreenCover(item:)
+struct IdentifiableImage: Identifiable {
+    let id = UUID()
+    let image: UIImage
 }
