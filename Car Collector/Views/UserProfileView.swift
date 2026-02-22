@@ -444,24 +444,24 @@ struct UserProfileView: View {
     static func anyCardFrom(cloud: CloudCard, image: UIImage) -> AnyCard {
         switch cloud.cardType {
         case "driver":
-            var dc = DriverCard(
+            let dc = DriverCard(
                 image: image,
                 firstName: cloud.firstName ?? cloud.make,
                 lastName: cloud.lastName ?? cloud.model,
-                nickname: cloud.nickname ?? ""
+                nickname: cloud.nickname ?? "",
+                capturedBy: cloud.capturedBy,
+                capturedLocation: cloud.capturedLocation,
+                firebaseId: cloud.id
             )
-            dc.capturedBy = cloud.capturedBy
-            dc.capturedLocation = cloud.capturedLocation
-            dc.firebaseId = cloud.id
             return .driver(dc)
         case "location":
-            var lc = LocationCard(
+            let lc = LocationCard(
                 image: image,
-                locationName: cloud.locationName ?? cloud.make
+                locationName: cloud.locationName ?? cloud.make,
+                capturedBy: cloud.capturedBy,
+                capturedLocation: cloud.capturedLocation,
+                firebaseId: cloud.id
             )
-            lc.capturedBy = cloud.capturedBy
-            lc.capturedLocation = cloud.capturedLocation
-            lc.firebaseId = cloud.id
             return .location(lc)
         default:
             let sc = SavedCard(
