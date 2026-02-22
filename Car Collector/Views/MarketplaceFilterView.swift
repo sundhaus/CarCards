@@ -18,6 +18,8 @@ struct MarketplaceFilterView: View {
     @State private var filterModel = "Any"
     @State private var filterYear = "Any"
     @State private var filterCategory = "Any"
+    @State private var filterLastName = "Any"
+    @State private var filterLocation = "Any"
     @State private var bidMinPrice = ""
     @State private var bidMaxPrice = ""
     @State private var buyMinPrice = ""
@@ -59,6 +61,23 @@ struct MarketplaceFilterView: View {
         return ["Any"] + cats
     }
     
+    private var availableLastNames: [String] {
+        // Driver listings have year == "Driver" or a nickname; model == lastName
+        let driverListings = marketplaceService.activeListings.filter {
+            $0.year == "Driver" || (!$0.year.isEmpty && Int($0.year) == nil && $0.year != "Location")
+        }
+        let names = Set(driverListings.map { $0.model })
+        guard !names.isEmpty else { return ["Any"] }
+        return ["Any"] + names.sorted()
+    }
+    
+    private var availableLocations: [String] {
+        let locListings = marketplaceService.activeListings.filter { $0.year == "Location" }
+        let locs = Set(locListings.map { $0.make })
+        guard !locs.isEmpty else { return ["Any"] }
+        return ["Any"] + locs.sorted()
+    }
+    
     // Apply all filters
     private var filteredListings: [CloudListing] {
         marketplaceService.activeListings.filter { listing in
@@ -72,6 +91,8 @@ struct MarketplaceFilterView: View {
             if let max = Double(bidMaxPrice), listing.currentBid > max { return false }
             if let min = Double(buyMinPrice), listing.buyNowPrice < min { return false }
             if let max = Double(buyMaxPrice), listing.buyNowPrice > max { return false }
+            if filterLastName != "Any" && listing.model != filterLastName { return false }
+            if filterLocation != "Any" && listing.make != filterLocation { return false }
             return true
         }
     }
@@ -149,6 +170,28 @@ struct MarketplaceFilterView: View {
                                 options: availableCategories,
                                 onSelect: { cat in
                                     filterCategory = cat
+                                }
+                            )
+                        }
+                        
+                        HStack(spacing: 10) {
+                            fullWidthPill(
+                                icon: "person.text.rectangle",
+                                label: "Last Name",
+                                value: filterLastName,
+                                options: availableLastNames,
+                                onSelect: { name in
+                                    filterLastName = name
+                                }
+                            )
+                            
+                            fullWidthPill(
+                                icon: "mappin.circle.fill",
+                                label: "Location",
+                                value: filterLocation,
+                                options: availableLocations,
+                                onSelect: { loc in
+                                    filterLocation = loc
                                 }
                             )
                         }
@@ -378,6 +421,8 @@ struct MarketplaceFilterView: View {
         filterModel = "Any"
         filterYear = "Any"
         filterCategory = "Any"
+        filterLastName = "Any"
+        filterLocation = "Any"
         bidMinPrice = ""
         bidMaxPrice = ""
         buyMinPrice = ""
@@ -390,6 +435,8 @@ struct MarketplaceFilterView: View {
         if filterModel != "Any" { parts.append(filterModel) }
         if filterYear != "Any" { parts.append(filterYear) }
         if filterCategory != "Any" { parts.append(filterCategory) }
+        if filterLastName != "Any" { parts.append(filterLastName) }
+        if filterLocation != "Any" { parts.append(filterLocation) }
         return parts.isEmpty ? "All Listings" : parts.joined(separator: " ")
     }
     
