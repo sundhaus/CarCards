@@ -99,7 +99,15 @@ struct SignatureView: View {
     }
     
     private func combineImageWithSignature() -> UIImage {
-        let cardSize = cardImage.size
+        var cardSize = cardImage.size
+        
+        // Cap render size to prevent GPU memory crash on large RAW images
+        let maxDimension: CGFloat = 2048
+        if max(cardSize.width, cardSize.height) > maxDimension {
+            let ratio = maxDimension / max(cardSize.width, cardSize.height)
+            cardSize = CGSize(width: cardSize.width * ratio, height: cardSize.height * ratio)
+        }
+        
         let canvasSize = canvas.bounds.size
         
         // Calculate where the card image appears within the canvas (scaledToFit)
@@ -121,8 +129,8 @@ struct SignatureView: View {
         
         let renderer = UIGraphicsImageRenderer(size: cardSize)
         return renderer.image { context in
-            // Draw card image
-            cardImage.draw(at: .zero)
+            // Draw card image scaled to capped size
+            cardImage.draw(in: CGRect(origin: .zero, size: cardSize))
             
             // Get the full canvas drawing at screen scale
             let scale = UITraitCollection.current.displayScale
