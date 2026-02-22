@@ -4,8 +4,8 @@
 # Pulls latest from GitHub and builds the project
 
 PROJECT_DIR="/Users/jbsund/Documents/HeatCheck/HeatCheck"
-SCHEME="HeatCheck"
-XCODEPROJ="$PROJECT_DIR/HeatCheck.xcodeproj"
+SCHEME="Car Collector"
+XCODEPROJ="$PROJECT_DIR/Car Collector.xcodeproj"
 REPO_URL="https://github.com/sundhaus/CarCards.git"
 
 echo ""
