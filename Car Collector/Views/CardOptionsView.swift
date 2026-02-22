@@ -131,7 +131,7 @@ struct CardOptionsView: View {
                 let scale = min(maxW / displayW, maxH / displayH, 1.0)
                 
                 ZStack {
-                    // Rotated card image
+                    // Rotated card image — clip AFTER rotation on outer frame
                     ZStack {
                         if let image = card.image {
                             Image(uiImage: image)
@@ -149,7 +149,6 @@ struct CardOptionsView: View {
                                 .allowsHitTesting(false)
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
                     .rotationEffect(.degrees(90))
                     
                     // Name overlay — constrained to portrait card bounds
@@ -170,8 +169,8 @@ struct CardOptionsView: View {
                         }
                         .foregroundStyle(config.textColor)
                         .shadow(color: .black, radius: 4, x: 0, y: 2)
-                        .padding(.top, 10)
-                        .padding(.leading, 10)
+                        .padding(.top, 14)
+                        .padding(.leading, 24)
                         .frame(width: displayW * scale, height: displayH * scale, alignment: .topLeading)
                     }
                 }
