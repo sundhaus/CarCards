@@ -770,8 +770,8 @@ struct UnifiedCardDetailView: View {
                     }
                     .foregroundStyle(config.textColor)
                     .shadow(color: .black, radius: 4, x: 0, y: 2)
-                    .padding(.top, geometry.size.height * 0.18)
-                    .padding(.leading, geometry.size.width * 0.12)
+                    .padding(.top, geometry.size.height * 0.12)
+                    .padding(.leading, geometry.size.width * 0.18)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
                 
