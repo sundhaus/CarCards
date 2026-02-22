@@ -57,13 +57,8 @@ struct CardOptionsView: View {
                     VStack(spacing: 20) {
                         // Card preview — centered
                         cardPreview
-                            .frame(height: 240)
+                            .frame(height: isDriver ? 340 : 240)
                             .padding(.horizontal, 30)
-                        
-                        // Card title
-                        Text(card.displayTitle)
-                            .font(.poppins(18))
-                            .foregroundStyle(.secondary)
                         
                         // Action buttons
                         VStack(spacing: 10) {
@@ -162,30 +157,32 @@ struct CardOptionsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .rotationEffect(.degrees(90))
                     
-                    // Name overlay (un-rotated)
+                    // Name overlay — constrained to portrait card bounds
                     if case .driver(let dc) = card {
                         let config = CardBorderConfig.forFrame(card.customFrame)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(dc.firstName.uppercased())
-                                .font(.custom("Futura-Light", size: 18))
+                                .font(.custom("Futura-Light", size: 16))
                             
                             if !dc.nickname.isEmpty {
                                 Text("\"\(dc.nickname.uppercased())\"")
-                                    .font(.custom("Futura-Bold", size: 12))
+                                    .font(.custom("Futura-Bold", size: 10))
                                     .opacity(0.8)
                             }
                             
                             Text(dc.lastName.uppercased())
-                                .font(.custom("Futura-Bold", size: 18))
+                                .font(.custom("Futura-Bold", size: 16))
                         }
                         .foregroundStyle(config.textColor)
                         .shadow(color: .black, radius: 4, x: 0, y: 2)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        .padding(.top, 12)
-                        .padding(.leading, displayW * 0.35)
+                        .frame(width: displayW * scale, height: displayH * scale, alignment: .topLeading)
+                        .padding(.top, 10)
+                        .padding(.leading, 10)
                     }
                 }
                 .frame(width: displayW * scale, height: displayH * scale)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 // Vehicle/Location: landscape card, no rotation
