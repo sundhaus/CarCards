@@ -388,7 +388,7 @@ struct MarketplaceFilterView: View {
                     .background(.clear)
                     .glassEffect(.regular, in: .rect(cornerRadius: 12))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             
             // Search
             Button(action: {
