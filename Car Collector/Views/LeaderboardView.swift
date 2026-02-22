@@ -38,15 +38,15 @@ struct LeaderboardView: View {
                                     .background {
                                         if selectedTab == index {
                                             Capsule()
-                                                .fill(Color(.systemGray5))
+                                                .fill(.white.opacity(0.15))
                                         }
                                     }
                             }
                         }
                     }
                     .padding(4)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(Capsule())
+                    .background(.clear)
+                    .glassEffect(.regular, in: .capsule)
                     .padding(.horizontal)
                     .padding(.top, 12)
                     .padding(.bottom, 8)
