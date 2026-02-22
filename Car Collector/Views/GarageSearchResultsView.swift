@@ -130,7 +130,7 @@ struct GarageResultCard: View {
         VStack(spacing: 0) {
             // Card image
             ZStack {
-                if let image = card.image {
+                if let image = card.thumbnail ?? card.image {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)

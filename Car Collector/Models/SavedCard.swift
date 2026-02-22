@@ -104,6 +104,12 @@ struct SavedCard: Identifiable, Codable {
     
     // MARK: - Image Access (lazy loads from disk if needed)
     
+    /// Thumbnail for grid/list views — small memory footprint
+    var thumbnail: UIImage? {
+        CardImageStore.shared.loadVehicleThumbnail(for: id)
+    }
+    
+    /// Full-res for fullscreen detail — loaded on demand
     var image: UIImage? {
         if !imageData.isEmpty {
             return UIImage(data: imageData)

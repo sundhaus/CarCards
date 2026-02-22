@@ -935,9 +935,9 @@ struct AnyCardDetailsFrontView: View {
                         )
                     )
                 
-                // Card image - full bleed
+                // Card image - full bleed (use thumbnail for grid)
                 Group {
-                    if let image = card.image {
+                    if let image = card.thumbnail ?? card.image {
                         Image(uiImage: image)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -1133,9 +1133,9 @@ struct UnifiedCardView: View {
                     )
                 )
             
-            // Card image - full bleed
+            // Card image - full bleed (use thumbnail for grid)
             Group {
-                if let image = card.image {
+                if let image = card.thumbnail ?? card.image {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)

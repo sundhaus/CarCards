@@ -29,7 +29,7 @@ struct ContentView: View {
         for dc in driverCards {
             all.append(SavedCard(
                 id: dc.id,
-                image: dc.image ?? UIImage(),
+                image: dc.thumbnail ?? dc.image ?? UIImage(),
                 make: dc.firstName,
                 model: dc.lastName,
                 color: "Driver",
@@ -42,7 +42,7 @@ struct ContentView: View {
         for lc in locationCards {
             all.append(SavedCard(
                 id: lc.id,
-                image: lc.image ?? UIImage(),
+                image: lc.thumbnail ?? lc.image ?? UIImage(),
                 make: lc.locationName,
                 model: "",
                 color: "Location",

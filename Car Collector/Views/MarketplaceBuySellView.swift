@@ -632,7 +632,7 @@ struct SellTabCardView: View {
             
             // Car image - full bleed
             Group {
-                if let image = card.image {
+                if let image = card.thumbnail ?? card.image {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -968,7 +968,7 @@ struct CompactGarageCard: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
                 
-                if let image = card.image {
+                if let image = card.thumbnail ?? card.image {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)

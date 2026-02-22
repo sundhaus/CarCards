@@ -88,6 +88,10 @@ struct DriverCard: Identifiable, Codable {
         try container.encodeIfPresent(customFrame, forKey: .customFrame)
     }
     
+    var thumbnail: UIImage? {
+        CardImageStore.shared.loadDriverThumbnail(for: id)
+    }
+    
     var image: UIImage? {
         if !imageData.isEmpty {
             return UIImage(data: imageData)

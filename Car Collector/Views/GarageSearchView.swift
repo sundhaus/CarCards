@@ -17,7 +17,7 @@ struct GarageSearchView: View {
         for dc in CardStorage.loadDriverCards() {
             all.append(SavedCard(
                 id: dc.id,
-                image: dc.image ?? UIImage(),
+                image: dc.thumbnail ?? dc.image ?? UIImage(),
                 make: dc.firstName,
                 model: dc.lastName,
                 color: "Driver",
@@ -30,7 +30,7 @@ struct GarageSearchView: View {
         for lc in CardStorage.loadLocationCards() {
             all.append(SavedCard(
                 id: lc.id,
-                image: lc.image ?? UIImage(),
+                image: lc.thumbnail ?? lc.image ?? UIImage(),
                 make: lc.locationName,
                 model: "",
                 color: "Location",

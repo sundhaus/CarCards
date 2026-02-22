@@ -67,6 +67,10 @@ struct LocationCard: Identifiable, Codable {
         try container.encodeIfPresent(customFrame, forKey: .customFrame)
     }
     
+    var thumbnail: UIImage? {
+        CardImageStore.shared.loadLocationThumbnail(for: id)
+    }
+    
     var image: UIImage? {
         if !imageData.isEmpty {
             return UIImage(data: imageData)

@@ -20,6 +20,14 @@ enum AnyCard: Identifiable {
         }
     }
     
+    var thumbnail: UIImage? {
+        switch self {
+        case .vehicle(let card): return card.thumbnail
+        case .driver(let card): return card.thumbnail
+        case .location(let card): return card.thumbnail
+        }
+    }
+    
     var image: UIImage? {
         switch self {
         case .vehicle(let card): return card.image
