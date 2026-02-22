@@ -99,16 +99,16 @@ struct DriverInfoFormSheet: View {
                                 Text(signatureImage != nil ? "Signature Added" : "Add Signature")
                                     .font(.poppins(16))
                             }
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(signatureImage != nil ? Color.green.opacity(0.3) : Color.white.opacity(0.15))
+                                    .fill(signatureImage != nil ? Color.green.opacity(0.15) : Color(.systemGray5))
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(signatureImage != nil ? Color.green : Color.white.opacity(0.3), lineWidth: 2)
+                                    .stroke(signatureImage != nil ? Color.green : Color(.systemGray3), lineWidth: 2)
                             )
                         }
                         .padding(.horizontal, 20)
