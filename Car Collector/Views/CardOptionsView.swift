@@ -124,14 +124,14 @@ struct CardOptionsView: View {
             
             if isDriver {
                 // Driver: rotate landscape image 90° to show portrait, with name overlay
-                let landscapeW = maxH  // after rotation, height becomes width
+                let landscapeW = maxH
                 let landscapeH = landscapeW * 9.0 / 16.0
                 let displayW = landscapeH  // portrait width = landscape height
                 let displayH = landscapeW  // portrait height = landscape width
                 let scale = min(maxW / displayW, maxH / displayH, 1.0)
                 
                 ZStack {
-                    // Rotated card image — clip AFTER rotation on outer frame
+                    // Rotated card image — clip both before AND after rotation
                     ZStack {
                         if let image = card.image {
                             Image(uiImage: image)
@@ -149,7 +149,11 @@ struct CardOptionsView: View {
                                 .allowsHitTesting(false)
                         }
                     }
+                    .frame(width: landscapeW, height: landscapeH)
+                    .clipped()
                     .rotationEffect(.degrees(90))
+                    .frame(width: displayW, height: displayH)
+                    .clipped()
                     
                     // Name overlay — constrained to portrait card bounds
                     if case .driver(let dc) = card {
@@ -169,8 +173,8 @@ struct CardOptionsView: View {
                         }
                         .foregroundStyle(config.textColor)
                         .shadow(color: .black, radius: 4, x: 0, y: 2)
-                        .padding(.top, 14)
-                        .padding(.leading, 24)
+                        .padding(.top, 10)
+                        .padding(.leading, 14)
                         .frame(width: displayW * scale, height: displayH * scale, alignment: .topLeading)
                     }
                 }
