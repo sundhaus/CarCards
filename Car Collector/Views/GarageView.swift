@@ -937,16 +937,14 @@ struct AnyCardDetailsFrontView: View {
                 
                 // Title overlay
                 if case .driver(let driverCard) = card {
-                    // In landscape storage: text goes along the bottom edge, right-aligned
-                    // After fullscreen 90° CW rotation: appears top-right, reading top-to-bottom
                     let config = CardBorderConfig.forFrame(card.customFrame)
                     let fontSize = cardHeight * 0.11
                     let nickSize = cardHeight * 0.07
                     let inset = cardHeight * 0.06
                     
-                    HStack {
+                    VStack(alignment: .leading, spacing: 0) {
                         Spacer()
-                        VStack(alignment: .trailing, spacing: cardHeight * 0.01) {
+                        HStack(alignment: .top, spacing: cardHeight * 0.03) {
                             Text(driverCard.firstName.uppercased())
                                 .font(.custom("Futura-Bold", size: fontSize))
                                 .foregroundStyle(config.textColor)
@@ -964,10 +962,10 @@ struct AnyCardDetailsFrontView: View {
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         }
-                        .padding(.trailing, inset)
+                        .rotationEffect(.degrees(-90), anchor: .bottomLeading)
+                        .padding(.leading, inset)
+                        .padding(.bottom, inset)
                     }
-                    .padding(.bottom, inset)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
@@ -1167,9 +1165,9 @@ struct UnifiedCardView: View {
                 let config = CardBorderConfig.forFrame(card.customFrame)
                 let inset = cardHeight * 0.06
                 
-                HStack {
+                VStack(alignment: .leading, spacing: 0) {
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 0) {
+                    HStack(alignment: .top, spacing: 2) {
                         Text(driverCard.firstName.uppercased())
                             .font(.custom("Futura-Bold", size: cardHeight * 0.09))
                             .foregroundStyle(config.textColor)
@@ -1180,10 +1178,10 @@ struct UnifiedCardView: View {
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     }
-                    .padding(.trailing, inset)
+                    .rotationEffect(.degrees(-90), anchor: .bottomLeading)
+                    .padding(.leading, inset)
+                    .padding(.bottom, inset)
                 }
-                .padding(.bottom, inset)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             } else {
                 // Vehicle / Location: existing top-left layout
                 VStack {
