@@ -26,6 +26,8 @@ struct MarketplaceBuySellView: View {
     @State private var sellFilterMake = "Any"
     @State private var sellFilterModel = "Any"
     @State private var sellFilterYear = "Any"
+    @State private var sellFilterLastName = "Any"
+    @State private var sellFilterLocation = "Any"
     
     @State private var selectedCard: SavedCard?
     @State private var comparePriceCard: SavedCard?  // For Compare Price navigation
@@ -103,7 +105,30 @@ struct MarketplaceBuySellView: View {
         return ["Any"] + years.sorted()
     }
     
+    private var sellAvailableLastNames: [String] {
+        let driverCards = savedCards.filter { $0.color == "Driver" }
+        return ["Any"] + Set(driverCards.map { $0.model }).sorted()
+    }
+    
+    private var sellAvailableLocations: [String] {
+        let locCards = savedCards.filter { $0.color == "Location" }
+        return ["Any"] + Set(locCards.map { $0.make }).sorted()
+    }
+    
     private var filteredCards: [SavedCard] {
+        savedCards.filter { card in
+            if sellFilterMake != "Any" && card.make != sellFilterMake { return false }
+            if sellFilterModel != "Any" && card.model != sellFilterModel { return false }
+            if sellFilterYear != "Any" && card.year != sellFilterYear { return false }
+            if sellFilterLastName != "Any" {
+                guard card.color == "Driver" && card.model == sellFilterLastName else { return false }
+            }
+            if sellFilterLocation != "Any" {
+                guard card.color == "Location" && card.make == sellFilterLocation else { return false }
+            }
+            return true
+        }
+    }: [SavedCard] {
         savedCards.filter { card in
             if sellFilterMake != "Any" && card.make != sellFilterMake { return false }
             if sellFilterModel != "Any" && card.model != sellFilterModel { return false }
@@ -353,6 +378,28 @@ struct MarketplaceBuySellView: View {
                     disabled: sellFilterModel == "Any",
                     onSelect: { year in
                         sellFilterYear = year
+                    }
+                )
+                
+                filterDropdown(
+                    label: "Last Name",
+                    selection: $sellFilterLastName,
+                    options: sellAvailableLastNames,
+                    disabled: false,
+                    onSelect: { name in
+                        sellFilterLastName = name
+                    }
+                )
+            }
+            
+            HStack(spacing: 12) {
+                filterDropdown(
+                    label: "Location",
+                    selection: $sellFilterLocation,
+                    options: sellAvailableLocations,
+                    disabled: false,
+                    onSelect: { loc in
+                        sellFilterLocation = loc
                     }
                 )
                 
