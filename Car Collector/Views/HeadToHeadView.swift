@@ -54,6 +54,7 @@ struct HeadToHeadView: View {
         }
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .ignoresSafeArea(edges: .bottom)
         .onAppear {
             h2hService.startListening()
             Task { await h2hService.checkExpiredRaces() }
