@@ -881,7 +881,7 @@ struct AnyCardDetailsFrontView: View {
                     .rotationEffect(.degrees(-90), anchor: .bottomLeading)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                     .padding(.bottom, cardHeight * 0.11)
-                    .padding(.leading, cardHeight * 0.03)
+                    .padding(.leading, cardHeight * 0.10)
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
