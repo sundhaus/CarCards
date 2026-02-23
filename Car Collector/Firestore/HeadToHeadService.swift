@@ -45,7 +45,8 @@ struct Race: Identifiable {
     var voters: [String]            // UIDs who have voted (prevents double voting)
     
     enum RaceStatus: String, Codable {
-        case pending    // Awaiting defender acceptance
+        case open       // Open challenge, anyone can accept
+        case pending    // Awaiting defender acceptance (direct challenge)
         case active     // Race is live, accepting votes
         case finished   // Race completed (threshold or timer)
         case declined   // Defender declined
@@ -240,6 +241,7 @@ class HeadToHeadService: ObservableObject {
     
     // Published state
     @Published var activeRaces: [Race] = []           // All active races for voting feed
+    @Published var openChallenges: [Race] = []        // Open challenges anyone can accept
     @Published var myPendingChallenges: [Race] = []   // Challenges sent to me awaiting accept
     @Published var mySentChallenges: [Race] = []      // Challenges I sent awaiting accept
     @Published var currentFeedRace: Race?             // The race currently shown in the feed
@@ -248,6 +250,7 @@ class HeadToHeadService: ObservableObject {
     
     private let db = FirebaseManager.shared.db
     private var racesListener: ListenerRegistration?
+    private var openListener: ListenerRegistration?
     private var pendingListener: ListenerRegistration?
     private var streakListener: ListenerRegistration?
     
@@ -292,7 +295,19 @@ class HeadToHeadService: ObservableObject {
                 }
             }
         
-        // Listen for challenges sent to me
+        // Listen for open challenges (anyone can accept)
+        openListener = racesCollection
+            .whereField("status", isEqualTo: "open")
+            .order(by: "createdAt", descending: true)
+            .limit(to: 30)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let docs = snapshot?.documents else { return }
+                Task { @MainActor in
+                    self?.openChallenges = docs.compactMap { Race(document: $0) }
+                }
+            }
+        
+        // Listen for direct challenges sent to me
         pendingListener = racesCollection
             .whereField("defenderId", isEqualTo: uid)
             .whereField("status", isEqualTo: "pending")
@@ -309,6 +324,7 @@ class HeadToHeadService: ObservableObject {
     
     func stopListening() {
         racesListener?.remove()
+        openListener?.remove()
         pendingListener?.remove()
         streakListener?.remove()
     }
@@ -399,6 +415,93 @@ class HeadToHeadService: ObservableObject {
         }())
         
         print("🏁 Challenge issued: \(myCard.make) \(myCard.model) vs \(opponentCard.make) \(opponentCard.model)")
+    }
+    
+    // MARK: - Open Challenge (anyone can accept)
+    
+    /// Post an open challenge — your card waits for anyone to match against it
+    func postOpenChallenge(
+        myCard: CloudCard,
+        voteThreshold: Int
+    ) async throws {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        guard let profile = UserService.shared.currentProfile else {
+            throw UserServiceError.profileNotFound
+        }
+        
+        // Check card cooldown
+        let cooldownOk = try await checkCardCooldown(cardId: myCard.id)
+        guard cooldownOk else {
+            throw HeadToHeadError.cardOnCooldown
+        }
+        
+        let raceId = UUID().uuidString
+        let data: [String: Any] = [
+            "challengerId": uid,
+            "challengerUsername": profile.username,
+            "challengerCardId": myCard.id,
+            "challengerCardMake": myCard.make,
+            "challengerCardModel": myCard.model,
+            "challengerCardYear": myCard.year,
+            "challengerCardImageURL": myCard.flatImageURL ?? myCard.imageURL,
+            "challengerVotes": 0,
+            
+            // Defender fields empty until someone accepts
+            "defenderId": "",
+            "defenderUsername": "",
+            "defenderCardId": "",
+            "defenderCardMake": "",
+            "defenderCardModel": "",
+            "defenderCardYear": "",
+            "defenderCardImageURL": "",
+            "defenderVotes": 0,
+            
+            "voteThreshold": voteThreshold,
+            "durationSeconds": 7200,
+            "status": "open",
+            "createdAt": Timestamp(date: Date()),
+            "voters": [String]()
+        ]
+        
+        try await racesCollection.document(raceId).setData(data)
+        
+        print("🏁 Open challenge posted: \(myCard.make) \(myCard.model) — waiting for opponent")
+    }
+    
+    /// Accept an open challenge by picking your card to race against
+    func acceptOpenChallenge(raceId: String, myCard: CloudCard) async throws {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        guard let profile = UserService.shared.currentProfile else {
+            throw UserServiceError.profileNotFound
+        }
+        
+        // Check card cooldown
+        let cooldownOk = try await checkCardCooldown(cardId: myCard.id)
+        guard cooldownOk else {
+            throw HeadToHeadError.cardOnCooldown
+        }
+        
+        let now = Date()
+        let expiresAt = now.addingTimeInterval(7200)
+        
+        try await racesCollection.document(raceId).updateData([
+            "defenderId": uid,
+            "defenderUsername": profile.username,
+            "defenderCardId": myCard.id,
+            "defenderCardMake": myCard.make,
+            "defenderCardModel": myCard.model,
+            "defenderCardYear": myCard.year,
+            "defenderCardImageURL": myCard.flatImageURL ?? myCard.imageURL,
+            "status": "active",
+            "startedAt": Timestamp(date: now),
+            "expiresAt": Timestamp(date: expiresAt)
+        ])
+        
+        print("✅ Open challenge accepted! \(myCard.make) \(myCard.model) enters the race")
     }
     
     // MARK: - Accept / Decline Challenge
