@@ -313,6 +313,7 @@ struct LeaderboardRow: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.blue.opacity(0.15)) : nil
         )
+        .contentShape(RoundedRectangle(cornerRadius: 12))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
