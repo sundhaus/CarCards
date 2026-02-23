@@ -11,6 +11,7 @@ struct HotCardsCarousel: View {
     @ObservedObject private var hotCardsService = HotCardsService.shared
     @State private var currentIndex = 0
     @State private var isDragging = false
+    @StateObject private var imageCache = CarouselImageCache()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -26,6 +27,10 @@ struct HotCardsCarousel: View {
         .frame(maxWidth: .infinity)
         .onAppear {
             hotCardsService.fetchHotCardsIfNeeded()
+            imageCache.preloadImages(from: hotCardsService.hotCards)
+        }
+        .onChange(of: hotCardsService.hotCards.count) { _, _ in
+            imageCache.preloadImages(from: hotCardsService.hotCards)
         }
     }
     
@@ -39,7 +44,7 @@ struct HotCardsCarousel: View {
                         // Create infinite loop by repeating cards
                         ForEach(createInfiniteArray(), id: \.id) { item in
                             GeometryReader { cardGeometry in
-                                HotCardItem(card: item.card)
+                                HotCardItem(card: item.card, imageCache: imageCache)
                                     .rotation3DEffect(
                                         getRotationAngle(for: cardGeometry, screenWidth: geometry.size.width),
                                         axis: (x: 0, y: 1, z: 0),
@@ -215,10 +220,45 @@ struct HotCardsCarousel: View {
     }
 }
 
+// MARK: - Image Cache for Carousel
+
+class CarouselImageCache: ObservableObject {
+    @Published var images: [String: UIImage] = [:]
+    private var loadingURLs: Set<String> = []
+    
+    func preloadImages(from cards: [FriendActivity]) {
+        for card in cards {
+            let urlString = card.imageURL
+            guard !urlString.isEmpty,
+                  images[urlString] == nil,
+                  !loadingURLs.contains(urlString),
+                  let url = URL(string: urlString) else { continue }
+            
+            loadingURLs.insert(urlString)
+            
+            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+                guard let data = data, let image = UIImage(data: data) else {
+                    DispatchQueue.main.async { self?.loadingURLs.remove(urlString) }
+                    return
+                }
+                DispatchQueue.main.async {
+                    self?.images[urlString] = image
+                    self?.loadingURLs.remove(urlString)
+                }
+            }.resume()
+        }
+    }
+    
+    func image(for urlString: String) -> UIImage? {
+        return images[urlString]
+    }
+}
+
 // MARK: - Hot Card Item
 
 struct HotCardItem: View {
     let card: FriendActivity
+    @ObservedObject var imageCache: CarouselImageCache
     
     // Responsive dimensions for carousel
     private let cardHeight: CGFloat = DeviceScale.h(157.5)
@@ -239,7 +279,7 @@ struct HotCardItem: View {
                     )
                 )
             
-            // Car image - full bleed
+            // Car image - full bleed, from cache
             cardImageView
                 .frame(width: cardWidth, height: cardHeight)
                 .clipped()
@@ -303,7 +343,13 @@ struct HotCardItem: View {
     
     @ViewBuilder
     private var cardImageView: some View {
-        if let url = URL(string: card.imageURL) {
+        if let cachedImage = imageCache.image(for: card.imageURL) {
+            // Use cached image — instant, no flicker
+            Image(uiImage: cachedImage)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+        } else if let url = URL(string: card.imageURL) {
+            // Fallback to AsyncImage while cache loads
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .empty:
