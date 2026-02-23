@@ -28,47 +28,45 @@ struct DriverCaptureLandingView: View {
                     VStack(spacing: 8) {
                         Text("Capture Driver")
                             .font(.poppins(42))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
                             .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                         
                         Text("Choose capture type")
                             .font(.poppins(16))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 60)
-                    .padding(.bottom, 30)
                     
-                    // Main content
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            // Driver Only
-                            NavigationButton(
-                                title: "DRIVER",
-                                subtitle: "Capture driver portrait",
-                                icon: "person.fill",
-                                gradient: [Color.purple, Color.pink],
-                                action: {
-                                    captureDriverPlusVehicle = false
-                                    showCamera = true
-                                }
-                            )
-                            
-                            // Driver + Vehicle
-                            NavigationButton(
-                                title: "Driver + Vehicle",
-                                subtitle: "Capture driver with their car",
-                                icon: "person.and.background.dotted",
-                                gradient: [Color.blue, Color.purple],
-                                action: {
-                                    captureDriverPlusVehicle = true
-                                    showCamera = true
-                                }
-                            )
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 20)
+                    Spacer()
+                    
+                    // Buttons stretch to fill
+                    VStack(spacing: 16) {
+                        // Driver Only
+                        NavigationButton(
+                            title: "DRIVER",
+                            subtitle: "Capture driver portrait",
+                            icon: "person.fill",
+                            gradient: [Color.purple, Color.pink],
+                            action: {
+                                captureDriverPlusVehicle = false
+                                showCamera = true
+                            }
+                        )
+                        
+                        // Driver + Vehicle
+                        NavigationButton(
+                            title: "Driver + Vehicle",
+                            subtitle: "Capture driver with their car",
+                            icon: "person.and.background.dotted",
+                            gradient: [Color.blue, Color.purple],
+                            action: {
+                                captureDriverPlusVehicle = true
+                                showCamera = true
+                            }
+                        )
                     }
+                    .padding(.horizontal, 20)
                     
                     Spacer()
                 }

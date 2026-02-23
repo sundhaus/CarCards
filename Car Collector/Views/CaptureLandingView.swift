@@ -45,47 +45,45 @@ struct CaptureLandingView: View {
                     VStack(spacing: 8) {
                         Text("CAPTURE")
                             .font(.poppins(42))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
                             .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                         
                         Text("Choose what to capture")
                             .font(.poppins(16))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 60)
-                    .padding(.bottom, 30)
                     
-                    // Main content
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            NavigationButton(
-                                title: "VEHICLE",
-                                subtitle: "Capture a car in the wild",
-                                icon: "car.fill",
-                                gradient: [Color.blue, Color.cyan],
-                                action: { showVehicleCamera = true }
-                            )
-                            
-                            NavigationButton(
-                                title: "DRIVER",
-                                subtitle: "Capture a driver portrait",
-                                icon: "person.fill",
-                                gradient: [Color.purple, Color.pink],
-                                action: { showDriverTypeSelector = true }
-                            )
-                            
-                            NavigationButton(
-                                title: "LOCATION",
-                                subtitle: "Capture a special location",
-                                icon: "mappin.circle.fill",
-                                gradient: [Color.green, Color.teal],
-                                action: { showLocationCamera = true }
-                            )
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 20)
+                    Spacer()
+                    
+                    // Buttons stretch to fill
+                    VStack(spacing: 16) {
+                        NavigationButton(
+                            title: "VEHICLE",
+                            subtitle: "Capture a car in the wild",
+                            icon: "car.fill",
+                            gradient: [Color.blue, Color.cyan],
+                            action: { showVehicleCamera = true }
+                        )
+                        
+                        NavigationButton(
+                            title: "DRIVER",
+                            subtitle: "Capture a driver portrait",
+                            icon: "person.fill",
+                            gradient: [Color.purple, Color.pink],
+                            action: { showDriverTypeSelector = true }
+                        )
+                        
+                        NavigationButton(
+                            title: "LOCATION",
+                            subtitle: "Capture a special location",
+                            icon: "mappin.circle.fill",
+                            gradient: [Color.green, Color.teal],
+                            action: { showLocationCamera = true }
+                        )
                     }
+                    .padding(.horizontal, 20)
                     
                     Spacer()
                 }

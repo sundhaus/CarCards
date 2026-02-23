@@ -28,8 +28,6 @@ struct MarketplaceLandingView: View {
                     VStack(spacing: 8) {
                         Text("MARKETPLACE")
                             .font(.poppins(42))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
@@ -39,47 +37,45 @@ struct MarketplaceLandingView: View {
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 60)
-                    .padding(.bottom, 30)
                     
-                    // Main content
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            // Search Marketplace
-                            NavigationButton(
-                                title: "SEARCH",
-                                subtitle: "Find and buy cards",
-                                icon: "magnifyingglass",
-                                gradient: [Color.blue, Color.purple],
-                                action: {
-                                    showBuySell = true
-                                }
-                            )
-                            
-                            // Transfer List
-                            NavigationButton(
-                                title: "TRANSFER LIST",
-                                subtitle: "Cards you've listed for sale",
-                                icon: "list.bullet.rectangle",
-                                gradient: [Color.orange, Color.red],
-                                action: {
-                                    showTransferList = true
-                                }
-                            )
-                            
-                            // Transfer Targets
-                            NavigationButton(
-                                title: "TRANSFER TARGETS",
-                                subtitle: "Cards you're bidding on",
-                                icon: "target",
-                                gradient: [Color.green, Color.teal],
-                                action: {
-                                    showTransferTargets = true
-                                }
-                            )
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 20)
+                    Spacer()
+                    
+                    // Buttons stretch to fill
+                    VStack(spacing: 16) {
+                        // Search Marketplace
+                        NavigationButton(
+                            title: "SEARCH",
+                            subtitle: "Find and buy cards",
+                            icon: "magnifyingglass",
+                            gradient: [Color.blue, Color.purple],
+                            action: {
+                                showBuySell = true
+                            }
+                        )
+                        
+                        // Transfer List
+                        NavigationButton(
+                            title: "TRANSFER LIST",
+                            subtitle: "Cards you've listed for sale",
+                            icon: "list.bullet.rectangle",
+                            gradient: [Color.orange, Color.red],
+                            action: {
+                                showTransferList = true
+                            }
+                        )
+                        
+                        // Transfer Targets
+                        NavigationButton(
+                            title: "TRANSFER TARGETS",
+                            subtitle: "Cards you're bidding on",
+                            icon: "target",
+                            gradient: [Color.green, Color.teal],
+                            action: {
+                                showTransferTargets = true
+                            }
+                        )
                     }
+                    .padding(.horizontal, 20)
                     
                     Spacer()
                 }
