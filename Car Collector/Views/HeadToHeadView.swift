@@ -168,78 +168,21 @@ struct HeadToHeadView: View {
     // MARK: - Drag Strip Background
     
     private var dragStripBackground: some View {
-        ZStack {
-            // Base dark background
-            Color.black.ignoresSafeArea()
-            
-            // Placeholder drag strip art (replace with James's custom asset)
-            // For now, we draw a stylized track
-            GeometryReader { geo in
-                let width = geo.size.width
-                let height = geo.size.height
-                let laneWidth = width * 0.12
-                let centerX = width / 2
-                
-                // Track surface
-                Rectangle()
-                    .fill(Color(red: 0.15, green: 0.15, blue: 0.18))
-                    .frame(width: laneWidth * 3.5)
-                    .position(x: centerX, y: height / 2)
-                
-                // Lane divider (dashed center line)
-                Path { path in
-                    path.move(to: CGPoint(x: centerX, y: height * 0.12))
-                    path.addLine(to: CGPoint(x: centerX, y: height * 0.65))
-                }
-                .stroke(style: StrokeStyle(lineWidth: 2, dash: [12, 8]))
-                .foregroundStyle(.yellow.opacity(0.6))
-                
-                // Left lane line
-                Path { path in
-                    path.move(to: CGPoint(x: centerX - laneWidth * 0.8, y: height * 0.12))
-                    path.addLine(to: CGPoint(x: centerX - laneWidth * 0.8, y: height * 0.65))
-                }
-                .stroke(.white.opacity(0.3), lineWidth: 1.5)
-                
-                // Right lane line
-                Path { path in
-                    path.move(to: CGPoint(x: centerX + laneWidth * 0.8, y: height * 0.12))
-                    path.addLine(to: CGPoint(x: centerX + laneWidth * 0.8, y: height * 0.65))
-                }
-                .stroke(.white.opacity(0.3), lineWidth: 1.5)
-            }
-            .ignoresSafeArea()
-            
-            // TODO: Replace above with custom drag strip image:
-            // Image("dragStripAerial")
-            //     .resizable()
-            //     .aspectRatio(contentMode: .fill)
-            //     .ignoresSafeArea()
+        GeometryReader { geo in
+            Image("dragStripTrack")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
         }
+        .ignoresSafeArea()
     }
     
     // MARK: - Finish Line
     
     private var finishLine: some View {
-        VStack(spacing: 4) {
-            // Checkered pattern
-            HStack(spacing: 0) {
-                ForEach(0..<20, id: \.self) { i in
-                    Rectangle()
-                        .fill(i % 2 == 0 ? Color.white : Color.black)
-                        .frame(width: 18, height: 12)
-                }
-            }
-            
-            HStack(spacing: 0) {
-                ForEach(0..<20, id: \.self) { i in
-                    Rectangle()
-                        .fill(i % 2 == 0 ? Color.black : Color.white)
-                        .frame(width: 18, height: 12)
-                }
-            }
-            
-            // Timer
+        // Timer + vote count overlay (finish line is in the background art)
+        Group {
             if let race = h2hService.currentFeedRace {
                 HStack(spacing: 8) {
                     Image(systemName: "clock")
@@ -249,14 +192,16 @@ struct HeadToHeadView: View {
                     
                     Text("•")
                     
-                    Text("\(race.totalVotes)/\(race.voteThreshold) votes")
+                    Text("\(race.totalVotes)/\(race.voteThreshold)")
                         .font(.system(size: 12, weight: .medium))
                 }
-                .foregroundStyle(.white.opacity(0.8))
-                .padding(.top, 4)
+                .foregroundStyle(.white.opacity(0.9))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(.black.opacity(0.5))
+                .cornerRadius(12)
             }
         }
-        .padding(.horizontal)
     }
     
     // MARK: - Race Track (Car Progress)
