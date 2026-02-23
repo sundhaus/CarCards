@@ -106,22 +106,27 @@ struct ActivityRow: View {
             
             // Content
             VStack(alignment: .leading, spacing: 4) {
-                // Main text
-                Group {
-                    if item.type == .heat {
-                        Text("**\(item.username)** gave heat to your **\(cardName)** card")
-                    } else {
-                        Text("**\(item.username)** commented on your **\(cardName)** card")
-                    }
-                }
-                .font(.pSubheadline)
-                .foregroundStyle(.primary)
+                // Line 1: username + action
+                let action = item.type == .heat ? "gave heat to your" : "commented on your"
                 
-                // Comment text preview
+                (Text(item.username)
+                    .font(.pSubheadline)
+                    .foregroundColor(.white)
+                 + Text("  \(action)")
+                    .font(.pCaption)
+                    .foregroundColor(.gray)
+                )
+                
+                // Line 2: card make + model (always on new line, bold white)
+                Text(cardName.uppercased())
+                    .font(.pSubheadline)
+                    .foregroundColor(.white)
+                
+                // Comment text preview (white, non-bold)
                 if let commentText = item.text {
                     Text(commentText)
-                        .font(.pCaption)
-                        .foregroundStyle(.secondary)
+                        .font(.custom("Futura-Medium", fixedSize: DeviceScale.f(13)))
+                        .foregroundColor(.white.opacity(0.85))
                         .lineLimit(2)
                 }
                 

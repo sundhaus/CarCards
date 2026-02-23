@@ -810,11 +810,11 @@ class FriendsService: ObservableObject {
             return
         }
         
-        // Atomic update - add user to heatedBy array and increment count
-        // If fields don't exist, they'll be created automatically
+        // Atomic update - add user to heatedBy array, increment count, store timestamp
         try await activityRef.updateData([
             "heatedBy": FieldValue.arrayUnion([userId]),
-            "heatCount": FieldValue.increment(Int64(1))
+            "heatCount": FieldValue.increment(Int64(1)),
+            "heatTimestamps.\(userId)": Timestamp(date: Date())
         ])
         
         print("âœ… Heat added to activity \(activityId)")

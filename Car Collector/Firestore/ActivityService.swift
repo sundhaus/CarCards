@@ -70,10 +70,14 @@ class ActivityService: ObservableObject {
                 
                 // Fetch heats
                 if let heatedBy = data["heatedBy"] as? [String], !heatedBy.isEmpty {
-                    let heatTimestamp = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+                    let heatTimestamps = data["heatTimestamps"] as? [String: Timestamp] ?? [:]
+                    let fallbackTimestamp = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
                     
                     for heaterUid in heatedBy {
                         if heaterUid == uid { continue } // skip self
+                        
+                        // Use per-user timestamp if available, else fallback to card creation
+                        let heatTime = heatTimestamps[heaterUid]?.dateValue() ?? fallbackTimestamp
                         
                         // Look up username
                         let username = await lookupUsername(uid: heaterUid)
@@ -86,7 +90,7 @@ class ActivityService: ObservableObject {
                             cardMake: make,
                             cardModel: model,
                             activityId: activityId,
-                            createdAt: heatTimestamp
+                            createdAt: heatTime
                         ))
                     }
                 }
