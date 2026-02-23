@@ -913,6 +913,62 @@ class HeadToHeadService: ObservableObject {
         } catch {
             print("⚠️ Error checking expired races: \(error)")
         }
+        
+        // Also clean up old finished/cancelled races
+        await cleanupOldRaces()
+    }
+    
+    /// Delete finished/cancelled races older than 24 hours + their votes
+    private func cleanupOldRaces() async {
+        let oneDayAgo = Date().addingTimeInterval(-86400)
+        let cutoff = Timestamp(date: oneDayAgo)
+        
+        do {
+            // Finished races older than 1 day
+            let finishedSnap = try await racesCollection
+                .whereField("status", isEqualTo: "finished")
+                .whereField("createdAt", isLessThan: cutoff)
+                .limit(to: 30)
+                .getDocuments()
+            
+            // Cancelled races older than 1 day
+            let cancelledSnap = try await racesCollection
+                .whereField("status", isEqualTo: "cancelled")
+                .whereField("createdAt", isLessThan: cutoff)
+                .limit(to: 30)
+                .getDocuments()
+            
+            // Open races older than 1 day (stale queue entries)
+            let openSnap = try await racesCollection
+                .whereField("status", isEqualTo: "open")
+                .whereField("createdAt", isLessThan: cutoff)
+                .limit(to: 30)
+                .getDocuments()
+            
+            let allOld = finishedSnap.documents + cancelledSnap.documents + openSnap.documents
+            
+            guard !allOld.isEmpty else { return }
+            
+            for doc in allOld {
+                let raceId = doc.documentID
+                
+                // Delete associated vote records
+                let voteDocs = try await votesCollection
+                    .whereField("raceId", isEqualTo: raceId)
+                    .getDocuments()
+                
+                for voteDoc in voteDocs.documents {
+                    try await voteDoc.reference.delete()
+                }
+                
+                // Delete the race itself
+                try await doc.reference.delete()
+            }
+            
+            print("🧹 Cleaned up \(allOld.count) old race(s)")
+        } catch {
+            print("⚠️ Error cleaning up old races: \(error)")
+        }
     }
     
     // MARK: - Fetch Helpers
