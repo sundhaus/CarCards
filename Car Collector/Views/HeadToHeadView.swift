@@ -971,6 +971,21 @@ struct RaceHistoryView: View {
         let challengerRatio = CGFloat(race.challengerVotes) / CGFloat(totalVotes)
         
         return VStack(spacing: 10) {
+            // Time remaining / status at top center
+            if isFinished {
+                Text("FINISHED")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.4))
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 10))
+                    Text(race.timeRemainingString)
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                }
+                .foregroundStyle(.orange)
+            }
+            
             // Progress bar with PFPs and usernames
             HStack(spacing: 8) {
                 // Left: challenger PFP + name
