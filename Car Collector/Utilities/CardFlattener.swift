@@ -56,8 +56,8 @@ struct FlatDriverCardView: View {
             .shadow(color: .black, radius: 4, x: 0, y: 2)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .frame(width: portraitW, height: portraitH)
-            .padding(.top, portraitH * 0.025)
-            .padding(.leading, portraitW * 0.12)
+            .padding(.top, portraitH * 0.04)
+            .padding(.leading, portraitW * 0.18)
         }
         .frame(width: renderWidth, height: renderHeight)
         .clipped()

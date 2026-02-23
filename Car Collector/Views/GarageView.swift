@@ -645,44 +645,28 @@ struct UnifiedCardDetailView: View {
                         // Don't dismiss on tap - only X button dismisses
                     }
                 
-                // Card container - portrait mode: rotate card landscape
+                // Card container
                 VStack {
                     Spacer()
-                    ZStack {
-                        cardContent(screenSize: geometry.size)
-                            .rotationEffect(.degrees(90))
-                        
-                        // Driver name overlay — positioned relative to the CARD (not screen)
-                        if case .driver(let driverCard) = card {
-                            // Card dimensions after rotation
-                            let landscapeW = geometry.size.height * 0.8
-                            let landscapeH = landscapeW / 16 * 9
-                            // After 90° rotation: portrait width = landscapeH, height = landscapeW
-                            let portraitW = landscapeH
-                            let portraitH = landscapeW
-                            let config = CardBorderConfig.forFrame(card.customFrame)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(driverCard.firstName.uppercased())
-                                    .font(.custom("Futura-Light", fixedSize: portraitH * 0.035))
-                                
-                                if !driverCard.nickname.isEmpty {
-                                    Text("\"\(driverCard.nickname.uppercased())\"")
-                                        .font(.custom("Futura-Bold", fixedSize: portraitH * 0.022))
-                                        .opacity(0.8)
-                                }
-                                
-                                Text(driverCard.lastName.uppercased())
-                                    .font(.custom("Futura-Bold", fixedSize: portraitH * 0.035))
+                    Group {
+                        if case .driver = card, let flatImage = CardFlattener.shared.flatten(card) {
+                            // Driver: show the ONE baked flat image — text, border, photo all frozen
+                            Image(uiImage: flatImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxWidth: geometry.size.width * 0.85)
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                .shadow(radius: 10)
+                                .cardTilt()
+                        } else {
+                            // Vehicle/Location: landscape card rotated to portrait
+                            ZStack {
+                                cardContent(screenSize: geometry.size)
+                                    .rotationEffect(.degrees(90))
                             }
-                            .foregroundStyle(config.textColor)
-                            .shadow(color: .black, radius: 4, x: 0, y: 2)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                            .frame(width: portraitW, height: portraitH)
-                            .padding(.top, portraitH * 0.025)
-                            .padding(.leading, portraitW * 0.12)
+                            .cardTilt()
                         }
                     }
-                    .cardTilt()
                     Spacer()
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
