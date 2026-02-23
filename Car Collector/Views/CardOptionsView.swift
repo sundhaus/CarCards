@@ -118,18 +118,18 @@ struct CardOptionsView: View {
     
     private var cardPreview: some View {
         Group {
-            if isDriver {
-                if case .driver(let dc) = card {
-                    FlatDriverCardView(card: card, driverCard: dc, renderWidth: 280)
-                        .frame(width: 280, height: 280 * 16.0 / 9.0)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
-                }
-            } else {
-                FlatLandscapeCardView(card: card, renderWidth: 320)
-                    .frame(width: 320, height: 320 / (16.0 / 9.0))
+            // Show the ONE baked flat image — no SwiftUI layers, just pixels
+            if let flatImage = CardFlattener.shared.flatten(card) {
+                Image(uiImage: flatImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxHeight: isDriver ? 400 : 240)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: isDriver ? 180 : 320, height: isDriver ? 320 : 180)
             }
         }
         .frame(maxWidth: .infinity)
