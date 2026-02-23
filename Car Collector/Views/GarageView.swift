@@ -859,6 +859,10 @@ struct AnyCardDetailsFrontView: View {
                     // Driver text drawn INSIDE the card (not as separate overlay)
                     // Rotated -90° here so it reads correctly after the card's +90° rotation
                     let config = CardBorderConfig.forFrame(card.customFrame)
+                    // Portrait dimensions after rotation:
+                    //   portrait width = cardHeight, portrait height = geometry.size.width
+                    // Equal spacing from border = cardHeight * 0.05 in portrait terms
+                    let portraitInset = cardHeight * 0.05
                     VStack(alignment: .leading, spacing: 1) {
                         Text(driverCard.firstName.uppercased())
                             .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
@@ -876,8 +880,10 @@ struct AnyCardDetailsFrontView: View {
                     .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     .rotationEffect(.degrees(-90))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                    .padding(.bottom, cardHeight * 0.20)
-                    .padding(.leading, cardHeight * 0.08)
+                    // bottom in landscape = top in portrait: use portraitInset
+                    .padding(.bottom, geometry.size.width - portraitInset - cardHeight * 0.35)
+                    // leading in landscape = left in portrait: use portraitInset
+                    .padding(.leading, portraitInset)
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
