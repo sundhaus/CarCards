@@ -864,8 +864,7 @@ struct AnyCardDetailsFrontView: View {
                         HStack(spacing: 4) {
                             if !driverCard.nickname.isEmpty {
                                 Text("\"\(driverCard.nickname.uppercased())\"")
-                                    .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.05))
-                                    .opacity(0.8)
+                                    .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
                             }
                             
                             Text(driverCard.lastName.uppercased())
