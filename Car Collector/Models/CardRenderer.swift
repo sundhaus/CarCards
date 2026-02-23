@@ -9,6 +9,7 @@
 import UIKit
 import SwiftUI
 
+@MainActor
 final class CardRenderer {
     static let shared = CardRenderer()
     
