@@ -726,6 +726,9 @@ struct ChallengeView: View {
             
             switch matchResult {
             case .matched(let race):
+                let uid = FirebaseManager.shared.currentUserId ?? ""
+                let opponentName = race.challengerId == uid ? race.defenderUsername : race.challengerUsername
+                
                 Image(systemName: "car.2.fill")
                     .font(.system(size: 50))
                     .foregroundStyle(.green)
@@ -734,7 +737,7 @@ struct ChallengeView: View {
                     .font(.title.bold())
                     .foregroundStyle(.white)
                 
-                Text("Racing against \(race.defenderUsername.isEmpty ? race.challengerUsername : race.defenderUsername)")
+                Text("Racing against \(opponentName)")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.7))
                 
