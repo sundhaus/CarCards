@@ -204,7 +204,7 @@ struct VoteStreak: Codable {
 /// Individual vote record (for reward distribution after race ends)
 struct RaceVote: Identifiable {
     var id: String
-    var raceid: String
+    var raceId: String
     var oddsLocked: Bool
     var voterId: String
     var votedForCardId: String  // Which card the user picked
@@ -213,7 +213,7 @@ struct RaceVote: Identifiable {
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
         self.id = document.documentID
-        self.raceid = data["raceId"] as? String ?? ""
+        self.raceId = data["raceId"] as? String ?? ""
         self.voterId = data["voterId"] as? String ?? ""
         self.votedForCardId = data["votedForCardId"] as? String ?? ""
         self.votedAt = (data["votedAt"] as? Timestamp)?.dateValue() ?? Date()
