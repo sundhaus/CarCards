@@ -231,6 +231,7 @@ struct HeadToHeadView: View {
     // MARK: - Race Track with Sliding Cards
     
     @State private var hasVoted = false
+    @State private var cardsVisible = true
     
     private func raceTrackView(race: Race) -> some View {
         let cardH: CGFloat = 100
@@ -301,6 +302,7 @@ struct HeadToHeadView: View {
                 x: geo.size.width / 2 - cardW * 0.5 - 8,
                 y: hasVoted ? leftY : trackBottom - cardH / 2
             )
+            .opacity(cardsVisible ? 1 : 0)
             .animation(
                 hasVoted ? .spring(response: 0.8, dampingFraction: 0.7) : .none,
                 value: race.challengerVotes
@@ -329,6 +331,7 @@ struct HeadToHeadView: View {
                 x: geo.size.width / 2 + cardW * 0.5 + 8,
                 y: hasVoted ? rightY : trackBottom - cardH / 2
             )
+            .opacity(cardsVisible ? 1 : 0)
             .animation(
                 hasVoted ? .spring(response: 0.8, dampingFraction: 0.7) : .none,
                 value: race.defenderVotes
@@ -478,9 +481,23 @@ struct HeadToHeadView: View {
                 // Mark this race as voted so we don't cycle back to it
                 h2hService.markRaceVoted(race.id)
                 
-                // Reset hasVoted for the next race so cards start at bottom
+                // Fade out cards
+                withAnimation(.easeOut(duration: 0.3)) {
+                    cardsVisible = false
+                }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                
+                // Reset position to bottom (no animation)
                 hasVoted = false
+                
+                // Load next race
                 h2hService.loadNextFeedRace()
+                
+                // Fade in new cards at bottom
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                withAnimation(.easeIn(duration: 0.3)) {
+                    cardsVisible = true
+                }
                 isVoting = false
                 
             } catch {
