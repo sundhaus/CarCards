@@ -360,9 +360,9 @@ class HeadToHeadService: ObservableObject {
     func loadNextFeedRace() {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
         
-        // All active races excluding ones we've already voted on this session
+        // Filter out races we've voted on (locally tracked OR in Firestore voters array)
         let unvoted = activeRaces.filter { race in
-            !votedRaceIds.contains(race.id)
+            !votedRaceIds.contains(race.id) && !race.voters.contains(uid)
         }
         
         // Priority 1: My unvoted races
@@ -379,13 +379,8 @@ class HeadToHeadService: ObservableObject {
             return
         }
         
-        // All races voted on — reset and cycle again
-        if !activeRaces.isEmpty {
-            votedRaceIds.removeAll()
-            currentFeedRace = activeRaces.randomElement()
-        } else {
-            currentFeedRace = nil
-        }
+        // All races voted on — show nothing
+        currentFeedRace = nil
     }
     
     // MARK: - Issue Challenge
@@ -655,13 +650,13 @@ class HeadToHeadService: ObservableObject {
                 return nil
             }
             
-            // Check if already voted — DISABLED FOR TESTING
-            // let voters = data["voters"] as? [String] ?? []
-            // guard !voters.contains(uid) else {
-            //     errorPointer?.pointee = NSError(domain: "HeadToHead", code: -2,
-            //         userInfo: [NSLocalizedDescriptionKey: "Already voted on this race"])
-            //     return nil
-            // }
+            // Check if already voted
+            let voters = data["voters"] as? [String] ?? []
+            guard !voters.contains(uid) else {
+                errorPointer?.pointee = NSError(domain: "HeadToHead", code: -2,
+                    userInfo: [NSLocalizedDescriptionKey: "Already voted on this race"])
+                return nil
+            }
             
             // Determine which side gets the vote
             let challengerCardId = data["challengerCardId"] as? String ?? ""
@@ -676,14 +671,14 @@ class HeadToHeadService: ObservableObject {
             return document
         }
         
-        // Record individual vote for reward distribution — DISABLED FOR TESTING
-        // let voteId = "\(raceId)_\(uid)"
-        // try await votesCollection.document(voteId).setData([
-        //     "raceId": raceId,
-        //     "voterId": uid,
-        //     "votedForCardId": votedForCardId,
-        //     "votedAt": Timestamp(date: Date())
-        // ])
+        // Record individual vote for reward distribution
+        let voteId = "\(raceId)_\(uid)"
+        try await votesCollection.document(voteId).setData([
+            "raceId": raceId,
+            "voterId": uid,
+            "votedForCardId": votedForCardId,
+            "votedAt": Timestamp(date: Date())
+        ])
         
         // Award XP for voting
         UserService.shared.addXP(HeadToHeadService.voterXP)
