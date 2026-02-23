@@ -14,6 +14,7 @@ struct FriendsView: View {
     @State private var showFriendsList = false
     @State private var showSearch = false
     @State private var fullScreenActivity: FriendActivity? = nil
+    @State private var commentingActivityId: String? = nil
     @Environment(\.dismiss) private var dismiss
     
     // Generate gradient colors based on level (same as LevelHeader)
@@ -138,7 +139,8 @@ struct FriendsView: View {
                                         levelGradient: levelGradient(for: activity.level),
                                         onCardTap: {
                                             fullScreenActivity = activity
-                                        }
+                                        },
+                                        commentingActivityId: $commentingActivityId
                                     )
                                     
                                     if activity.id != friendsService.friendActivities.last?.id {
@@ -198,6 +200,19 @@ struct FriendsView: View {
                         )
                     )
                 }
+                
+                // Comment input bar — pinned to bottom above keyboard
+                if let activityId = commentingActivityId {
+                    VStack {
+                        Spacer()
+                        CommentInputBar(activityId: activityId) {
+                            withAnimation {
+                                commentingActivityId = nil
+                            }
+                        }
+                    }
+                    .transition(.move(edge: .bottom))
+                }
             }
             .navigationBarBackButtonHidden(true)
             .toolbar(.hidden, for: .navigationBar)
@@ -219,10 +234,16 @@ struct FriendActivityCard: View {
     let activity: FriendActivity
     let levelGradient: [Color]
     var onCardTap: () -> Void
+    @Binding var commentingActivityId: String?
     
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
     @State private var profileImage: UIImage?
+    @ObservedObject private var commentService = CommentService.shared
+    
+    private var showingComments: Bool {
+        commentingActivityId == activity.id
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -283,11 +304,39 @@ struct FriendActivityCard: View {
             })
                 .frame(width: 360, height: 202.5)
                 .padding(.horizontal)
-                .padding(.bottom, 14)
+            
+            // Comment button
+            CommentButton(activityId: activity.id) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if commentingActivityId == activity.id {
+                        commentingActivityId = nil
+                    } else {
+                        commentingActivityId = activity.id
+                        commentService.listenToComments(activityId: activity.id)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            
+            // Comments list (when expanded or has comments)
+            if showingComments {
+                CommentsListView(activityId: activity.id)
+            } else if let comments = commentService.commentsCache[activity.id], !comments.isEmpty {
+                // Show last 2 comments as preview
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(comments.suffix(2)) { comment in
+                        CommentRow(comment: comment)
+                    }
+                }
+                .padding(.horizontal)
+            }
+            
+            Spacer().frame(height: 6)
         }
         .task {
             await loadCardImage()
             await loadProfilePicture()
+            await commentService.fetchCommentCount(activityId: activity.id)
         }
     }
     
