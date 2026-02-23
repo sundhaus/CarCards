@@ -153,14 +153,10 @@ struct HeadToHeadView: View {
     // MARK: - Drag Strip Background
     
     private var dragStripBackground: some View {
-        GeometryReader { geo in
-            Image("dragStripTrack")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: geo.size.width, height: geo.size.height)
-                .clipped()
-        }
-        .ignoresSafeArea()
+        Image("dragStripTrack")
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .ignoresSafeArea()
     }
     
     // MARK: - Finish Line
@@ -222,11 +218,8 @@ struct HeadToHeadView: View {
     
     private func carIndicator(votes: Int, side: VoteSide) -> some View {
         VStack(spacing: 2) {
-            // Small car icon
-            Image(systemName: "car.fill")
-                .font(.system(size: 24))
-                .foregroundStyle(side == .left ? .red : .blue)
-                .rotationEffect(.degrees(-90)) // Point upward
+            Text("🔥")
+                .font(.system(size: 28))
                 .scaleEffect(voteAnimation == side ? 1.3 : 1.0)
             
             // Vote count
