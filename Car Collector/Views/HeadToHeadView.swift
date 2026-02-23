@@ -517,6 +517,21 @@ struct HeadToHeadView: View {
             } catch {
                 print("❌ Vote failed: \(error.localizedDescription)")
                 withAnimation { voteAnimation = nil }
+                
+                // Mark as voted so we skip this race
+                h2hService.markRaceVoted(race.id)
+                
+                // Fade out and advance to next race
+                withAnimation(.easeOut(duration: 0.3)) {
+                    cardsVisible = false
+                }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                hasVoted = false
+                h2hService.loadNextFeedRace()
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                withAnimation(.easeIn(duration: 0.3)) {
+                    cardsVisible = true
+                }
                 isVoting = false
             }
         }

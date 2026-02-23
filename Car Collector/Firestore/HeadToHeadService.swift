@@ -390,13 +390,6 @@ class HeadToHeadService: ObservableObject {
             return
         }
         
-        // Priority 3: My races I already voted on (still want to see progress)
-        if let myVoted = myRaces.first {
-            print("🏁 Showing my already-voted race: \(myVoted.id)")
-            currentFeedRace = myVoted
-            return
-        }
-        
         print("🏁 No races to show")
         currentFeedRace = nil
     }
