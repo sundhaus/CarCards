@@ -246,7 +246,7 @@ struct HeadToHeadView: View {
         
         return GeometryReader { geo in
             let trackTop: CGFloat = 20
-            let trackBottom: CGFloat = geo.size.height - 50 // cards near bottom
+            let trackBottom: CGFloat = geo.size.height - 30
             let trackHeight = trackBottom - trackTop
             
             // Step markers along both lanes — only visible after voting
@@ -360,7 +360,6 @@ struct HeadToHeadView: View {
                 .position(x: geo.size.width / 2, y: trackBottom + 20)
                 .opacity(!hasVoted ? 1 : 0)
         }
-        .padding(.bottom, 40)
     }
     
     // Step markers based on race threshold
