@@ -119,33 +119,17 @@ struct CardOptionsView: View {
     private var cardPreview: some View {
         Group {
             if isDriver {
-                // Portrait driver card — rendered flat
-                if let portrait = CardRenderer.shared.portraitCard(for: card, width: 220) {
-                    Image(uiImage: portrait)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxHeight: 340)
+                if case .driver(let dc) = card {
+                    FlatDriverCardView(card: card, driverCard: dc, renderWidth: 280)
+                        .frame(width: 280, height: 280 * 16.0 / 9.0)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
-                } else {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 180, height: 320)
                 }
             } else {
-                // Landscape vehicle/location card — rendered flat
-                if let landscape = CardRenderer.shared.landscapeCard(for: card, height: 300) {
-                    Image(uiImage: landscape)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxHeight: 240)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
-                } else {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 320, height: 180)
-                }
+                FlatLandscapeCardView(card: card, renderWidth: 320)
+                    .frame(width: 320, height: 320 / (16.0 / 9.0))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
             }
         }
         .frame(maxWidth: .infinity)

@@ -16,7 +16,7 @@ import FirebaseStorage
 // MARK: - Flattened Card Views (used only for rendering to image)
 
 /// Portrait driver card — replicates the exact fullscreen composition
-private struct FlatDriverCardView: View {
+struct FlatDriverCardView: View {
     let card: AnyCard
     let driverCard: DriverCard
     let renderWidth: CGFloat
@@ -65,7 +65,7 @@ private struct FlatDriverCardView: View {
 }
 
 /// Landscape vehicle/location card
-private struct FlatLandscapeCardView: View {
+struct FlatLandscapeCardView: View {
     let card: AnyCard
     let renderWidth: CGFloat
     
