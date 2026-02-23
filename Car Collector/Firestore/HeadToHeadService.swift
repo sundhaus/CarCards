@@ -639,13 +639,13 @@ class HeadToHeadService: ObservableObject {
                 return nil
             }
             
-            // Check if already voted
-            let voters = data["voters"] as? [String] ?? []
-            guard !voters.contains(uid) else {
-                errorPointer?.pointee = NSError(domain: "HeadToHead", code: -2,
-                    userInfo: [NSLocalizedDescriptionKey: "Already voted on this race"])
-                return nil
-            }
+            // Check if already voted — DISABLED FOR TESTING
+            // let voters = data["voters"] as? [String] ?? []
+            // guard !voters.contains(uid) else {
+            //     errorPointer?.pointee = NSError(domain: "HeadToHead", code: -2,
+            //         userInfo: [NSLocalizedDescriptionKey: "Already voted on this race"])
+            //     return nil
+            // }
             
             // Determine which side gets the vote
             let challengerCardId = data["challengerCardId"] as? String ?? ""
