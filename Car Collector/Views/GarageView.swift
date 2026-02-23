@@ -652,30 +652,34 @@ struct UnifiedCardDetailView: View {
                         cardContent(screenSize: geometry.size)
                             .rotationEffect(.degrees(90))
                         
-                        // Driver name overlay — positioned from card's visible top-left
+                        // Driver name overlay — positioned relative to the CARD (not screen)
                         if case .driver(let driverCard) = card {
-                            let cardVisibleWidth = geometry.size.width * 0.85
-                            let cardVisibleHeight = geometry.size.height * 0.75
+                            // Card dimensions after rotation
+                            let landscapeW = geometry.size.height * 0.8
+                            let landscapeH = landscapeW / 16 * 9
+                            // After 90° rotation: portrait width = landscapeH, height = landscapeW
+                            let portraitW = landscapeH
+                            let portraitH = landscapeW
                             let config = CardBorderConfig.forFrame(card.customFrame)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(driverCard.firstName.uppercased())
-                                    .font(.custom("Futura-Light", fixedSize: 28))
+                                    .font(.custom("Futura-Light", fixedSize: portraitH * 0.035))
                                 
                                 if !driverCard.nickname.isEmpty {
                                     Text("\"\(driverCard.nickname.uppercased())\"")
-                                        .font(.custom("Futura-Bold", fixedSize: 18))
+                                        .font(.custom("Futura-Bold", fixedSize: portraitH * 0.022))
                                         .opacity(0.8)
                                 }
                                 
                                 Text(driverCard.lastName.uppercased())
-                                    .font(.custom("Futura-Bold", fixedSize: 28))
+                                    .font(.custom("Futura-Bold", fixedSize: portraitH * 0.035))
                             }
                             .foregroundStyle(config.textColor)
                             .shadow(color: .black, radius: 4, x: 0, y: 2)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                            .frame(width: cardVisibleWidth, height: cardVisibleHeight)
-                            .padding(.top, 18)
-                            .padding(.leading, 100)
+                            .frame(width: portraitW, height: portraitH)
+                            .padding(.top, portraitH * 0.025)
+                            .padding(.leading, portraitW * 0.12)
                         }
                     }
                     .cardTilt()

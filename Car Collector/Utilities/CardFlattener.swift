@@ -26,6 +26,9 @@ struct FlatDriverCardView: View {
         // Landscape card dimensions (before rotation)
         let landscapeW = renderHeight
         let landscapeH = landscapeW / 16 * 9
+        // After rotation: portrait dimensions
+        let portraitW = landscapeH  // = renderWidth
+        let portraitH = landscapeW  // = renderHeight
         
         ZStack {
             // Landscape card rotated to portrait
@@ -33,31 +36,28 @@ struct FlatDriverCardView: View {
                 .frame(width: landscapeW, height: landscapeH)
                 .rotationEffect(.degrees(90))
             
-            // Driver text overlay — IDENTICAL to UnifiedCardDetailView
+            // Driver text overlay — IDENTICAL math to UnifiedCardDetailView
             let config = CardBorderConfig.forFrame(card.customFrame)
-            let scale = renderWidth / 393  // Scale relative to iPhone 15 Pro
-            let visibleWidth = renderWidth * 0.85
-            let visibleHeight = renderHeight * 0.75
             
             VStack(alignment: .leading, spacing: 1) {
                 Text(driverCard.firstName.uppercased())
-                    .font(.custom("Futura-Light", fixedSize: 28 * scale))
+                    .font(.custom("Futura-Light", fixedSize: portraitH * 0.035))
                 
                 if !driverCard.nickname.isEmpty {
                     Text("\"\(driverCard.nickname.uppercased())\"")
-                        .font(.custom("Futura-Bold", fixedSize: 18 * scale))
+                        .font(.custom("Futura-Bold", fixedSize: portraitH * 0.022))
                         .opacity(0.8)
                 }
                 
                 Text(driverCard.lastName.uppercased())
-                    .font(.custom("Futura-Bold", fixedSize: 28 * scale))
+                    .font(.custom("Futura-Bold", fixedSize: portraitH * 0.035))
             }
             .foregroundStyle(config.textColor)
             .shadow(color: .black, radius: 4, x: 0, y: 2)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .frame(width: visibleWidth, height: visibleHeight)
-            .padding(.top, 18 * scale)
-            .padding(.leading, 100 * scale)
+            .frame(width: portraitW, height: portraitH)
+            .padding(.top, portraitH * 0.025)
+            .padding(.leading, portraitW * 0.12)
         }
         .frame(width: renderWidth, height: renderHeight)
         .clipped()
