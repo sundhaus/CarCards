@@ -989,57 +989,35 @@ class HeadToHeadService: ObservableObject {
         return activeRaces.filter { $0.challengerId == uid || $0.defenderId == uid }.count
     }
     
-    // MARK: - Race History
+    // MARK: - Vote History
     
-    /// Fetch all races the current user participated in (active + finished)
-    func fetchRaceHistory() async throws -> [Race] {
+    /// Fetch all races the user has voted on (to track if their picks are winning)
+    func fetchVotedRaces() async throws -> [(race: Race, votedForCardId: String)] {
         guard let uid = FirebaseManager.shared.currentUserId else { return [] }
         
-        var allRaces: [Race] = []
-        let seenIds = NSMutableSet()
+        // Get all votes by this user
+        let voteSnap = try await votesCollection
+            .whereField("voterId", isEqualTo: uid)
+            .order(by: "votedAt", descending: true)
+            .limit(to: 50)
+            .getDocuments()
         
-        // Races where I'm challenger
-        do {
-            let challengerSnap = try await racesCollection
-                .whereField("challengerId", isEqualTo: uid)
-                .order(by: "createdAt", descending: true)
-                .limit(to: 50)
-                .getDocuments()
+        print("📋 Found \(voteSnap.documents.count) vote records")
+        
+        var results: [(race: Race, votedForCardId: String)] = []
+        
+        for doc in voteSnap.documents {
+            guard let vote = RaceVote(document: doc) else { continue }
             
-            for doc in challengerSnap.documents {
-                guard !seenIds.contains(doc.documentID),
-                      let race = Race(document: doc) else { continue }
-                seenIds.add(doc.documentID)
-                allRaces.append(race)
-            }
-            print("📋 Challenger races found: \(challengerSnap.documents.count)")
-        } catch {
-            print("⚠️ Challenger history query failed: \(error)")
+            // Fetch the race
+            let raceDoc = try await racesCollection.document(vote.raceId).getDocument()
+            guard let race = Race(document: raceDoc) else { continue }
+            
+            results.append((race: race, votedForCardId: vote.votedForCardId))
         }
         
-        // Races where I'm defender
-        do {
-            let defenderSnap = try await racesCollection
-                .whereField("defenderId", isEqualTo: uid)
-                .order(by: "createdAt", descending: true)
-                .limit(to: 50)
-                .getDocuments()
-            
-            for doc in defenderSnap.documents {
-                guard !seenIds.contains(doc.documentID),
-                      let race = Race(document: doc) else { continue }
-                seenIds.add(doc.documentID)
-                allRaces.append(race)
-            }
-            print("📋 Defender races found: \(defenderSnap.documents.count)")
-        } catch {
-            print("⚠️ Defender history query failed: \(error)")
-        }
-        
-        // Sort by createdAt descending
-        allRaces.sort { $0.createdAt > $1.createdAt }
-        print("📋 Total race history: \(allRaces.count)")
-        return allRaces
+        print("📋 Loaded \(results.count) voted races")
+        return results
     }
 }
 
