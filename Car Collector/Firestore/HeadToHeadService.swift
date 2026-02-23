@@ -921,6 +921,41 @@ class HeadToHeadService: ObservableObject {
         guard let uid = FirebaseManager.shared.currentUserId else { return 0 }
         return activeRaces.filter { $0.challengerId == uid || $0.defenderId == uid }.count
     }
+    
+    // MARK: - Race History
+    
+    /// Fetch all races the current user participated in (active + finished)
+    func fetchRaceHistory() async throws -> [Race] {
+        guard let uid = FirebaseManager.shared.currentUserId else { return [] }
+        
+        // Races where I'm challenger
+        let challengerSnap = try await racesCollection
+            .whereField("challengerId", isEqualTo: uid)
+            .order(by: "createdAt", descending: true)
+            .limit(to: 50)
+            .getDocuments()
+        
+        // Races where I'm defender
+        let defenderSnap = try await racesCollection
+            .whereField("defenderId", isEqualTo: uid)
+            .order(by: "createdAt", descending: true)
+            .limit(to: 50)
+            .getDocuments()
+        
+        var allRaces: [Race] = []
+        let seenIds = NSMutableSet()
+        
+        for doc in challengerSnap.documents + defenderSnap.documents {
+            guard !seenIds.contains(doc.documentID),
+                  let race = Race(document: doc) else { continue }
+            seenIds.add(doc.documentID)
+            allRaces.append(race)
+        }
+        
+        // Sort by createdAt descending
+        allRaces.sort { $0.createdAt > $1.createdAt }
+        return allRaces
+    }
 }
 
 // MARK: - XP Helper on UserService

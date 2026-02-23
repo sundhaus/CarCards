@@ -16,6 +16,7 @@ struct HeadToHeadView: View {
     
     // UI State
     @State private var showChallenge = false
+    @State private var showHistory = false
     @State private var showPendingChallenges = false
     @State private var voteAnimation: VoteSide? = nil
     @State private var showWinnerCelebration = false
@@ -103,6 +104,9 @@ struct HeadToHeadView: View {
         .sheet(isPresented: $showChallenge) {
             ChallengeView()
         }
+        .sheet(isPresented: $showHistory) {
+            RaceHistoryView()
+        }
         .sheet(isPresented: $showPendingChallenges) {
             PendingChallengesView()
         }
@@ -112,21 +116,32 @@ struct HeadToHeadView: View {
     
     private var topBar: some View {
         ZStack {
-            // Center: Challenge button
-            Button(action: { showChallenge = true }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "flag.checkered")
-                        .font(.system(size: 14, weight: .bold))
-                    Text("CHALLENGE")
-                        .font(.system(size: 14, weight: .bold))
+            // Center: Challenge + History buttons
+            HStack(spacing: 10) {
+                Button(action: { showChallenge = true }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "flag.checkered")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("CHALLENGE")
+                            .font(.system(size: 14, weight: .bold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(
+                        LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(25)
                 }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(
-                    LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
-                )
-                .cornerRadius(25)
+                
+                Button(action: { showHistory = true }) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(10)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                }
             }
             
             // Left/Right: back, streak, bell
@@ -825,6 +840,276 @@ struct ChallengeView: View {
         }
         .cornerRadius(10)
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
+    }
+}
+
+// MARK: - Race History View
+
+struct RaceHistoryView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var races: [Race] = []
+    @State private var isLoading = true
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                if isLoading {
+                    ProgressView().tint(.white)
+                } else if races.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "flag.checkered")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.white.opacity(0.3))
+                        Text("No races yet")
+                            .font(.headline)
+                            .foregroundStyle(.white.opacity(0.6))
+                        Text("Challenge someone to get started!")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(races) { race in
+                                raceHistoryRow(race: race)
+                            }
+                        }
+                        .padding()
+                    }
+                }
+            }
+            .navigationTitle("Race History")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .task {
+                do {
+                    races = try await HeadToHeadService.shared.fetchRaceHistory()
+                } catch {
+                    print("❌ Failed to load history: \(error)")
+                }
+                isLoading = false
+            }
+        }
+    }
+    
+    // MARK: - History Row
+    
+    private func raceHistoryRow(race: Race) -> some View {
+        let uid = FirebaseManager.shared.currentUserId ?? ""
+        let totalVotes = max(race.challengerVotes + race.defenderVotes, 1)
+        let challengerRatio = CGFloat(race.challengerVotes) / CGFloat(totalVotes)
+        let isFinished = race.status == .finished
+        let iWon = race.winnerId == uid
+        let challengerWon = race.winnerId == race.challengerId
+        let defenderWon = race.winnerId == race.defenderId
+        
+        // Colors: left side vs right side
+        let leftColor: Color = isFinished && challengerWon ? .white : .white.opacity(0.5)
+        let rightColor: Color = isFinished && defenderWon ? .white : .white.opacity(0.5)
+        
+        return VStack(spacing: 12) {
+            // Status badge
+            HStack {
+                Text(statusLabel(race: race, uid: uid))
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(statusColor(race: race, uid: uid))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(statusColor(race: race, uid: uid).opacity(0.15))
+                    .cornerRadius(6)
+                
+                Spacer()
+                
+                Text("\(race.voteThreshold) votes")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.4))
+            }
+            
+            // Main row: PFP — bar — PFP
+            HStack(spacing: 12) {
+                // Left user (challenger)
+                VStack(spacing: 4) {
+                    pfpCircle(
+                        username: race.challengerUsername,
+                        isWinner: challengerWon && isFinished
+                    )
+                    Text(race.challengerUsername)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(leftColor)
+                        .lineLimit(1)
+                }
+                .frame(width: 50)
+                
+                // Progress bar
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        // Background
+                        Capsule()
+                            .fill(.white.opacity(0.1))
+                            .frame(height: 8)
+                        
+                        // Left side fill (challenger)
+                        Capsule()
+                            .fill(
+                                isFinished && challengerWon
+                                    ? Color.white
+                                    : Color.white.opacity(0.5)
+                            )
+                            .frame(
+                                width: max(geo.size.width * challengerRatio, 4),
+                                height: 8
+                            )
+                        
+                        // Right side fill (defender) — from right
+                        HStack {
+                            Spacer()
+                            Capsule()
+                                .fill(
+                                    isFinished && defenderWon
+                                        ? Color.white
+                                        : Color.gray
+                                )
+                                .frame(
+                                    width: max(geo.size.width * (1 - challengerRatio), 4),
+                                    height: 8
+                                )
+                        }
+                    }
+                }
+                .frame(height: 8)
+                
+                // Right user (defender)
+                VStack(spacing: 4) {
+                    pfpCircle(
+                        username: race.defenderUsername,
+                        isWinner: defenderWon && isFinished
+                    )
+                    Text(race.defenderUsername)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(rightColor)
+                        .lineLimit(1)
+                }
+                .frame(width: 50)
+            }
+            
+            // Vote counts
+            HStack {
+                Text("\(race.challengerVotes)")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(leftColor)
+                Spacer()
+                Text("\(race.defenderVotes)")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(rightColor)
+            }
+            .padding(.horizontal, 4)
+            
+            // Cards
+            HStack(spacing: 10) {
+                historyCard(imageURL: race.challengerCardImageURL, isWinner: challengerWon && isFinished)
+                historyCard(imageURL: race.defenderCardImageURL, isWinner: defenderWon && isFinished)
+            }
+        }
+        .padding(14)
+        .background(.white.opacity(0.05))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    isFinished && iWon ? Color.yellow.opacity(0.3) :
+                    isFinished ? Color.white.opacity(0.08) :
+                    Color.blue.opacity(0.2),
+                    lineWidth: 1
+                )
+        )
+    }
+    
+    // MARK: - PFP Circle
+    
+    private func pfpCircle(username: String, isWinner: Bool) -> some View {
+        ZStack {
+            Circle()
+                .fill(isWinner ? Color.yellow.opacity(0.2) : Color.white.opacity(0.1))
+                .frame(width: 40, height: 40)
+            
+            Text(String(username.prefix(1)).uppercased())
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(isWinner ? .yellow : .white.opacity(0.7))
+            
+            if isWinner {
+                Circle()
+                    .stroke(Color.yellow, lineWidth: 2)
+                    .frame(width: 40, height: 40)
+                
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.yellow)
+                    .offset(y: -24)
+            }
+        }
+    }
+    
+    // MARK: - History Card Thumbnail
+    
+    private func historyCard(imageURL: String, isWinner: Bool) -> some View {
+        let cardH: CGFloat = 70
+        let cardW: CGFloat = cardH * (16.0 / 9.0)
+        
+        return AsyncImage(url: URL(string: imageURL)) { phase in
+            switch phase {
+            case .success(let image):
+                image.resizable().aspectRatio(contentMode: .fill)
+            default:
+                Rectangle().fill(Color.gray.opacity(0.2))
+                    .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.2)))
+            }
+        }
+        .frame(width: cardW, height: cardH)
+        .clipped()
+        .cornerRadius(cardH * 0.09)
+        .overlay(
+            RoundedRectangle(cornerRadius: cardH * 0.09)
+                .stroke(isWinner ? Color.yellow.opacity(0.5) : Color.white.opacity(0.1), lineWidth: isWinner ? 2 : 1)
+        )
+        .opacity(isWinner ? 1.0 : 0.7)
+    }
+    
+    // MARK: - Status Helpers
+    
+    private func statusLabel(race: Race, uid: String) -> String {
+        switch race.status {
+        case .active:
+            return "LIVE"
+        case .open:
+            return "WAITING"
+        case .finished:
+            if race.winnerId == uid { return "WON" }
+            if race.challengerId == uid || race.defenderId == uid { return "LOST" }
+            return "FINISHED"
+        case .pending:
+            return "PENDING"
+        default:
+            return race.status.rawValue.uppercased()
+        }
+    }
+    
+    private func statusColor(race: Race, uid: String) -> Color {
+        switch race.status {
+        case .active: return .blue
+        case .open: return .orange
+        case .finished:
+            if race.winnerId == uid { return .green }
+            if race.challengerId == uid || race.defenderId == uid { return .red }
+            return .white.opacity(0.5)
+        case .pending: return .yellow
+        default: return .white.opacity(0.5)
+        }
     }
 }
 
