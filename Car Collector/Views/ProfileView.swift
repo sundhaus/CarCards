@@ -9,6 +9,7 @@ import SwiftUI
 import AuthenticationServices
 import CryptoKit
 import FirebaseFirestore
+import FirebaseFirestore
 
 struct ProfileView: View {
     @Binding var isShowing: Bool
@@ -296,6 +297,38 @@ struct ProfileView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 24)
+                
+                // Safe Mode toggle
+                VStack(spacing: 8) {
+                    Divider()
+                        .padding(.horizontal)
+                    
+                    Toggle(isOn: Binding(
+                        get: { UserService.shared.currentProfile?.isMinor ?? false },
+                        set: { newValue in
+                            Task {
+                                guard let uid = FirebaseManager.shared.currentUserId else { return }
+                                try? await Firestore.firestore().collection("users").document(uid).updateData(["isMinor": newValue])
+                                UserService.shared.currentProfile?.isMinor = newValue
+                            }
+                        }
+                    )) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "shield.checkered")
+                                .foregroundStyle(.blue)
+                            Text("Safe Mode")
+                                .font(.pSubheadline)
+                        }
+                    }
+                    .tint(.blue)
+                    .padding(.horizontal, 24)
+                    
+                    Text("Filters inappropriate language in comments")
+                        .font(.pCaption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 24)
+                }
+                .padding(.bottom, 16)
             }
             .frame(width: 320)
             .background(.ultraThinMaterial)
