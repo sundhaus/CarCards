@@ -849,6 +849,11 @@ struct SearchUsersView: View {
                         searchResults[index].isFriend = searchResults[index].followsMe
                     }
                     
+                    // Refresh activity feed to include new follow's activity
+                    if let uid = FirebaseManager.shared.currentUserId {
+                        FriendsService.shared.listenToFriendActivities(uid: uid)
+                    }
+                    
                     // Clear success message after delay
                     Task {
                         try? await Task.sleep(nanoseconds: 2_000_000_000)
