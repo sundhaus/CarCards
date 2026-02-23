@@ -97,7 +97,7 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showExplore) {
                 ExploreView(isLandscape: isLandscape)
             }
-            .navigationDestination(isPresented: $showHeadToHead) {
+            .fullScreenCover(isPresented: $showHeadToHead) {
                 HeadToHeadView(isLandscape: isLandscape)
             }
             .fullScreenCover(isPresented: $showLeaderboard) {

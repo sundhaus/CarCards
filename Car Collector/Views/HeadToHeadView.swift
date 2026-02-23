@@ -81,7 +81,7 @@ struct HeadToHeadView: View {
     private var topBar: some View {
         HStack {
             Button(action: { dismiss() }) {
-                Image(systemName: "chevron.left")
+                Image(systemName: "xmark")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
                     .padding(10)
