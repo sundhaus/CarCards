@@ -112,19 +112,22 @@ final class CardRenderer {
             // Draw rotated card
             rotated.draw(in: rect)
             
-            // Draw driver text — vertical stack, top-left
+            // Draw driver text — vertical stack, positioned to match fullscreen view
+            // Fullscreen uses padding(.leading, 100) on a ~375pt wide card
+            // That's roughly 26% from left edge
             let config = CardBorderConfig.forFrame(card.customFrame)
             let textColor = UIColor(config.textColor)
-            let insetTop = portraitSize.height * 0.03
-            let insetLeft = portraitSize.width * 0.05
+            let insetTop = portraitSize.height * 0.025
+            let insetLeft = portraitSize.width * 0.26
             
             let shadow = NSShadow()
             shadow.shadowColor = UIColor.black.withAlphaComponent(0.8)
             shadow.shadowBlurRadius = 4
             shadow.shadowOffset = CGSize(width: 0, height: 2)
             
-            let nameSize = portraitSize.height * 0.04
-            let nickSize = portraitSize.height * 0.025
+            // Match fullscreen font ratios: 28pt on ~667pt visible height = ~4.2%
+            let nameSize = portraitSize.height * 0.042
+            let nickSize = portraitSize.height * 0.027
             
             let lightAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont(name: "Futura-Light", size: nameSize) ?? UIFont.systemFont(ofSize: nameSize),
@@ -137,7 +140,7 @@ final class CardRenderer {
                 .shadow: shadow
             ]
             let nickAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Futura-Light", size: nickSize) ?? UIFont.systemFont(ofSize: nickSize),
+                .font: UIFont(name: "Futura-Bold", size: nickSize) ?? UIFont.boldSystemFont(ofSize: nickSize),
                 .foregroundColor: textColor.withAlphaComponent(0.8),
                 .shadow: shadow
             ]
