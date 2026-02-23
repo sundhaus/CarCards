@@ -266,26 +266,20 @@ class CardFlattener {
             // Draw rotated card
             rotated.draw(in: rect)
             
-            // Draw driver text — matches AnyCardDetailsFrontView
-            // Same proportional sizing as SwiftUI view: cardHeight * 0.08
+            // Match fullscreen overlay: 6% from left, 3% from top of portrait card
             let config = CardBorderConfig.forFrame(frame)
             let textColor = UIColor(config.textColor)
             
-            let landscapeCardHeight = size.width // 1080 (portrait width = landscape height)
-            let fontSize = landscapeCardHeight * 0.08
-            let nickFontSize = landscapeCardHeight * 0.055
-            let textPadding = landscapeCardHeight * 0.08
-            
-            let insetLeft = textPadding
-            let insetTop = textPadding
+            let insetLeft = size.width * 0.06
+            let insetTop = size.height * 0.03
             
             let shadow = NSShadow()
             shadow.shadowColor = UIColor.black.withAlphaComponent(0.8)
             shadow.shadowBlurRadius = 4 * (size.width / 375)
             shadow.shadowOffset = CGSize(width: 0, height: 2 * (size.width / 375))
             
-            let nameSize = fontSize
-            let nickSize = nickFontSize
+            let nameSize = size.height * 0.041
+            let nickSize = size.height * 0.026
             
             let lightAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont(name: "Futura-Light", size: nameSize) ?? UIFont.systemFont(ofSize: nameSize),

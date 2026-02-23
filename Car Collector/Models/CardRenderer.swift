@@ -112,30 +112,21 @@ final class CardRenderer {
             // Draw rotated card
             rotated.draw(in: rect)
             
-            // Draw driver text — matches AnyCardDetailsFrontView exactly
-            // Text is drawn in LANDSCAPE orientation (before rotation was applied)
-            // Position uses cardHeight * 0.08 for padding and font, same as SwiftUI view
+            // Match fullscreen overlay: 6% from left, 3% from top of portrait card
             let config = CardBorderConfig.forFrame(card.customFrame)
             let textColor = UIColor(config.textColor)
             
-            // In portrait: width=1080, height=1920
-            // The landscape card was 1920×1080, so cardHeight in landscape = 1080
-            // Font/padding in landscape view = cardHeight * 0.08 = 1080 * 0.08 = 86.4
-            // After rotation to portrait, these map to:
-            let landscapeCardHeight = portraitSize.width // 1080
-            let fontSize = landscapeCardHeight * 0.08
-            let nickFontSize = landscapeCardHeight * 0.055
-            let textPadding = landscapeCardHeight * 0.08
-            
-            // In portrait orientation, the landscape left+top padding maps to:
-            // portrait top = landscape left padding (rotated)
-            let insetTop = textPadding
-            let insetLeft = textPadding
+            let insetLeft = portraitSize.width * 0.06
+            let insetTop = portraitSize.height * 0.03
             
             let shadow = NSShadow()
             shadow.shadowColor = UIColor.black.withAlphaComponent(0.8)
             shadow.shadowBlurRadius = 4 * (portraitSize.width / 375)
             shadow.shadowOffset = CGSize(width: 0, height: 2 * (portraitSize.width / 375))
+            
+            // Font: 28pt on ~682pt card height = 4.1%
+            let fontSize = portraitSize.height * 0.041
+            let nickFontSize = portraitSize.height * 0.026
             
             let lightAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont(name: "Futura-Light", size: fontSize) ?? UIFont.systemFont(ofSize: fontSize),
