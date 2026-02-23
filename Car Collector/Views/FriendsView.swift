@@ -56,13 +56,13 @@ struct FriendsView: View {
                         Button(action: { dismiss() }) {
                             Image(systemName: "chevron.left")
                                 .font(.pTitle3)
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.white)
                         }
                         
                         Text("FRIENDS")
                             .font(.pTitle2)
                             .fontWeight(.bold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                         
                         Spacer()
                         
@@ -85,7 +85,7 @@ struct FriendsView: View {
                             ZStack(alignment: .topTrailing) {
                                 Image(systemName: "line.3.horizontal")
                                     .font(.pTitle3)
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(.white)
                                 
                                 // Notification badge
                                 if friendsService.newFollowersCount > 0 {
@@ -96,7 +96,7 @@ struct FriendsView: View {
                                         
                                         Text("\(friendsService.newFollowersCount)")
                                             .font(.poppins(10))
-                                            .foregroundStyle(.primary)
+                                            .foregroundStyle(.white)
                                     }
                                     .offset(x: 8, y: -8)
                                 }
@@ -136,7 +136,7 @@ struct FriendsView: View {
                                         }
                                         .font(.pSubheadline)
                                         .fontWeight(.medium)
-                                        .foregroundStyle(.primary)
+                                        .foregroundStyle(.white)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 12)
                                         .background(.white.opacity(0.2))
@@ -302,7 +302,7 @@ struct FriendActivityCard: View {
                         Text(activity.username)
                             .font(.pSubheadline)
                             .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                         Text("added a card")
                             .font(.pCaption)
                             .foregroundStyle(.secondary)
@@ -519,7 +519,7 @@ struct FollowListPopup: View {
                     }
                     .font(.pSubheadline)
                     .fontWeight(.medium)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(.white.opacity(0.2))
@@ -593,7 +593,7 @@ struct TabButton: View {
                             
                             Text("\(notificationCount)")
                                 .font(.poppins(9))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.white)
                         }
                     }
                 }
@@ -915,7 +915,7 @@ struct FollowRow: View {
                     
                     Text("\(person.level)")
                         .font(.poppins(16))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                 }
                 
                 // Username and stats
@@ -924,7 +924,7 @@ struct FollowRow: View {
                         Text(person.username)
                             .font(.pSubheadline)
                             .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                         
                         if person.isFriend {
                             Image(systemName: "checkmark.seal.fill")
@@ -951,6 +951,7 @@ struct FollowRow: View {
             .padding(.vertical, 12)
             .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 }
 
@@ -974,7 +975,7 @@ struct SearchResultRow: View {
                         .overlay(
                             Text(String(user.username.prefix(1)).uppercased())
                                 .font(.pHeadline)
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.white)
                         )
                     
                     // Username and stats
@@ -983,7 +984,7 @@ struct SearchResultRow: View {
                             Text(user.username)
                                 .font(.pSubheadline)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.white)
                             
                             if user.isFriend {
                                 Image(systemName: "checkmark.seal.fill")
@@ -1007,6 +1008,7 @@ struct SearchResultRow: View {
                     }
                 }
             }
+            .buttonStyle(.plain)
             
             Spacer()
             
@@ -1016,7 +1018,7 @@ struct SearchResultRow: View {
                     Text("FOLLOWING")
                         .font(.pCaption)
                         .fontWeight(.medium)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(.white.opacity(0.2))
