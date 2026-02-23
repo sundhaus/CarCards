@@ -139,7 +139,7 @@ struct FriendsView: View {
                                         .foregroundStyle(.primary)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 12)
-                                        .background(.blue)
+                                        .background(.white.opacity(0.2))
                                         .cornerRadius(20)
                                     }
                                     .padding(.top, 8)
@@ -522,7 +522,7 @@ struct FollowListPopup: View {
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(.blue)
+                    .background(.white.opacity(0.2))
                     .cornerRadius(12)
                 }
                 .padding()
@@ -582,7 +582,7 @@ struct TabButton: View {
                 HStack(spacing: 4) {
                     Text("\(count)")
                         .font(.pCaption)
-                        .foregroundStyle(isSelected ? .blue : .secondary)
+                        .foregroundStyle(isSelected ? .white : .secondary)
                     
                     // Notification badge
                     if let notificationCount = notificationCount, notificationCount > 0 {
@@ -604,7 +604,7 @@ struct TabButton: View {
                 VStack {
                     Spacer()
                     Rectangle()
-                        .fill(isSelected ? Color.blue : Color.clear)
+                        .fill(isSelected ? Color.white : Color.clear)
                         .frame(height: 2)
                 }
             )
@@ -929,7 +929,7 @@ struct FollowRow: View {
                         if person.isFriend {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.pCaption)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.white)
                         }
                     }
                     
@@ -944,7 +944,7 @@ struct FollowRow: View {
                 if person.followsMe && !person.isFollowing {
                     Text("Follows you")
                         .font(.pCaption)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.white)
                 }
             }
             .padding(.horizontal)
@@ -988,7 +988,7 @@ struct SearchResultRow: View {
                             if user.isFriend {
                                 Image(systemName: "checkmark.seal.fill")
                                     .font(.pCaption)
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.white)
                             }
                         }
                         
@@ -1019,14 +1019,14 @@ struct SearchResultRow: View {
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(.blue)
+                        .background(.white.opacity(0.2))
                         .cornerRadius(12)
                 }
             } else {
                 Button(action: onFollow) {
                     Image(systemName: "person.badge.plus")
                         .font(.pTitle3)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.white)
                 }
             }
         }
