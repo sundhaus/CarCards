@@ -15,7 +15,8 @@ struct HeadToHeadView: View {
     @ObservedObject private var cardService = CardService.shared
     
     // UI State
-    @State private var showChallengeFlow = false
+    @State private var showStartRace = false
+    @State private var showFindRace = false
     @State private var showPendingChallenges = false
     @State private var voteAnimation: VoteSide? = nil
     @State private var showWinnerCelebration = false
@@ -37,37 +38,40 @@ struct HeadToHeadView: View {
             dragStripBackground
             
             VStack(spacing: 0) {
-                // Top bar: back button, challenge button, streak, pending count
+                // Top bar: back button, streak, pending count
                 topBar
                 
                 Spacer()
                 
-                // Finish line area
+                // Timer / vote count overlay
                 finishLine
                 
                 // Race track with car progress indicators
                 raceTrack
                 
-                // Two cards at the bottom
+                // Two cards for voting (or no-race state)
                 cardMatchup
-                    .padding(.bottom, 20)
+                
+                // Bottom action buttons: Find Race / Start Race
+                bottomButtons
+                    .padding(.bottom, 16)
             }
             
             // Winner celebration overlay
             if showWinnerCelebration, let side = winnerSide {
                 winnerOverlay(side: side)
             }
-            
-            // No races available
-            if showNoRacesMessage && h2hService.currentFeedRace == nil {
-                noRacesOverlay
-            }
         }
         .navigationBarHidden(true)
         .onAppear {
             h2hService.startListening()
-            // Check for expired races
             Task { await h2hService.checkExpiredRaces() }
+            // Show no-races after brief delay if needed
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                if h2hService.currentFeedRace == nil {
+                    showNoRacesMessage = true
+                }
+            }
         }
         .onDisappear {
             raceTimer.upstream.connect().cancel()
@@ -75,8 +79,11 @@ struct HeadToHeadView: View {
         .onReceive(raceTimer) { _ in
             updateTimer()
         }
-        .sheet(isPresented: $showChallengeFlow) {
-            ChallengeFlowView()
+        .sheet(isPresented: $showStartRace) {
+            StartRaceView()
+        }
+        .sheet(isPresented: $showFindRace) {
+            FindRaceView()
         }
         .sheet(isPresented: $showPendingChallenges) {
             PendingChallengesView()
@@ -139,26 +146,6 @@ struct HeadToHeadView: View {
                             .offset(x: 4, y: -4)
                     }
                 }
-            }
-            
-            // Challenge button
-            Button(action: { showChallengeFlow = true }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "flag.checkered")
-                    Text("CHALLENGE")
-                        .font(.system(size: 13, weight: .bold))
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(
-                    LinearGradient(
-                        colors: [Color.red, Color.orange],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(20)
             }
         }
         .padding(.horizontal, 16)
@@ -263,7 +250,6 @@ struct HeadToHeadView: View {
                 VStack(spacing: 8) {
                     // VS label
                     HStack {
-                        // Left card owner
                         Text(race.challengerUsername)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.7))
@@ -276,7 +262,6 @@ struct HeadToHeadView: View {
                         
                         Spacer()
                         
-                        // Right card owner
                         Text(race.defenderUsername)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.7))
@@ -285,7 +270,6 @@ struct HeadToHeadView: View {
                     
                     // Two cards side by side — tap to vote
                     HStack(spacing: 16) {
-                        // Left card (challenger)
                         raceCardView(
                             imageURL: race.challengerCardImageURL,
                             make: race.challengerCardMake,
@@ -296,7 +280,6 @@ struct HeadToHeadView: View {
                             cardId: race.challengerCardId
                         )
                         
-                        // Right card (defender)
                         raceCardView(
                             imageURL: race.defenderCardImageURL,
                             make: race.defenderCardMake,
@@ -309,14 +292,24 @@ struct HeadToHeadView: View {
                     }
                     .padding(.horizontal, 16)
                     
-                    // Tap instruction
                     Text("TAP YOUR PICK TO ADD HEAT 🔥")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white.opacity(0.5))
                         .padding(.top, 4)
                 }
+            } else if showNoRacesMessage {
+                // No active races — prompt to find or start
+                VStack(spacing: 8) {
+                    Text("No active races")
+                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.6))
+                    Text("Find a race or start your own below")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                .padding(.vertical, 40)
             } else {
-                // Loading or no races
+                // Loading
                 VStack(spacing: 12) {
                     ProgressView()
                         .tint(.white)
@@ -324,13 +317,7 @@ struct HeadToHeadView: View {
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.6))
                 }
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        if h2hService.currentFeedRace == nil {
-                            showNoRacesMessage = true
-                        }
-                    }
-                }
+                .padding(.vertical, 30)
             }
         }
     }
@@ -496,125 +483,53 @@ struct HeadToHeadView: View {
     
     // MARK: - No Races Overlay
     
-    private var noRacesOverlay: some View {
-        VStack(spacing: 20) {
-            if !h2hService.openChallenges.filter({ $0.challengerId != FirebaseManager.shared.currentUserId }).isEmpty {
-                // There are open challenges to accept
-                openChallengesListView
-            } else {
-                Image(systemName: "flag.checkered")
-                    .font(.system(size: 50))
-                    .foregroundStyle(.white.opacity(0.4))
-                
-                Text("No races right now")
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
-                
-                Text("Post an open race or challenge a friend!")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.6))
-                
-                Button(action: { showChallengeFlow = true }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "flag.checkered")
-                        Text("Start a Race")
-                    }
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(
-                        LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
-                    )
-                    .cornerRadius(25)
-                }
-            }
-        }
-    }
+    // MARK: - Bottom Action Buttons
     
-    // MARK: - Open Challenges List (when no active races to vote on)
-    
-    @State private var showAcceptSheet = false
-    @State private var selectedOpenRace: Race? = nil
-    
-    private var openChallengesListView: some View {
-        VStack(spacing: 12) {
-            Text("OPEN RACES")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(.white.opacity(0.6))
-                .padding(.top, 8)
-            
-            ScrollView {
-                LazyVStack(spacing: 10) {
-                    ForEach(h2hService.openChallenges.filter { $0.challengerId != FirebaseManager.shared.currentUserId }) { race in
-                        Button(action: {
-                            selectedOpenRace = race
-                            showAcceptSheet = true
-                        }) {
-                            HStack(spacing: 12) {
-                                // Challenger card thumbnail
-                                AsyncImage(url: URL(string: race.challengerCardImageURL)) { image in
-                                    image.resizable().aspectRatio(contentMode: .fill)
-                                } placeholder: {
-                                    Color.gray.opacity(0.3)
-                                }
-                                .frame(width: 60, height: 40)
-                                .cornerRadius(6)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("\(race.challengerUsername)'s \(race.challengerCardMake) \(race.challengerCardModel)")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(.white)
-                                        .lineLimit(1)
-                                    Text("\(race.voteThreshold) votes • \(thresholdLabel(race.voteThreshold))")
-                                        .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.6))
-                                }
-                                
-                                Spacer()
-                                
-                                Text("RACE")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Color.orange)
-                                    .cornerRadius(8)
-                            }
-                            .padding(10)
-                            .background(.white.opacity(0.08))
-                            .cornerRadius(12)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .frame(maxHeight: 300)
-            
-            Button(action: { showChallengeFlow = true }) {
+    private var bottomButtons: some View {
+        HStack(spacing: 12) {
+            // Find Race
+            Button(action: { showFindRace = true }) {
                 HStack(spacing: 6) {
-                    Image(systemName: "plus")
-                    Text("Post Your Own")
-                        .font(.subheadline.bold())
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("FIND RACE")
+                        .font(.system(size: 14, weight: .bold))
                 }
-                .foregroundStyle(.orange)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    LinearGradient(
+                        colors: [Color.blue, Color.cyan],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(14)
+            }
+            
+            // Start Race
+            Button(action: { showStartRace = true }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "flag.checkered")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("START RACE")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    LinearGradient(
+                        colors: [Color.red, Color.orange],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(14)
             }
         }
-        .sheet(isPresented: $showAcceptSheet) {
-            if let race = selectedOpenRace {
-                AcceptOpenChallengeView(race: race)
-            }
-        }
-    }
-    
-    private func thresholdLabel(_ threshold: Int) -> String {
-        switch threshold {
-        case 25: return "Quick"
-        case 50: return "Standard"
-        case 100: return "Marathon"
-        default: return ""
-        }
+        .padding(.horizontal, 16)
     }
     
     // MARK: - Timer Update
@@ -628,30 +543,23 @@ struct HeadToHeadView: View {
     }
 }
 
-// MARK: - Challenge Flow (Sheet)
 
-struct ChallengeFlowView: View {
+// MARK: - Start Race (Pick Card → Pick Limit → Post Open Challenge)
+
+struct StartRaceView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var cardService = CardService.shared
-    @ObservedObject private var friendsService = FriendsService.shared
     
-    @State private var step: ChallengeStep = .selectMyCard
-    @State private var selectedMyCard: CloudCard?
+    @State private var step: StartStep = .pickCard
+    @State private var selectedCard: CloudCard?
     @State private var selectedThreshold: Int = 50
-    @State private var isDirectChallenge = false
-    @State private var selectedOpponent: (userId: String, username: String)?
-    @State private var selectedOpponentCard: CloudCard?
-    @State private var opponentCards: [CloudCard] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var cooldownMessage: String?
     
-    enum ChallengeStep {
-        case selectMyCard
-        case selectThreshold
-        case selectOpponent       // Only if direct challenge
-        case selectOpponentCard   // Only if direct challenge
-        case confirm
+    enum StartStep {
+        case pickCard
+        case pickLimit
     }
     
     var body: some View {
@@ -660,16 +568,10 @@ struct ChallengeFlowView: View {
                 Color.black.ignoresSafeArea()
                 
                 switch step {
-                case .selectMyCard:
-                    selectMyCardView
-                case .selectThreshold:
-                    selectThresholdView
-                case .selectOpponent:
-                    selectOpponentView
-                case .selectOpponentCard:
-                    selectOpponentCardView
-                case .confirm:
-                    confirmView
+                case .pickCard:
+                    pickCardView
+                case .pickLimit:
+                    pickLimitView
                 }
             }
             .navigationTitle("Start a Race")
@@ -690,41 +592,41 @@ struct ChallengeFlowView: View {
         }
     }
     
-    // MARK: Step 1: Select My Card
-    
-    private var selectMyCardView: some View {
+    private var pickCardView: some View {
         VStack(spacing: 16) {
-            Text("Pick your card for the race")
-                .font(.headline)
+            Text("Pick a Card")
+                .font(.title3.bold())
                 .foregroundStyle(.white)
                 .padding(.top)
             
-            if cardService.myCards.isEmpty {
-                Text("No cards available")
+            if cardService.myCards.filter({ $0.cardType == "vehicle" }).isEmpty {
+                Spacer()
+                Text("No vehicle cards available")
                     .foregroundStyle(.white.opacity(0.5))
+                Spacer()
             } else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(cardService.myCards.filter { $0.cardType == "vehicle" }) { card in
                             Button(action: {
                                 Task {
+                                    cooldownMessage = nil
                                     let ok = try await HeadToHeadService.shared.checkCardCooldown(cardId: card.id)
                                     if ok {
-                                        cooldownMessage = nil
-                                        selectedMyCard = card
-                                        step = .selectThreshold
+                                        selectedCard = card
+                                        step = .pickLimit
                                     } else {
                                         let expiry = try await HeadToHeadService.shared.getCooldownExpiry(cardId: card.id)
                                         if let expiry = expiry {
                                             let remaining = expiry.timeIntervalSince(Date())
                                             let hours = Int(remaining) / 3600
                                             let mins = (Int(remaining) % 3600) / 60
-                                            cooldownMessage = "On cooldown: \(hours)h \(mins)m remaining"
+                                            cooldownMessage = "\(card.make) \(card.model): cooldown \(hours)h \(mins)m"
                                         }
                                     }
                                 }
                             }) {
-                                challengeCardCell(card: card)
+                                cardCell(card: card)
                             }
                             .buttonStyle(.plain)
                         }
@@ -737,51 +639,52 @@ struct ChallengeFlowView: View {
                 Text(msg)
                     .font(.caption)
                     .foregroundStyle(.orange)
-                    .padding(.bottom)
+                    .padding(.bottom, 8)
             }
         }
     }
     
-    // MARK: Step 2: Select Threshold + Open vs Direct
-    
-    private var selectThresholdView: some View {
-        VStack(spacing: 24) {
-            Text("How many votes to win?")
-                .font(.headline)
-                .foregroundStyle(.white)
-                .padding(.top, 30)
+    private var pickLimitView: some View {
+        VStack(spacing: 20) {
+            if let card = selectedCard {
+                VStack(spacing: 6) {
+                    AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Rectangle().fill(Color.gray.opacity(0.3))
+                    }
+                    .frame(width: 140, height: 90)
+                    .cornerRadius(10)
+                    
+                    Text("\(card.make) \(card.model)")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                }
+                .padding(.top, 20)
+            }
             
-            Text("First to reach the threshold wins, or whoever leads after 2 hours.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+            Text("Set Vote Limit")
+                .font(.title3.bold())
+                .foregroundStyle(.white)
             
             VStack(spacing: 12) {
                 ForEach([25, 50, 100], id: \.self) { threshold in
-                    Button(action: {
-                        selectedThreshold = threshold
-                    }) {
+                    Button(action: { selectedThreshold = threshold }) {
                         HStack {
-                            Text("\(threshold) votes")
-                                .font(.title3.bold())
+                            Text("\(threshold)")
+                                .font(.title2.bold())
                                 .foregroundStyle(.white)
-                            
-                            Spacer()
-                            
-                            Text(thresholdLabel(threshold))
-                                .font(.subheadline)
+                            Text("votes")
                                 .foregroundStyle(.white.opacity(0.6))
-                            
+                            Spacer()
+                            Text(thresholdLabel(threshold))
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.5))
                             Image(systemName: selectedThreshold == threshold ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(selectedThreshold == threshold ? .orange : .white.opacity(0.3))
                         }
                         .padding()
-                        .background(
-                            selectedThreshold == threshold
-                                ? Color.orange.opacity(0.2)
-                                : Color.white.opacity(0.05)
-                        )
+                        .background(selectedThreshold == threshold ? Color.orange.opacity(0.2) : Color.white.opacity(0.05))
                         .cornerRadius(12)
                     }
                     .buttonStyle(.plain)
@@ -791,242 +694,21 @@ struct ChallengeFlowView: View {
             
             Spacer()
             
-            // Challenge a specific user toggle
-            Button(action: {
-                isDirectChallenge.toggle()
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: isDirectChallenge ? "checkmark.square.fill" : "square")
-                        .foregroundStyle(isDirectChallenge ? .orange : .white.opacity(0.4))
-                    Text("Challenge a specific user")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.8))
-                }
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal)
-            
-            // Continue button
-            Button(action: {
-                if isDirectChallenge {
-                    step = .selectOpponent
-                } else {
-                    step = .confirm
-                }
-            }) {
-                Text("CONTINUE")
-                    .font(.headline.bold())
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
-                    )
-                    .cornerRadius(16)
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 30)
-        }
-    }
-    
-    // MARK: Step 3 (Direct only): Select Opponent
-    
-    private var selectOpponentView: some View {
-        VStack(spacing: 16) {
-            Text("Who do you want to challenge?")
-                .font(.headline)
-                .foregroundStyle(.white)
-                .padding(.top)
-            
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(friendsService.following, id: \.id) { user in
-                        Button(action: {
-                            selectedOpponent = (userId: user.id, username: user.username)
-                            Task {
-                                isLoading = true
-                                opponentCards = await fetchUserCards(userId: user.id)
-                                isLoading = false
-                                step = .selectOpponentCard
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "person.circle.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(.blue)
-                                
-                                VStack(alignment: .leading) {
-                                    Text(user.username)
-                                        .font(.headline)
-                                        .foregroundStyle(.white)
-                                    Text("Level \(user.level)")
-                                        .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.6))
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(.white.opacity(0.4))
-                            }
-                            .padding()
-                            .background(.white.opacity(0.05))
-                            .cornerRadius(12)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding()
-            }
-            
-            if isLoading {
-                ProgressView()
-                    .tint(.white)
-            }
-        }
-    }
-    
-    // MARK: Step 4 (Direct only): Select Opponent's Card
-    
-    private var selectOpponentCardView: some View {
-        VStack(spacing: 16) {
-            Text("Pick \(selectedOpponent?.username ?? "their") card to race against")
-                .font(.headline)
-                .foregroundStyle(.white)
-                .padding(.top)
-            
-            if opponentCards.isEmpty {
-                Text("No vehicle cards available")
-                    .foregroundStyle(.white.opacity(0.5))
-            } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach(opponentCards.filter { $0.cardType == "vehicle" }) { card in
-                            Button(action: {
-                                selectedOpponentCard = card
-                                step = .confirm
-                            }) {
-                                challengeCardCell(card: card)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding()
-                }
-            }
-        }
-    }
-    
-    // MARK: Step: Confirm
-    
-    private var confirmView: some View {
-        VStack(spacing: 24) {
-            Text(isDirectChallenge ? "Confirm Challenge" : "Confirm Open Race")
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-                .padding(.top, 30)
-            
-            // Matchup preview
-            HStack(spacing: 20) {
-                if let myCard = selectedMyCard {
-                    VStack {
-                        AsyncImage(url: URL(string: myCard.flatImageURL ?? myCard.imageURL)) { image in
-                            image.resizable().aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Rectangle().fill(Color.gray.opacity(0.3))
-                        }
-                        .frame(width: 120, height: 80)
-                        .cornerRadius(8)
-                        
-                        Text("\(myCard.make) \(myCard.model)")
-                            .font(.caption.bold())
-                            .foregroundStyle(.white)
-                    }
-                }
-                
-                Text("VS")
-                    .font(.title.bold())
-                    .foregroundStyle(.yellow)
-                
-                if isDirectChallenge, let oppCard = selectedOpponentCard {
-                    VStack {
-                        AsyncImage(url: URL(string: oppCard.flatImageURL ?? oppCard.imageURL)) { image in
-                            image.resizable().aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Rectangle().fill(Color.gray.opacity(0.3))
-                        }
-                        .frame(width: 120, height: 80)
-                        .cornerRadius(8)
-                        
-                        Text("\(oppCard.make) \(oppCard.model)")
-                            .font(.caption.bold())
-                            .foregroundStyle(.white)
-                    }
-                } else {
-                    // Open challenge — question mark placeholder
-                    VStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white.opacity(0.1))
-                            .frame(width: 120, height: 80)
-                            .overlay(
-                                Text("?")
-                                    .font(.system(size: 36, weight: .black))
-                                    .foregroundStyle(.white.opacity(0.4))
-                            )
-                        
-                        Text("Any challenger")
-                            .font(.caption.bold())
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-                }
-            }
-            
-            // Details
-            VStack(spacing: 8) {
-                if isDirectChallenge {
-                    detailRow("Opponent", selectedOpponent?.username ?? "")
-                } else {
-                    detailRow("Type", "Open — anyone can accept")
-                }
-                detailRow("Threshold", "\(selectedThreshold) votes")
-                detailRow("Duration", "2 hours")
-            }
-            .padding()
-            .background(.white.opacity(0.05))
-            .cornerRadius(12)
-            .padding(.horizontal)
-            
-            Spacer()
-            
-            // Post / Send button
-            Button(action: submitChallenge) {
+            Button(action: postRace) {
                 HStack {
-                    Image(systemName: isDirectChallenge ? "paperplane.fill" : "flag.checkered")
-                    Text(isDirectChallenge ? "SEND CHALLENGE" : "POST OPEN RACE")
+                    Image(systemName: "flag.checkered")
+                    Text("POST RACE")
                         .font(.headline.bold())
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(
-                    LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
-                )
+                .background(LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing))
                 .cornerRadius(16)
             }
             .padding(.horizontal)
             .padding(.bottom, 30)
             .disabled(isLoading)
-        }
-    }
-    
-    private func detailRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-                .foregroundStyle(.white.opacity(0.6))
-            Spacer()
-            Text(value)
-                .foregroundStyle(.white)
-                .fontWeight(.semibold)
         }
     }
     
@@ -1039,9 +721,21 @@ struct ChallengeFlowView: View {
         }
     }
     
-    // MARK: - Helpers
+    private func postRace() {
+        guard let card = selectedCard else { return }
+        isLoading = true
+        Task {
+            do {
+                try await HeadToHeadService.shared.postOpenChallenge(myCard: card, voteThreshold: selectedThreshold)
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+                isLoading = false
+            }
+        }
+    }
     
-    private func challengeCardCell(card: CloudCard) -> some View {
+    private func cardCell(card: CloudCard) -> some View {
         VStack(spacing: 0) {
             AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { phase in
                 switch phase {
@@ -1064,53 +758,280 @@ struct ChallengeFlowView: View {
                 .background(Color.black.opacity(0.7))
         }
         .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
-        )
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
+    }
+}
+
+// MARK: - Find Race (Pick Limit → Match → Pick Your Card → Race Starts)
+
+struct FindRaceView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var h2hService = HeadToHeadService.shared
+    @ObservedObject private var cardService = CardService.shared
+    
+    @State private var step: FindStep = .pickLimit
+    @State private var selectedThreshold: Int = 50
+    @State private var selectedOpenRace: Race?
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var cooldownMessage: String?
+    
+    enum FindStep {
+        case pickLimit
+        case pickCard
     }
     
-    private func submitChallenge() {
-        guard let myCard = selectedMyCard else { return }
-        
+    private var matchingRaces: [Race] {
+        h2hService.openChallenges.filter {
+            $0.voteThreshold == selectedThreshold &&
+            $0.challengerId != FirebaseManager.shared.currentUserId
+        }
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                switch step {
+                case .pickLimit:
+                    pickLimitView
+                case .pickCard:
+                    pickMyCardView
+                }
+            }
+            .navigationTitle("Find a Race")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .alert("Error", isPresented: .init(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button("OK") { errorMessage = nil }
+            } message: {
+                Text(errorMessage ?? "")
+            }
+        }
+    }
+    
+    private var pickLimitView: some View {
+        VStack(spacing: 20) {
+            Text("Choose Vote Limit")
+                .font(.title3.bold())
+                .foregroundStyle(.white)
+                .padding(.top, 20)
+            
+            VStack(spacing: 12) {
+                ForEach([25, 50, 100], id: \.self) { threshold in
+                    let count = h2hService.openChallenges.filter {
+                        $0.voteThreshold == threshold &&
+                        $0.challengerId != FirebaseManager.shared.currentUserId
+                    }.count
+                    
+                    Button(action: { selectedThreshold = threshold }) {
+                        HStack {
+                            Text("\(threshold)")
+                                .font(.title2.bold())
+                                .foregroundStyle(.white)
+                            Text("votes")
+                                .foregroundStyle(.white.opacity(0.6))
+                            Spacer()
+                            if count > 0 {
+                                Text("\(count) open")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.green)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(Color.green.opacity(0.2))
+                                    .cornerRadius(6)
+                            } else {
+                                Text("none")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.3))
+                            }
+                            Image(systemName: selectedThreshold == threshold ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selectedThreshold == threshold ? .blue : .white.opacity(0.3))
+                        }
+                        .padding()
+                        .background(selectedThreshold == threshold ? Color.blue.opacity(0.2) : Color.white.opacity(0.05))
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+            
+            // Preview matching races
+            if !matchingRaces.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AVAILABLE RACES")
+                        .font(.caption.bold())
+                        .foregroundStyle(.white.opacity(0.5))
+                        .padding(.horizontal)
+                    
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(matchingRaces) { race in
+                                HStack(spacing: 12) {
+                                    AsyncImage(url: URL(string: race.challengerCardImageURL)) { image in
+                                        image.resizable().aspectRatio(contentMode: .fill)
+                                    } placeholder: {
+                                        Color.gray.opacity(0.3)
+                                    }
+                                    .frame(width: 50, height: 35)
+                                    .cornerRadius(6)
+                                    
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(race.challengerUsername)
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundStyle(.white)
+                                        Text("\(race.challengerCardMake) \(race.challengerCardModel)")
+                                            .font(.caption)
+                                            .foregroundStyle(.white.opacity(0.6))
+                                            .lineLimit(1)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(8)
+                                .background(.white.opacity(0.05))
+                                .cornerRadius(10)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .frame(maxHeight: 160)
+                }
+            }
+            
+            Spacer()
+            
+            Button(action: findMatch) {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                    Text(matchingRaces.isEmpty ? "NO RACES AT THIS LIMIT" : "FIND RACE")
+                        .font(.headline.bold())
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    LinearGradient(
+                        colors: matchingRaces.isEmpty ? [.gray, .gray] : [.blue, .cyan],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(16)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 30)
+            .disabled(matchingRaces.isEmpty)
+        }
+    }
+    
+    private var pickMyCardView: some View {
+        VStack(spacing: 16) {
+            if let race = selectedOpenRace {
+                VStack(spacing: 6) {
+                    Text("Racing against \(race.challengerUsername)")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    AsyncImage(url: URL(string: race.challengerCardImageURL)) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Color.gray.opacity(0.3)
+                    }
+                    .frame(width: 140, height: 90)
+                    .cornerRadius(10)
+                    Text("\(race.challengerCardMake) \(race.challengerCardModel)")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                }
+                .padding(.top)
+            }
+            
+            Divider().background(.white.opacity(0.2)).padding(.horizontal)
+            
+            Text("Pick your card")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+            
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    ForEach(cardService.myCards.filter { $0.cardType == "vehicle" }) { card in
+                        Button(action: { acceptWith(card: card) }) {
+                            VStack(spacing: 0) {
+                                AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().aspectRatio(contentMode: .fill)
+                                    default:
+                                        Rectangle().fill(Color.gray.opacity(0.3))
+                                            .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.3)))
+                                    }
+                                }
+                                .frame(height: 100)
+                                .clipped()
+                                
+                                Text("\(card.make) \(card.model)")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .padding(6)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.black.opacity(0.7))
+                            }
+                            .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isLoading)
+                    }
+                }
+                .padding(.horizontal)
+            }
+            
+            if let msg = cooldownMessage {
+                Text(msg).font(.caption).foregroundStyle(.orange)
+            }
+            if isLoading {
+                ProgressView().tint(.white).padding(.bottom)
+            }
+        }
+    }
+    
+    private func findMatch() {
+        guard let race = matchingRaces.randomElement() else { return }
+        selectedOpenRace = race
+        step = .pickCard
+    }
+    
+    private func acceptWith(card: CloudCard) {
+        guard let race = selectedOpenRace else { return }
         isLoading = true
+        cooldownMessage = nil
         Task {
             do {
-                if isDirectChallenge,
-                   let opponent = selectedOpponent,
-                   let oppCard = selectedOpponentCard {
-                    // Direct challenge to specific user
-                    try await HeadToHeadService.shared.issueChallenge(
-                        myCard: myCard,
-                        opponentUserId: opponent.userId,
-                        opponentUsername: opponent.username,
-                        opponentCard: oppCard,
-                        voteThreshold: selectedThreshold
-                    )
-                } else {
-                    // Open challenge — anyone can accept
-                    try await HeadToHeadService.shared.postOpenChallenge(
-                        myCard: myCard,
-                        voteThreshold: selectedThreshold
-                    )
+                let ok = try await HeadToHeadService.shared.checkCardCooldown(cardId: card.id)
+                guard ok else {
+                    let expiry = try await HeadToHeadService.shared.getCooldownExpiry(cardId: card.id)
+                    if let expiry = expiry {
+                        let remaining = expiry.timeIntervalSince(Date())
+                        cooldownMessage = "\(card.make): cooldown \(Int(remaining) / 3600)h \((Int(remaining) % 3600) / 60)m"
+                    }
+                    isLoading = false
+                    return
                 }
+                try await HeadToHeadService.shared.acceptOpenChallenge(raceId: race.id, myCard: card)
                 dismiss()
             } catch {
                 errorMessage = error.localizedDescription
                 isLoading = false
             }
-        }
-    }
-    
-    private func fetchUserCards(userId: String) async -> [CloudCard] {
-        do {
-            let snapshot = try await FirebaseManager.shared.db.collection("cards")
-                .whereField("ownerId", isEqualTo: userId)
-                .getDocuments()
-            return snapshot.documents.compactMap { CloudCard(document: $0) }
-        } catch {
-            print("⚠️ Failed to fetch user cards: \(error)")
-            return []
         }
     }
 }
@@ -1253,155 +1174,6 @@ struct PendingChallengesView: View {
     }
 }
 
-// MARK: - Accept Open Challenge Sheet
-
-struct AcceptOpenChallengeView: View {
-    let race: Race
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var cardService = CardService.shared
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-    @State private var cooldownMessage: String?
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                VStack(spacing: 16) {
-                    // Show challenger's card
-                    VStack(spacing: 8) {
-                        Text("\(race.challengerUsername) wants a race!")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                        
-                        AsyncImage(url: URL(string: race.challengerCardImageURL)) { image in
-                            image.resizable().aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Color.gray.opacity(0.3)
-                        }
-                        .frame(width: 160, height: 100)
-                        .cornerRadius(10)
-                        
-                        Text("\(race.challengerCardMake) \(race.challengerCardModel) '\(String(race.challengerCardYear.suffix(2)))")
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.white)
-                        
-                        Text("\(race.voteThreshold) votes to win • 2 hour timer")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
-                    .padding(.top)
-                    
-                    Divider().background(.white.opacity(0.2)).padding(.horizontal)
-                    
-                    Text("Pick your card to race against")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                    
-                    // My cards grid
-                    ScrollView {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                            ForEach(cardService.myCards.filter { $0.cardType == "vehicle" }) { card in
-                                Button(action: {
-                                    acceptWith(card: card)
-                                }) {
-                                    VStack(spacing: 0) {
-                                        AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { phase in
-                                            switch phase {
-                                            case .success(let image):
-                                                image.resizable().aspectRatio(contentMode: .fill)
-                                            default:
-                                                Rectangle().fill(Color.gray.opacity(0.3))
-                                                    .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.3)))
-                                            }
-                                        }
-                                        .frame(height: 100)
-                                        .clipped()
-                                        
-                                        Text("\(card.make) \(card.model)")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundStyle(.white)
-                                            .lineLimit(1)
-                                            .padding(6)
-                                            .frame(maxWidth: .infinity)
-                                            .background(Color.black.opacity(0.7))
-                                    }
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(isLoading)
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                    
-                    if let msg = cooldownMessage {
-                        Text(msg)
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
-                    
-                    if isLoading {
-                        ProgressView()
-                            .tint(.white)
-                            .padding(.bottom)
-                    }
-                }
-            }
-            .navigationTitle("Accept Race")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-            .alert("Error", isPresented: .init(
-                get: { errorMessage != nil },
-                set: { if !$0 { errorMessage = nil } }
-            )) {
-                Button("OK") { errorMessage = nil }
-            } message: {
-                Text(errorMessage ?? "")
-            }
-        }
-    }
-    
-    private func acceptWith(card: CloudCard) {
-        isLoading = true
-        cooldownMessage = nil
-        
-        Task {
-            do {
-                let ok = try await HeadToHeadService.shared.checkCardCooldown(cardId: card.id)
-                guard ok else {
-                    let expiry = try await HeadToHeadService.shared.getCooldownExpiry(cardId: card.id)
-                    if let expiry = expiry {
-                        let remaining = expiry.timeIntervalSince(Date())
-                        let hours = Int(remaining) / 3600
-                        let mins = (Int(remaining) % 3600) / 60
-                        cooldownMessage = "On cooldown: \(hours)h \(mins)m remaining"
-                    }
-                    isLoading = false
-                    return
-                }
-                
-                try await HeadToHeadService.shared.acceptOpenChallenge(
-                    raceId: race.id,
-                    myCard: card
-                )
-                dismiss()
-            } catch {
-                errorMessage = error.localizedDescription
-                isLoading = false
-            }
-        }
-    }
-}
 
 // MARK: - Preview
 
