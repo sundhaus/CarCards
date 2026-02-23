@@ -14,6 +14,7 @@ struct LevelHeader: View {
     @Binding var showProfile: Bool
     
     @State private var profileImage: UIImage?
+    @State private var showAdmin = false
     @ObservedObject private var userService = UserService.shared
     
     private var username: String {
@@ -165,6 +166,17 @@ struct LevelHeader: View {
             .padding(.bottom, 4)
         }
         .buttonStyle(.plain)
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 1.0)
+                .onEnded { _ in
+                    if AdminService.shared.isAdmin {
+                        showAdmin = true
+                    }
+                }
+        )
+        .sheet(isPresented: $showAdmin) {
+            AdminPanelView()
+        }
         .task {
             await loadProfilePicture()
         }
