@@ -45,14 +45,16 @@ struct HeadToHeadView: View {
             VStack(spacing: 0) {
                 topBar
                 
-                Spacer()
-                
+                // Timer directly under challenge button
                 finishLine
+                    .padding(.top, 8)
+                
+                Spacer()
                 
                 raceTrack
                 
                 cardMatchup
-                    .padding(.bottom, 80)
+                    .padding(.bottom, 90)
             }
             
             if showWinnerCelebration, let side = winnerSide {
@@ -88,71 +90,76 @@ struct HeadToHeadView: View {
     // MARK: - Top Bar
     
     private var topBar: some View {
-        HStack {
-            Button(action: { dismiss() }) {
-                Image(systemName: "chevron.left")
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-            }
-            
-            Spacer()
-            
-            if h2hService.myStreak.currentStreak > 0 {
-                HStack(spacing: 4) {
-                    Image(systemName: "flame.fill")
-                        .foregroundStyle(.orange)
-                    Text("\(h2hService.myStreak.currentStreak)")
-                        .font(.system(size: 16, weight: .bold))
+        VStack(spacing: 12) {
+            // Row: back button only
+            HStack {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title3.bold())
                         .foregroundStyle(.white)
-                    if h2hService.myStreak.coinMultiplier > 1.0 {
-                        Text("\(Int(h2hService.myStreak.coinMultiplier))x")
-                            .font(.caption.bold())
-                            .foregroundStyle(.yellow)
+                        .padding(10)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                }
+                
+                Spacer()
+                
+                if h2hService.myStreak.currentStreak > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(.orange)
+                        Text("\(h2hService.myStreak.currentStreak)")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                        if h2hService.myStreak.coinMultiplier > 1.0 {
+                            Text("\(Int(h2hService.myStreak.coinMultiplier))x")
+                                .font(.caption.bold())
+                                .foregroundStyle(.yellow)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(20)
+                }
+                
+                if !h2hService.myPendingChallenges.isEmpty {
+                    Button(action: { showPendingChallenges = true }) {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell.fill")
+                                .font(.title3)
+                                .foregroundStyle(.white)
+                                .padding(10)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                            
+                            Text("\(h2hService.myPendingChallenges.count)")
+                                .font(.caption2.bold())
+                                .foregroundStyle(.white)
+                                .padding(4)
+                                .background(Color.red)
+                                .clipShape(Circle())
+                                .offset(x: 4, y: -4)
+                        }
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(.ultraThinMaterial)
-                .cornerRadius(20)
             }
             
-            if !h2hService.myPendingChallenges.isEmpty {
-                Button(action: { showPendingChallenges = true }) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "bell.fill")
-                            .font(.title3)
-                            .foregroundStyle(.white)
-                            .padding(10)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                        
-                        Text("\(h2hService.myPendingChallenges.count)")
-                            .font(.caption2.bold())
-                            .foregroundStyle(.white)
-                            .padding(4)
-                            .background(Color.red)
-                            .clipShape(Circle())
-                            .offset(x: 4, y: -4)
-                    }
-                }
-            }
-            
+            // Centered challenge button
             Button(action: { showChallenge = true }) {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Image(systemName: "flag.checkered")
+                        .font(.system(size: 16, weight: .bold))
                     Text("CHALLENGE")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 16, weight: .bold))
                 }
                 .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 12)
                 .background(
                     LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
                 )
-                .cornerRadius(20)
+                .cornerRadius(25)
             }
         }
         .padding(.horizontal, 16)
