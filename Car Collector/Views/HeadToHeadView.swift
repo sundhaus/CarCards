@@ -49,12 +49,33 @@ struct HeadToHeadView: View {
                 finishLine
                     .padding(.top, 8)
                 
-                Spacer()
-                
-                raceTrack
-                
-                cardMatchup
-                    .padding(.bottom, 90)
+                // The race track with sliding cards
+                if let race = h2hService.currentFeedRace {
+                    raceTrackView(race: race)
+                } else if showNoRacesMessage {
+                    Spacer()
+                    VStack(spacing: 8) {
+                        Image(systemName: "flag.checkered")
+                            .font(.system(size: 36))
+                            .foregroundStyle(.white.opacity(0.3))
+                        Text("No active races")
+                            .font(.headline)
+                            .foregroundStyle(.white.opacity(0.6))
+                        Text("Tap Challenge to enter the queue")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    Spacer()
+                } else {
+                    Spacer()
+                    VStack(spacing: 12) {
+                        ProgressView().tint(.white)
+                        Text("Finding a race...")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    Spacer()
+                }
             }
             
             if showWinnerCelebration, let side = winnerSide {
@@ -192,179 +213,185 @@ struct HeadToHeadView: View {
         }
     }
     
-    // MARK: - Race Track (Car Progress)
+    // MARK: - Race Track with Sliding Cards
     
-    private var raceTrack: some View {
-        GeometryReader { geo in
-            let trackHeight = geo.size.height
-            let centerX = geo.size.width / 2
-            let laneOffset: CGFloat = geo.size.width * 0.15
-            
-            if let race = h2hService.currentFeedRace {
-                // Left car (challenger) — starts at bottom, moves up
-                let leftY = trackHeight * (1.0 - race.challengerProgress * 0.85)
-                carIndicator(
-                    votes: race.challengerVotes,
-                    side: .left
-                )
-                .position(x: centerX - laneOffset, y: leftY)
-                .animation(.spring(response: 0.6, dampingFraction: 0.7), value: race.challengerVotes)
-                
-                // Right car (defender) — starts at bottom, moves up
-                let rightY = trackHeight * (1.0 - race.defenderProgress * 0.85)
-                carIndicator(
-                    votes: race.defenderVotes,
-                    side: .right
-                )
-                .position(x: centerX + laneOffset, y: rightY)
-                .animation(.spring(response: 0.6, dampingFraction: 0.7), value: race.defenderVotes)
-            }
-        }
-        .frame(height: 200)
-    }
+    @State private var hasVoted = false
     
-    private func carIndicator(votes: Int, side: VoteSide) -> some View {
-        VStack(spacing: 2) {
-            Text("🔥")
-                .font(.system(size: 28))
-                .scaleEffect(voteAnimation == side ? 1.3 : 1.0)
-            
-            // Vote count
-            Text("\(votes)")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(.black.opacity(0.6))
-                .cornerRadius(4)
-        }
-    }
-    
-    // MARK: - Card Matchup (Bottom)
-    
-    private var cardMatchup: some View {
-        Group {
-            if let race = h2hService.currentFeedRace {
-                VStack(spacing: 8) {
-                    // VS label
-                    HStack {
-                        Text(race.challengerUsername)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.7))
-                        
-                        Spacer()
-                        
-                        Text("VS")
-                            .font(.system(size: 18, weight: .black))
-                            .foregroundStyle(.yellow)
-                        
-                        Spacer()
-                        
-                        Text(race.defenderUsername)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                    .padding(.horizontal, 24)
-                    
-                    // Two cards side by side — tap to vote
-                    HStack(spacing: 16) {
-                        raceCardView(
-                            imageURL: race.challengerCardImageURL,
-                            make: race.challengerCardMake,
-                            model: race.challengerCardModel,
-                            year: race.challengerCardYear,
-                            votes: race.challengerVotes,
-                            side: .left,
-                            cardId: race.challengerCardId
-                        )
-                        
-                        raceCardView(
-                            imageURL: race.defenderCardImageURL,
-                            make: race.defenderCardMake,
-                            model: race.defenderCardModel,
-                            year: race.defenderCardYear,
-                            votes: race.defenderVotes,
-                            side: .right,
-                            cardId: race.defenderCardId
-                        )
-                    }
-                    .padding(.horizontal, 16)
-                    
-                    Text("TAP YOUR PICK TO ADD HEAT 🔥")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.5))
-                        .padding(.top, 4)
-                }
-            } else if showNoRacesMessage {
-                VStack(spacing: 8) {
-                    Image(systemName: "flag.checkered")
-                        .font(.system(size: 36))
-                        .foregroundStyle(.white.opacity(0.3))
-                    Text("No active races")
-                        .font(.headline)
-                        .foregroundStyle(.white.opacity(0.6))
-                    Text("Tap Challenge to enter the queue")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.4))
-                }
-                .padding(.vertical, 40)
-            } else {
-                // Loading
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .tint(.white)
-                    Text("Finding a race...")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .padding(.vertical, 30)
-            }
-        }
-    }
-    
-    // MARK: - Individual Race Card
-    
-    private func raceCardView(
-        imageURL: String,
-        make: String,
-        model: String,
-        year: String,
-        votes: Int,
-        side: VoteSide,
-        cardId: String
-    ) -> some View {
-        let cardHeight: CGFloat = 100
-        let cardWidth: CGFloat = cardHeight * (16.0 / 9.0)
+    private func raceTrackView(race: Race) -> some View {
+        let cardH: CGFloat = 100
+        let cardW: CGFloat = cardH * (16.0 / 9.0)
+        let steps = stepMarkers(for: race.voteThreshold)
         
-        return Button(action: {
+        return GeometryReader { geo in
+            let trackTop: CGFloat = 20
+            let trackBottom: CGFloat = geo.size.height - 100 // leave room for tap text
+            let trackHeight = trackBottom - trackTop
+            
+            // Step markers along both lanes
+            ForEach(steps, id: \.self) { step in
+                let progress = CGFloat(step) / CGFloat(race.voteThreshold)
+                let y = trackBottom - (progress * trackHeight)
+                
+                // Left lane marker
+                Text("\(step)")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.3))
+                    .position(x: geo.size.width * 0.5 - cardW * 0.5 - 20, y: y)
+                
+                // Right lane marker
+                Text("\(step)")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.3))
+                    .position(x: geo.size.width * 0.5 + cardW * 0.5 + 20, y: y)
+                
+                // Dashed line across
+                Rectangle()
+                    .fill(.white.opacity(0.08))
+                    .frame(width: cardW * 2 + 40, height: 1)
+                    .position(x: geo.size.width / 2, y: y)
+            }
+            
+            // Finish line at top
+            HStack(spacing: 2) {
+                Text("🏁")
+                    .font(.system(size: 14))
+                Text("FINISH")
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(.white.opacity(0.5))
+                Text("🏁")
+                    .font(.system(size: 14))
+            }
+            .position(x: geo.size.width / 2, y: trackTop - 5)
+            
+            // Left card (challenger)
+            let leftProgress = CGFloat(race.challengerVotes) / CGFloat(max(race.voteThreshold, 1))
+            let leftY = trackBottom - (min(leftProgress, 1.0) * trackHeight) - cardH / 2
+            
+            VStack(spacing: 4) {
+                Text(race.challengerUsername)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.7))
+                
+                slidingCard(
+                    imageURL: race.challengerCardImageURL,
+                    votes: race.challengerVotes,
+                    threshold: race.voteThreshold,
+                    side: .left,
+                    cardId: race.challengerCardId,
+                    cardW: cardW,
+                    cardH: cardH
+                )
+            }
+            .position(
+                x: geo.size.width / 2 - cardW * 0.5 - 8,
+                y: hasVoted ? leftY : trackBottom - cardH / 2
+            )
+            .animation(
+                hasVoted ? .spring(response: 0.8, dampingFraction: 0.7) : .none,
+                value: race.challengerVotes
+            )
+            
+            // Right card (defender)
+            let rightProgress = CGFloat(race.defenderVotes) / CGFloat(max(race.voteThreshold, 1))
+            let rightY = trackBottom - (min(rightProgress, 1.0) * trackHeight) - cardH / 2
+            
+            VStack(spacing: 4) {
+                Text(race.defenderUsername)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.7))
+                
+                slidingCard(
+                    imageURL: race.defenderCardImageURL,
+                    votes: race.defenderVotes,
+                    threshold: race.voteThreshold,
+                    side: .right,
+                    cardId: race.defenderCardId,
+                    cardW: cardW,
+                    cardH: cardH
+                )
+            }
+            .position(
+                x: geo.size.width / 2 + cardW * 0.5 + 8,
+                y: hasVoted ? rightY : trackBottom - cardH / 2
+            )
+            .animation(
+                hasVoted ? .spring(response: 0.8, dampingFraction: 0.7) : .none,
+                value: race.defenderVotes
+            )
+            
+            // VS badge between cards at starting position
+            Text("VS")
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(.yellow)
+                .position(x: geo.size.width / 2, y: trackBottom - cardH / 2)
+            
+            // Bottom text
+            Text("TAP YOUR PICK TO ADD HEAT 🔥")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white.opacity(0.5))
+                .position(x: geo.size.width / 2, y: geo.size.height - 50)
+        }
+        .padding(.bottom, 90)
+    }
+    
+    // Step markers based on race threshold
+    private func stepMarkers(for threshold: Int) -> [Int] {
+        switch threshold {
+        case 25:
+            return [5, 10, 15, 20, 25]
+        case 50:
+            return [10, 20, 30, 40, 50]
+        case 100:
+            return [20, 40, 60, 80, 100]
+        default:
+            let step = max(threshold / 5, 1)
+            return stride(from: step, through: threshold, by: step).map { $0 }
+        }
+    }
+    
+    // Individual sliding card (tappable to vote)
+    private func slidingCard(
+        imageURL: String,
+        votes: Int,
+        threshold: Int,
+        side: VoteSide,
+        cardId: String,
+        cardW: CGFloat,
+        cardH: CGFloat
+    ) -> some View {
+        Button(action: {
             guard !isVoting else { return }
             voteForCard(cardId: cardId, side: side)
         }) {
-            AsyncImage(url: URL(string: imageURL)) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                case .failure(_):
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .overlay(
-                            Image(systemName: "car.fill")
-                                .font(.title2)
-                                .foregroundStyle(.white.opacity(0.3))
-                        )
-                default:
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .overlay(ProgressView().tint(.white))
+            ZStack(alignment: .bottom) {
+                AsyncImage(url: URL(string: imageURL)) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    case .failure(_):
+                        Rectangle().fill(Color.gray.opacity(0.3))
+                            .overlay(Image(systemName: "car.fill").font(.title2).foregroundStyle(.white.opacity(0.3)))
+                    default:
+                        Rectangle().fill(Color.gray.opacity(0.2))
+                            .overlay(ProgressView().tint(.white))
+                    }
                 }
+                .frame(width: cardW, height: cardH)
+                .clipped()
+                .cornerRadius(cardH * 0.09)
+                
+                // Vote count pill
+                Text("\(votes)/\(threshold)")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(.black.opacity(0.7))
+                    .cornerRadius(8)
+                    .padding(.bottom, 4)
             }
-            .frame(width: cardWidth, height: cardHeight)
-            .clipped()
-            .cornerRadius(cardHeight * 0.09)
             .overlay(
-                RoundedRectangle(cornerRadius: cardHeight * 0.09)
+                RoundedRectangle(cornerRadius: cardH * 0.09)
                     .stroke(
                         voteAnimation == side ? Color.orange : Color.white.opacity(0.2),
                         lineWidth: voteAnimation == side ? 3 : 1
@@ -394,6 +421,9 @@ struct HeadToHeadView: View {
         impact.impactOccurred()
         
         let isParticipant = race.challengerId == uid || race.defenderId == uid
+        
+        // Trigger sliding animation
+        hasVoted = true
         
         Task {
             do {
