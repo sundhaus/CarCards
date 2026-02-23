@@ -200,7 +200,7 @@ struct HotCardsCarousel: View {
         VStack(spacing: 8) {
             Image(systemName: "flame.fill")
                 .font(.poppins(50))
-                .foregroundStyle(.orange.opacity(0.7))
+                .foregroundStyle(.orange)
             
             Text("No hot cards yet")
                 .font(.pSubheadline)
@@ -288,7 +288,7 @@ struct HotCardItem: View {
                             Text("\(card.heatCount)")
                                 .font(.system(size: cardHeight * 0.09, weight: .bold))
                         }
-                        .foregroundStyle(Color(red: 1.0, green: 0.6, blue: 0.0))
+                        .foregroundColor(.orange)
                         .shadow(color: .black.opacity(0.6), radius: 2)
                         .padding(.bottom, cardHeight * 0.08)
                         .padding(.trailing, cardHeight * 0.08)

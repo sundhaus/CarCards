@@ -124,7 +124,7 @@ struct FIFACardView: View {
                             Text("\(displayHeatCount)")
                                 .font(.system(size: height * 0.09, weight: .bold))
                         }
-                        .foregroundStyle(Color(red: 1.0, green: 0.6, blue: 0.0))
+                        .foregroundColor(.orange)
                         .shadow(color: .black.opacity(0.6), radius: 2)
                         .padding(.bottom, height * 0.08)
                         .padding(.trailing, height * 0.08)
@@ -136,7 +136,7 @@ struct FIFACardView: View {
             if showHeartAnimation {
                 Image(systemName: "flame.fill")
                     .font(.system(size: height * 0.4))
-                    .foregroundStyle(Color(red: 1.0, green: 0.6, blue: 0.0))
+                    .foregroundColor(.orange)
                     .shadow(color: .black.opacity(0.5), radius: 8)
                     .transition(.scale.combined(with: .opacity))
             }
