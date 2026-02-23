@@ -35,6 +35,9 @@ struct CloudCard: Identifiable, Codable {
     // ADDED: Customization fields
     var customFrame: String?
     
+    // Flattened card image (border + text baked in)
+    var flatImageURL: String?
+    
     // From Firestore document
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -77,6 +80,7 @@ struct CloudCard: Identifiable, Codable {
         
         // ADDED: Load customization
         self.customFrame = data["customFrame"] as? String
+        self.flatImageURL = data["flatImageURL"] as? String
     }
     
     // New card
@@ -111,6 +115,7 @@ struct CloudCard: Identifiable, Codable {
         self.capturedLocation = capturedLocation
         self.previousOwners = previousOwners
         self.customFrame = customFrame
+        self.flatImageURL = nil
         self.firstName = firstName
         self.lastName = lastName
         self.nickname = nickname

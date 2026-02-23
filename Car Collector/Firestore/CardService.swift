@@ -142,6 +142,26 @@ class CardService: ObservableObject {
         }
         
         print("✅ Saved card: \(make) \(model) - Captured by: \(capturedBy ?? "unknown"), Location: \(capturedLocation ?? "unknown")")
+        
+        // 6. Flatten card image (border + text baked in) for universal display
+        Task {
+            do {
+                let savedCardObj = SavedCard(
+                    id: UUID(uuidString: cardId) ?? UUID(),
+                    image: image,
+                    make: make, model: model, color: color, year: year,
+                    capturedBy: capturedBy, capturedLocation: capturedLocation,
+                    previousOwners: previousOwners, customFrame: customFrame,
+                    firebaseId: cardId
+                )
+                let anyCard = AnyCard.vehicle(savedCardObj)
+                let flatURL = try await CardFlattener.shared.flattenAndUpload(anyCard)
+                print("✅ Flat image uploaded: \(flatURL.prefix(60))...")
+            } catch {
+                print("⚠️ Flatten failed (non-critical): \(error)")
+            }
+        }
+        
         return card
     }
     
@@ -191,6 +211,19 @@ class CardService: ObservableObject {
             print("✅ Updated custom frame in friend activity")
         } catch {
             print("⚠️ Failed to update friend activity frame (non-critical): \(error)")
+        }
+        
+        // Clear old cached renders
+        CardRenderer.shared.clearCache()
+    }
+    
+    /// Re-flatten a card after frame/border change. Call this with the updated AnyCard.
+    func reflattenCard(_ card: AnyCard) async {
+        do {
+            let flatURL = try await CardFlattener.shared.reflatten(card)
+            print("✅ Re-flattened card after frame change: \(flatURL.prefix(60))...")
+        } catch {
+            print("⚠️ Re-flatten failed (non-critical): \(error)")
         }
     }
     
@@ -524,6 +557,27 @@ class CardService: ObservableObject {
         }
         
         print("✅ Driver card saved: \(firstName) \(lastName)")
+        
+        // 5. Flatten card image
+        Task {
+            do {
+                let dc = DriverCard(
+                    id: UUID(uuidString: cardId) ?? UUID(),
+                    image: image,
+                    firstName: firstName, lastName: lastName,
+                    nickname: nickname, vehicleName: vehicleName,
+                    isDriverPlusVehicle: isDriverPlusVehicle,
+                    capturedBy: capturedBy, capturedLocation: capturedLocation,
+                    firebaseId: cardId
+                )
+                let anyCard = AnyCard.driver(dc)
+                let flatURL = try await CardFlattener.shared.flattenAndUpload(anyCard)
+                print("✅ Driver flat image uploaded: \(flatURL.prefix(60))...")
+            } catch {
+                print("⚠️ Driver flatten failed (non-critical): \(error)")
+            }
+        }
+        
         return cardId
     }
     
@@ -580,6 +634,25 @@ class CardService: ObservableObject {
         }
         
         print("✅ Location card saved: \(locationName)")
+        
+        // 5. Flatten card image
+        Task {
+            do {
+                let lc = LocationCard(
+                    id: UUID(uuidString: cardId) ?? UUID(),
+                    image: image,
+                    locationName: locationName,
+                    capturedBy: capturedBy, capturedLocation: capturedLocation,
+                    firebaseId: cardId
+                )
+                let anyCard = AnyCard.location(lc)
+                let flatURL = try await CardFlattener.shared.flattenAndUpload(anyCard)
+                print("✅ Location flat image uploaded: \(flatURL.prefix(60))...")
+            } catch {
+                print("⚠️ Location flatten failed (non-critical): \(error)")
+            }
+        }
+        
         return cardId
     }
 }
