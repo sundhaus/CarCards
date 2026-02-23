@@ -285,9 +285,15 @@ class HeadToHeadService: ObservableObject {
             .order(by: "startedAt", descending: true)
             .limit(to: 50)
             .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    print("❌ Active races listener error: \(error)")
+                    return
+                }
                 guard let docs = snapshot?.documents else { return }
+                print("🏁 Active races loaded: \(docs.count) total")
                 Task { @MainActor in
                     self?.activeRaces = docs.compactMap { Race(document: $0) }
+                    print("🏁 Parsed races: \(self?.activeRaces.count ?? 0)")
                     
                     // Update current feed race with fresh data if it's still active
                     if let currentId = self?.currentFeedRace?.id,
@@ -365,9 +371,12 @@ class HeadToHeadService: ObservableObject {
             !votedRaceIds.contains(race.id) && !race.voters.contains(uid)
         }
         
+        print("🏁 loadNextFeedRace: \(activeRaces.count) active, \(unvoted.count) unvoted, \(votedRaceIds.count) locally voted")
+        
         // Priority 1: My unvoted races
         let myUnvoted = unvoted.filter { $0.challengerId == uid || $0.defenderId == uid }
         if let myRace = myUnvoted.first {
+            print("🏁 Showing my race: \(myRace.id)")
             currentFeedRace = myRace
             return
         }
@@ -375,10 +384,12 @@ class HeadToHeadService: ObservableObject {
         // Priority 2: Other people's unvoted races
         let othersUnvoted = unvoted.filter { $0.challengerId != uid && $0.defenderId != uid }
         if let next = othersUnvoted.randomElement() {
+            print("🏁 Showing other's race: \(next.id)")
             currentFeedRace = next
             return
         }
         
+        print("🏁 No races to show")
         // All races voted on — show nothing
         currentFeedRace = nil
     }
