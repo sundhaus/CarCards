@@ -243,41 +243,44 @@ struct HeadToHeadView: View {
             let trackBottom: CGFloat = geo.size.height - 100 // leave room for tap text
             let trackHeight = trackBottom - trackTop
             
-            // Step markers along both lanes
-            ForEach(steps, id: \.self) { step in
-                let progress = CGFloat(step) / CGFloat(race.voteThreshold)
-                let y = trackBottom - (progress * trackHeight)
+            // Step markers along both lanes — only visible after voting
+            if hasVoted {
+                ForEach(steps, id: \.self) { step in
+                    let progress = CGFloat(step) / CGFloat(race.voteThreshold)
+                    let y = trackBottom - (progress * trackHeight)
+                    
+                    // Left lane marker
+                    Text("\(step)")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.3))
+                        .position(x: geo.size.width * 0.5 - cardW * 0.5 - 20, y: y)
+                    
+                    // Right lane marker
+                    Text("\(step)")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.3))
+                        .position(x: geo.size.width * 0.5 + cardW * 0.5 + 20, y: y)
+                    
+                    // Dashed line across
+                    Rectangle()
+                        .fill(.white.opacity(0.08))
+                        .frame(width: cardW * 2 + 40, height: 1)
+                        .position(x: geo.size.width / 2, y: y)
+                }
                 
-                // Left lane marker
-                Text("\(step)")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.3))
-                    .position(x: geo.size.width * 0.5 - cardW * 0.5 - 20, y: y)
-                
-                // Right lane marker
-                Text("\(step)")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.3))
-                    .position(x: geo.size.width * 0.5 + cardW * 0.5 + 20, y: y)
-                
-                // Dashed line across
-                Rectangle()
-                    .fill(.white.opacity(0.08))
-                    .frame(width: cardW * 2 + 40, height: 1)
-                    .position(x: geo.size.width / 2, y: y)
+                // Finish line at top
+                HStack(spacing: 2) {
+                    Text("🏁")
+                        .font(.system(size: 14))
+                    Text("FINISH")
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("🏁")
+                        .font(.system(size: 14))
+                }
+                .position(x: geo.size.width / 2, y: trackTop - 5)
+                .transition(.opacity)
             }
-            
-            // Finish line at top
-            HStack(spacing: 2) {
-                Text("🏁")
-                    .font(.system(size: 14))
-                Text("FINISH")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(.white.opacity(0.5))
-                Text("🏁")
-                    .font(.system(size: 14))
-            }
-            .position(x: geo.size.width / 2, y: trackTop - 5)
             
             // Left card (challenger)
             let leftProgress = CGFloat(race.challengerVotes) / CGFloat(max(race.voteThreshold, 1))
@@ -398,15 +401,18 @@ struct HeadToHeadView: View {
                 .clipped()
                 .cornerRadius(cardH * 0.09)
                 
-                // Vote count pill
-                Text("\(votes)/\(threshold)")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(.black.opacity(0.7))
-                    .cornerRadius(8)
-                    .padding(.bottom, 4)
+                // Vote count pill — only visible after user votes
+                if hasVoted {
+                    Text("\(votes)/\(threshold)")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(.black.opacity(0.7))
+                        .cornerRadius(8)
+                        .padding(.bottom, 4)
+                        .transition(.opacity)
+                }
             }
             .overlay(
                 RoundedRectangle(cornerRadius: cardH * 0.09)
