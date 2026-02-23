@@ -652,14 +652,10 @@ struct UnifiedCardDetailView: View {
                         cardContent(screenSize: geometry.size)
                             .rotationEffect(.degrees(90))
                         
-                        // Driver name overlay — positioned AFTER rotation so text reads correctly
+                        // Driver name overlay — positioned from card's visible top-left
                         if case .driver(let driverCard) = card {
-                            // Match the actual rotated card dimensions
-                            let landscapeWidth = geometry.size.height * 0.8
-                            let landscapeHeight = landscapeWidth / 16 * 9
-                            // After 90° rotation: visible width = landscapeHeight, visible height = landscapeWidth
-                            let cardPortraitWidth = landscapeHeight
-                            let cardPortraitHeight = landscapeWidth
+                            let cardVisibleWidth = geometry.size.width * 0.85
+                            let cardVisibleHeight = geometry.size.height * 0.75
                             let config = CardBorderConfig.forFrame(card.customFrame)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(driverCard.firstName.uppercased())
@@ -677,9 +673,9 @@ struct UnifiedCardDetailView: View {
                             .foregroundStyle(config.textColor)
                             .shadow(color: .black, radius: 4, x: 0, y: 2)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                            .frame(width: cardPortraitWidth, height: cardPortraitHeight)
-                            .padding(.top, cardPortraitHeight * 0.03)
-                            .padding(.leading, cardPortraitWidth * 0.06)
+                            .frame(width: cardVisibleWidth, height: cardVisibleHeight)
+                            .padding(.top, 18)
+                            .padding(.leading, 100)
                         }
                     }
                     .cardTilt()
