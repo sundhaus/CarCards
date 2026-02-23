@@ -13,6 +13,7 @@ struct FriendsView: View {
     @StateObject private var friendsService = FriendsService.shared
     @State private var showFriendsList = false
     @State private var showSearch = false
+    @State private var showActivity = false
     @State private var fullScreenActivity: FriendActivity? = nil
     @State private var commentingActivityId: String? = nil
     @Environment(\.dismiss) private var dismiss
@@ -63,6 +64,16 @@ struct FriendsView: View {
                             .foregroundStyle(.primary)
                         
                         Spacer()
+                        
+                        // Activity button
+                        Button(action: {
+                            showActivity = true
+                        }) {
+                            Image(systemName: "flame.fill")
+                                .font(.pTitle3)
+                                .foregroundStyle(.orange)
+                        }
+                        .padding(.trailing, 16)
                         
                         Button(action: {
                             withAnimation {
@@ -175,6 +186,12 @@ struct FriendsView: View {
                 // Search/Follow users popup
                 if showSearch {
                     SearchUsersView(isShowing: $showSearch)
+                }
+                
+                // Activity view
+                if showActivity {
+                    ActivityView(isShowing: $showActivity)
+                        .transition(.move(edge: .trailing))
                 }
                 
                 // Bottom blur gradient behind hub (portrait mode)
