@@ -901,8 +901,21 @@ struct FollowRow: View {
             UserProfileView(userId: person.id, username: person.username)
         } label: {
             HStack(spacing: 12) {
-                // Level bubble
-                ZStack {
+                // Profile picture
+                if let urlString = person.profilePictureURL, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        Circle().fill(Color(.systemGray4))
+                            .overlay(
+                                Text(String(person.username.prefix(1)).uppercased())
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(.white)
+                            )
+                    }
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+                } else {
                     Circle()
                         .fill(
                             LinearGradient(
@@ -912,10 +925,11 @@ struct FollowRow: View {
                             )
                         )
                         .frame(width: 40, height: 40)
-                    
-                    Text("\(person.level)")
-                        .font(.poppins(16))
-                        .foregroundStyle(.white)
+                        .overlay(
+                            Text(String(person.username.prefix(1)).uppercased())
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(.white)
+                        )
                 }
                 
                 // Username and stats
@@ -968,15 +982,30 @@ struct SearchResultRow: View {
                 UserProfileView(userId: user.id, username: user.username)
             } label: {
                 HStack(spacing: 12) {
-                    // Profile circle placeholder
-                    Circle()
-                        .fill(Color(.systemGray5))
+                    // Profile picture
+                    if let urlString = user.profilePictureURL, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().scaledToFill()
+                        } placeholder: {
+                            Circle().fill(Color(.systemGray4))
+                                .overlay(
+                                    Text(String(user.username.prefix(1)).uppercased())
+                                        .font(.pHeadline)
+                                        .foregroundStyle(.white)
+                                )
+                        }
                         .frame(width: 40, height: 40)
-                        .overlay(
-                            Text(String(user.username.prefix(1)).uppercased())
-                                .font(.pHeadline)
-                                .foregroundStyle(.white)
-                        )
+                        .clipShape(Circle())
+                    } else {
+                        Circle()
+                            .fill(Color(.systemGray5))
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Text(String(user.username.prefix(1)).uppercased())
+                                    .font(.pHeadline)
+                                    .foregroundStyle(.white)
+                            )
+                    }
                     
                     // Username and stats
                     VStack(alignment: .leading, spacing: 2) {
