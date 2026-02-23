@@ -52,7 +52,7 @@ struct HeadToHeadView: View {
                 raceTrack
                 
                 cardMatchup
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 80)
             }
             
             if showWinnerCelebration, let side = winnerSide {
@@ -156,7 +156,7 @@ struct HeadToHeadView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.top, 16)
     }
     
     // MARK: - Finish Line
