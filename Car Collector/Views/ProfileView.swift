@@ -327,6 +327,22 @@ struct ProfileView: View {
                         .font(.pCaption2)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 24)
+                    
+                    // Test preview
+                    if UserService.shared.currentProfile?.isMinor == true {
+                        let testInput = "What the h3ll, that car is b@dass!"
+                        let testOutput = ProfanityFilter.censor(testInput)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Filter preview:")
+                                .font(.pCaption2)
+                                .foregroundStyle(.tertiary)
+                            Text(testOutput)
+                                .font(.pCaption)
+                                .foregroundStyle(.green)
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 4)
+                    }
                 }
                 .padding(.bottom, 16)
             }
