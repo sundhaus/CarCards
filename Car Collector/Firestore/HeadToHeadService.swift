@@ -660,14 +660,14 @@ class HeadToHeadService: ObservableObject {
             return document
         }
         
-        // Record individual vote for reward distribution
-        let voteId = "\(raceId)_\(uid)"
-        try await votesCollection.document(voteId).setData([
-            "raceId": raceId,
-            "voterId": uid,
-            "votedForCardId": votedForCardId,
-            "votedAt": Timestamp(date: Date())
-        ])
+        // Record individual vote for reward distribution — DISABLED FOR TESTING
+        // let voteId = "\(raceId)_\(uid)"
+        // try await votesCollection.document(voteId).setData([
+        //     "raceId": raceId,
+        //     "voterId": uid,
+        //     "votedForCardId": votedForCardId,
+        //     "votedAt": Timestamp(date: Date())
+        // ])
         
         // Award XP for voting
         UserService.shared.addXP(HeadToHeadService.voterXP)
