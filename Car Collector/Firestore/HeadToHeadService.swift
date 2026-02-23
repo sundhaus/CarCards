@@ -350,26 +350,42 @@ class HeadToHeadService: ObservableObject {
     
     /// Load the next race to show. Prioritizes races the user is in,
     /// then shows other active races the user hasn't voted on.
+    /// Track races we've already voted on this session so we cycle through
+    private var votedRaceIds: Set<String> = []
+    
+    func markRaceVoted(_ raceId: String) {
+        votedRaceIds.insert(raceId)
+    }
+    
     func loadNextFeedRace() {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
         
-        // Priority 1: Active races I'm participating in
-        let myRaces = activeRaces.filter { race in
-            race.challengerId == uid || race.defenderId == uid
+        // All active races excluding ones we've already voted on this session
+        let unvoted = activeRaces.filter { race in
+            !votedRaceIds.contains(race.id)
         }
-        if let myRace = myRaces.first {
+        
+        // Priority 1: My unvoted races
+        let myUnvoted = unvoted.filter { $0.challengerId == uid || $0.defenderId == uid }
+        if let myRace = myUnvoted.first {
             currentFeedRace = myRace
             return
         }
         
-        // Priority 2: Active races I haven't voted on
-        let available = activeRaces.filter { race in
-            !race.voters.contains(uid) &&
-            race.challengerId != uid &&
-            race.defenderId != uid
+        // Priority 2: Other people's unvoted races
+        let othersUnvoted = unvoted.filter { $0.challengerId != uid && $0.defenderId != uid }
+        if let next = othersUnvoted.randomElement() {
+            currentFeedRace = next
+            return
         }
         
-        currentFeedRace = available.randomElement()
+        // All races voted on — reset and cycle again
+        if !activeRaces.isEmpty {
+            votedRaceIds.removeAll()
+            currentFeedRace = activeRaces.randomElement()
+        } else {
+            currentFeedRace = nil
+        }
     }
     
     // MARK: - Issue Challenge

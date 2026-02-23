@@ -475,6 +475,9 @@ struct HeadToHeadView: View {
                 // Wait 2 seconds for user to see the updated positions, then advance
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 
+                // Mark this race as voted so we don't cycle back to it
+                h2hService.markRaceVoted(race.id)
+                
                 // Reset hasVoted for the next race so cards start at bottom
                 hasVoted = false
                 h2hService.loadNextFeedRace()
