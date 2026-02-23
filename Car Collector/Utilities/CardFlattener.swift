@@ -18,49 +18,19 @@ import FirebaseStorage
 /// Portrait driver card — replicates the exact fullscreen composition
 struct FlatDriverCardView: View {
     let card: AnyCard
-    let driverCard: DriverCard
     let renderWidth: CGFloat
     
     var body: some View {
         let renderHeight = renderWidth * (16.0 / 9.0)
-        // Landscape card dimensions (before rotation)
         let landscapeW = renderHeight
         let landscapeH = landscapeW / 16 * 9
-        // After rotation: portrait dimensions
-        let portraitW = landscapeH  // = renderWidth
-        let portraitH = landscapeW  // = renderHeight
         
-        ZStack {
-            // Landscape card rotated to portrait
-            AnyCardDetailsFrontView(card: card)
-                .frame(width: landscapeW, height: landscapeH)
-                .rotationEffect(.degrees(90))
-            
-            // Driver text overlay — IDENTICAL math to UnifiedCardDetailView
-            let config = CardBorderConfig.forFrame(card.customFrame)
-            
-            VStack(alignment: .leading, spacing: 1) {
-                Text(driverCard.firstName.uppercased())
-                    .font(.custom("Futura-Light", fixedSize: portraitH * 0.035))
-                
-                if !driverCard.nickname.isEmpty {
-                    Text("\"\(driverCard.nickname.uppercased())\"")
-                        .font(.custom("Futura-Bold", fixedSize: portraitH * 0.022))
-                        .opacity(0.8)
-                }
-                
-                Text(driverCard.lastName.uppercased())
-                    .font(.custom("Futura-Bold", fixedSize: portraitH * 0.035))
-            }
-            .foregroundStyle(config.textColor)
-            .shadow(color: .black, radius: 4, x: 0, y: 2)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .frame(width: portraitW, height: portraitH)
-            .padding(.top, portraitH * 0.04)
-            .padding(.leading, portraitW * 0.18)
-        }
-        .frame(width: renderWidth, height: renderHeight)
-        .clipped()
+        // Just render the card rotated — text is already baked inside AnyCardDetailsFrontView
+        AnyCardDetailsFrontView(card: card)
+            .frame(width: landscapeW, height: landscapeH)
+            .rotationEffect(.degrees(90))
+            .frame(width: renderWidth, height: renderHeight)
+            .clipped()
     }
 }
 
@@ -171,7 +141,7 @@ class CardFlattener {
     // MARK: - SwiftUI → UIImage
     
     private func renderDriverCard(card: AnyCard, driverCard: DriverCard) -> UIImage? {
-        let view = FlatDriverCardView(card: card, driverCard: driverCard, renderWidth: 1080)
+        let view = FlatDriverCardView(card: card, renderWidth: 1080)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 1.0
         return renderer.uiImage
