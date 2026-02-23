@@ -17,7 +17,7 @@ struct HomeContainer: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: DeviceScale.h(8)) {
                 Spacer()
                 
                 // Gradient icon circle
@@ -30,7 +30,7 @@ struct HomeContainer: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 70, height: 70)
+                        .frame(width: DeviceScale.w(70), height: DeviceScale.w(70))
                     
                     Image(systemName: icon)
                         .font(.poppins(32))
@@ -43,13 +43,13 @@ struct HomeContainer: View {
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
                     .padding(.horizontal, 8)
                     .padding(.top, 4)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, DeviceScale.h(16))
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 140)
+            .frame(height: DeviceScale.h(140))
             .contentShape(Rectangle())
             .glassEffect(.regular, in: .rect(cornerRadius: 16))
         }

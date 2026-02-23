@@ -86,7 +86,7 @@ struct LevelHeader: View {
                 .padding(.top, 8)
                 .padding(.bottom, 16)
             }
-            .frame(height: 60)
+            .frame(height: DeviceScale.h(60))
             .background(alignment: .bottom) {
                 // Glass rect oversized in all directions - top and side edges
                 // extend off-screen so only the bottom glow is visible
@@ -109,15 +109,12 @@ struct LevelHeader: View {
                 showProfile = true
             }
         }) {
-            HStack(spacing: 10) {
-                // Profile picture with progress ring (no level badge overlay)
+            HStack(spacing: DeviceScale.w(10)) {
                 ZStack {
-                    // Background circle for ring
                     Circle()
                         .stroke(Color(.systemGray5), lineWidth: 3)
-                        .frame(width: 48, height: 48)
+                        .frame(width: DeviceScale.w(48), height: DeviceScale.w(48))
                     
-                    // Progress ring (fills clockwise)
                     Circle()
                         .trim(from: 0, to: levelSystem.progress)
                         .stroke(
@@ -128,16 +125,15 @@ struct LevelHeader: View {
                             ),
                             style: StrokeStyle(lineWidth: 3, lineCap: .round)
                         )
-                        .frame(width: 48, height: 48)
-                        .rotationEffect(.degrees(-90)) // Start at top
+                        .frame(width: DeviceScale.w(48), height: DeviceScale.w(48))
+                        .rotationEffect(.degrees(-90))
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: levelSystem.progress)
                     
-                    // Profile picture or placeholder
                     if let profileImage = profileImage {
                         Image(uiImage: profileImage)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 40, height: 40)
+                            .frame(width: DeviceScale.w(40), height: DeviceScale.w(40))
                             .clipShape(Circle())
                     } else {
                         Circle()
@@ -148,7 +144,7 @@ struct LevelHeader: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 40, height: 40)
+                            .frame(width: DeviceScale.w(40), height: DeviceScale.w(40))
                             .overlay {
                                 Image(systemName: "person.fill")
                                     .font(.poppins(18))
@@ -164,7 +160,7 @@ struct LevelHeader: View {
                     .lineLimit(1)
                 
                 // Level badge to the right of username
-                levelBadge(size: 26)
+                levelBadge(size: DeviceScale.w(26))
             }
             .padding(.bottom, 4)
         }
@@ -195,7 +191,7 @@ struct LevelHeader: View {
                     // Background circle for ring
                     Circle()
                         .stroke(Color(.systemGray5), lineWidth: 3)
-                        .frame(width: 48, height: 48)
+                        .frame(width: DeviceScale.w(48), height: DeviceScale.w(48))
                     
                     // Progress ring (fills clockwise)
                     Circle()
@@ -208,7 +204,7 @@ struct LevelHeader: View {
                             ),
                             style: StrokeStyle(lineWidth: 3, lineCap: .round)
                         )
-                        .frame(width: 48, height: 48)
+                        .frame(width: DeviceScale.w(48), height: DeviceScale.w(48))
                         .rotationEffect(.degrees(-90)) // Start at top
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: levelSystem.progress)
                     
@@ -217,7 +213,7 @@ struct LevelHeader: View {
                         Image(uiImage: profileImage)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 40, height: 40)
+                            .frame(width: DeviceScale.w(40), height: DeviceScale.w(40))
                             .clipShape(Circle())
                     } else {
                         Circle()
@@ -228,7 +224,7 @@ struct LevelHeader: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 40, height: 40)
+                            .frame(width: DeviceScale.w(40), height: DeviceScale.w(40))
                             .overlay {
                                 Image(systemName: "person.fill")
                                     .font(.poppins(18))

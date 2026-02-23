@@ -51,14 +51,14 @@ struct HotCardsCarousel: View {
                                     .scaleEffect(getScale(for: cardGeometry, screenWidth: geometry.size.width))
                                     .cardTilt(intensity: 0.8, perspective: 0.6)
                             }
-                            .frame(width: 280, height: 157.5)
+                            .frame(width: DeviceScale.w(280), height: DeviceScale.h(157.5))
                             .id(item.id)
                         }
                     }
-                    .padding(.horizontal, (geometry.size.width - 280) / 2)
+                    .padding(.horizontal, (geometry.size.width - DeviceScale.w(280)) / 2)
                 }
-                .frame(height: 180)
-                .padding(.top, 12)
+                .frame(height: DeviceScale.h(180))
+                .padding(.top, DeviceScale.h(12))
                 .scrollDisabled(true)
                 .gesture(
                     DragGesture(minimumDistance: 20)
@@ -81,7 +81,7 @@ struct HotCardsCarousel: View {
                 }
             }
         }
-        .frame(height: 205)
+        .frame(height: DeviceScale.h(205))
     }
     
     // MARK: - Swipe Direction Handler
@@ -193,7 +193,7 @@ struct HotCardsCarousel: View {
                 .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 170)
+        .frame(height: DeviceScale.h(170))
     }
     
     private var emptyView: some View {
@@ -211,7 +211,7 @@ struct HotCardsCarousel: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 170)
+        .frame(height: DeviceScale.h(170))
     }
 }
 
@@ -220,8 +220,8 @@ struct HotCardsCarousel: View {
 struct HotCardItem: View {
     let card: FriendActivity
     
-    // Fixed dimensions for carousel
-    private let cardHeight: CGFloat = 157.5
+    // Responsive dimensions for carousel
+    private let cardHeight: CGFloat = DeviceScale.h(157.5)
     private var cardWidth: CGFloat { cardHeight * (16/9) }
     
     var body: some View {

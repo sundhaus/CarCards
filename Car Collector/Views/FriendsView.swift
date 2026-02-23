@@ -316,10 +316,10 @@ struct FriendActivityCard: View {
             .padding(.top, 16)
             
             // Card preview — single tap opens fullscreen, double tap heats
-            FIFACardView(card: activity, height: 202.5, onSingleTap: {
+            FIFACardView(card: activity, height: DeviceScale.h(202.5), onSingleTap: {
                 onCardTap()
             })
-                .frame(width: 360, height: 202.5)
+                .frame(width: DeviceScale.w(360), height: DeviceScale.h(202.5))
                 .padding(.horizontal)
             
             // Comment button

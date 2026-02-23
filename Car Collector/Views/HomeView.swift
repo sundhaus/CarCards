@@ -21,11 +21,11 @@ struct HomeView: View {
     
     var body: some View {
         NavigationStack(path: $navigationController.homeNavigationPath) {
-            VStack(spacing: 16) {
+            VStack(spacing: DeviceScale.h(16)) {
                 Spacer()
                 
                 // Top row - Leaderboard and Friends
-                HStack(spacing: 16) {
+                HStack(spacing: DeviceScale.w(16)) {
                     // Leaderboard
                     HomeContainer(
                         title: "LEADERBOARD",
@@ -49,7 +49,7 @@ struct HomeView: View {
                     .padding(.horizontal)
                 
                 // Bottom row - Sets and Transfer List
-                HStack(spacing: 16) {
+                HStack(spacing: DeviceScale.w(16)) {
                     // Sets (Coming Soon)
                     HomeContainer(
                         title: "SETS",
