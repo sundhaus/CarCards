@@ -90,72 +90,68 @@ struct HeadToHeadView: View {
     // MARK: - Top Bar
     
     private var topBar: some View {
-        VStack(spacing: 12) {
-            // Row: back button only
-            HStack {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                        .padding(10)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                }
-                
-                Spacer()
-                
-                if h2hService.myStreak.currentStreak > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .foregroundStyle(.orange)
-                        Text("\(h2hService.myStreak.currentStreak)")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                        if h2hService.myStreak.coinMultiplier > 1.0 {
-                            Text("\(Int(h2hService.myStreak.coinMultiplier))x")
-                                .font(.caption.bold())
-                                .foregroundStyle(.yellow)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+        HStack {
+            Button(action: { dismiss() }) {
+                Image(systemName: "chevron.left")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .padding(10)
                     .background(.ultraThinMaterial)
-                    .cornerRadius(20)
+                    .clipShape(Circle())
+            }
+            
+            Spacer()
+            
+            if h2hService.myStreak.currentStreak > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .foregroundStyle(.orange)
+                    Text("\(h2hService.myStreak.currentStreak)")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white)
+                    if h2hService.myStreak.coinMultiplier > 1.0 {
+                        Text("\(Int(h2hService.myStreak.coinMultiplier))x")
+                            .font(.caption.bold())
+                            .foregroundStyle(.yellow)
+                    }
                 }
-                
-                if !h2hService.myPendingChallenges.isEmpty {
-                    Button(action: { showPendingChallenges = true }) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "bell.fill")
-                                .font(.title3)
-                                .foregroundStyle(.white)
-                                .padding(10)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                            
-                            Text("\(h2hService.myPendingChallenges.count)")
-                                .font(.caption2.bold())
-                                .foregroundStyle(.white)
-                                .padding(4)
-                                .background(Color.red)
-                                .clipShape(Circle())
-                                .offset(x: 4, y: -4)
-                        }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.ultraThinMaterial)
+                .cornerRadius(20)
+            }
+            
+            if !h2hService.myPendingChallenges.isEmpty {
+                Button(action: { showPendingChallenges = true }) {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bell.fill")
+                            .font(.title3)
+                            .foregroundStyle(.white)
+                            .padding(10)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                        
+                        Text("\(h2hService.myPendingChallenges.count)")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.white)
+                            .padding(4)
+                            .background(Color.red)
+                            .clipShape(Circle())
+                            .offset(x: 4, y: -4)
                     }
                 }
             }
             
-            // Centered challenge button
             Button(action: { showChallenge = true }) {
                 HStack(spacing: 8) {
                     Image(systemName: "flag.checkered")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
                     Text("CHALLENGE")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
                 }
                 .foregroundStyle(.white)
-                .padding(.horizontal, 32)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
                 .background(
                     LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
                 )
