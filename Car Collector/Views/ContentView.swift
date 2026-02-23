@@ -258,6 +258,21 @@ struct ContentView: View {
                         UserDefaults.standard.set(true, forKey: "hasCompletedImageSync_v1")
                     }
                 }
+                
+                // One-time flatten migration for existing cards
+                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v1") {
+                    let vehicles = savedCards
+                    let drivers = driverCards
+                    let locations = locationCards
+                    Task {
+                        await CardFlattener.shared.migrateExistingCards(
+                            vehicles: vehicles,
+                            drivers: drivers,
+                            locations: locations
+                        )
+                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v1")
+                    }
+                }
             }
             // Pre-warm Capture tab after a brief delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

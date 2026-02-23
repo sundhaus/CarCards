@@ -71,6 +71,67 @@ class CardFlattener {
         return try await flattenAndUpload(card)
     }
     
+    // MARK: - Migration (one-time for existing cards)
+    
+    /// Flatten all existing cards that don't have a flatImageURL yet
+    func migrateExistingCards(vehicles: [SavedCard], drivers: [DriverCard], locations: [LocationCard]) async {
+        let db = FirebaseManager.shared.db
+        
+        print("🔄 Starting flatten migration...")
+        var count = 0
+        
+        // Vehicles
+        for card in vehicles {
+            guard let firebaseId = card.firebaseId else { continue }
+            // Check if already has flatImageURL
+            if let doc = try? await db.collection("cards").document(firebaseId).getDocument(),
+               doc.data()?["flatImageURL"] != nil {
+                continue
+            }
+            do {
+                _ = try await flattenAndUpload(AnyCard.vehicle(card))
+                count += 1
+                print("🔄 Flattened vehicle \(count): \(card.make) \(card.model)")
+            } catch {
+                print("⚠️ Failed to flatten vehicle \(card.make) \(card.model): \(error)")
+            }
+        }
+        
+        // Drivers
+        for card in drivers {
+            guard let firebaseId = card.firebaseId else { continue }
+            if let doc = try? await db.collection("cards").document(firebaseId).getDocument(),
+               doc.data()?["flatImageURL"] != nil {
+                continue
+            }
+            do {
+                _ = try await flattenAndUpload(AnyCard.driver(card))
+                count += 1
+                print("🔄 Flattened driver \(count): \(card.firstName) \(card.lastName)")
+            } catch {
+                print("⚠️ Failed to flatten driver \(card.firstName): \(error)")
+            }
+        }
+        
+        // Locations
+        for card in locations {
+            guard let firebaseId = card.firebaseId else { continue }
+            if let doc = try? await db.collection("cards").document(firebaseId).getDocument(),
+               doc.data()?["flatImageURL"] != nil {
+                continue
+            }
+            do {
+                _ = try await flattenAndUpload(AnyCard.location(card))
+                count += 1
+                print("🔄 Flattened location \(count): \(card.locationName)")
+            } catch {
+                print("⚠️ Failed to flatten location \(card.locationName): \(error)")
+            }
+        }
+        
+        print("✅ Flatten migration complete: \(count) cards processed")
+    }
+    
     // MARK: - Landscape Rendering (Vehicle / Location)
     
     private func flattenLandscape(_ card: AnyCard) -> UIImage? {
