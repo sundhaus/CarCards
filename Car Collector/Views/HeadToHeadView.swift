@@ -447,6 +447,11 @@ struct HeadToHeadView: View {
                     votedForCardId: cardId
                 )
                 
+                // Immediately update the displayed race with new vote counts
+                await MainActor.run {
+                    h2hService.currentFeedRace = updatedRace
+                }
+                
                 // Check if race just finished
                 if updatedRace.status == .finished || updatedRace.winnerId != nil {
                     let winSide: VoteSide = (updatedRace.winnerId == updatedRace.challengerId) ? .left : .right
