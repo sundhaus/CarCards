@@ -470,6 +470,56 @@ class HeadToHeadService: ObservableObject {
         print("🏁 Open challenge posted: \(myCard.make) \(myCard.model) — waiting for opponent")
     }
     
+    // MARK: - Challenge with Auto-Matchmaking
+    
+    /// Try to match with an existing open challenge at the same vote limit.
+    /// If a match is found, accept it and start the race.
+    /// If no match, post as an open challenge and wait in the queue.
+    func challengeWithMatchmaking(
+        myCard: CloudCard,
+        voteThreshold: Int
+    ) async throws -> ChallengeView.MatchResult {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        guard let profile = UserService.shared.currentProfile else {
+            throw UserServiceError.profileNotFound
+        }
+        
+        // Check cooldown
+        let cooldownOk = try await checkCardCooldown(cardId: myCard.id)
+        guard cooldownOk else {
+            throw HeadToHeadError.cardOnCooldown
+        }
+        
+        // Look for an open challenge at this vote limit (not my own)
+        let openSnapshot = try await racesCollection
+            .whereField("status", isEqualTo: "open")
+            .whereField("voteThreshold", isEqualTo: voteThreshold)
+            .limit(to: 10)
+            .getDocuments()
+        
+        let candidates = openSnapshot.documents
+            .compactMap { Race(document: $0) }
+            .filter { $0.challengerId != uid }
+        
+        if let match = candidates.randomElement() {
+            // Found a match — accept it
+            try await acceptOpenChallenge(raceId: match.id, myCard: myCard)
+            
+            // Fetch updated race
+            let updatedDoc = try await racesCollection.document(match.id).getDocument()
+            if let updatedRace = Race(document: updatedDoc) {
+                return .matched(updatedRace)
+            }
+            return .matched(match)
+        } else {
+            // No match — post as open challenge
+            try await postOpenChallenge(myCard: myCard, voteThreshold: voteThreshold)
+            return .queued
+        }
+    }
+    
     /// Accept an open challenge by picking your card to race against
     func acceptOpenChallenge(raceId: String, myCard: CloudCard) async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {
