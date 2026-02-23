@@ -87,21 +87,40 @@ struct ActivityView: View {
 
 struct ActivityRow: View {
     let item: ActivityItem
+    @State private var profileImage: UIImage?
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Icon
+            // Profile picture
             ZStack {
-                Circle()
-                    .fill(item.type == .heat ?
-                          LinearGradient(colors: [.orange, .red], startPoint: .topLeading, endPoint: .bottomTrailing) :
-                          LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .frame(width: 36, height: 36)
+                if let image = profileImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(
+                            LinearGradient(colors: [.gray.opacity(0.4), .gray.opacity(0.2)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                        .frame(width: 36, height: 36)
+                        .overlay {
+                            Text(String(item.username.prefix(1)).uppercased())
+                                .font(.poppins(14))
+                                .foregroundStyle(.white)
+                        }
+                }
                 
+                // Small type badge in corner
                 Image(systemName: item.type == .heat ? "flame.fill" : "bubble.right.fill")
-                    .font(.system(size: 14))
+                    .font(.system(size: 10))
                     .foregroundStyle(.white)
+                    .padding(3)
+                    .background(item.type == .heat ? Color.orange : Color.blue)
+                    .clipShape(Circle())
+                    .offset(x: 13, y: 13)
             }
             
             // Content
@@ -141,6 +160,7 @@ struct ActivityRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .task { await loadProfileImage() }
     }
     
     private var cardName: String {
@@ -148,6 +168,20 @@ struct ActivityRow: View {
             return item.cardMake
         }
         return "\(item.cardMake) \(item.cardModel)"
+    }
+    
+    private func loadProfileImage() async {
+        guard let urlString = item.profilePictureURL,
+              let url = URL(string: urlString) else { return }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let image = UIImage(data: data) {
+                await MainActor.run { profileImage = image }
+            }
+        } catch {
+            print("⚠️ Failed to load activity pfp: \(error)")
+        }
     }
 }
 

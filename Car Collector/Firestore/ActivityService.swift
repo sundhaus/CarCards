@@ -11,7 +11,9 @@ import FirebaseFirestore
 struct ActivityItem: Identifiable {
     let id: String
     let type: ActivityType
+    let userId: String
     let username: String
+    let profilePictureURL: String?
     let text: String?       // comment text (nil for heats)
     let cardMake: String
     let cardModel: String
@@ -142,13 +144,14 @@ class ActivityService: ObservableObject {
                         // Use per-user timestamp if available, else fallback to card creation
                         let heatTime = heatTimestamps[heaterUid]?.dateValue() ?? fallbackTimestamp
                         
-                        // Look up username
-                        let username = await lookupUsername(uid: heaterUid)
+                        let user = await lookupUser(uid: heaterUid)
                         
                         items.append(ActivityItem(
                             id: "\(activityId)-heat-\(heaterUid)",
                             type: .heat,
-                            username: username,
+                            userId: heaterUid,
+                            username: user.username,
+                            profilePictureURL: user.pfp,
                             text: nil,
                             cardMake: make,
                             cardModel: model,
@@ -171,14 +174,16 @@ class ActivityService: ObservableObject {
                     let commentUserId = commentData["userId"] as? String ?? ""
                     if commentUserId == uid { continue } // skip own comments
                     
-                    let username = commentData["username"] as? String ?? "Unknown"
+                    let user = await lookupUser(uid: commentUserId)
                     let text = commentData["text"] as? String ?? ""
                     let createdAt = (commentData["createdAt"] as? Timestamp)?.dateValue() ?? Date()
                     
                     items.append(ActivityItem(
                         id: commentDoc.documentID,
                         type: .comment,
-                        username: username,
+                        userId: commentUserId,
+                        username: user.username,
+                        profilePictureURL: user.pfp,
                         text: text,
                         cardMake: make,
                         cardModel: model,
@@ -203,18 +208,19 @@ class ActivityService: ObservableObject {
         }
     }
     
-    private var usernameCache: [String: String] = [:]
+    private var userCache: [String: (username: String, pfp: String?)] = [:]
     
-    private func lookupUsername(uid: String) async -> String {
-        if let cached = usernameCache[uid] { return cached }
+    private func lookupUser(uid: String) async -> (username: String, pfp: String?) {
+        if let cached = userCache[uid] { return cached }
         
         do {
             let doc = try await db.collection("users").document(uid).getDocument()
             let username = doc.data()?["username"] as? String ?? "Unknown"
-            usernameCache[uid] = username
-            return username
+            let pfp = doc.data()?["profilePictureURL"] as? String
+            userCache[uid] = (username, pfp)
+            return (username, pfp)
         } catch {
-            return "Unknown"
+            return ("Unknown", nil)
         }
     }
 }
