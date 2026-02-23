@@ -247,7 +247,7 @@ struct HeadToHeadView: View {
         return GeometryReader { geo in
             let bottomInset = geo.safeAreaInsets.bottom
             let trackTop: CGFloat = 20
-            let trackBottom: CGFloat = geo.size.height - bottomInset - 100
+            let trackBottom: CGFloat = geo.size.height - bottomInset - 160
             let trackHeight = trackBottom - trackTop
             
             // Step markers along both lanes — only visible after voting
