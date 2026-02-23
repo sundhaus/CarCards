@@ -351,7 +351,7 @@ class HeadToHeadService: ObservableObject {
     /// Load the next race to show. Prioritizes races the user is in,
     /// then shows other active races the user hasn't voted on.
     /// Track races we've already voted on this session so we cycle through
-    private var votedRaceIds: Set<String> = []
+    var votedRaceIds: Set<String> = []
     
     func markRaceVoted(_ raceId: String) {
         votedRaceIds.insert(raceId)

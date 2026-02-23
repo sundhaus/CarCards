@@ -101,7 +101,13 @@ struct HeadToHeadView: View {
         .onReceive(raceTimer) { _ in
             updateTimer()
         }
-        .sheet(isPresented: $showChallenge) {
+        .sheet(isPresented: $showChallenge, onDismiss: {
+            // Refresh feed to show newly matched race
+            h2hService.votedRaceIds.removeAll()
+            hasVoted = false
+            cardsVisible = true
+            h2hService.loadNextFeedRace()
+        }) {
             ChallengeView()
         }
         .sheet(isPresented: $showHistory) {
