@@ -15,6 +15,7 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
     
     let isAvailable: Bool
     private var latestDepthMap: CVPixelBuffer?
+    private var lastDepthTimestamp: Date?
     var hasDepthData: Bool { latestDepthMap != nil }
     private var currentDepthOutput: AVCaptureDepthDataOutput?
     private let depthQueue = DispatchQueue(label: "depthQueue")
@@ -58,6 +59,7 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
     
     func stop() {
         latestDepthMap = nil
+        lastDepthTimestamp = nil
     }
     
     func depthDataOutput(_ output: AVCaptureDepthDataOutput,
@@ -66,12 +68,19 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
                          connection: AVCaptureConnection) {
         let converted = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32)
         latestDepthMap = converted.depthDataMap
+        lastDepthTimestamp = Date()
     }
     
     /// Check if the scene in front of the camera is flat (screen)
     func isSceneFlat() -> Bool {
         guard let depthMap = latestDepthMap else {
-            print("🔍 LiDAR: no depth data yet")
+            print("🔍 LiDAR: no depth data available — allowing capture")
+            return false
+        }
+        
+        // Check if depth data is stale (> 2 seconds old)
+        if let ts = lastDepthTimestamp, Date().timeIntervalSince(ts) > 2.0 {
+            print("🔍 LiDAR: depth data stale (\(String(format: "%.1f", Date().timeIntervalSince(ts)))s old) — allowing capture")
             return false
         }
         
@@ -128,18 +137,26 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
         print("🔍 LiDAR depth: samples=\(depthValues.count), mean=\(String(format: "%.3f", mean))m, range=\(String(format: "%.3f", fullRange))m, IQR=\(String(format: "%.3f", iqr))m, min=\(String(format: "%.3f", minDepth))m, max=\(String(format: "%.3f", maxDepth))m")
         
         // A screen held up to the camera:
-        // - Very close: mean < 0.75m (arm's length)
-        // - Flat: IQR < 0.12m (screen + bezel edge noise)
+        // - Close range: mean < 1.2m (phone/tablet/monitor distance)
+        // - Flat: IQR < 0.15m (screen surface is uniformly flat)
         //   Real data: monitor at 0.47m → IQR=0.079m
+        //   iPhone 12 LiDAR produces slightly noisier depth → wider threshold
         //
         // A real car/person even at close range:
         // - IQR > 0.20m (hood, windshield, background all different depths)
+        //
+        // Also check full range for very flat surfaces (TV/monitor further away)
         
-        if iqr < 0.12 && mean < 0.75 {
-            print("🚫 LiDAR: flat surface — IQR \(String(format: "%.3f", iqr))m at \(String(format: "%.2f", mean))m (likely screen)")
+        let isFlat = iqr < 0.15
+        let isClose = mean < 1.2
+        let isVeryFlat = fullRange < 0.25 && mean < 1.5
+        
+        if (isFlat && isClose) || isVeryFlat {
+            print("🚫 LiDAR: flat surface — IQR \(String(format: "%.3f", iqr))m, range \(String(format: "%.3f", fullRange))m at \(String(format: "%.2f", mean))m (likely screen)")
             return true
         }
         
+        print("✅ LiDAR: 3D scene — IQR \(String(format: "%.3f", iqr))m, range \(String(format: "%.3f", fullRange))m at \(String(format: "%.2f", mean))m (real subject)")
         return false
     }
 }
