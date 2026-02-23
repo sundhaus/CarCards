@@ -245,8 +245,9 @@ struct HeadToHeadView: View {
         let steps = stepMarkers(for: race.voteThreshold)
         
         return GeometryReader { geo in
+            let bottomInset = geo.safeAreaInsets.bottom
             let trackTop: CGFloat = 20
-            let trackBottom: CGFloat = geo.size.height - 30
+            let trackBottom: CGFloat = geo.size.height - bottomInset - 100
             let trackHeight = trackBottom - trackTop
             
             // Step markers along both lanes — only visible after voting
