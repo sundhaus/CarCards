@@ -988,28 +988,35 @@ struct RaceHistoryView: View {
                 }
             }
             
-            // Progress bar
+            // Progress bar with flame at meeting point
             GeometryReader { geo in
+                let leftWidth = max(geo.size.width * challengerRatio, 4)
+                let rightWidth = max(geo.size.width * (1 - challengerRatio), 4)
+                let challengerLeading = race.challengerVotes >= race.defenderVotes
+                
                 ZStack(alignment: .leading) {
                     Capsule().fill(.white.opacity(0.08)).frame(height: 6)
                     
+                    // Left side (challenger)
                     Capsule()
-                        .fill(iPickedChallenger
-                              ? (myPickWon ? Color.green : myPickLost ? Color.red : Color.white.opacity(0.6))
-                              : Color.white.opacity(0.3))
-                        .frame(width: max(geo.size.width * challengerRatio, 4), height: 6)
+                        .fill(challengerLeading ? Color.orange : Color.white.opacity(0.3))
+                        .frame(width: leftWidth, height: 6)
                     
+                    // Right side (defender)
                     HStack {
                         Spacer()
                         Capsule()
-                            .fill(!iPickedChallenger
-                                  ? (myPickWon ? Color.green : myPickLost ? Color.red : Color.white.opacity(0.6))
-                                  : Color.white.opacity(0.3))
-                            .frame(width: max(geo.size.width * (1 - challengerRatio), 4), height: 6)
+                            .fill(!challengerLeading ? Color.orange : Color.white.opacity(0.3))
+                            .frame(width: rightWidth, height: 6)
                     }
+                    
+                    // Flame at meeting point
+                    Text("🔥")
+                        .font(.system(size: 14))
+                        .offset(x: leftWidth - 10, y: -1)
                 }
             }
-            .frame(height: 6)
+            .frame(height: 14)
             
             // Vote counts
             HStack {
@@ -1048,12 +1055,7 @@ struct RaceHistoryView: View {
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(
-                    myPickWon ? Color.green.opacity(0.3) :
-                    myPickLost ? Color.red.opacity(0.15) :
-                    Color.white.opacity(0.08),
-                    lineWidth: 1
-                )
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
     
@@ -1062,9 +1064,7 @@ struct RaceHistoryView: View {
     private func voteCard(imageURL: String, isMyPick: Bool, isWinner: Bool, isLoser: Bool) -> some View {
         let cardH: CGFloat = 80
         let cardW: CGFloat = cardH * (16.0 / 9.0)
-        let borderColor: Color = isMyPick
-            ? (isWinner ? .green : isLoser ? .red : .orange)
-            : .white.opacity(0.1)
+        let borderColor: Color = isMyPick ? .orange : .white.opacity(0.1)
         
         return ZStack(alignment: .bottomLeading) {
             AsyncImage(url: URL(string: imageURL)) { phase in
