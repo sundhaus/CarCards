@@ -53,6 +53,7 @@ struct HeadToHeadView: View {
             }
         }
         .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             h2hService.startListening()
             Task { await h2hService.checkExpiredRaces() }
@@ -81,7 +82,7 @@ struct HeadToHeadView: View {
     private var topBar: some View {
         HStack {
             Button(action: { dismiss() }) {
-                Image(systemName: "xmark")
+                Image(systemName: "chevron.left")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
                     .padding(10)
@@ -153,10 +154,14 @@ struct HeadToHeadView: View {
     // MARK: - Drag Strip Background
     
     private var dragStripBackground: some View {
-        Image("dragStripTrack")
-            .resizable()
-            .aspectRatio(contentMode: .fill)
-            .ignoresSafeArea()
+        GeometryReader { geo in
+            Image("dragStripTrack")
+                .resizable()
+                .scaledToFill()
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+                .position(x: geo.size.width / 2, y: geo.size.height / 2)
+        }
     }
     
     // MARK: - Finish Line
@@ -330,49 +335,29 @@ struct HeadToHeadView: View {
             guard !isVoting else { return }
             voteForCard(cardId: cardId, side: side)
         }) {
-            VStack(spacing: 0) {
-                // Card image
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    case .failure(_):
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .overlay(
-                                Image(systemName: "car.fill")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(.white.opacity(0.3))
-                            )
-                    default:
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.2))
-                            .overlay(ProgressView().tint(.white))
-                    }
+            AsyncImage(url: URL(string: imageURL)) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                case .failure(_):
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .overlay(
+                            Image(systemName: "car.fill")
+                                .font(.largeTitle)
+                                .foregroundStyle(.white.opacity(0.3))
+                        )
+                default:
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .overlay(ProgressView().tint(.white))
                 }
-                .frame(height: 120)
-                .clipped()
-                
-                // Card info bar
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(make) \(model)")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        Text(year)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .background(Color.black.opacity(0.7))
             }
+            .frame(height: 120)
             .frame(maxWidth: .infinity)
+            .clipped()
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
