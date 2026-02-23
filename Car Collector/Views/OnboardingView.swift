@@ -38,24 +38,23 @@ struct OnboardingView: View {
             AppBackground(animateShapes: true)
                 .ignoresSafeArea()
             
+            // Dim overlay so text is readable
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+            
             VStack(spacing: 0) {
                 Spacer()
                 
                 // App icon / logo area
                 VStack(spacing: 16) {
-                    Image(systemName: "car.fill")
-                        .font(.poppins(70))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.blue, .cyan],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                    Image("HeatCheckLogo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 120, height: 120)
                         .scaleEffect(animateIn ? 1.0 : 0.5)
                         .opacity(animateIn ? 1.0 : 0.0)
                     
-                    Text("Car Card Collector")
+                    Text("HeatCheck")
                         .font(.poppins(32))
                         .foregroundStyle(.white)
                         .opacity(animateIn ? 1.0 : 0.0)
