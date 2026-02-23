@@ -124,7 +124,8 @@ struct ActivityRow: View {
                 
                 // Comment text preview (white, non-bold)
                 if let commentText = item.text {
-                    Text(commentText)
+                    let displayText = UserService.shared.currentProfile?.isMinor == true ? ProfanityFilter.censor(commentText) : commentText
+                    Text(displayText)
                         .font(.custom("Futura-Medium", fixedSize: DeviceScale.f(13)))
                         .foregroundColor(.white.opacity(0.85))
                         .lineLimit(2)

@@ -65,6 +65,13 @@ struct CommentsListView: View {
 struct CommentRow: View {
     let comment: CardComment
     
+    private var displayText: String {
+        if UserService.shared.currentProfile?.isMinor == true {
+            return ProfanityFilter.censor(comment.text)
+        }
+        return comment.text
+    }
+    
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text(comment.username)
@@ -72,7 +79,7 @@ struct CommentRow: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
             
-            Text(comment.text)
+            Text(displayText)
                 .font(.pCaption)
                 .foregroundStyle(.primary)
                 .lineLimit(3)

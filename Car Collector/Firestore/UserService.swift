@@ -23,6 +23,7 @@ struct UserProfile: Codable, Identifiable {
     var linkedAccount: Bool
     var profilePictureURL: String?
     var crownCardId: String?  // Firebase card ID of the user's showcase/favorite card
+    var isMinor: Bool  // Under 13 — enable content filtering
     
     // Firestore document → UserProfile
     init?(document: DocumentSnapshot) {
@@ -39,10 +40,11 @@ struct UserProfile: Codable, Identifiable {
         self.linkedAccount = data["linkedAccount"] as? Bool ?? false
         self.profilePictureURL = data["profilePictureURL"] as? String
         self.crownCardId = data["crownCardId"] as? String
+        self.isMinor = data["isMinor"] as? Bool ?? false
     }
     
     // New user default
-    init(uid: String, username: String) {
+    init(uid: String, username: String, isMinor: Bool = false) {
         self.id = uid
         self.username = username
         self.level = 1
@@ -53,6 +55,8 @@ struct UserProfile: Codable, Identifiable {
         self.createdAt = Date()
         self.linkedAccount = false
         self.profilePictureURL = nil
+        self.crownCardId = nil
+        self.isMinor = isMinor
         self.crownCardId = nil
     }
     
@@ -66,7 +70,8 @@ struct UserProfile: Codable, Identifiable {
             "coins": coins,
             "totalCardsCollected": totalCardsCollected,
             "createdAt": Timestamp(date: createdAt),
-            "linkedAccount": linkedAccount
+            "linkedAccount": linkedAccount,
+            "isMinor": isMinor
         ]
         
         if let url = profilePictureURL {
@@ -109,7 +114,7 @@ class UserService: ObservableObject {
     // MARK: - Create Profile (first launch)
     
     /// Creates user profile with atomic username reservation
-    func createProfile(uid: String, username: String) async throws {
+    func createProfile(uid: String, username: String, isMinor: Bool = false) async throws {
         let lowercased = username.lowercased()
         
         // Use a batch write to atomically reserve the username AND create the profile
@@ -124,7 +129,7 @@ class UserService: ObservableObject {
         ], forDocument: usernameDoc)
         
         // 2. Create the user profile
-        let profile = UserProfile(uid: uid, username: username)
+        let profile = UserProfile(uid: uid, username: username, isMinor: isMinor)
         let profileDoc = usersCollection.document(uid)
         batch.setData(profile.dictionary, forDocument: profileDoc)
         

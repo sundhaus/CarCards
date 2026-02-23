@@ -20,6 +20,7 @@ struct OnboardingView: View {
     @State private var isCreating = false
     @State private var animateIn = false
     @State private var checkTask: Task<Void, Never>?
+    @State private var isUnder13 = false
     
     private var isValid: Bool {
         let trimmed = username.trimmingCharacters(in: .whitespaces)
@@ -145,6 +146,23 @@ struct OnboardingView: View {
                 }
                 .opacity(animateIn ? 1.0 : 0.0)
                 .offset(y: animateIn ? 0 : 20)
+                
+                // Age checkbox
+                Button(action: { isUnder13.toggle() }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: isUnder13 ? "checkmark.square.fill" : "square")
+                            .font(.system(size: 22))
+                            .foregroundStyle(isUnder13 ? .blue : .white.opacity(0.5))
+                        
+                        Text("I am under 13 years old")
+                            .font(.pSubheadline)
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 40)
+                .padding(.top, 8)
+                .opacity(animateIn ? 1.0 : 0.0)
                 
                 Spacer()
                 
@@ -287,7 +305,7 @@ struct OnboardingView: View {
                 
                 // 3. Create user profile + reserve username atomically
                 print("📝 Creating profile...")
-                try await UserService.shared.createProfile(uid: uid, username: trimmed)
+                try await UserService.shared.createProfile(uid: uid, username: trimmed, isMinor: isUnder13)
                 
                 // 4. Mark onboarding complete locally
                 UserDefaults.standard.set(true, forKey: "onboardingComplete")
