@@ -288,7 +288,7 @@ struct HotCardItem: View {
                             Text("\(card.heatCount)")
                                 .font(.system(size: cardHeight * 0.09, weight: .bold))
                         }
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color(red: 1.0, green: 0.6, blue: 0.0))
                         .shadow(color: .black.opacity(0.6), radius: 2)
                         .padding(.bottom, cardHeight * 0.08)
                         .padding(.trailing, cardHeight * 0.08)
