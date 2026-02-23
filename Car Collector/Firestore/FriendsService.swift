@@ -52,6 +52,7 @@ struct FriendActivity: Identifiable {
     var heatCount: Int
     var customFrame: String?
     var category: String?  // NEW: For Explore page categorization
+    var cardType: String   // "vehicle", "driver", "location"
     
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -69,11 +70,12 @@ struct FriendActivity: Identifiable {
         self.heatedBy = data["heatedBy"] as? [String] ?? []
         self.heatCount = data["heatCount"] as? Int ?? 0
         self.customFrame = data["customFrame"] as? String
-        self.category = data["category"] as? String  // NEW: Read category from Firebase
+        self.category = data["category"] as? String
+        self.cardType = data["cardType"] as? String ?? "vehicle"
     }
     
     /// Manual init for loading from featured_cards collection
-    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date) {
+    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date, cardType: String = "vehicle") {
         self.id = id
         self.userId = userId
         self.username = username
@@ -88,6 +90,7 @@ struct FriendActivity: Identifiable {
         self.heatCount = heatCount
         self.customFrame = customFrame
         self.category = nil
+        self.cardType = cardType
     }
     
     var dictionary: [String: Any] {
@@ -100,6 +103,7 @@ struct FriendActivity: Identifiable {
             "cardModel": cardModel,
             "cardYear": cardYear,
             "imageURL": imageURL,
+            "cardType": cardType,
             "createdAt": Timestamp(date: createdAt),
             "heatedBy": heatedBy,
             "heatCount": heatCount
@@ -589,7 +593,7 @@ class FriendsService: ObservableObject {
     
     // MARK: - Post Activity (when user adds a card)
     
-    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, customFrame: String? = nil, category: VehicleCategory? = nil) async throws {
+    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, customFrame: String? = nil, category: VehicleCategory? = nil, cardType: String = "vehicle") async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
         }
@@ -615,19 +619,21 @@ class FriendsService: ObservableObject {
             return
         }
         
-        // Also dedup by make+model+year to prevent duplicate feed entries
+        // Also dedup by make+model+year for vehicles to prevent duplicate feed entries
         // (e.g. same car saved through different flows with different cardIds)
-        let existingByVehicle = try await activitiesCollection
-            .whereField("userId", isEqualTo: uid)
-            .whereField("cardMake", isEqualTo: make)
-            .whereField("cardModel", isEqualTo: model)
-            .whereField("cardYear", isEqualTo: year)
-            .limit(to: 1)
-            .getDocuments()
-        
-        if !existingByVehicle.documents.isEmpty {
-            print("ℹ️  Activity already exists for \(make) \(model) \(year) - skipping duplicate")
-            return
+        if cardType == "vehicle" {
+            let existingByVehicle = try await activitiesCollection
+                .whereField("userId", isEqualTo: uid)
+                .whereField("cardMake", isEqualTo: make)
+                .whereField("cardModel", isEqualTo: model)
+                .whereField("cardYear", isEqualTo: year)
+                .limit(to: 1)
+                .getDocuments()
+            
+            if !existingByVehicle.documents.isEmpty {
+                print("ℹ️  Activity already exists for \(make) \(model) \(year) - skipping duplicate")
+                return
+            }
         }
         
         let activityId = UUID().uuidString
@@ -640,6 +646,7 @@ class FriendsService: ObservableObject {
             "cardModel": model,
             "cardYear": year,
             "imageURL": imageURL,
+            "cardType": cardType,
             "createdAt": Timestamp(date: Date())
         ]
         

@@ -52,27 +52,64 @@ struct FIFACardView: View {
                     .allowsHitTesting(false)
             }
             
-            // Car name overlay - top left, horizontal
-            VStack {
-                HStack {
-                    HStack(spacing: 6) {
-                        let config = CardBorderConfig.forFrame(card.customFrame)
+            // Card name overlay — adapts to card type
+            let config = CardBorderConfig.forFrame(card.customFrame)
+            if card.cardType == "driver" {
+                // Driver: stacked first/last name
+                let inset = height * 0.08
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(card.cardMake.uppercased())
+                        .font(.custom("Futura-Bold", size: height * 0.09))
+                    
+                    if !card.cardYear.isEmpty {
+                        Text("\"\(card.cardYear.uppercased())\"")
+                            .font(.custom("Futura-Light", size: height * 0.06))
+                    }
+                    
+                    Text(card.cardModel.uppercased())
+                        .font(.custom("Futura-Bold", size: height * 0.09))
+                }
+                .foregroundStyle(config.textColor)
+                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                .padding(.top, inset)
+                .padding(.leading, inset)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            } else if card.cardType == "location" {
+                // Location: location name (bold)
+                VStack {
+                    HStack {
                         Text(card.cardMake.uppercased())
-                            .font(.custom("Futura-Light", size: height * 0.08))
-                            .foregroundStyle(config.textColor)
-                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                        
-                        Text(card.cardModel.uppercased())
                             .font(.custom("Futura-Bold", size: height * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            .lineLimit(1)
+                            .padding(.top, height * 0.08)
+                            .padding(.leading, height * 0.08)
+                        Spacer()
                     }
-                    .padding(.top, height * 0.08)
-                    .padding(.leading, height * 0.08)
                     Spacer()
                 }
-                Spacer()
+            } else {
+                // Vehicle: make (light) + model (bold) horizontal
+                VStack {
+                    HStack {
+                        HStack(spacing: 6) {
+                            Text(card.cardMake.uppercased())
+                                .font(.custom("Futura-Light", size: height * 0.08))
+                                .foregroundStyle(config.textColor)
+                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                            
+                            Text(card.cardModel.uppercased())
+                                .font(.custom("Futura-Bold", size: height * 0.08))
+                                .foregroundStyle(config.textColor)
+                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                                .lineLimit(1)
+                        }
+                        .padding(.top, height * 0.08)
+                        .padding(.leading, height * 0.08)
+                        Spacer()
+                    }
+                    Spacer()
+                }
             }
             
             // Heat indicator - bottom right
@@ -194,7 +231,7 @@ struct FIFACardView: View {
             Rectangle()
                 .fill(Color.white.opacity(0.3))
                 .overlay(
-                    Image(systemName: "car.fill")
+                    Image(systemName: card.cardType == "driver" ? "person.fill" : card.cardType == "location" ? "mappin.circle.fill" : "car.fill")
                         .font(.system(size: height * 0.3))
                         .foregroundStyle(.gray.opacity(0.4))
                 )

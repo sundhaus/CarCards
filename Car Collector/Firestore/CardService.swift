@@ -508,6 +508,21 @@ class CardService: ObservableObject {
         // 3. Increment user's card count
         try await UserService.shared.incrementCardCount(uid: uid)
         
+        // 4. Post activity to friend feed
+        do {
+            try await FriendsService.shared.postCardActivity(
+                cardId: cardId,
+                make: firstName,
+                model: lastName,
+                year: nickname,
+                imageURL: imageURL,
+                cardType: "driver"
+            )
+            print("✅ Posted driver activity to friends feed")
+        } catch {
+            print("⚠️ Failed to post driver friend activity (non-critical): \(error)")
+        }
+        
         print("✅ Driver card saved: \(firstName) \(lastName)")
         return cardId
     }
@@ -548,6 +563,21 @@ class CardService: ObservableObject {
         
         // 3. Increment user's card count
         try await UserService.shared.incrementCardCount(uid: uid)
+        
+        // 4. Post activity to friend feed
+        do {
+            try await FriendsService.shared.postCardActivity(
+                cardId: cardId,
+                make: locationName,
+                model: "",
+                year: "",
+                imageURL: imageURL,
+                cardType: "location"
+            )
+            print("✅ Posted location activity to friends feed")
+        } catch {
+            print("⚠️ Failed to post location friend activity (non-critical): \(error)")
+        }
         
         print("✅ Location card saved: \(locationName)")
         return cardId

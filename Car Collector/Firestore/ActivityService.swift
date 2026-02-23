@@ -56,7 +56,7 @@ class ActivityService: ObservableObject {
             // Get all friend_activities owned by current user
             let activitiesSnapshot = try await db.collection("friend_activities")
                 .whereField("userId", isEqualTo: uid)
-                .order(by: "timestamp", descending: true)
+                .order(by: "createdAt", descending: true)
                 .limit(to: 50)
                 .getDocuments()
             
@@ -64,13 +64,13 @@ class ActivityService: ObservableObject {
             
             for doc in activitiesSnapshot.documents {
                 let data = doc.data()
-                let make = data["make"] as? String ?? "Unknown"
-                let model = data["model"] as? String ?? ""
+                let make = data["cardMake"] as? String ?? "Unknown"
+                let model = data["cardModel"] as? String ?? ""
                 let activityId = doc.documentID
                 
                 // Fetch heats
                 if let heatedBy = data["heatedBy"] as? [String], !heatedBy.isEmpty {
-                    let heatTimestamp = (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+                    let heatTimestamp = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
                     
                     for heaterUid in heatedBy {
                         if heaterUid == uid { continue } // skip self
