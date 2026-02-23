@@ -54,6 +54,8 @@ struct GarageView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "car.fill")
                                 .font(.poppins(60))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.6)
                                 .foregroundStyle(.secondary)
                             Text("Your collection will appear here")
                                 .foregroundStyle(.secondary)
@@ -657,16 +659,16 @@ struct UnifiedCardDetailView: View {
                             let config = CardBorderConfig.forFrame(card.customFrame)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(driverCard.firstName.uppercased())
-                                    .font(.custom("Futura-Light", size: 28))
+                                    .font(.custom("Futura-Light", fixedSize: 28))
                                 
                                 if !driverCard.nickname.isEmpty {
                                     Text("\"\(driverCard.nickname.uppercased())\"")
-                                        .font(.custom("Futura-Bold", size: 18))
+                                        .font(.custom("Futura-Bold", fixedSize: 18))
                                         .opacity(0.8)
                                 }
                                 
                                 Text(driverCard.lastName.uppercased())
-                                    .font(.custom("Futura-Bold", size: 28))
+                                    .font(.custom("Futura-Bold", fixedSize: 28))
                             }
                             .foregroundStyle(config.textColor)
                             .shadow(color: .black, radius: 4, x: 0, y: 2)
@@ -875,13 +877,13 @@ struct AnyCardDetailsFrontView: View {
                             HStack(spacing: 6) {
                                 let config = CardBorderConfig.forFrame(card.customFrame)
                                 Text(card.titleLine1.uppercased())
-                                    .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                                    .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
                                     .foregroundStyle(config.textColor)
                                     .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                                 
                                 if !card.titleLine2.isEmpty {
                                     Text(card.titleLine2.uppercased())
-                                        .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
                                         .foregroundStyle(config.textColor)
                                         .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                                         .lineLimit(1)
@@ -929,7 +931,7 @@ struct CardBackView: View {
                 // Header
                 VStack(spacing: 2 * scale) {
                     Text("\(make.uppercased()) \(model.uppercased())")
-                        .font(.custom("Futura-Bold", size: 12 * scale))
+                        .font(.custom("Futura-Bold", fixedSize: 12 * scale))
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
@@ -1069,15 +1071,15 @@ struct UnifiedCardView: View {
                 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(driverCard.firstName.uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
+                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.09))
                     
                     if !driverCard.nickname.isEmpty {
                         Text("\"\(driverCard.nickname.uppercased())\"")
-                            .font(.custom("Futura-Light", size: cardHeight * 0.06))
+                            .font(.custom("Futura-Light", fixedSize: cardHeight * 0.06))
                     }
                     
                     Text(driverCard.lastName.uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.09))
+                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.09))
                 }
                 .foregroundStyle(config.textColor)
                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
@@ -1091,7 +1093,7 @@ struct UnifiedCardView: View {
                         HStack(spacing: isLargeSize ? 6 : 3) {
                             let config = CardBorderConfig.forFrame(card.customFrame)
                             Text(card.titleLine1.uppercased())
-                                .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                                .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
                                 .foregroundStyle(config.textColor)
                                 .shadow(
                                     color: config.textShadow.color,
@@ -1102,7 +1104,7 @@ struct UnifiedCardView: View {
                             
                             if !card.titleLine2.isEmpty {
                                 Text(card.titleLine2.uppercased())
-                                    .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                                    .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
                                     .foregroundStyle(config.textColor)
                                     .shadow(
                                         color: config.textShadow.color,

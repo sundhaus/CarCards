@@ -56,6 +56,8 @@ struct OnboardingView: View {
                     
                     Text("HeatCheck")
                         .font(.poppins(32))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .foregroundStyle(.white)
                         .opacity(animateIn ? 1.0 : 0.0)
                 }

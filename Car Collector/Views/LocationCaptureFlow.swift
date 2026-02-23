@@ -107,6 +107,8 @@ struct LocationInfoFormView: View {
             VStack(spacing: 8) {
                 Text("LOCATION INFO")
                     .font(.poppins(32))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(.white)
                 
                 Text("Name this location")

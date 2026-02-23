@@ -466,6 +466,8 @@ struct BuyView: View {
                     Spacer()
                     Image(systemName: hasUnfilteredListings ? "line.3.horizontal.decrease.circle" : "cart")
                         .font(.poppins(60))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .foregroundStyle(.gray)
                     Text(hasUnfilteredListings ? "No listings match filters" : "No listings available")
                         .font(.pTitle2)
@@ -530,6 +532,8 @@ struct SellView: View {
                     Spacer()
                     Image(systemName: "square.stack.3d.up.slash")
                         .font(.poppins(60))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .foregroundStyle(.gray)
                     Text("No cards in your garage")
                         .font(.pTitle2)
@@ -629,7 +633,7 @@ struct GarageCardRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(card.make.uppercased()) \(card.model.uppercased())")
-                        .font(.custom("Futura-Bold", size: 17))
+                        .font(.custom("Futura-Bold", fixedSize: 17))
                     Text(card.year)
                         .font(.pCaption)
                         .foregroundStyle(.secondary)
@@ -760,12 +764,12 @@ struct MarketplaceFIFACard: View {
                     HStack(spacing: 6) {
                         let config = CardBorderConfig.forFrame(listing.customFrame)
                         Text(listing.make.uppercased())
-                            .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                            .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                         
                         Text(listing.model.uppercased())
-                            .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                            .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             .lineLimit(1)
@@ -876,10 +880,10 @@ struct CompactListingCard: View {
                         let config = CardBorderConfig.forFrame(listing.customFrame)
                         HStack(spacing: 3) {
                             Text(listing.make.uppercased())
-                                .font(.custom("Futura-Light", size: 9))
+                                .font(.custom("Futura-Light", fixedSize: 9))
                                 .foregroundStyle(config.textColor)
                             Text(listing.model.uppercased())
-                                .font(.custom("Futura-Bold", size: 9))
+                                .font(.custom("Futura-Bold", fixedSize: 9))
                                 .foregroundStyle(config.textColor)
                                 .lineLimit(1)
                         }
@@ -978,10 +982,10 @@ struct CompactGarageCard: View {
                         let config = CardBorderConfig.forFrame(card.customFrame)
                         HStack(spacing: 3) {
                             Text(card.make.uppercased())
-                                .font(.custom("Futura-Light", size: 9))
+                                .font(.custom("Futura-Light", fixedSize: 9))
                                 .foregroundStyle(config.textColor)
                             Text(card.model.uppercased())
-                                .font(.custom("Futura-Bold", size: 9))
+                                .font(.custom("Futura-Bold", fixedSize: 9))
                                 .foregroundStyle(config.textColor)
                                 .lineLimit(1)
                         }

@@ -83,6 +83,8 @@ struct DriverCaptureFlow: View {
             VStack(spacing: 8) {
                 Text("CAPTURE DRIVER")
                     .font(.poppins(42))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(.white)
                 
                 Text("Choose capture type")
@@ -181,6 +183,8 @@ struct DriverInfoFormView: View {
             VStack(spacing: 8) {
                 Text("DRIVER INFO")
                     .font(.poppins(32))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(.white)
                 
                 Text("Add driver details")

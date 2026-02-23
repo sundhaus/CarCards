@@ -59,15 +59,15 @@ struct FIFACardView: View {
                 let inset = height * 0.08
                 VStack(alignment: .leading, spacing: 1) {
                     Text(card.cardMake.uppercased())
-                        .font(.custom("Futura-Bold", size: height * 0.09))
+                        .font(.custom("Futura-Bold", fixedSize: height * 0.09))
                     
                     if !card.cardYear.isEmpty {
                         Text("\"\(card.cardYear.uppercased())\"")
-                            .font(.custom("Futura-Light", size: height * 0.06))
+                            .font(.custom("Futura-Light", fixedSize: height * 0.06))
                     }
                     
                     Text(card.cardModel.uppercased())
-                        .font(.custom("Futura-Bold", size: height * 0.09))
+                        .font(.custom("Futura-Bold", fixedSize: height * 0.09))
                 }
                 .foregroundStyle(config.textColor)
                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
@@ -79,7 +79,7 @@ struct FIFACardView: View {
                 VStack {
                     HStack {
                         Text(card.cardMake.uppercased())
-                            .font(.custom("Futura-Bold", size: height * 0.08))
+                            .font(.custom("Futura-Bold", fixedSize: height * 0.08))
                             .foregroundStyle(config.textColor)
                             .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             .padding(.top, height * 0.08)
@@ -94,12 +94,12 @@ struct FIFACardView: View {
                     HStack {
                         HStack(spacing: 6) {
                             Text(card.cardMake.uppercased())
-                                .font(.custom("Futura-Light", size: height * 0.08))
+                                .font(.custom("Futura-Light", fixedSize: height * 0.08))
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             
                             Text(card.cardModel.uppercased())
-                                .font(.custom("Futura-Bold", size: height * 0.08))
+                                .font(.custom("Futura-Bold", fixedSize: height * 0.08))
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                                 .lineLimit(1)

@@ -34,6 +34,8 @@ struct HomeContainer: View {
                     
                     Image(systemName: icon)
                         .font(.poppins(32))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .foregroundStyle(.white)
                 }
                 

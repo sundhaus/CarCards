@@ -171,6 +171,8 @@ struct UserProfileView: View {
                                             .overlay {
                                                 Image(systemName: "person.fill")
                                                     .font(.poppins(36))
+                                                    .lineLimit(1)
+                                                    .minimumScaleFactor(0.6)
                                                     .foregroundStyle(.white)
                                             }
                                     }
@@ -325,6 +327,8 @@ struct UserProfileView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "car")
                                         .font(.poppins(50))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.6)
                                         .foregroundStyle(.gray)
                                     Text("No cards yet")
                                         .foregroundStyle(.secondary)
@@ -646,9 +650,9 @@ struct UserCardView: View {
                 let config = CardBorderConfig.forFrame(card.customFrame)
                 VStack(alignment: .leading, spacing: 1) {
                     Text((card.firstName ?? card.make).uppercased())
-                        .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                        .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
                     Text((card.lastName ?? card.model).uppercased())
-                        .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
                 }
                 .foregroundStyle(config.textColor)
                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
@@ -658,7 +662,7 @@ struct UserCardView: View {
             } else if card.cardType == "location" {
                 let config = CardBorderConfig.forFrame(card.customFrame)
                 Text((card.locationName ?? card.make).uppercased())
-                    .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                    .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
                     .foregroundStyle(config.textColor)
                     .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     .padding(.top, cardHeight * 0.08)
@@ -671,12 +675,12 @@ struct UserCardView: View {
                         HStack(spacing: isLargeSize ? 6 : 3) {
                             let config = CardBorderConfig.forFrame(card.customFrame)
                             Text(card.make.uppercased())
-                                .font(.custom("Futura-Light", size: cardHeight * 0.08))
+                                .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             
                             Text(card.model.uppercased())
-                                .font(.custom("Futura-Bold", size: cardHeight * 0.08))
+                                .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                                 .lineLimit(1)

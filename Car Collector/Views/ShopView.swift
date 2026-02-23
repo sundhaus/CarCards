@@ -15,6 +15,8 @@ struct ShopView: View {
             Spacer()
             Image(systemName: "bag.fill")
                 .font(.poppins(60))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .foregroundStyle(.green)
             Text("Shop")
                 .font(.pTitle)

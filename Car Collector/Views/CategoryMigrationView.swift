@@ -23,6 +23,8 @@ struct CategoryMigrationView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.poppins(60))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                             .foregroundStyle(.blue)
                         
                         Text("Category Migration")

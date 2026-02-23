@@ -28,7 +28,11 @@ struct MarketplaceLandingView: View {
                     VStack(spacing: 8) {
                         Text("MARKETPLACE")
                             .font(.poppins(42))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                             .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                         
                         Text("Trade & collect rare cards")
                             .font(.poppins(16))

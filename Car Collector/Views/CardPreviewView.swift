@@ -29,6 +29,8 @@ struct CardPreviewView: View {
                 // Success icon
                 Image(systemName: "checkmark.circle.fill")
                     .font(.poppins(60))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(.green)
                 
                 // Card preview (horizontal 16:9)

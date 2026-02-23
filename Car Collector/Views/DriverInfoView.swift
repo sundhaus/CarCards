@@ -30,6 +30,8 @@ struct DriverInfoView: View {
                     VStack(spacing: 8) {
                         Text("Driver Info")
                             .font(.poppins(32))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                             .foregroundStyle(.primary)
                         
                         Text("Add driver details")

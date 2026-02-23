@@ -126,13 +126,13 @@ struct CustomizeCardView: View {
                                 let shadowColor: Color = selectedFrame == .white ? .black.opacity(0.8) : .white.opacity(0.6)
                                 
                                 Text(card.titleLine1.uppercased())
-                                    .font(.custom("Futura-Light", size: 14))
+                                    .font(.custom("Futura-Light", fixedSize: 14))
                                     .foregroundStyle(textColor)
                                     .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
                                 
                                 if !card.titleLine2.isEmpty {
                                     Text(card.titleLine2.uppercased())
-                                        .font(.custom("Futura-Bold", size: 14))
+                                        .font(.custom("Futura-Bold", fixedSize: 14))
                                         .foregroundStyle(textColor)
                                         .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
                                         .lineLimit(1)
@@ -336,6 +336,8 @@ struct CustomizeCardView: View {
         VStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.poppins(40))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .foregroundStyle(.tertiary)
             Text(title)
                 .font(.pHeadline)
@@ -352,6 +354,8 @@ struct CustomizeCardView: View {
         VStack(spacing: 12) {
             Image(systemName: "wand.and.stars")
                 .font(.poppins(40))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .foregroundStyle(.tertiary)
             Text("Effects")
                 .font(.pHeadline)

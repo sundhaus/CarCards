@@ -129,6 +129,8 @@ struct ProfileView: View {
                             } else {
                                 Image(systemName: "person.fill")
                                     .font(.poppins(40))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.6)
                                     .foregroundStyle(.white)
                             }
                             

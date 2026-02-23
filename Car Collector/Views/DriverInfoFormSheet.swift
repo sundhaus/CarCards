@@ -47,16 +47,16 @@ struct DriverInfoFormSheet: View {
                             if !firstName.isEmpty || !lastName.isEmpty {
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(firstName.uppercased())
-                                        .font(.custom("Futura-Light", size: 16))
+                                        .font(.custom("Futura-Light", fixedSize: 16))
                                     
                                     if !nickname.isEmpty {
                                         Text("\"\(nickname.uppercased())\"")
-                                            .font(.custom("Futura-Bold", size: 11))
+                                            .font(.custom("Futura-Bold", fixedSize: 11))
                                             .opacity(0.8)
                                     }
                                     
                                     Text(lastName.uppercased())
-                                        .font(.custom("Futura-Bold", size: 16))
+                                        .font(.custom("Futura-Bold", fixedSize: 16))
                                 }
                                 .foregroundStyle(.white)
                                 .shadow(color: .black, radius: 4, x: 0, y: 2)

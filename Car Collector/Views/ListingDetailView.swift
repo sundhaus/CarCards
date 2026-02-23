@@ -178,11 +178,11 @@ struct ListingDetailView: View {
                         HStack(spacing: 6) {
                             let config = CardBorderConfig.forFrame(listing.customFrame)
                             Text(listing.make.uppercased())
-                                .font(.custom("Futura-Light", size: fontSize))
+                                .font(.custom("Futura-Light", fixedSize: fontSize))
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                             Text(listing.model.uppercased())
-                                .font(.custom("Futura-Bold", size: fontSize))
+                                .font(.custom("Futura-Bold", fixedSize: fontSize))
                                 .foregroundStyle(config.textColor)
                                 .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                                 .lineLimit(1)

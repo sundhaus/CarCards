@@ -100,6 +100,8 @@ struct TransferListView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "tag")
                                         .font(.poppins(50))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.6)
                                         .foregroundStyle(.white.opacity(0.3))
                                     Text("No active listings")
                                         .foregroundStyle(.white.opacity(0.5))
@@ -142,6 +144,8 @@ struct TransferListView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "checkmark.circle")
                                         .font(.poppins(50))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.6)
                                         .foregroundStyle(.white.opacity(0.3))
                                     Text("No sold listings")
                                         .foregroundStyle(.white.opacity(0.5))

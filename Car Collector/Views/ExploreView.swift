@@ -118,6 +118,8 @@ struct ExploreView: View {
         VStack(spacing: 16) {
             Image(systemName: "car.fill")
                 .font(.poppins(60))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .foregroundStyle(.gray)
             Text("No cars with specs yet")
                 .font(.pSubheadline)

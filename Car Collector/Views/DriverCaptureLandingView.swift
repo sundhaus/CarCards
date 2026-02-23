@@ -28,6 +28,8 @@ struct DriverCaptureLandingView: View {
                     VStack(spacing: 8) {
                         Text("Capture Driver")
                             .font(.poppins(42))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                             .foregroundStyle(.primary)
                         
                         Text("Choose capture type")

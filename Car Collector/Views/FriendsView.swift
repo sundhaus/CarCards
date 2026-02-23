@@ -116,6 +116,8 @@ struct FriendsView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "person.2")
                                         .font(.poppins(50))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.6)
                                         .foregroundStyle(.gray)
                                     Text("No recent activity")
                                         .foregroundStyle(.secondary)
@@ -547,6 +549,8 @@ struct FollowListPopup: View {
         VStack(spacing: 12) {
             Image(systemName: "person.2")
                 .font(.poppins(40))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .foregroundStyle(.gray)
             Text(message)
                 .foregroundStyle(.secondary)
@@ -715,6 +719,8 @@ struct SearchUsersView: View {
                             VStack(spacing: 12) {
                                 Image(systemName: "magnifyingglass")
                                     .font(.poppins(40))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.6)
                                     .foregroundStyle(.gray.opacity(0.5))
                                 Text("Type a username to search")
                                     .foregroundStyle(.secondary)
@@ -725,6 +731,8 @@ struct SearchUsersView: View {
                             VStack(spacing: 12) {
                                 Image(systemName: "person.fill.questionmark")
                                     .font(.poppins(40))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.6)
                                     .foregroundStyle(.gray)
                                 Text("No users found")
                                     .foregroundStyle(.secondary)

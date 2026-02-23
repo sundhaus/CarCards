@@ -632,7 +632,7 @@ struct CardDetailView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(card.make.uppercased()) \(card.model.uppercased())")
-                            .font(.custom("Futura-Bold", size: 22))
+                            .font(.custom("Futura-Bold", fixedSize: 22))
                             .foregroundStyle(.white)
                         Text(card.year)
                             .font(.pSubheadline)
@@ -681,7 +681,7 @@ struct CardDetailView: View {
                 // Header
                 VStack(spacing: 4) {
                     Text("\(currentCard.make.uppercased()) \(currentCard.model.uppercased())")
-                        .font(.custom("Futura-Bold", size: 24))
+                        .font(.custom("Futura-Bold", fixedSize: 24))
                         .foregroundStyle(.white)
                     
                     Text(currentCard.year)

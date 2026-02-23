@@ -74,6 +74,8 @@ struct TransferTargetsView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "trophy")
                                         .font(.poppins(50))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.6)
                                         .foregroundStyle(.white.opacity(0.3))
                                     Text("No winning bids")
                                         .foregroundStyle(.white.opacity(0.5))
@@ -113,6 +115,8 @@ struct TransferTargetsView: View {
                                 VStack(spacing: 12) {
                                     Image(systemName: "exclamationmark.triangle")
                                         .font(.poppins(50))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.6)
                                         .foregroundStyle(.white.opacity(0.3))
                                     Text("No outbid cards")
                                         .foregroundStyle(.white.opacity(0.5))
