@@ -875,9 +875,9 @@ struct AnyCardDetailsFrontView: View {
                     .foregroundStyle(config.textColor)
                     .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     .rotationEffect(.degrees(-90))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(.top, cardHeight * 0.10)
-                    .padding(.trailing, cardHeight * 0.10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                    .padding(.bottom, cardHeight * 0.10)
+                    .padding(.leading, cardHeight * 0.10)
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
