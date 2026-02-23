@@ -53,118 +53,29 @@ final class CardRenderer {
     /// Renders image+border in landscape, rotates, then draws text in portrait.
     /// Returns nil for non-driver cards.
     func portraitCard(for card: AnyCard, width: CGFloat = 300) -> UIImage? {
-        guard case .driver(let dc) = card else { return nil }
+        guard case .driver = card else { return nil }
         
         let key = "\(card.id.uuidString)-P-\(Int(width))" as NSString
         if let cached = portraitCache.object(forKey: key) {
             return cached
         }
         
-        guard let sourceImage = card.thumbnail ?? card.image else { return nil }
+        guard card.thumbnail ?? card.image != nil else { return nil }
         
-        // Step 1: Render landscape image+border WITHOUT text
-        let landscapeHeight = width // landscape height = portrait width
-        let landscapeWidth = landscapeHeight * 16.0 / 9.0
-        let landscapeSize = CGSize(width: landscapeWidth, height: landscapeHeight)
+        // Use CardFlattener to get the canonical flat image, then resize
+        guard let fullImage = CardFlattener.shared.flatten(card) else { return nil }
         
-        let landscapeRenderer = UIGraphicsImageRenderer(size: landscapeSize)
-        let landscapeImage = landscapeRenderer.image { ctx in
-            let rect = CGRect(origin: .zero, size: landscapeSize)
-            let context = ctx.cgContext
-            
-            // Background gradient
-            let colors = [
-                UIColor(red: 0.85, green: 0.85, blue: 0.88, alpha: 1.0).cgColor,
-                UIColor(red: 0.75, green: 0.75, blue: 0.78, alpha: 1.0).cgColor
-            ]
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
-                context.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: landscapeSize.height), options: [])
-            }
-            
-            // Source image (aspect fill)
-            let imageRect = aspectFillRect(imageSize: sourceImage.size, targetRect: rect)
-            sourceImage.draw(in: imageRect)
-            
-            // Border overlay
-            let config = CardBorderConfig.forFrame(card.customFrame)
-            if let borderName = config.borderImageName, let borderImage = UIImage(named: borderName) {
-                borderImage.draw(in: rect)
-            }
+        // Scale down to requested width
+        let aspectRatio = fullImage.size.height / fullImage.size.width
+        let targetSize = CGSize(width: width, height: width * aspectRatio)
+        
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let resized = renderer.image { _ in
+            fullImage.draw(in: CGRect(origin: .zero, size: targetSize))
         }
         
-        // Step 2: Rotate 90° clockwise to get portrait
-        guard let rotated = rotateImage(landscapeImage, degrees: 90) else { return nil }
-        
-        // Step 3: Draw driver text in portrait orientation on top
-        let portraitSize = rotated.size // width x height in portrait
-        let cornerRadius = portraitSize.width * 0.05
-        
-        let finalRenderer = UIGraphicsImageRenderer(size: portraitSize)
-        let rendered = finalRenderer.image { ctx in
-            let rect = CGRect(origin: .zero, size: portraitSize)
-            let context = ctx.cgContext
-            
-            // Clip to rounded rect
-            let clipPath = UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius)
-            context.addPath(clipPath.cgPath)
-            context.clip()
-            
-            // Draw rotated card
-            rotated.draw(in: rect)
-            
-            // Match fullscreen overlay: 6% from left, 3% from top of portrait card
-            let config = CardBorderConfig.forFrame(card.customFrame)
-            let textColor = UIColor(config.textColor)
-            
-            let insetLeft = portraitSize.width * 0.06
-            let insetTop = portraitSize.height * 0.03
-            
-            let shadow = NSShadow()
-            shadow.shadowColor = UIColor.black.withAlphaComponent(0.8)
-            shadow.shadowBlurRadius = 4 * (portraitSize.width / 375)
-            shadow.shadowOffset = CGSize(width: 0, height: 2 * (portraitSize.width / 375))
-            
-            // Font: 28pt on ~682pt card height = 4.1%
-            let fontSize = portraitSize.height * 0.041
-            let nickFontSize = portraitSize.height * 0.026
-            
-            let lightAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Futura-Light", size: fontSize) ?? UIFont.systemFont(ofSize: fontSize),
-                .foregroundColor: textColor,
-                .shadow: shadow
-            ]
-            let boldAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Futura-Bold", size: fontSize) ?? UIFont.boldSystemFont(ofSize: fontSize),
-                .foregroundColor: textColor,
-                .shadow: shadow
-            ]
-            let nickAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Futura-Bold", size: nickFontSize) ?? UIFont.boldSystemFont(ofSize: nickFontSize),
-                .foregroundColor: textColor.withAlphaComponent(0.8),
-                .shadow: shadow
-            ]
-            
-            var yOffset = insetTop
-            
-            // First name
-            let firstName = dc.firstName.uppercased() as NSString
-            firstName.draw(at: CGPoint(x: insetLeft, y: yOffset), withAttributes: lightAttrs)
-            yOffset += firstName.size(withAttributes: lightAttrs).height + 2
-            
-            // Nickname
-            if !dc.nickname.isEmpty {
-                let nickname = "\"\(dc.nickname.uppercased())\"" as NSString
-                nickname.draw(at: CGPoint(x: insetLeft, y: yOffset), withAttributes: nickAttrs)
-                yOffset += nickname.size(withAttributes: nickAttrs).height + 2
-            }
-            
-            // Last name
-            let lastName = dc.lastName.uppercased() as NSString
-            lastName.draw(at: CGPoint(x: insetLeft, y: yOffset), withAttributes: boldAttrs)
-        }
-        
-        portraitCache.setObject(rendered, forKey: key)
-        return rendered
+        portraitCache.setObject(resized, forKey: key)
+        return resized
     }
     
     /// Clear all caches
