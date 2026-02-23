@@ -51,6 +51,7 @@ struct OnboardingView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 120, height: 120)
+                        .clipShape(RoundedRectangle(cornerRadius: 28))
                         .scaleEffect(animateIn ? 1.0 : 0.5)
                         .opacity(animateIn ? 1.0 : 0.0)
                     
