@@ -886,6 +886,7 @@ struct RaceHistoryView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var votedRaces: [(race: Race, votedForCardId: String)] = []
     @State private var isLoading = true
+    @State private var pfpURLs: [String: String] = [:] // userId -> profilePictureURL
     
     var body: some View {
         NavigationStack {
@@ -927,6 +928,21 @@ struct RaceHistoryView: View {
             .task {
                 do {
                     votedRaces = try await HeadToHeadService.shared.fetchVotedRaces()
+                    
+                    // Fetch PFP URLs for all users in races
+                    var userIds = Set<String>()
+                    for entry in votedRaces {
+                        userIds.insert(entry.race.challengerId)
+                        userIds.insert(entry.race.defenderId)
+                    }
+                    
+                    let db = FirebaseManager.shared.db
+                    for userId in userIds where !userId.isEmpty {
+                        if let doc = try? await db.collection("users").document(userId).getDocument(),
+                           let url = doc.data()?["profilePictureURL"] as? String {
+                            pfpURLs[userId] = url
+                        }
+                    }
                 } catch {
                     print("❌ Failed to load vote history: \(error)")
                 }
@@ -953,14 +969,7 @@ struct RaceHistoryView: View {
             HStack(spacing: 8) {
                 // Left: challenger PFP + name
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(Color(.systemGray4))
-                        .frame(width: 24, height: 24)
-                        .overlay(
-                            Text(String(race.challengerUsername.prefix(1)).uppercased())
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.white)
-                        )
+                    pfpImage(userId: race.challengerId, username: race.challengerUsername)
                     Text(race.challengerUsername)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.8))
@@ -975,14 +984,7 @@ struct RaceHistoryView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
-                    Circle()
-                        .fill(Color(.systemGray4))
-                        .frame(width: 24, height: 24)
-                        .overlay(
-                            Text(String(race.defenderUsername.prefix(1)).uppercased())
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.white)
-                        )
+                    pfpImage(userId: race.defenderId, username: race.defenderUsername)
                 }
             }
             
@@ -1094,6 +1096,35 @@ struct RaceHistoryView: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+    
+    // MARK: - PFP Image
+    
+    @ViewBuilder
+    private func pfpImage(userId: String, username: String) -> some View {
+        if let urlString = pfpURLs[userId], let url = URL(string: urlString) {
+            AsyncImage(url: url) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                Circle().fill(Color(.systemGray4))
+                    .overlay(
+                        Text(String(username.prefix(1)).uppercased())
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                    )
+            }
+            .frame(width: 24, height: 24)
+            .clipShape(Circle())
+        } else {
+            Circle()
+                .fill(Color(.systemGray4))
+                .frame(width: 24, height: 24)
+                .overlay(
+                    Text(String(username.prefix(1)).uppercased())
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                )
+        }
     }
 }
 
