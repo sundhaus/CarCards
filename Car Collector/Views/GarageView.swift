@@ -880,10 +880,8 @@ struct AnyCardDetailsFrontView: View {
                     .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
                     .rotationEffect(.degrees(-90))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                    // bottom in landscape = top in portrait: use portraitInset
-                    .padding(.bottom, geometry.size.width - portraitInset - cardHeight * 0.35)
-                    // leading in landscape = left in portrait: use portraitInset
-                    .padding(.leading, portraitInset)
+                    .padding(.bottom, cardHeight * 0.22)
+                    .padding(.leading, cardHeight * 0.06)
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
