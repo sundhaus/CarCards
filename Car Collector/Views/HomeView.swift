@@ -16,7 +16,9 @@ struct HomeView: View {
     @State private var showFriends = false
     @State private var showLeaderboard = false
     @State private var showExplore = false
+    @State private var showHeadToHead = false
     @ObservedObject private var friendsService = FriendsService.shared
+    @ObservedObject private var h2hService = HeadToHeadService.shared
     @ObservedObject private var navigationController = NavigationController.shared
     
     var body: some View {
@@ -50,15 +52,26 @@ struct HomeView: View {
                 
                 // Bottom row - Sets and Transfer List
                 HStack(spacing: DeviceScale.w(16)) {
-                    // Sets (Coming Soon)
-                    HomeContainer(
-                        title: "SETS",
-                        icon: "square.stack.3d.up.fill",
-                        gradient: [Color.purple, Color.pink],
-                        action: {},
-                        disabled: true
-                    )
-                    .opacity(0.6)
+                    // Head to Head
+                    ZStack(alignment: .topTrailing) {
+                        HomeContainer(
+                            title: "HEAD TO HEAD",
+                            icon: "flag.checkered",
+                            gradient: [Color.red, Color.orange],
+                            action: { showHeadToHead = true }
+                        )
+                        
+                        // Pending challenges badge
+                        if !h2hService.myPendingChallenges.isEmpty {
+                            Text("\(h2hService.myPendingChallenges.count)")
+                                .font(.caption2.bold())
+                                .foregroundStyle(.white)
+                                .padding(5)
+                                .background(Color.red)
+                                .clipShape(Circle())
+                                .offset(x: -8, y: 8)
+                        }
+                    }
                     
                     // Transfer List
                     HomeContainer(
@@ -84,6 +97,9 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showExplore) {
                 ExploreView(isLandscape: isLandscape)
             }
+            .navigationDestination(isPresented: $showHeadToHead) {
+                HeadToHeadView(isLandscape: isLandscape)
+            }
             .fullScreenCover(isPresented: $showLeaderboard) {
                 LeaderboardView(isLandscape: isLandscape)
             }
@@ -93,6 +109,7 @@ struct HomeView: View {
                     showFriends = false
                     showLeaderboard = false
                     showExplore = false
+                    showHeadToHead = false
                 }
             }
             .onChange(of: showFriends) { _, isFriendsOpen in
@@ -110,6 +127,7 @@ struct HomeView: View {
                 showFriends = false
                 showLeaderboard = false
                 showExplore = false
+                showHeadToHead = false
                 navigationController.unpreserveTab(1)
                 print("🏠 HomeView: Reset all navigation booleans from trigger")
             }
