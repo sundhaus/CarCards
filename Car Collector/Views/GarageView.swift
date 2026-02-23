@@ -651,6 +651,32 @@ struct UnifiedCardDetailView: View {
                     ZStack {
                         cardContent(screenSize: geometry.size)
                             .rotationEffect(.degrees(90))
+                        
+                        // Driver name overlay — positioned AFTER rotation so text reads correctly
+                        if case .driver(let driverCard) = card {
+                            let cardVisibleWidth = geometry.size.width * 0.85
+                            let cardVisibleHeight = geometry.size.height * 0.75
+                            let config = CardBorderConfig.forFrame(card.customFrame)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(driverCard.firstName.uppercased())
+                                    .font(.custom("Futura-Light", fixedSize: 28))
+                                
+                                if !driverCard.nickname.isEmpty {
+                                    Text("\"\(driverCard.nickname.uppercased())\"")
+                                        .font(.custom("Futura-Bold", fixedSize: 18))
+                                        .opacity(0.8)
+                                }
+                                
+                                Text(driverCard.lastName.uppercased())
+                                    .font(.custom("Futura-Bold", fixedSize: 28))
+                            }
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: .black, radius: 4, x: 0, y: 2)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .frame(width: cardVisibleWidth, height: cardVisibleHeight)
+                            .padding(.top, 18)
+                            .padding(.leading, 18)
+                        }
                     }
                     .cardTilt()
                     Spacer()
@@ -841,37 +867,9 @@ struct AnyCardDetailsFrontView: View {
                 }
                 
                 // Title overlay
-                if case .driver(let driverCard) = card {
-                    // Driver text: vertical stack, top-left of landscape card
-                    // This renders in landscape orientation — the card rotation handles portrait display
-                    let config = CardBorderConfig.forFrame(card.customFrame)
-                    VStack {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(driverCard.firstName.uppercased())
-                                    .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
-                                    .foregroundStyle(config.textColor)
-                                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                
-                                if !driverCard.nickname.isEmpty {
-                                    Text("\"\(driverCard.nickname.uppercased())\"")
-                                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.055))
-                                        .foregroundStyle(config.textColor)
-                                        .opacity(0.8)
-                                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                }
-                                
-                                Text(driverCard.lastName.uppercased())
-                                    .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                                    .foregroundStyle(config.textColor)
-                                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            }
-                            .padding(.top, cardHeight * 0.08)
-                            .padding(.leading, cardHeight * 0.08)
-                            Spacer()
-                        }
-                        Spacer()
-                    }
+                if case .driver = card {
+                    // Driver text overlaid AFTER rotation in UnifiedCardDetailView
+                    EmptyView()
                 } else {
                     // Vehicle / Location: existing horizontal layout
                     VStack {
