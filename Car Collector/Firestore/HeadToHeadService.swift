@@ -366,31 +366,38 @@ class HeadToHeadService: ObservableObject {
     func loadNextFeedRace() {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
         
-        // Filter out races we've voted on (locally tracked OR in Firestore voters array)
-        let unvoted = activeRaces.filter { race in
-            !votedRaceIds.contains(race.id) && !race.voters.contains(uid)
-        }
+        print("🏁 loadNextFeedRace: \(activeRaces.count) active, \(votedRaceIds.count) locally voted")
         
-        print("🏁 loadNextFeedRace: \(activeRaces.count) active, \(unvoted.count) unvoted, \(votedRaceIds.count) locally voted")
-        
-        // Priority 1: My unvoted races
-        let myUnvoted = unvoted.filter { $0.challengerId == uid || $0.defenderId == uid }
+        // Priority 1: My active races (always show, even if voted)
+        let myRaces = activeRaces.filter { $0.challengerId == uid || $0.defenderId == uid }
+        let myUnvoted = myRaces.filter { !votedRaceIds.contains($0.id) && !$0.voters.contains(uid) }
         if let myRace = myUnvoted.first {
-            print("🏁 Showing my race: \(myRace.id)")
+            print("🏁 Showing my unvoted race: \(myRace.id)")
             currentFeedRace = myRace
             return
         }
         
-        // Priority 2: Other people's unvoted races
-        let othersUnvoted = unvoted.filter { $0.challengerId != uid && $0.defenderId != uid }
+        // Priority 2: Other people's races I haven't voted on
+        let othersUnvoted = activeRaces.filter { race in
+            race.challengerId != uid &&
+            race.defenderId != uid &&
+            !votedRaceIds.contains(race.id) &&
+            !race.voters.contains(uid)
+        }
         if let next = othersUnvoted.randomElement() {
             print("🏁 Showing other's race: \(next.id)")
             currentFeedRace = next
             return
         }
         
+        // Priority 3: My races I already voted on (still want to see progress)
+        if let myVoted = myRaces.first {
+            print("🏁 Showing my already-voted race: \(myVoted.id)")
+            currentFeedRace = myVoted
+            return
+        }
+        
         print("🏁 No races to show")
-        // All races voted on — show nothing
         currentFeedRace = nil
     }
     
