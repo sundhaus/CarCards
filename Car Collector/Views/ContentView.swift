@@ -260,7 +260,7 @@ struct ContentView: View {
                 }
                 
                 // One-time flatten migration for existing cards
-                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v1") {
+                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v2") {
                     let vehicles = savedCards
                     let drivers = driverCards
                     let locations = locationCards
@@ -270,7 +270,7 @@ struct ContentView: View {
                             drivers: drivers,
                             locations: locations
                         )
-                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v1")
+                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v2")
                     }
                 }
             }

@@ -112,35 +112,43 @@ final class CardRenderer {
             // Draw rotated card
             rotated.draw(in: rect)
             
-            // Draw driver text — vertical stack, positioned to match fullscreen view
-            // Fullscreen uses padding(.leading, 100) on a ~375pt wide card
-            // That's roughly 26% from left edge
+            // Draw driver text — matches AnyCardDetailsFrontView exactly
+            // Text is drawn in LANDSCAPE orientation (before rotation was applied)
+            // Position uses cardHeight * 0.08 for padding and font, same as SwiftUI view
             let config = CardBorderConfig.forFrame(card.customFrame)
             let textColor = UIColor(config.textColor)
-            let insetTop = portraitSize.height * 0.025
-            let insetLeft = portraitSize.width * 0.26
+            
+            // In portrait: width=1080, height=1920
+            // The landscape card was 1920×1080, so cardHeight in landscape = 1080
+            // Font/padding in landscape view = cardHeight * 0.08 = 1080 * 0.08 = 86.4
+            // After rotation to portrait, these map to:
+            let landscapeCardHeight = portraitSize.width // 1080
+            let fontSize = landscapeCardHeight * 0.08
+            let nickFontSize = landscapeCardHeight * 0.055
+            let textPadding = landscapeCardHeight * 0.08
+            
+            // In portrait orientation, the landscape left+top padding maps to:
+            // portrait top = landscape left padding (rotated)
+            let insetTop = textPadding
+            let insetLeft = textPadding
             
             let shadow = NSShadow()
             shadow.shadowColor = UIColor.black.withAlphaComponent(0.8)
-            shadow.shadowBlurRadius = 4
-            shadow.shadowOffset = CGSize(width: 0, height: 2)
-            
-            // Match fullscreen font ratios: 28pt on ~667pt visible height = ~4.2%
-            let nameSize = portraitSize.height * 0.042
-            let nickSize = portraitSize.height * 0.027
+            shadow.shadowBlurRadius = 4 * (portraitSize.width / 375)
+            shadow.shadowOffset = CGSize(width: 0, height: 2 * (portraitSize.width / 375))
             
             let lightAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Futura-Light", size: nameSize) ?? UIFont.systemFont(ofSize: nameSize),
+                .font: UIFont(name: "Futura-Light", size: fontSize) ?? UIFont.systemFont(ofSize: fontSize),
                 .foregroundColor: textColor,
                 .shadow: shadow
             ]
             let boldAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Futura-Bold", size: nameSize) ?? UIFont.boldSystemFont(ofSize: nameSize),
+                .font: UIFont(name: "Futura-Bold", size: fontSize) ?? UIFont.boldSystemFont(ofSize: fontSize),
                 .foregroundColor: textColor,
                 .shadow: shadow
             ]
             let nickAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Futura-Bold", size: nickSize) ?? UIFont.boldSystemFont(ofSize: nickSize),
+                .font: UIFont(name: "Futura-Bold", size: nickFontSize) ?? UIFont.boldSystemFont(ofSize: nickFontSize),
                 .foregroundColor: textColor.withAlphaComponent(0.8),
                 .shadow: shadow
             ]
