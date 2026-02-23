@@ -472,11 +472,12 @@ struct HeadToHeadView: View {
                     voteAnimation = nil
                 }
                 
-                // If spectating, advance to next race
-                // If participant, stay on this race (listener will update vote counts)
-                if !isParticipant {
-                    h2hService.loadNextFeedRace()
-                }
+                // Wait 2 seconds for user to see the updated positions, then advance
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                
+                // Reset hasVoted for the next race so cards start at bottom
+                hasVoted = false
+                h2hService.loadNextFeedRace()
                 isVoting = false
                 
             } catch {
