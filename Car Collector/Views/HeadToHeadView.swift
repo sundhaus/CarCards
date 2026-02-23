@@ -381,6 +381,7 @@ struct HeadToHeadView: View {
     
     private func voteForCard(cardId: String, side: VoteSide) {
         guard let race = h2hService.currentFeedRace else { return }
+        guard let uid = FirebaseManager.shared.currentUserId else { return }
         isVoting = true
         
         // Animate the vote
@@ -392,6 +393,8 @@ struct HeadToHeadView: View {
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
         
+        let isParticipant = race.challengerId == uid || race.defenderId == uid
+        
         Task {
             do {
                 let updatedRace = try await h2hService.castVote(
@@ -401,27 +404,29 @@ struct HeadToHeadView: View {
                 
                 // Check if race just finished
                 if updatedRace.status == .finished || updatedRace.winnerId != nil {
-                    // Show winner celebration
                     let winSide: VoteSide = (updatedRace.winnerId == updatedRace.challengerId) ? .left : .right
                     withAnimation {
                         winnerSide = winSide
                         showWinnerCelebration = true
                     }
                     
-                    // Auto-dismiss and load next
-                    try? await Task.sleep(nanoseconds: 2_500_000_000) // 2.5 seconds
+                    try? await Task.sleep(nanoseconds: 2_500_000_000)
                     withAnimation {
                         showWinnerCelebration = false
                         winnerSide = nil
                     }
                 }
                 
-                // Brief delay then load next race
-                try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconds
+                try? await Task.sleep(nanoseconds: 800_000_000)
                 withAnimation {
                     voteAnimation = nil
                 }
-                h2hService.loadNextFeedRace()
+                
+                // If spectating, advance to next race
+                // If participant, stay on this race (listener will update vote counts)
+                if !isParticipant {
+                    h2hService.loadNextFeedRace()
+                }
                 isVoting = false
                 
             } catch {

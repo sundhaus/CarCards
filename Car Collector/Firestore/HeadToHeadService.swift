@@ -288,8 +288,12 @@ class HeadToHeadService: ObservableObject {
                 guard let docs = snapshot?.documents else { return }
                 Task { @MainActor in
                     self?.activeRaces = docs.compactMap { Race(document: $0) }
-                    // Auto-load next race if feed is empty
-                    if self?.currentFeedRace == nil {
+                    
+                    // Update current feed race with fresh data if it's still active
+                    if let currentId = self?.currentFeedRace?.id,
+                       let updated = self?.activeRaces.first(where: { $0.id == currentId }) {
+                        self?.currentFeedRace = updated
+                    } else if self?.currentFeedRace == nil {
                         self?.loadNextFeedRace()
                     }
                 }
