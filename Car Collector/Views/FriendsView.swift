@@ -11,6 +11,7 @@ import SwiftUI
 struct FriendsView: View {
     var isLandscape: Bool = false
     @StateObject private var friendsService = FriendsService.shared
+    @ObservedObject private var activityService = ActivityService.shared
     @State private var showFriendsList = false
     @State private var showSearch = false
     @State private var showActivity = false
@@ -68,8 +69,9 @@ struct FriendsView: View {
                         // Activity button
                         Button(action: {
                             showActivity = true
+                            activityService.markAsRead()
                         }) {
-                            Image(systemName: "flame.fill")
+                            Image(systemName: activityService.hasUnread ? "flame.fill" : "flame")
                                 .font(.pTitle3)
                                 .foregroundStyle(.orange)
                         }
@@ -237,6 +239,7 @@ struct FriendsView: View {
             .toolbar(.hidden, for: .navigationBar)
             .onAppear {
                 startListeners()
+                Task { await activityService.checkForUnread() }
             }
     }
     

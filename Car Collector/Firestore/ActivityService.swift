@@ -43,9 +43,72 @@ class ActivityService: ObservableObject {
     
     @Published var activities: [ActivityItem] = []
     @Published var isLoading = false
-    @Published var unreadCount = 0
+    @Published var hasUnread = false
+    
+    private let lastViewedKey = "activityLastViewedTimestamp"
+    
+    var lastViewedDate: Date {
+        let ts = UserDefaults.standard.double(forKey: lastViewedKey)
+        return ts > 0 ? Date(timeIntervalSince1970: ts) : Date.distantPast
+    }
     
     private init() {}
+    
+    /// Mark all activity as read (call when user opens activity page)
+    func markAsRead() {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastViewedKey)
+        hasUnread = false
+    }
+    
+    /// Lightweight check for unread activity without fetching full list
+    func checkForUnread() async {
+        guard let uid = FirebaseManager.shared.currentUserId else { return }
+        let lastViewed = lastViewedDate
+        
+        do {
+            // Check for any activity newer than last viewed
+            let snapshot = try await db.collection("friend_activities")
+                .whereField("userId", isEqualTo: uid)
+                .order(by: "createdAt", descending: true)
+                .limit(to: 10)
+                .getDocuments()
+            
+            for doc in snapshot.documents {
+                let data = doc.data()
+                
+                // Check heats
+                if let heatTimestamps = data["heatTimestamps"] as? [String: Timestamp] {
+                    for (heaterUid, ts) in heatTimestamps {
+                        if heaterUid != uid && ts.dateValue() > lastViewed {
+                            hasUnread = true
+                            return
+                        }
+                    }
+                }
+                
+                // Check comments
+                let comments = try await db.collection("friend_activities")
+                    .document(doc.documentID)
+                    .collection("comments")
+                    .order(by: "createdAt", descending: true)
+                    .limit(to: 1)
+                    .getDocuments()
+                
+                if let latest = comments.documents.first,
+                   let commentUserId = latest.data()["userId"] as? String,
+                   commentUserId != uid,
+                   let commentTs = latest.data()["createdAt"] as? Timestamp,
+                   commentTs.dateValue() > lastViewed {
+                    hasUnread = true
+                    return
+                }
+            }
+            
+            hasUnread = false
+        } catch {
+            print("⚠️ Failed to check unread activity: \(error)")
+        }
+    }
     
     func fetchActivity() async {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
@@ -127,7 +190,11 @@ class ActivityService: ObservableObject {
             
             // Sort all by date, newest first
             activities = items.sorted { $0.createdAt > $1.createdAt }
-            unreadCount = 0
+            
+            // Check for unread
+            let lastViewed = lastViewedDate
+            hasUnread = activities.contains { $0.createdAt > lastViewed }
+            
             isLoading = false
             
         } catch {
