@@ -240,7 +240,7 @@ struct HeadToHeadView: View {
         
         return GeometryReader { geo in
             let trackTop: CGFloat = 20
-            let trackBottom: CGFloat = geo.size.height - 100 // leave room for tap text
+            let trackBottom: CGFloat = geo.size.height - 50 // cards near bottom
             let trackHeight = trackBottom - trackTop
             
             // Step markers along both lanes — only visible after voting
@@ -340,19 +340,21 @@ struct HeadToHeadView: View {
                 value: race.defenderVotes
             )
             
-            // VS badge between cards at starting position
+            // VS badge centered between cards
             Text("VS")
                 .font(.system(size: 16, weight: .black))
                 .foregroundStyle(.yellow)
-                .position(x: geo.size.width / 2, y: trackBottom - cardH / 2)
+                .position(x: geo.size.width / 2, y: trackBottom - cardH / 2 + 10)
+                .opacity(cardsVisible && !hasVoted ? 1 : 0)
             
-            // Bottom text
+            // Bottom text below cards
             Text("TAP YOUR PICK TO ADD HEAT 🔥")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(.white.opacity(0.5))
-                .position(x: geo.size.width / 2, y: geo.size.height - 50)
+                .position(x: geo.size.width / 2, y: trackBottom + 20)
+                .opacity(!hasVoted ? 1 : 0)
         }
-        .padding(.bottom, 90)
+        .padding(.bottom, 40)
     }
     
     // Step markers based on race threshold
