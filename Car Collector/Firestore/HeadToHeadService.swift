@@ -344,18 +344,27 @@ class HeadToHeadService: ObservableObject {
     
     // MARK: - Feed Navigation
     
-    /// Load the next race the user hasn't voted on
+    /// Load the next race to show. Prioritizes races the user is in,
+    /// then shows other active races the user hasn't voted on.
     func loadNextFeedRace() {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
         
-        // Filter: active races I haven't voted on and I'm not a participant in
+        // Priority 1: Active races I'm participating in
+        let myRaces = activeRaces.filter { race in
+            race.challengerId == uid || race.defenderId == uid
+        }
+        if let myRace = myRaces.first {
+            currentFeedRace = myRace
+            return
+        }
+        
+        // Priority 2: Active races I haven't voted on
         let available = activeRaces.filter { race in
             !race.voters.contains(uid) &&
             race.challengerId != uid &&
             race.defenderId != uid
         }
         
-        // Pick a random one for variety
         currentFeedRace = available.randomElement()
     }
     
@@ -492,7 +501,28 @@ class HeadToHeadService: ObservableObject {
             throw HeadToHeadError.cardOnCooldown
         }
         
-        // Look for an open challenge at this vote limit (not my own)
+        // Check if this card is already in an active or open race
+        let activeCheck = try await racesCollection
+            .whereField("challengerCardId", isEqualTo: myCard.id)
+            .whereField("status", in: ["open", "active"])
+            .limit(to: 1)
+            .getDocuments()
+        
+        if !activeCheck.documents.isEmpty {
+            throw HeadToHeadError.cardAlreadyInRace
+        }
+        
+        let defenderCheck = try await racesCollection
+            .whereField("defenderCardId", isEqualTo: myCard.id)
+            .whereField("status", isEqualTo: "active")
+            .limit(to: 1)
+            .getDocuments()
+        
+        if !defenderCheck.documents.isEmpty {
+            throw HeadToHeadError.cardAlreadyInRace
+        }
+        
+        // Look for an open challenge at this vote limit (not my own, not my own cards)
         let openSnapshot = try await racesCollection
             .whereField("status", isEqualTo: "open")
             .whereField("voteThreshold", isEqualTo: voteThreshold)
@@ -911,6 +941,7 @@ extension UserService {
 
 enum HeadToHeadError: LocalizedError {
     case cardOnCooldown
+    case cardAlreadyInRace
     case raceNotFound
     case alreadyVoted
     case raceNotActive
@@ -919,6 +950,7 @@ enum HeadToHeadError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .cardOnCooldown: return "This card is on cooldown. Try again later."
+        case .cardAlreadyInRace: return "This card is already in an active race."
         case .raceNotFound: return "Race not found."
         case .alreadyVoted: return "You already voted on this race."
         case .raceNotActive: return "This race is no longer active."
