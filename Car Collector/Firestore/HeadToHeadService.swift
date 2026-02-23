@@ -939,32 +939,50 @@ class HeadToHeadService: ObservableObject {
     func fetchRaceHistory() async throws -> [Race] {
         guard let uid = FirebaseManager.shared.currentUserId else { return [] }
         
-        // Races where I'm challenger
-        let challengerSnap = try await racesCollection
-            .whereField("challengerId", isEqualTo: uid)
-            .order(by: "createdAt", descending: true)
-            .limit(to: 50)
-            .getDocuments()
-        
-        // Races where I'm defender
-        let defenderSnap = try await racesCollection
-            .whereField("defenderId", isEqualTo: uid)
-            .order(by: "createdAt", descending: true)
-            .limit(to: 50)
-            .getDocuments()
-        
         var allRaces: [Race] = []
         let seenIds = NSMutableSet()
         
-        for doc in challengerSnap.documents + defenderSnap.documents {
-            guard !seenIds.contains(doc.documentID),
-                  let race = Race(document: doc) else { continue }
-            seenIds.add(doc.documentID)
-            allRaces.append(race)
+        // Races where I'm challenger
+        do {
+            let challengerSnap = try await racesCollection
+                .whereField("challengerId", isEqualTo: uid)
+                .order(by: "createdAt", descending: true)
+                .limit(to: 50)
+                .getDocuments()
+            
+            for doc in challengerSnap.documents {
+                guard !seenIds.contains(doc.documentID),
+                      let race = Race(document: doc) else { continue }
+                seenIds.add(doc.documentID)
+                allRaces.append(race)
+            }
+            print("📋 Challenger races found: \(challengerSnap.documents.count)")
+        } catch {
+            print("⚠️ Challenger history query failed: \(error)")
+        }
+        
+        // Races where I'm defender
+        do {
+            let defenderSnap = try await racesCollection
+                .whereField("defenderId", isEqualTo: uid)
+                .order(by: "createdAt", descending: true)
+                .limit(to: 50)
+                .getDocuments()
+            
+            for doc in defenderSnap.documents {
+                guard !seenIds.contains(doc.documentID),
+                      let race = Race(document: doc) else { continue }
+                seenIds.add(doc.documentID)
+                allRaces.append(race)
+            }
+            print("📋 Defender races found: \(defenderSnap.documents.count)")
+        } catch {
+            print("⚠️ Defender history query failed: \(error)")
         }
         
         // Sort by createdAt descending
         allRaces.sort { $0.createdAt > $1.createdAt }
+        print("📋 Total race history: \(allRaces.count)")
         return allRaces
     }
 }
