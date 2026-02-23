@@ -150,6 +150,8 @@ struct ContentView: View {
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .tabViewSidebar(.hidden)
+        .tabViewStyle(.tabBarOnly)
         .overlay {
             // Level Header
             if !showCamera && !showCardDetail {
