@@ -878,7 +878,7 @@ struct AnyCardDetailsFrontView: View {
                     }
                     .foregroundStyle(config.textColor)
                     .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                    .rotationEffect(.degrees(-90))
+                    .rotationEffect(.degrees(-90), anchor: .bottomLeading)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                     .padding(.bottom, cardHeight * 0.11)
                     .padding(.leading, cardHeight * 0.03)
