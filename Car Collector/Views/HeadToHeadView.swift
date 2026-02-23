@@ -1098,6 +1098,7 @@ struct RaceHistoryView: View {
         }
         .frame(maxWidth: .infinity)
     }
+}
 
 // MARK: - Pending Challenges Sheet
 
