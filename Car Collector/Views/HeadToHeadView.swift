@@ -33,7 +33,14 @@ struct HeadToHeadView: View {
     
     var body: some View {
         ZStack {
-            dragStripBackground
+            Color.black.ignoresSafeArea()
+            
+            Image("dragStripTrack")
+                .resizable()
+                .scaledToFill()
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                .clipped()
+                .allowsHitTesting(false)
             
             VStack(spacing: 0) {
                 topBar
@@ -150,19 +157,6 @@ struct HeadToHeadView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-    }
-    
-    // MARK: - Drag Strip Background
-    
-    private var dragStripBackground: some View {
-        GeometryReader { geo in
-            Image("dragStripTrack")
-                .resizable()
-                .scaledToFill()
-                .frame(width: geo.size.width, height: geo.size.height)
-                .clipped()
-                .position(x: geo.size.width / 2, y: geo.size.height / 2)
-        }
     }
     
     // MARK: - Finish Line
