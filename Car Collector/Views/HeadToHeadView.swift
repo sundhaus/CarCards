@@ -948,66 +948,42 @@ struct RaceHistoryView: View {
         let totalVotes = max(race.challengerVotes + race.defenderVotes, 1)
         let challengerRatio = CGFloat(race.challengerVotes) / CGFloat(totalVotes)
         
-        return VStack(spacing: 12) {
-            // Status row
-            HStack {
-                if isFinished {
-                    HStack(spacing: 4) {
-                        Image(systemName: myPickWon ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .font(.system(size: 12))
-                        Text(myPickWon ? "CORRECT" : "WRONG")
-                            .font(.system(size: 10, weight: .bold))
-                    }
-                    .foregroundStyle(myPickWon ? .green : .red)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background((myPickWon ? Color.green : Color.red).opacity(0.15))
-                    .cornerRadius(6)
-                } else {
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(.blue)
-                            .frame(width: 6, height: 6)
-                        Text("LIVE")
-                            .font(.system(size: 10, weight: .bold))
-                    }
-                    .foregroundStyle(.blue)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.blue.opacity(0.15))
-                    .cornerRadius(6)
+        return VStack(spacing: 10) {
+            // Progress bar with PFPs and usernames
+            HStack(spacing: 8) {
+                // Left: challenger PFP + name
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(Color(.systemGray4))
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Text(String(race.challengerUsername.prefix(1)).uppercased())
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.white)
+                        )
+                    Text(race.challengerUsername)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .lineLimit(1)
                 }
                 
                 Spacer()
                 
-                Text("\(race.challengerVotes + race.defenderVotes)/\(race.voteThreshold)")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.4))
-            }
-            
-            // Cards side by side with pick indicator
-            HStack(spacing: 12) {
-                voteCard(
-                    imageURL: race.challengerCardImageURL,
-                    username: race.challengerUsername,
-                    votes: race.challengerVotes,
-                    isMyPick: iPickedChallenger,
-                    isWinner: challengerWon && isFinished,
-                    isLoser: defenderWon && isFinished
-                )
-                
-                Text("VS")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(.white.opacity(0.3))
-                
-                voteCard(
-                    imageURL: race.defenderCardImageURL,
-                    username: race.defenderUsername,
-                    votes: race.defenderVotes,
-                    isMyPick: !iPickedChallenger,
-                    isWinner: defenderWon && isFinished,
-                    isLoser: challengerWon && isFinished
-                )
+                // Right: name + defender PFP
+                HStack(spacing: 6) {
+                    Text(race.defenderUsername)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .lineLimit(1)
+                    Circle()
+                        .fill(Color(.systemGray4))
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Text(String(race.defenderUsername.prefix(1)).uppercased())
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.white)
+                        )
+                }
             }
             
             // Progress bar
@@ -1032,6 +1008,38 @@ struct RaceHistoryView: View {
                 }
             }
             .frame(height: 6)
+            
+            // Vote counts
+            HStack {
+                Text("\(race.challengerVotes)")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.5))
+                Spacer()
+                Text("\(race.defenderVotes)")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            
+            // Cards side by side
+            HStack(spacing: 12) {
+                voteCard(
+                    imageURL: race.challengerCardImageURL,
+                    isMyPick: iPickedChallenger,
+                    isWinner: challengerWon && isFinished,
+                    isLoser: defenderWon && isFinished
+                )
+                
+                Text("VS")
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(.white.opacity(0.3))
+                
+                voteCard(
+                    imageURL: race.defenderCardImageURL,
+                    isMyPick: !iPickedChallenger,
+                    isWinner: defenderWon && isFinished,
+                    isLoser: challengerWon && isFinished
+                )
+            }
         }
         .padding(14)
         .background(.white.opacity(0.05))
@@ -1049,52 +1057,41 @@ struct RaceHistoryView: View {
     
     // MARK: - Vote Card
     
-    private func voteCard(imageURL: String, username: String, votes: Int, isMyPick: Bool, isWinner: Bool, isLoser: Bool) -> some View {
+    private func voteCard(imageURL: String, isMyPick: Bool, isWinner: Bool, isLoser: Bool) -> some View {
         let cardH: CGFloat = 80
         let cardW: CGFloat = cardH * (16.0 / 9.0)
         let borderColor: Color = isMyPick
             ? (isWinner ? .green : isLoser ? .red : .orange)
             : .white.opacity(0.1)
         
-        return VStack(spacing: 6) {
-            ZStack(alignment: .topLeading) {
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    default:
-                        Rectangle().fill(Color.gray.opacity(0.2))
-                            .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.2)))
-                    }
-                }
-                .frame(width: cardW, height: cardH)
-                .clipped()
-                .cornerRadius(cardH * 0.09)
-                .overlay(
-                    RoundedRectangle(cornerRadius: cardH * 0.09)
-                        .stroke(borderColor, lineWidth: isMyPick ? 2 : 1)
-                )
-                
-                if isMyPick {
-                    Text("MY PICK")
-                        .font(.system(size: 7, weight: .heavy))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(borderColor)
-                        .cornerRadius(4)
-                        .padding(4)
+        return ZStack(alignment: .bottomLeading) {
+            AsyncImage(url: URL(string: imageURL)) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: .fill)
+                default:
+                    Rectangle().fill(Color.gray.opacity(0.2))
+                        .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.2)))
                 }
             }
+            .frame(width: cardW, height: cardH)
+            .clipped()
+            .cornerRadius(cardH * 0.09)
+            .overlay(
+                RoundedRectangle(cornerRadius: cardH * 0.09)
+                    .stroke(borderColor, lineWidth: isMyPick ? 2 : 1)
+            )
             
-            Text(username)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.white.opacity(isMyPick ? 1 : 0.6))
-                .lineLimit(1)
-            
-            Text("\(votes) votes")
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.4))
+            if isMyPick {
+                Text("MY PICK")
+                    .font(.system(size: 7, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(borderColor)
+                    .cornerRadius(4)
+                    .padding(4)
+            }
         }
         .frame(maxWidth: .infinity)
     }
