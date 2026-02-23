@@ -50,7 +50,7 @@ struct OnboardingView: View {
                     Image("HeatCheckLogo")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 120, height: 120)
+                        .frame(width: DeviceScale.w(120), height: DeviceScale.w(120))
                         .scaleEffect(animateIn ? 1.0 : 0.5)
                         .opacity(animateIn ? 1.0 : 0.0)
                     

@@ -338,7 +338,7 @@ struct GarageViewContent: View {
                             startPoint: .leading,
                             endPoint: .trailing
                         )
-                        .frame(width: 200)
+                        .frame(width: DeviceScale.w(200))
                         .allowsHitTesting(false)
                     }
                     .ignoresSafeArea() // Extend to all edges including top/bottom
@@ -429,7 +429,7 @@ struct GarageViewContent: View {
             LazyHGrid(rows: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
                 ForEach(savedCards) { card in
                     SavedCardView(card: card, isLargeSize: false)
-                        .frame(width: 340) // Bigger than 260px - fills page better
+                        .frame(width: DeviceScale.w(340))
                         .onTapGesture {
                             actionSheetCard = card
                             showActionSheet = true
@@ -500,7 +500,7 @@ struct CardDetailView: View {
                                 .font(.pTitle2)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
+                                .frame(width: DeviceScale.w(44), height: DeviceScale.w(44))
                                 .background(.black.opacity(0.6))
                                 .clipShape(Circle())
                         }

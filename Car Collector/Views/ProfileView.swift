@@ -118,13 +118,13 @@ struct ProfileView: View {
                                         endPoint: .bottomTrailing
                                     )
                                 )
-                                .frame(width: 80, height: 80)
+                                .frame(width: DeviceScale.w(80), height: DeviceScale.w(80))
                             
                             if let profileImage = profileImage {
                                 Image(uiImage: profileImage)
                                     .resizable()
                                     .scaledToFill()
-                                    .frame(width: 80, height: 80)
+                                    .frame(width: DeviceScale.w(80), height: DeviceScale.w(80))
                                     .clipShape(Circle())
                             } else {
                                 Image(systemName: "person.fill")
@@ -135,7 +135,7 @@ struct ProfileView: View {
                             if isUploadingImage {
                                 Circle()
                                     .fill(.black.opacity(0.5))
-                                    .frame(width: 80, height: 80)
+                                    .frame(width: DeviceScale.w(80), height: DeviceScale.w(80))
                                 
                                 ProgressView()
                                     .tint(.white)

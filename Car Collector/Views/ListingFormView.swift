@@ -45,7 +45,7 @@ struct ListingFormView: View {
                         Image(uiImage: image)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 360, height: 202.5)
+                            .frame(width: DeviceScale.w(360), height: DeviceScale.h(202.5))
                             .clipped()
                             .cornerRadius(12)
                     }

@@ -37,7 +37,7 @@ struct LocationInfoView: View {
                     Image(uiImage: capturedImage)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 280, height: 180)
+                        .frame(width: DeviceScale.w(280), height: DeviceScale.h(180))
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)

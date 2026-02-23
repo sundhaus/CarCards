@@ -18,7 +18,7 @@ struct LaunchScreenView: View {
             Image("AppLogo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 280, height: 280)
+                .frame(width: DeviceScale.w(280), height: DeviceScale.w(280))
         }
     }
 }

@@ -77,7 +77,7 @@ struct CustomizeCardView: View {
                         Image(selectedBackground!)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 320, height: 180)
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                             .scaleEffect(bgScale)
                             .offset(bgOffset)
                             .clipped()
@@ -86,7 +86,7 @@ struct CustomizeCardView: View {
                         Image(uiImage: transparentSubject!)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 320, height: 180)
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                             .clipped()
                     } else {
                         // Normal card image
@@ -94,12 +94,12 @@ struct CustomizeCardView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(width: 320, height: 180)
+                                .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                                 .clipped()
                         } else {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.3))
-                                .frame(width: 320, height: 180)
+                                .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                         }
                     }
                     
@@ -108,13 +108,13 @@ struct CustomizeCardView: View {
                         Image("Border_Def_Wht")
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 320, height: 180)
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                             .allowsHitTesting(false)
                     } else {
                         Image("Border_Def_Blk")
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 320, height: 180)
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                             .allowsHitTesting(false)
                     }
                     
@@ -144,7 +144,7 @@ struct CustomizeCardView: View {
                         }
                         Spacer()
                     }
-                    .frame(width: 320, height: 180)
+                    .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 180 * 0.09))
                 .contentShape(Rectangle())
