@@ -326,7 +326,10 @@ struct HeadToHeadView: View {
         side: VoteSide,
         cardId: String
     ) -> some View {
-        Button(action: {
+        let cardHeight: CGFloat = 100
+        let cardWidth: CGFloat = cardHeight * (16.0 / 9.0)
+        
+        return Button(action: {
             guard !isVoting else { return }
             voteForCard(cardId: cardId, side: side)
         }) {
@@ -341,7 +344,7 @@ struct HeadToHeadView: View {
                         .fill(Color.gray.opacity(0.3))
                         .overlay(
                             Image(systemName: "car.fill")
-                                .font(.largeTitle)
+                                .font(.title2)
                                 .foregroundStyle(.white.opacity(0.3))
                         )
                 default:
@@ -350,12 +353,11 @@ struct HeadToHeadView: View {
                         .overlay(ProgressView().tint(.white))
                 }
             }
-            .frame(height: 120)
-            .frame(maxWidth: .infinity)
+            .frame(width: cardWidth, height: cardHeight)
             .clipped()
-            .cornerRadius(12)
+            .cornerRadius(cardHeight * 0.09)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: cardHeight * 0.09)
                     .stroke(
                         voteAnimation == side ? Color.orange : Color.white.opacity(0.2),
                         lineWidth: voteAnimation == side ? 3 : 1
