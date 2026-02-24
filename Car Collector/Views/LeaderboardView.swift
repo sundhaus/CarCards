@@ -52,13 +52,16 @@ struct LeaderboardView: View {
                     .padding(.bottom, 8)
                     
                     // Tab Content
-                    if selectedTab == 0 {
-                        CardsLeaderboard(entries: leaderboardService.cardsLeaderboard)
-                    } else if selectedTab == 1 {
-                        HeatLeaderboard(entries: leaderboardService.heatLeaderboard)
-                    } else {
-                        EarningsLeaderboard(entries: leaderboardService.earningsLeaderboard)
+                    Group {
+                        if selectedTab == 0 {
+                            CardsLeaderboard(entries: leaderboardService.cardsLeaderboard)
+                        } else if selectedTab == 1 {
+                            HeatLeaderboard(entries: leaderboardService.heatLeaderboard)
+                        } else {
+                            EarningsLeaderboard(entries: leaderboardService.earningsLeaderboard)
+                        }
                     }
+                    .frame(maxHeight: .infinity, alignment: .top)
                 }
                 .padding(.bottom, isLandscape ? 0 : 100)
                 .padding(.trailing, isLandscape ? 100 : 0)
