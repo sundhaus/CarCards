@@ -1239,14 +1239,25 @@ struct ChallengeView: View {
             if AdminService.shared.isAdmin && challengeMode == .duo {
                 Button(action: {
                     Task {
+                        // Seed fake opponents
                         try? await HeadToHeadService.shared.seedFakeOpponentDuo(
                             voteThreshold: selectedThreshold
                         )
+                        
+                        // Re-run duo matchmaking to match against them
+                        if let invite = acceptedInvite {
+                            do {
+                                let result = try await HeadToHeadService.shared.duoMatchmaking(invite: invite)
+                                matchResult = result
+                            } catch {
+                                errorMessage = error.localizedDescription
+                            }
+                        }
                     }
                 }) {
                     HStack(spacing: 6) {
                         Image(systemName: "ant.fill")
-                        Text("SEED OPPONENT DUO")
+                        Text("SEED & MATCH")
                             .font(.caption.bold())
                     }
                     .foregroundStyle(.yellow)
@@ -1343,6 +1354,7 @@ struct ChallengeView: View {
                     let doc = try await FirebaseManager.shared.db
                         .collection("duoInvites").document(inviteId).getDocument()
                     if let invite = DuoInvite(document: doc) {
+                        acceptedInvite = invite  // Store for seed & match button
                         let result = try await HeadToHeadService.shared.duoMatchmaking(invite: invite)
                         isLoading = false
                         matchResult = result
