@@ -52,17 +52,12 @@ struct HeadToHeadView: View {
                 
                 // Vote history below top bar
                 Button(action: { showHistory = true }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 12, weight: .bold))
-                        Text("My Votes")
-                            .font(.system(size: 12, weight: .semibold))
-                    }
-                    .foregroundStyle(.white.opacity(0.7))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(16)
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(10)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.trailing, 16)
