@@ -285,8 +285,9 @@ class HeadToHeadService: ObservableObject {
     
     // Reward constants
     static let voterXP = 5                   // XP per vote cast
-    static let voterCorrectPickXP = 15       // XP for picking the winning card
-    static let voterDuoPerfectXP = 30        // XP for picking both winning cards in a duo (replaces 2x base)
+    static let voterCorrectPickXP = 20       // XP for picking the winning card (solo)
+    static let voterDuoSingleXP = 15         // XP for picking 1 of 2 winning cards in a duo
+    static let voterDuoPerfectXP = 40        // XP for picking both winning cards in a duo
     static let winnerXP = 25                 // XP for race winner
     static let loserXP = 10                  // Consolation XP for loser
     static let correctPickCoins = 10         // Base coins for picking winner
@@ -1187,9 +1188,12 @@ class HeadToHeadService: ObservableObject {
                     let coins = Int(Double(HeadToHeadService.correctPickCoins) * streak.coinMultiplier)
                     
                     // Check if voter also picked correctly on paired duo race
-                    var xpReward = HeadToHeadService.voterCorrectPickXP
+                    var xpReward = HeadToHeadService.voterCorrectPickXP  // Solo default: 20
                     
                     if let pairedRaceId = pairedRaceId, let pairedWinner = pairedWinnerCardId {
+                        // This is a duo — base reward is 15 for 1/2
+                        xpReward = HeadToHeadService.voterDuoSingleXP
+                        
                         // Look up this voter's vote on the paired race
                         let pairedVoteDocs = try? await votesCollection
                             .whereField("raceId", isEqualTo: pairedRaceId)
