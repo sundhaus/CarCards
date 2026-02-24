@@ -226,8 +226,10 @@ struct ContentView: View {
                         }
                     }
                     
-                    levelSystem.addXP(RewardConfig.cardCaptureXP)
-                    levelSystem.addCoins(RewardConfig.cardCaptureCoins)
+                    // Award XP and coins scaled by rarity
+                    let rarity = card.specs?.rarity ?? .common
+                    levelSystem.addXP(RewardConfig.captureXP(for: rarity))
+                    levelSystem.addCoins(RewardConfig.captureCoins(for: rarity))
                     showCamera = false
                     OrientationManager.lockToPortrait()
                 }
