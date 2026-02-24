@@ -59,8 +59,6 @@ struct LeaderboardView: View {
                     } else {
                         EarningsLeaderboard(entries: leaderboardService.earningsLeaderboard)
                     }
-                    
-                    Spacer(minLength: 0)
                 }
                 .padding(.bottom, isLandscape ? 0 : 100)
                 .padding(.trailing, isLandscape ? 100 : 0)
