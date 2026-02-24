@@ -806,18 +806,11 @@ struct CameraView: View {
         contentRejected = false
         rejectionMessage = ""
         
-        // LiDAR depth check — is the scene flat (screen)?
-        let isFlat = LiDARDepthScanner.shared.isSceneFlat()
+        // LiDAR depth check — temporarily disabled
+        // let isFlat = LiDARDepthScanner.shared.isSceneFlat()
         
         isCheckingContent = false
-        
-        if isFlat {
-            contentRejected = true
-            rejectionMessage = "Photos of screens, screenshots, and downloaded images are not allowed. Please take a photo of a real subject."
-            print("🚫 Image rejected: flat surface detected by LiDAR")
-        } else {
-            contentCheckedImage = image
-        }
+        contentCheckedImage = image
     }
 }
 
