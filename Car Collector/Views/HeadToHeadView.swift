@@ -1305,34 +1305,48 @@ struct ChallengeView: View {
         
         inviteListener = FirebaseManager.shared.db.collection("duoInvites")
             .document(inviteId)
-            .addSnapshotListener { snapshot, error in
+            .addSnapshotListener { [self] snapshot, error in
                 guard let data = snapshot?.data(),
                       let status = data["status"] as? String else { return }
                 
                 if status == "accepted" {
-                    let invite = DuoInvite(document: snapshot!)
+                    let parsedInvite = DuoInvite(document: snapshot!)
                     withAnimation {
-                        acceptedInvite = invite
+                        acceptedInvite = parsedInvite
                         teammateAccepted = true
                     }
                     
-                    // Auto-proceed to matchmaking after a brief delay
+                    // Auto-proceed to duo matchmaking after a brief delay
+                    guard let parsedInvite = parsedInvite else { return }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                        guard let card = selectedCard else { return }
                         inviteListener?.remove()
                         inviteListener = nil
-                        // TODO: Duo matchmaking - for now fall through to solo
-                        startMatchmaking(card: card)
+                        startDuoMatchmaking(invite: parsedInvite)
                     }
                 } else if status == "declined" || status == "expired" {
                     inviteListener?.remove()
                     inviteListener = nil
                     errorMessage = "Your teammate \(status) the invite"
-                    // Go back to mode selection
                     step = .pickMode
                     matchResult = nil
                 }
             }
+    }
+    
+    private func startDuoMatchmaking(invite: DuoInvite) {
+        isLoading = true
+        
+        Task {
+            do {
+                let result = try await HeadToHeadService.shared.duoMatchmaking(invite: invite)
+                isLoading = false
+                matchResult = result
+                // Stay on result step - it will show matched or queued
+            } catch {
+                errorMessage = error.localizedDescription
+                isLoading = false
+            }
+        }
     }
     
     // MARK: - Helpers

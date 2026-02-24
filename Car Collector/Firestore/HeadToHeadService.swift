@@ -44,6 +44,11 @@ struct Race: Identifiable {
     
     var voters: [String]            // UIDs who have voted (prevents double voting)
     
+    // Duo pairing
+    var isDuo: Bool                 // Is this part of a duo matchup?
+    var pairedRaceId: String?       // The other race in this duo pair
+    var duoTeamSide: String?        // "challenger" or "defender" - which duo team this belongs to
+    
     enum RaceStatus: String, Codable {
         case open       // Open challenge, anyone can accept
         case pending    // Awaiting defender acceptance (direct challenge)
@@ -87,6 +92,9 @@ struct Race: Identifiable {
         self.winnerId = data["winnerId"] as? String
         self.winnerCardId = data["winnerCardId"] as? String
         self.voters = data["voters"] as? [String] ?? []
+        self.isDuo = data["isDuo"] as? Bool ?? false
+        self.pairedRaceId = data["pairedRaceId"] as? String
+        self.duoTeamSide = data["duoTeamSide"] as? String
     }
     
     var dictionary: [String: Any] {
@@ -115,6 +123,10 @@ struct Race: Identifiable {
             "createdAt": Timestamp(date: createdAt),
             "voters": voters
         ]
+        
+        dict["isDuo"] = isDuo
+        if let pairedRaceId = pairedRaceId { dict["pairedRaceId"] = pairedRaceId }
+        if let duoTeamSide = duoTeamSide { dict["duoTeamSide"] = duoTeamSide }
         
         if let startedAt = startedAt { dict["startedAt"] = Timestamp(date: startedAt) }
         if let expiresAt = expiresAt { dict["expiresAt"] = Timestamp(date: expiresAt) }
@@ -358,15 +370,33 @@ class HeadToHeadService: ObservableObject {
     /// then shows other active races the user hasn't voted on.
     /// Track races we've already voted on this session so we cycle through
     var votedRaceIds: Set<String> = []
+    var pendingPairedRaceId: String? = nil  // After voting on a duo race, show its pair next
     
     func markRaceVoted(_ raceId: String) {
         votedRaceIds.insert(raceId)
+        
+        // If this was a duo race, queue the paired race next
+        if let race = activeRaces.first(where: { $0.id == raceId }),
+           race.isDuo, let pairedId = race.pairedRaceId {
+            pendingPairedRaceId = pairedId
+        }
     }
     
     func loadNextFeedRace() {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
         
         print("🏁 loadNextFeedRace: \(activeRaces.count) active, \(votedRaceIds.count) locally voted")
+        
+        // Priority 0: Paired duo race (must vote on both)
+        if let pairedId = pendingPairedRaceId,
+           let pairedRace = activeRaces.first(where: { $0.id == pairedId }),
+           !votedRaceIds.contains(pairedId) {
+            pendingPairedRaceId = nil
+            print("🏁 Showing paired duo race: \(pairedId)")
+            currentFeedRace = pairedRace
+            return
+        }
+        pendingPairedRaceId = nil
         
         // Priority 1: My active races (always show, even if voted)
         let myRaces = activeRaces.filter { $0.challengerId == uid || $0.defenderId == uid }
@@ -557,7 +587,7 @@ class HeadToHeadService: ObservableObject {
         
         let candidates = openSnapshot.documents
             .compactMap { Race(document: $0) }
-            .filter { $0.challengerId != uid }
+            .filter { $0.challengerId != uid && !$0.isDuo }
         
         if let match = candidates.randomElement() {
             // Found a match — accept it
@@ -574,6 +604,175 @@ class HeadToHeadService: ObservableObject {
             try await postOpenChallenge(myCard: myCard, voteThreshold: voteThreshold)
             return .queued
         }
+    }
+    
+    // MARK: - Duo Matchmaking
+    
+    /// Create a duo pair: two linked races where Team A (inviter+teammate) vs Team B (opponent duo)
+    /// For now, matches against another open duo or queues as open duo
+    func duoMatchmaking(
+        invite: DuoInvite
+    ) async throws -> ChallengeView.MatchResult {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        guard let profile = UserService.shared.currentProfile else {
+            throw UserServiceError.profileNotFound
+        }
+        
+        let threshold = invite.voteThreshold
+        
+        // Look for an open duo challenge to match against
+        let openDuoSnap = try await racesCollection
+            .whereField("status", isEqualTo: "open")
+            .whereField("isDuo", isEqualTo: true)
+            .whereField("voteThreshold", isEqualTo: threshold)
+            .limit(to: 10)
+            .getDocuments()
+        
+        // Find a duo pair (need 2 open races with same pairedRaceId, not ours)
+        let openDuos = openDuoSnap.documents
+            .compactMap { Race(document: $0) }
+            .filter { $0.challengerId != uid && $0.challengerId != invite.teammateId }
+        
+        // Group by pairedRaceId to find complete pairs
+        var pairGroups: [String: [Race]] = [:]
+        for race in openDuos {
+            if let pairId = race.pairedRaceId {
+                pairGroups[pairId, default: []].append(race)
+            }
+        }
+        
+        // Find a complete pair (2 races)
+        if let (_, opponentPair) = pairGroups.first(where: { $0.value.count == 2 }) {
+            // Match found! Accept both races
+            let opp1 = opponentPair[0]
+            let opp2 = opponentPair[1]
+            
+            // Inviter takes race 1, teammate takes race 2
+            let inviterCard = createCardProxy(
+                id: invite.inviterCardId,
+                make: invite.inviterCardMake,
+                model: invite.inviterCardModel,
+                year: invite.inviterCardYear,
+                imageURL: invite.inviterCardImageURL
+            )
+            let teammateCard = createCardProxy(
+                id: invite.teammateCardId,
+                make: invite.teammateCardMake,
+                model: invite.teammateCardModel,
+                year: invite.teammateCardYear,
+                imageURL: invite.teammateCardImageURL
+            )
+            
+            try await acceptOpenChallenge(raceId: opp1.id, myCard: inviterCard)
+            try await acceptOpenChallengeForUser(
+                raceId: opp2.id,
+                userId: invite.teammateId,
+                username: invite.teammateUsername,
+                card: teammateCard
+            )
+            
+            let updatedDoc = try await racesCollection.document(opp1.id).getDocument()
+            if let race = Race(document: updatedDoc) {
+                return .matched(race)
+            }
+            return .matched(opp1)
+        } else {
+            // No duo match — post our duo as open
+            let now = Date()
+            let raceId1 = UUID().uuidString
+            let raceId2 = UUID().uuidString
+            
+            let baseData: [String: Any] = [
+                "voteThreshold": threshold,
+                "durationSeconds": 7200,
+                "status": "open",
+                "createdAt": Timestamp(date: now),
+                "voters": [String](),
+                "isDuo": true,
+                "challengerVotes": 0,
+                "defenderVotes": 0,
+                "defenderId": "",
+                "defenderUsername": "",
+                "defenderCardId": "",
+                "defenderCardMake": "",
+                "defenderCardModel": "",
+                "defenderCardYear": "",
+                "defenderCardImageURL": "",
+            ]
+            
+            var race1Data = baseData
+            race1Data["challengerId"] = invite.inviterId
+            race1Data["challengerUsername"] = invite.inviterUsername
+            race1Data["challengerCardId"] = invite.inviterCardId
+            race1Data["challengerCardMake"] = invite.inviterCardMake
+            race1Data["challengerCardModel"] = invite.inviterCardModel
+            race1Data["challengerCardYear"] = invite.inviterCardYear
+            race1Data["challengerCardImageURL"] = invite.inviterCardImageURL
+            race1Data["pairedRaceId"] = raceId2
+            
+            var race2Data = baseData
+            race2Data["challengerId"] = invite.teammateId
+            race2Data["challengerUsername"] = invite.teammateUsername
+            race2Data["challengerCardId"] = invite.teammateCardId
+            race2Data["challengerCardMake"] = invite.teammateCardMake
+            race2Data["challengerCardModel"] = invite.teammateCardModel
+            race2Data["challengerCardYear"] = invite.teammateCardYear
+            race2Data["challengerCardImageURL"] = invite.teammateCardImageURL
+            race2Data["pairedRaceId"] = raceId1
+            
+            try await racesCollection.document(raceId1).setData(race1Data)
+            try await racesCollection.document(raceId2).setData(race2Data)
+            
+            // Update invite status
+            try await duoInvitesCollection.document(invite.id).updateData(["status": "queued"])
+            
+            print("🏁 Duo posted to queue: \(raceId1) paired with \(raceId2)")
+            return .queued
+        }
+    }
+    
+    /// Accept an open challenge on behalf of another user (for duo teammate)
+    func acceptOpenChallengeForUser(
+        raceId: String,
+        userId: String,
+        username: String,
+        card: CloudCard
+    ) async throws {
+        let now = Date()
+        try await racesCollection.document(raceId).updateData([
+            "defenderId": userId,
+            "defenderUsername": username,
+            "defenderCardId": card.id,
+            "defenderCardMake": card.make,
+            "defenderCardModel": card.model,
+            "defenderCardYear": card.year,
+            "defenderCardImageURL": card.flatImageURL ?? card.imageURL,
+            "defenderVotes": 0,
+            "status": "active",
+            "startedAt": Timestamp(date: now),
+            "expiresAt": Timestamp(date: now.addingTimeInterval(7200))
+        ])
+    }
+    
+    /// Helper to create a CloudCard-like proxy from invite data
+    private func createCardProxy(id: String, make: String, model: String, year: String, imageURL: String) -> CloudCard {
+        var card = CloudCard(
+            id: id,
+            ownerId: "",
+            ownerUsername: "",
+            make: make,
+            model: model,
+            year: year,
+            cardType: "vehicle",
+            imageURL: imageURL,
+            thumbnailURL: imageURL,
+            rarity: "common",
+            createdAt: Date()
+        )
+        card.flatImageURL = imageURL
+        return card
     }
     
     /// Accept an open challenge by picking your card to race against
