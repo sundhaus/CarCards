@@ -890,12 +890,35 @@ struct ChallengeView: View {
             card.cardType == "vehicle" && !unavailableCardIds.contains(card.id)
         }
         
-        // Admin: add sim cards for testing
+        // Admin: add sim cards for testing (A-Z)
         if AdminService.shared.isAdmin {
             let simCards: [(String, String, String, String)] = [
-                ("sim_mclaren_p1", "McLaren", "P1", "2015"),
+                ("sim_aston_martin_valkyrie", "Aston Martin", "Valkyrie", "2023"),
                 ("sim_bugatti_chiron", "Bugatti", "Chiron", "2022"),
+                ("sim_chevrolet_corvette", "Chevrolet", "Corvette Z06", "2024"),
+                ("sim_dodge_viper", "Dodge", "Viper ACR", "2017"),
+                ("sim_eagle_speedster", "Eagle", "Speedster", "2021"),
+                ("sim_ferrari_f40", "Ferrari", "F40", "1992"),
+                ("sim_gordon_murray_t50", "Gordon Murray", "T.50", "2022"),
+                ("sim_hennessey_venom", "Hennessey", "Venom F5", "2024"),
+                ("sim_iso_grifo", "Iso", "Grifo", "1968"),
+                ("sim_jaguar_xj220", "Jaguar", "XJ220", "1993"),
                 ("sim_koenigsegg_jesko", "Koenigsegg", "Jesko", "2023"),
+                ("sim_lamborghini_countach", "Lamborghini", "Countach", "1988"),
+                ("sim_mclaren_p1", "McLaren", "P1", "2015"),
+                ("sim_nissan_gtr", "Nissan", "GT-R Nismo", "2024"),
+                ("sim_oldsmobile_442", "Oldsmobile", "442", "1970"),
+                ("sim_porsche_911gt3", "Porsche", "911 GT3 RS", "2024"),
+                ("sim_qvale_mangusta", "Qvale", "Mangusta", "2000"),
+                ("sim_rimac_nevera", "Rimac", "Nevera", "2023"),
+                ("sim_shelby_gt500", "Shelby", "GT500", "1967"),
+                ("sim_toyota_supra", "Toyota", "Supra MK4", "1998"),
+                ("sim_ultima_rs", "Ultima", "RS", "2022"),
+                ("sim_vector_w8", "Vector", "W8", "1991"),
+                ("sim_wiesmann_mf5", "Wiesmann", "MF5", "2010"),
+                ("sim_xerion_xc5000", "Xerion", "XC5000", "2023"),
+                ("sim_yamaha_ox99", "Yamaha", "OX99-11", "1994"),
+                ("sim_zenvo_tsr", "Zenvo", "TSR-S", "2023"),
             ]
             for (id, make, model, year) in simCards {
                 if !unavailableCardIds.contains(id) {
