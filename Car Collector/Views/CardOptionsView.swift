@@ -100,8 +100,8 @@ struct CardOptionsView: View {
     
     // MARK: - Card Preview
     
-    private var isDriver: Bool {
-        if case .driver = card { return true }
+    private var isDriverOnly: Bool {
+        if case .driver(let dc) = card, !dc.isDriverPlusVehicle { return true }
         return false
     }
     
@@ -112,13 +112,13 @@ struct CardOptionsView: View {
                 Image(uiImage: flatImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: isDriver ? 400 : 240)
+                    .frame(maxHeight: isDriverOnly ? 400 : 240)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
             } else {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.gray.opacity(0.3))
-                    .frame(width: isDriver ? 180 : 320, height: isDriver ? 320 : 180)
+                    .frame(width: isDriverOnly ? 180 : 320, height: isDriverOnly ? 320 : 180)
             }
         }
         .frame(maxWidth: .infinity)

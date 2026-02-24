@@ -63,6 +63,10 @@ class CardFlattener {
     func flatten(_ card: AnyCard) -> UIImage? {
         switch card {
         case .driver(let dc):
+            // Driver+Vehicle cards display in landscape like vehicle cards
+            if dc.isDriverPlusVehicle {
+                return renderLandscapeCard(card: card)
+            }
             return renderDriverCard(card: card, driverCard: dc)
         case .vehicle, .location:
             return renderLandscapeCard(card: card)

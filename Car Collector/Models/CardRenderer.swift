@@ -54,7 +54,7 @@ final class CardRenderer {
     /// Renders image+border in landscape, rotates, then draws text in portrait.
     /// Returns nil for non-driver cards.
     func portraitCard(for card: AnyCard, width: CGFloat = 300) -> UIImage? {
-        guard case .driver = card else { return nil }
+        guard case .driver(let dc) = card, !dc.isDriverPlusVehicle else { return nil }
         
         let key = "\(card.id.uuidString)-P-\(Int(width))" as NSString
         if let cached = portraitCache.object(forKey: key) {

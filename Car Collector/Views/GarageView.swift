@@ -693,8 +693,8 @@ struct UnifiedCardDetailView: View {
                 VStack {
                     Spacer()
                     Group {
-                        if case .driver = card, let flatImage = CardFlattener.shared.flatten(card) {
-                            // Driver: show the ONE baked flat image — text, border, photo all frozen
+                        if case .driver(let dc) = card, !dc.isDriverPlusVehicle, let flatImage = CardFlattener.shared.flatten(card) {
+                            // Driver-only: show portrait flat image
                             Image(uiImage: flatImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
@@ -703,7 +703,7 @@ struct UnifiedCardDetailView: View {
                                 .shadow(radius: 10)
                                 .cardTilt()
                         } else {
-                            // Vehicle/Location: landscape card rotated to portrait
+                            // Vehicle, Driver+Vehicle, Location: landscape card rotated to portrait
                             ZStack {
                                 cardContent(screenSize: geometry.size)
                                     .rotationEffect(.degrees(90))
