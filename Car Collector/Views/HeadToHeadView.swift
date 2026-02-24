@@ -176,24 +176,22 @@ struct HeadToHeadView: View {
                 Spacer()
                 
                 VStack(spacing: 6) {
-                    if h2hService.myStreak.currentStreak > 0 {
-                        HStack(spacing: 4) {
-                            Image(systemName: "crown.fill")
+                    HStack(spacing: 4) {
+                        Image(systemName: "crown.fill")
+                            .foregroundStyle(.yellow)
+                        Text("\(h2hService.myStreak.currentStreak)")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                        if h2hService.myStreak.coinMultiplier > 1.0 {
+                            Text("\(Int(h2hService.myStreak.coinMultiplier))x")
+                                .font(.caption.bold())
                                 .foregroundStyle(.yellow)
-                            Text("\(h2hService.myStreak.currentStreak)")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(.white)
-                            if h2hService.myStreak.coinMultiplier > 1.0 {
-                                Text("\(Int(h2hService.myStreak.coinMultiplier))x")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.yellow)
-                            }
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(20)
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(20)
                 }
                 
                 if !h2hService.myPendingChallenges.isEmpty {
