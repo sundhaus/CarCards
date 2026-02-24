@@ -920,7 +920,9 @@ struct ChallengeView: View {
     // MARK: Step 2 - Pick Vote Limit + Challenge
     
     private var pickLimitView: some View {
-        VStack(spacing: 20) {
+        let userCoins = UserService.shared.currentProfile?.coins ?? 0
+        
+        return VStack(spacing: 20) {
             // Selected card preview
             if let card = selectedCard {
                 AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { image in
@@ -933,20 +935,43 @@ struct ChallengeView: View {
                 .padding(.top, 20)
             }
             
-            Text("Vote Limit")
+            Text("Entry Fee")
                 .font(.title3.bold())
                 .foregroundStyle(.white)
             
             VStack(spacing: 12) {
                 ForEach([25, 50, 100], id: \.self) { threshold in
+                    let fee = HeadToHeadService.entryFees[threshold] ?? threshold
+                    let pot = challengeMode == .duo ? fee * 4 : fee * 2
+                    let canAfford = userCoins >= fee
+                    
                     Button(action: { selectedThreshold = threshold }) {
                         HStack {
-                            Text("\(threshold)")
-                                .font(.title2.bold())
-                                .foregroundStyle(.white)
-                            Text("votes")
-                                .foregroundStyle(.white.opacity(0.6))
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "dollarsign.circle.fill")
+                                        .foregroundStyle(.yellow)
+                                    Text("\(fee)")
+                                        .font(.title2.bold())
+                                        .foregroundStyle(canAfford ? .white : .white.opacity(0.3))
+                                    Text("coins")
+                                        .foregroundStyle(canAfford ? .white.opacity(0.6) : .white.opacity(0.2))
+                                }
+                                
+                                HStack(spacing: 4) {
+                                    Text("\(threshold) votes")
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.4))
+                                    Text("•")
+                                        .foregroundStyle(.white.opacity(0.2))
+                                    Text("Pot: \(pot)")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.green.opacity(0.8))
+                                }
+                            }
+                            
                             Spacer()
+                            
                             Text(thresholdLabel(threshold))
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.5))
@@ -954,13 +979,32 @@ struct ChallengeView: View {
                                 .foregroundStyle(selectedThreshold == threshold ? .orange : .white.opacity(0.3))
                         }
                         .padding()
-                        .background(selectedThreshold == threshold ? Color.orange.opacity(0.2) : Color.white.opacity(0.05))
+                        .background(
+                            selectedThreshold == threshold
+                            ? Color.orange.opacity(0.2)
+                            : canAfford ? Color.white.opacity(0.05) : Color.red.opacity(0.05)
+                        )
                         .cornerRadius(12)
+                        .overlay(
+                            !canAfford ?
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.red.opacity(0.2), lineWidth: 1) : nil
+                        )
                     }
                     .buttonStyle(.plain)
+                    .disabled(!canAfford)
                 }
             }
             .padding(.horizontal)
+            
+            // Balance display
+            HStack(spacing: 4) {
+                Image(systemName: "dollarsign.circle.fill")
+                    .foregroundStyle(.yellow)
+                Text("Balance: \(userCoins)")
+                    .font(.caption.bold())
+                    .foregroundStyle(.white.opacity(0.6))
+            }
             
             Spacer()
             

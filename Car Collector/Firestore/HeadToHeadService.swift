@@ -49,6 +49,9 @@ struct Race: Identifiable {
     var pairedRaceId: String?       // The other race in this duo pair
     var duoTeamSide: String?        // "challenger" or "defender" - which duo team this belongs to
     
+    // Entry fee / pot
+    var entryFee: Int               // Coins each player pays to enter
+    
     enum RaceStatus: String, Codable {
         case open       // Open challenge, anyone can accept
         case pending    // Awaiting defender acceptance (direct challenge)
@@ -95,6 +98,7 @@ struct Race: Identifiable {
         self.isDuo = data["isDuo"] as? Bool ?? false
         self.pairedRaceId = data["pairedRaceId"] as? String
         self.duoTeamSide = data["duoTeamSide"] as? String
+        self.entryFee = data["entryFee"] as? Int ?? 0
     }
     
     var dictionary: [String: Any] {
@@ -127,6 +131,7 @@ struct Race: Identifiable {
         dict["isDuo"] = isDuo
         if let pairedRaceId = pairedRaceId { dict["pairedRaceId"] = pairedRaceId }
         if let duoTeamSide = duoTeamSide { dict["duoTeamSide"] = duoTeamSide }
+        dict["entryFee"] = entryFee
         
         if let startedAt = startedAt { dict["startedAt"] = Timestamp(date: startedAt) }
         if let expiresAt = expiresAt { dict["expiresAt"] = Timestamp(date: expiresAt) }
@@ -280,11 +285,17 @@ class HeadToHeadService: ObservableObject {
     
     // Reward constants
     static let voterXP = 5                   // XP per vote
-    static let winnerCoins = 50              // Coins for race winner
     static let winnerXP = 25                 // XP for race winner
     static let loserXP = 10                  // Consolation XP for loser
     static let correctPickCoins = 10         // Base coins for picking winner
     static let cardCooldownHours = 24        // Hours before a card can race again
+    
+    // Entry fee tiers: [voteThreshold: entryFee]
+    static let entryFees: [Int: Int] = [
+        25: 25,     // Quick Race: 25 coins
+        50: 50,     // Standard: 50 coins
+        100: 100    // Marathon: 100 coins
+    ]
     
     // MARK: - Listeners
     
@@ -503,11 +514,21 @@ class HeadToHeadService: ObservableObject {
             throw UserServiceError.profileNotFound
         }
         
+        let fee = HeadToHeadService.entryFees[voteThreshold] ?? 50
+        
+        // Check coins
+        guard (UserService.shared.currentProfile?.coins ?? 0) >= fee else {
+            throw HeadToHeadError.insufficientCoins
+        }
+        
         // Check card cooldown
         let cooldownOk = try await checkCardCooldown(cardId: myCard.id)
         guard cooldownOk else {
             throw HeadToHeadError.cardOnCooldown
         }
+        
+        // Deduct entry fee
+        _ = UserService.shared.spendCoins(fee)
         
         let raceId = UUID().uuidString
         let data: [String: Any] = [
@@ -534,7 +555,8 @@ class HeadToHeadService: ObservableObject {
             "durationSeconds": 7200,
             "status": "open",
             "createdAt": Timestamp(date: Date()),
-            "voters": [String]()
+            "voters": [String](),
+            "entryFee": fee
         ]
         
         try await racesCollection.document(raceId).setData(data)
@@ -562,6 +584,12 @@ class HeadToHeadService: ObservableObject {
         let cooldownOk = try await checkCardCooldown(cardId: myCard.id)
         guard cooldownOk else {
             throw HeadToHeadError.cardOnCooldown
+        }
+        
+        // Check coins for entry fee
+        let fee = HeadToHeadService.entryFees[voteThreshold] ?? 50
+        guard (UserService.shared.currentProfile?.coins ?? 0) >= fee else {
+            throw HeadToHeadError.insufficientCoins
         }
         
         // Check if this card is already in an active or open race
@@ -703,6 +731,8 @@ class HeadToHeadService: ObservableObject {
             let raceId1 = UUID().uuidString
             let raceId2 = UUID().uuidString
             
+            let fee = HeadToHeadService.entryFees[threshold] ?? 50
+            
             let baseData: [String: Any] = [
                 "voteThreshold": threshold,
                 "durationSeconds": 7200,
@@ -710,6 +740,7 @@ class HeadToHeadService: ObservableObject {
                 "createdAt": Timestamp(date: now),
                 "voters": [String](),
                 "isDuo": true,
+                "entryFee": fee,
                 "challengerVotes": 0,
                 "defenderVotes": 0,
                 "defenderId": "",
@@ -815,6 +846,8 @@ class HeadToHeadService: ObservableObject {
             ("TestBot_B", "Ferrari", "F40", "1992")
         ]
         
+        let fee = HeadToHeadService.entryFees[voteThreshold] ?? 50
+        
         let baseData: [String: Any] = [
             "voteThreshold": voteThreshold,
             "durationSeconds": 7200,
@@ -822,6 +855,7 @@ class HeadToHeadService: ObservableObject {
             "createdAt": Timestamp(date: now),
             "voters": [String](),
             "isDuo": true,
+            "entryFee": fee,
             "challengerVotes": 0,
             "defenderVotes": 0,
             "defenderId": "",
@@ -870,6 +904,16 @@ class HeadToHeadService: ObservableObject {
         let cooldownOk = try await checkCardCooldown(cardId: myCard.id)
         guard cooldownOk else {
             throw HeadToHeadError.cardOnCooldown
+        }
+        
+        // Get entry fee from the race and deduct
+        let raceDoc = try await racesCollection.document(raceId).getDocument()
+        let fee = raceDoc.data()?["entryFee"] as? Int ?? 0
+        if fee > 0 {
+            guard (UserService.shared.currentProfile?.coins ?? 0) >= fee else {
+                throw HeadToHeadError.insufficientCoins
+            }
+            _ = UserService.shared.spendCoins(fee)
         }
         
         let now = Date()
@@ -1052,16 +1096,35 @@ class HeadToHeadService: ObservableObject {
     // MARK: - Rewards
     
     private func awardWinnerRewards(winnerId: String, winnerCardId: String) async {
-        // Coins + XP to winner
+        // Get the race to calculate pot
+        // For solo: pot = entryFee * 2 (both players' fees)
+        // For duo: pot is calculated across paired races
+        // Winner takes the full pot
+        guard let race = activeRaces.first(where: { $0.winnerId == winnerId && $0.winnerCardId == winnerCardId })
+              ?? activeRaces.first(where: { $0.challengerId == winnerId || $0.defenderId == winnerId }) else {
+            return
+        }
+        
+        var pot = race.entryFee * 2  // Both challenger + defender fees
+        
+        // For duo races, pot includes both paired races
+        if race.isDuo, let pairedId = race.pairedRaceId,
+           let pairedRace = activeRaces.first(where: { $0.id == pairedId }) {
+            pot = (race.entryFee + pairedRace.entryFee) * 2  // All 4 players' fees
+        }
+        
+        // Award pot to winner (minimum winnerXP even if free race)
         if winnerId == FirebaseManager.shared.currentUserId {
-            UserService.shared.addCoins(HeadToHeadService.winnerCoins)
+            if pot > 0 { UserService.shared.addCoins(pot) }
             UserService.shared.addXP(HeadToHeadService.winnerXP)
         } else {
-            // Remote user — update their doc directly
-            try? await db.collection("users").document(winnerId).updateData([
-                "coins": FieldValue.increment(Int64(HeadToHeadService.winnerCoins)),
+            var updates: [String: Any] = [
                 "totalXP": FieldValue.increment(Int64(HeadToHeadService.winnerXP))
-            ])
+            ]
+            if pot > 0 {
+                updates["coins"] = FieldValue.increment(Int64(pot))
+            }
+            try? await db.collection("users").document(winnerId).updateData(updates)
         }
     }
     
@@ -1512,6 +1575,7 @@ enum HeadToHeadError: LocalizedError {
     case alreadyVoted
     case raceNotActive
     case cannotVoteOwnRace
+    case insufficientCoins
     
     var errorDescription: String? {
         switch self {
@@ -1521,6 +1585,7 @@ enum HeadToHeadError: LocalizedError {
         case .alreadyVoted: return "You already voted on this race."
         case .raceNotActive: return "This race is no longer active."
         case .cannotVoteOwnRace: return "You can't vote on your own race."
+        case .insufficientCoins: return "Not enough coins to enter this race."
         }
     }
 }
