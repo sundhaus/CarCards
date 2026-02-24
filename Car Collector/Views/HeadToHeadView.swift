@@ -1831,11 +1831,12 @@ struct DuoInvitePopupView: View {
             // Show inviter's card
             VStack(spacing: 8) {
                 AsyncImage(url: URL(string: invite.inviterCardImageURL)) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
+                    image.resizable().aspectRatio(contentMode: .fit)
                 } placeholder: {
                     Rectangle().fill(Color.gray.opacity(0.3))
+                        .frame(height: 180)
                 }
-                .frame(width: 160, height: 100)
+                .frame(maxWidth: 260)
                 .cornerRadius(10)
                 
                 Text("\(invite.inviterCardMake) \(invite.inviterCardModel)")
