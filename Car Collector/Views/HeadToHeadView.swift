@@ -171,8 +171,8 @@ struct HeadToHeadView: View {
                 
                 if h2hService.myStreak.currentStreak > 0 {
                     HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .foregroundStyle(.orange)
+                        Image(systemName: "crown.fill")
+                            .foregroundStyle(.yellow)
                         Text("\(h2hService.myStreak.currentStreak)")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
