@@ -592,6 +592,11 @@ struct HeadToHeadView: View {
             timeRemainingText = "--:--"
             return
         }
+        // If race has expired, move to next
+        if let expiresAt = race.expiresAt, expiresAt <= Date() {
+            h2hService.loadNextFeedRace()
+            return
+        }
         timeRemainingText = race.timeRemainingString
     }
     

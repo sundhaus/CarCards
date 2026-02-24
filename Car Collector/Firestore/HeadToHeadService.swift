@@ -385,11 +385,18 @@ class HeadToHeadService: ObservableObject {
     func loadNextFeedRace() {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
         
-        print("🏁 loadNextFeedRace: \(activeRaces.count) active, \(votedRaceIds.count) locally voted")
+        let now = Date()
+        // Filter out races past their expiry even if still marked active
+        let liveRaces = activeRaces.filter { race in
+            guard let expiresAt = race.expiresAt else { return true }
+            return expiresAt > now
+        }
+        
+        print("🏁 loadNextFeedRace: \(activeRaces.count) active, \(liveRaces.count) live, \(votedRaceIds.count) locally voted")
         
         // Priority 0: Paired duo race (must vote on both)
         if let pairedId = pendingPairedRaceId,
-           let pairedRace = activeRaces.first(where: { $0.id == pairedId }),
+           let pairedRace = liveRaces.first(where: { $0.id == pairedId }),
            !votedRaceIds.contains(pairedId) {
             pendingPairedRaceId = nil
             print("🏁 Showing paired duo race: \(pairedId)")
@@ -399,7 +406,7 @@ class HeadToHeadService: ObservableObject {
         pendingPairedRaceId = nil
         
         // Priority 1: My active races (always show, even if voted)
-        let myRaces = activeRaces.filter { $0.challengerId == uid || $0.defenderId == uid }
+        let myRaces = liveRaces.filter { $0.challengerId == uid || $0.defenderId == uid }
         let myUnvoted = myRaces.filter { !votedRaceIds.contains($0.id) && !$0.voters.contains(uid) }
         if let myRace = myUnvoted.first {
             print("🏁 Showing my unvoted race: \(myRace.id)")
@@ -408,7 +415,7 @@ class HeadToHeadService: ObservableObject {
         }
         
         // Priority 2: Other people's races I haven't voted on
-        let othersUnvoted = activeRaces.filter { race in
+        let othersUnvoted = liveRaces.filter { race in
             race.challengerId != uid &&
             race.defenderId != uid &&
             !votedRaceIds.contains(race.id) &&
