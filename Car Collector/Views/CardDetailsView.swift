@@ -304,19 +304,19 @@ struct CardDetailsView: View {
                     VStack(spacing: 10) {
                         specRow(label: "HP", value: parseIntValue(specs.horsepower))
                         specRow(label: "0-60", value: parseDoubleValue(specs.zeroToSixty))
-                        specRow(label: "ENGINE", value: specs.engine ?? "—")
+                        specRow(label: "ENGINE", value: specs.engine.isEmpty ? "—" : specs.engine)
                     }
                     
                     VStack(spacing: 10) {
                         specRow(label: "TRQ", value: parseIntValue(specs.torque))
                         specRow(label: "TOP", value: parseIntValue(specs.topSpeed))
-                        specRow(label: "DRIVE", value: specs.drivetrain ?? "—")
+                        specRow(label: "DRIVE", value: specs.drivetrain.isEmpty ? "—" : specs.drivetrain)
                     }
                 }
                 
                 // Description if available
-                if let description = specs.description, !description.isEmpty {
-                    Text(description)
+                if !specs.description.isEmpty {
+                    Text(specs.description)
                         .font(.poppins(12))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
