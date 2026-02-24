@@ -38,6 +38,9 @@ struct CloudCard: Identifiable, Codable {
     // Flattened card image (border + text baked in)
     var flatImageURL: String?
     
+    // Rarity tier for economy scaling
+    var rarity: String?
+    
     // From Firestore document
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -81,6 +84,7 @@ struct CloudCard: Identifiable, Codable {
         // ADDED: Load customization
         self.customFrame = data["customFrame"] as? String
         self.flatImageURL = data["flatImageURL"] as? String
+        self.rarity = data["rarity"] as? String
     }
     
     // New card
@@ -100,7 +104,8 @@ struct CloudCard: Identifiable, Codable {
         firstName: String? = nil,
         lastName: String? = nil,
         nickname: String? = nil,
-        locationName: String? = nil
+        locationName: String? = nil,
+        rarity: String? = nil
     ) {
         self.id = id
         self.ownerId = ownerId
@@ -120,6 +125,7 @@ struct CloudCard: Identifiable, Codable {
         self.lastName = lastName
         self.nickname = nickname
         self.locationName = locationName
+        self.rarity = rarity
     }
     
     var dictionary: [String: Any] {
@@ -158,6 +164,11 @@ struct CloudCard: Identifiable, Codable {
         // ADDED: Include customization if present
         if let customFrame = customFrame {
             dict["customFrame"] = customFrame
+        }
+        
+        // Include rarity if present
+        if let rarity = rarity {
+            dict["rarity"] = rarity
         }
         
         return dict

@@ -87,7 +87,8 @@ class CardService: ObservableObject {
         capturedBy: String? = nil,
         capturedLocation: String? = nil,
         previousOwners: Int = 0,
-        customFrame: String? = nil
+        customFrame: String? = nil,
+        rarity: CardRarity? = nil
     ) async throws -> CloudCard {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
@@ -111,7 +112,8 @@ class CardService: ObservableObject {
             capturedBy: capturedBy,
             capturedLocation: capturedLocation,
             previousOwners: previousOwners,
-            customFrame: customFrame
+            customFrame: customFrame,
+            rarity: rarity?.rawValue
         )
         
         try await cardsCollection.document(cardId).setData(card.dictionary)
@@ -492,7 +494,8 @@ class CardService: ObservableObject {
                 year: localCard.year,
                 capturedBy: localCard.capturedBy,
                 capturedLocation: localCard.capturedLocation,
-                previousOwners: localCard.previousOwners
+                previousOwners: localCard.previousOwners,
+                rarity: localCard.specs?.rarity
             )
         }
         

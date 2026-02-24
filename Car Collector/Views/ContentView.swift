@@ -97,7 +97,8 @@ struct ContentView: View {
                                             make: card.make,
                                             model: card.model,
                                             color: card.color,
-                                            year: card.year
+                                            year: card.year,
+                                            rarity: card.specs?.rarity
                                         )
                                         
                                         if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
@@ -211,7 +212,8 @@ struct ContentView: View {
                                     make: card.make,
                                     model: card.model,
                                     color: card.color,
-                                    year: card.year
+                                    year: card.year,
+                                    rarity: card.specs?.rarity
                                 )
                                 
                                 if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
