@@ -628,7 +628,7 @@ struct CardDetailView: View {
                 capturedBy: currentCard.capturedBy,
                 capturedLocation: currentCard.capturedLocation,
                 previousOwners: currentCard.previousOwners,
-                customFrame: currentCard.customFrame ?? specs?.rarity?.borderAssetName
+                customFrame: currentCard.customFrame ?? specs.rarity?.borderAssetName
             )
             
             await MainActor.run {
