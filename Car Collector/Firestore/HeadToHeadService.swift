@@ -894,6 +894,50 @@ class HeadToHeadService: ObservableObject {
         print("🤖 Seeded fake opponent duo: \(raceId1) + \(raceId2) at \(voteThreshold) votes")
     }
     
+    /// Creates a fake solo opponent in the queue for testing 1v1
+    func seedFakeSoloOpponent(voteThreshold: Int) async throws {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
+        let now = Date()
+        let raceId = UUID().uuidString
+        let fee = HeadToHeadService.entryFees[voteThreshold] ?? 50
+        
+        var data: [String: Any] = [
+            "challengerId": uid,
+            "challengerUsername": "SoloBot",
+            "challengerCardId": "fakeCard_\(raceId)",
+            "challengerCardMake": "Toyota",
+            "challengerCardModel": "Supra",
+            "challengerCardYear": "1998",
+            "challengerCardImageURL": "",
+            "challengerVotes": 0,
+            "defenderId": "",
+            "defenderUsername": "",
+            "defenderCardId": "",
+            "defenderCardMake": "",
+            "defenderCardModel": "",
+            "defenderCardYear": "",
+            "defenderCardImageURL": "",
+            "defenderVotes": 0,
+            "voteThreshold": voteThreshold,
+            "durationSeconds": 7200,
+            "status": "open",
+            "createdAt": Timestamp(date: now),
+            "voters": [String](),
+            "isDuo": false,
+            "entryFee": fee
+        ]
+        
+        try await racesCollection.document(raceId).setData(data)
+        try await racesCollection.document(raceId).updateData([
+            "challengerId": "fakeBot_\(raceId)"
+        ])
+        
+        print("🤖 Seeded fake solo opponent: \(raceId) at \(voteThreshold) votes")
+    }
+    
     /// Accept an open challenge by picking your card to race against
     func acceptOpenChallenge(raceId: String, myCard: CloudCard) async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {

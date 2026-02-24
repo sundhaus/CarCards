@@ -1310,22 +1310,37 @@ struct ChallengeView: View {
             
             Spacer()
             
-            // Debug: Seed fake opponent duo (admin only)
-            if AdminService.shared.isAdmin && challengeMode == .duo {
+            // Debug: Seed fake opponent (admin only)
+            if AdminService.shared.isAdmin {
                 Button(action: {
                     Task {
-                        // Seed fake opponents
-                        try? await HeadToHeadService.shared.seedFakeOpponentDuo(
-                            voteThreshold: selectedThreshold
-                        )
-                        
-                        // Re-run duo matchmaking to match against them
-                        if let invite = acceptedInvite {
-                            do {
-                                let result = try await HeadToHeadService.shared.duoMatchmaking(invite: invite)
-                                matchResult = result
-                            } catch {
-                                errorMessage = error.localizedDescription
+                        if challengeMode == .duo {
+                            try? await HeadToHeadService.shared.seedFakeOpponentDuo(
+                                voteThreshold: selectedThreshold
+                            )
+                            // Re-run duo matchmaking
+                            if let invite = acceptedInvite {
+                                do {
+                                    let result = try await HeadToHeadService.shared.duoMatchmaking(invite: invite)
+                                    matchResult = result
+                                } catch {
+                                    errorMessage = error.localizedDescription
+                                }
+                            }
+                        } else {
+                            try? await HeadToHeadService.shared.seedFakeSoloOpponent(
+                                voteThreshold: selectedThreshold
+                            )
+                            // Re-run solo matchmaking
+                            if let card = selectedCard {
+                                do {
+                                    let result = try await HeadToHeadService.shared.challengeWithMatchmaking(
+                                        myCard: card, voteThreshold: selectedThreshold
+                                    )
+                                    matchResult = result
+                                } catch {
+                                    errorMessage = error.localizedDescription
+                                }
                             }
                         }
                     }
