@@ -284,7 +284,9 @@ class HeadToHeadService: ObservableObject {
     }
     
     // Reward constants
-    static let voterXP = 5                   // XP per vote
+    static let voterXP = 5                   // XP per vote cast
+    static let voterCorrectPickXP = 15       // XP for picking the winning card
+    static let voterDuoPerfectXP = 30        // XP for picking both winning cards in a duo (replaces 2x base)
     static let winnerXP = 25                 // XP for race winner
     static let loserXP = 10                  // Consolation XP for loser
     static let correctPickCoins = 10         // Base coins for picking winner
@@ -1151,12 +1153,25 @@ class HeadToHeadService: ObservableObject {
         }
     }
     
-    /// Distribute coins to voters who picked the winner + update streaks
+    /// Distribute coins and XP to voters who picked the winner + update streaks
+    /// For duo races, checks both paired races for perfect pick bonus
     private func distributeVoterRewards(raceId: String, winnerCardId: String?) async {
         do {
             let voteDocs = try await votesCollection
                 .whereField("raceId", isEqualTo: raceId)
                 .getDocuments()
+            
+            // Check if this is a duo race and get paired race info
+            let thisRace = activeRaces.first(where: { $0.id == raceId })
+            var pairedWinnerCardId: String? = nil
+            var pairedRaceId: String? = nil
+            if let race = thisRace, race.isDuo, let pId = race.pairedRaceId {
+                pairedRaceId = pId
+                let pairedDoc = try? await racesCollection.document(pId).getDocument()
+                if let pairedRace = pairedDoc.flatMap({ Race(document: $0) }) {
+                    pairedWinnerCardId = pairedRace.winnerCardId
+                }
+            }
             
             for doc in voteDocs.documents {
                 guard let vote = RaceVote(document: doc) else { continue }
@@ -1165,21 +1180,41 @@ class HeadToHeadService: ObservableObject {
                 // Update voter's streak
                 await updateVoterStreak(voterId: vote.voterId, raceId: raceId, correct: isCorrect)
                 
-                // Award coins if correct
                 if isCorrect {
-                    // Get streak multiplier
+                    // Get streak multiplier for coins
                     let streakDoc = try? await streaksCollection.document(vote.voterId).getDocument()
                     let streak = streakDoc.flatMap { VoteStreak(document: $0) } ?? VoteStreak()
                     let coins = Int(Double(HeadToHeadService.correctPickCoins) * streak.coinMultiplier)
                     
+                    // Check if voter also picked correctly on paired duo race
+                    var xpReward = HeadToHeadService.voterCorrectPickXP
+                    
+                    if let pairedRaceId = pairedRaceId, let pairedWinner = pairedWinnerCardId {
+                        // Look up this voter's vote on the paired race
+                        let pairedVoteDocs = try? await votesCollection
+                            .whereField("raceId", isEqualTo: pairedRaceId)
+                            .whereField("voterId", isEqualTo: vote.voterId)
+                            .limit(to: 1)
+                            .getDocuments()
+                        
+                        if let pairedVote = pairedVoteDocs?.documents.first.flatMap({ RaceVote(document: $0) }),
+                           pairedVote.votedForCardId == pairedWinner {
+                            // Perfect duo pick — both correct!
+                            xpReward = HeadToHeadService.voterDuoPerfectXP
+                        }
+                    }
+                    
                     if vote.voterId == FirebaseManager.shared.currentUserId {
                         UserService.shared.addCoins(coins)
+                        UserService.shared.addXP(xpReward)
                     } else {
                         try? await db.collection("users").document(vote.voterId).updateData([
-                            "coins": FieldValue.increment(Int64(coins))
+                            "coins": FieldValue.increment(Int64(coins)),
+                            "totalXP": FieldValue.increment(Int64(xpReward))
                         ])
                     }
                 }
+                // No XP for incorrect picks
             }
         } catch {
             print("⚠️ Failed to distribute voter rewards: \(error)")
