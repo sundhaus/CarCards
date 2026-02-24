@@ -1703,6 +1703,7 @@ struct DuoInvitePopupView: View {
     @State private var selectedCard: CloudCard?
     @State private var isProcessing = false
     @State private var step: InviteStep = .review
+    @State private var unavailableCardIds: Set<String> = []
     
     enum InviteStep {
         case review
@@ -1811,7 +1812,11 @@ struct DuoInvitePopupView: View {
     }
     
     private var pickCardForDuoView: some View {
-        VStack(spacing: 16) {
+        let availableCards = cardService.myCards.filter { card in
+            card.cardType == "vehicle" && !unavailableCardIds.contains(card.id)
+        }
+        
+        return VStack(spacing: 16) {
             Text("Pick Your Card")
                 .font(.title3.bold())
                 .foregroundStyle(.white)
@@ -1823,9 +1828,7 @@ struct DuoInvitePopupView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             
-            let vehicleCards = cardService.myCards.filter { $0.cardType == "vehicle" }
-            
-            if vehicleCards.isEmpty {
+            if availableCards.isEmpty {
                 Spacer()
                 Text("No vehicle cards available")
                     .foregroundStyle(.white.opacity(0.5))
@@ -1833,7 +1836,7 @@ struct DuoInvitePopupView: View {
             } else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach(vehicleCards) { card in
+                        ForEach(availableCards) { card in
                             Button(action: {
                                 selectedCard = card
                             }) {
@@ -1904,6 +1907,59 @@ struct DuoInvitePopupView: View {
                 .padding(.bottom, 16)
             }
         }
+        .task {
+            await loadBlockedCards()
+        }
+    }
+    
+    private func loadBlockedCards() async {
+        guard let uid = FirebaseManager.shared.currentUserId else { return }
+        var blocked = Set<String>()
+        let db = FirebaseManager.shared.db
+        
+        do {
+            // Cards in active/open races
+            let activeSnap = try await db.collection("races")
+                .whereField("status", isEqualTo: "active")
+                .getDocuments()
+            let openSnap = try await db.collection("races")
+                .whereField("status", isEqualTo: "open")
+                .getDocuments()
+            
+            for doc in activeSnap.documents + openSnap.documents {
+                let data = doc.data()
+                if let cId = data["challengerId"] as? String, cId == uid,
+                   let cardId = data["challengerCardId"] as? String {
+                    blocked.insert(cardId)
+                }
+                if let dId = data["defenderId"] as? String, dId == uid,
+                   let cardId = data["defenderCardId"] as? String {
+                    blocked.insert(cardId)
+                }
+            }
+            
+            // Cards in pending duo invites
+            let pendingInvites = try await db.collection("duoInvites")
+                .whereField("teammateId", isEqualTo: uid)
+                .whereField("status", isEqualTo: "pending")
+                .getDocuments()
+            for doc in pendingInvites.documents {
+                if let cardId = doc.data()["teammateCardId"] as? String, !cardId.isEmpty {
+                    blocked.insert(cardId)
+                }
+            }
+        } catch {
+            print("⚠️ Error loading blocked cards for duo: \(error)")
+        }
+        
+        // Cards on cooldown
+        for card in cardService.myCards where card.cardType == "vehicle" {
+            if let ok = try? await HeadToHeadService.shared.checkCardCooldown(cardId: card.id), !ok {
+                blocked.insert(card.id)
+            }
+        }
+        
+        unavailableCardIds = blocked
     }
 }
 
