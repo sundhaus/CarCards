@@ -233,9 +233,6 @@ struct GarageView: View {
                                     NotificationCenter.default.post(name: NSNotification.Name("ComparePrice"), object: nil)
                                 }
                             }
-                        },
-                        onReplicate: {
-                            // TODO: Replicate functionality
                         }
                     )
                 }

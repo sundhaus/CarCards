@@ -12,7 +12,6 @@ struct CardOptionsView: View {
     let onQuickSell: () -> Void
     let onListOnMarket: () -> Void
     let onComparePrice: () -> Void
-    let onReplicate: () -> Void
     
     @Environment(\.dismiss) private var dismiss
     @State private var showQuickSellConfirm = false
@@ -81,16 +80,6 @@ struct CardOptionsView: View {
                                 colors: [Color.orange, Color.red]
                             ) {
                                 showQuickSellConfirm = true
-                            }
-                            
-                            optionButton(
-                                icon: "doc.on.doc.fill",
-                                label: "Replicate",
-                                subtitle: "Coming soon",
-                                colors: [Color.gray, Color.gray.opacity(0.6)],
-                                disabled: true
-                            ) {
-                                onReplicate()
                             }
                         }
                         .padding(.horizontal, 20)
@@ -197,7 +186,6 @@ struct CardOptionsView: View {
         card: card,
         onQuickSell: {},
         onListOnMarket: {},
-        onComparePrice: {},
-        onReplicate: {}
+        onComparePrice: {}
     )
 }
