@@ -424,6 +424,15 @@ struct CardComposerView: View {
                 case .success(let identification):
                     print("âœ… AI Success: \(identification.make) \(identification.model) \(identification.generation)")
                     
+                    // If AI returned Unknown, auto-run alternative identification
+                    if identification.make == "Unknown" || identification.model == "Unknown" {
+                        print("🔄 AI returned Unknown — auto-fetching alternatives...")
+                        Task {
+                            await fetchAlternativeVehicles()
+                        }
+                        return
+                    }
+                    
                     // Prepare card and data for preview
                     let finalCardImage = renderFinalCard()
                     print("ðŸ–¼ï¸ Card rendered: \(finalCardImage.size)")
