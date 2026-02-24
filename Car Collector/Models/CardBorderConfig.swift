@@ -128,6 +128,14 @@ extension CardBorderConfig {
     // Get config based on customFrame value, with optional rarity fallback
     // If customFrame is nil and rarity is provided, use the rarity border
     static func forFrame(_ frameName: String?, rarity: CardRarity? = nil) -> CardBorderConfig {
+        // If we have a rarity AND the frame is a default (or nil), prefer rarity border
+        if let rarity = rarity {
+            let isDefaultFrame = frameName == nil || frameName == "Border_Def_Wht" || frameName == "White" || frameName == "Border_Def_Blk" || frameName == "Black"
+            if isDefaultFrame {
+                return forRarity(rarity)
+            }
+        }
+        
         // Custom frame takes priority
         if let frameName = frameName {
             switch frameName {
@@ -148,12 +156,7 @@ extension CardBorderConfig {
             }
         }
         
-        // No custom frame — fall back to rarity border if available
-        if let rarity = rarity {
-            return forRarity(rarity)
-        }
-        
-        // Default fallback
+        // No custom frame, no rarity — default fallback
         return .defaultWhite
     }
 }

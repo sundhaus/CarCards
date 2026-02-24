@@ -126,7 +126,7 @@ final class CardRenderer {
             sourceImage.draw(in: imageRect)
             
             // Draw border overlay
-            let config = CardBorderConfig.forFrame(card.customFrame)
+            let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
             if let borderName = config.borderImageName, let borderImage = UIImage(named: borderName) {
                 borderImage.draw(in: rect)
             }

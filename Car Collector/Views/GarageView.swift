@@ -890,7 +890,7 @@ struct AnyCardDetailsFrontView: View {
                 .clipped()
                 
                 // Border overlay
-                if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity).borderImageName {
                     Image(borderImageName)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -900,7 +900,7 @@ struct AnyCardDetailsFrontView: View {
                 
                 // Title overlay
                 if case .driver(let driverCard) = card {
-                    let config = CardBorderConfig.forFrame(card.customFrame)
+                    let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(driverCard.firstName.uppercased())
                             .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
@@ -926,7 +926,7 @@ struct AnyCardDetailsFrontView: View {
                     VStack {
                         HStack {
                             HStack(spacing: 6) {
-                                let config = CardBorderConfig.forFrame(card.customFrame)
+                                let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
                                 Text(card.titleLine1.uppercased())
                                     .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
                                     .foregroundStyle(config.textColor)
@@ -1107,7 +1107,7 @@ struct UnifiedCardView: View {
             .clipped()
             
             // Border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity).borderImageName {
                 Image(borderImageName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -1117,7 +1117,7 @@ struct UnifiedCardView: View {
             
             // Title overlay
             if case .driver(let driverCard) = card {
-                let config = CardBorderConfig.forFrame(card.customFrame)
+                let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
                 let inset = cardHeight * 0.08
                 
                 VStack(alignment: .leading, spacing: 1) {
@@ -1142,7 +1142,7 @@ struct UnifiedCardView: View {
                 VStack {
                     HStack {
                         HStack(spacing: isLargeSize ? 6 : 3) {
-                            let config = CardBorderConfig.forFrame(card.customFrame)
+                            let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
                             Text(card.titleLine1.uppercased())
                                 .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
                                 .foregroundStyle(config.textColor)

@@ -657,7 +657,7 @@ struct CardDetailView: View {
             }
             
             // PNG border overlay based on customFrame (on top of image)
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.specs?.rarity).borderImageName {
                 Image(borderImageName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -792,7 +792,7 @@ struct CardDetailView: View {
             .frame(width: cardWidth, height: cardHeight)
             
             // PNG border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.specs?.rarity).borderImageName {
                 Image(borderImageName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)

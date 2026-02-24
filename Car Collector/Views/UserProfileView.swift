@@ -636,7 +636,7 @@ struct UserCardView: View {
             .clipped()
             
             // PNG border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+            if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity.flatMap { CardRarity(rawValue: $0) }).borderImageName {
                 Image(borderImageName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -647,7 +647,7 @@ struct UserCardView: View {
             // Car name overlay
             if card.cardType == "driver" {
                 // Driver: top-left in landscape, name stacked
-                let config = CardBorderConfig.forFrame(card.customFrame)
+                let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity.flatMap { CardRarity(rawValue: $0) })
                 VStack(alignment: .leading, spacing: 1) {
                     Text((card.firstName ?? card.make).uppercased())
                         .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
@@ -660,7 +660,7 @@ struct UserCardView: View {
                 .padding(.leading, cardHeight * 0.08)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else if card.cardType == "location" {
-                let config = CardBorderConfig.forFrame(card.customFrame)
+                let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity.flatMap { CardRarity(rawValue: $0) })
                 Text((card.locationName ?? card.make).uppercased())
                     .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
                     .foregroundStyle(config.textColor)
@@ -673,7 +673,7 @@ struct UserCardView: View {
                 VStack {
                     HStack {
                         HStack(spacing: isLargeSize ? 6 : 3) {
-                            let config = CardBorderConfig.forFrame(card.customFrame)
+                            let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity.flatMap { CardRarity(rawValue: $0) })
                             Text(card.make.uppercased())
                                 .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
                                 .foregroundStyle(config.textColor)

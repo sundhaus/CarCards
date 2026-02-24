@@ -969,7 +969,7 @@ struct CompactGarageCard: View {
                 }
                 
                 // Border overlay
-                if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.specs?.rarity).borderImageName {
                     Image(borderImageName)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -979,7 +979,7 @@ struct CompactGarageCard: View {
                 // Name overlay
                 VStack {
                     HStack {
-                        let config = CardBorderConfig.forFrame(card.customFrame)
+                        let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.specs?.rarity)
                         HStack(spacing: 3) {
                             Text(card.make.uppercased())
                                 .font(.custom("Futura-Light", fixedSize: 9))
