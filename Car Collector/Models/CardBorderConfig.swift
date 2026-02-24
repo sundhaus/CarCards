@@ -44,6 +44,16 @@ struct CardBorderConfig {
 
 extension CardBorderConfig {
     
+    // MARK: - Placeholder Border (shown while rarity loads)
+    
+    static let placeholderWhite = CardBorderConfig(
+        borderImageName: "Border_Def_Wht",
+        textPosition: .topLeft,
+        textColor: .white,
+        textShadow: Shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2),
+        heatPosition: .bottomRight
+    )
+    
     // MARK: - Rarity Borders
     
     static let rarityCommon = CardBorderConfig(
@@ -118,11 +128,11 @@ extension CardBorderConfig {
             case "Border_Legendary":
                 return .rarityLegendary
             default:
-                return .rarityCommon
+                return .placeholderWhite
             }
         }
         
-        // No frame, no rarity — default to common
-        return .rarityCommon
+        // No frame, no rarity — show placeholder until rarity loads
+        return .placeholderWhite
     }
 }
