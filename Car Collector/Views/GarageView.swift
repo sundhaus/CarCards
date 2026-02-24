@@ -21,6 +21,7 @@ struct GarageView: View {
     @State private var contextMenuCard: AnyCard?
     @State private var contextMenuCardFrame: CGRect = .zero
     @State private var cardFrames: [UUID: CGRect] = [:]
+    @State private var showClearLocalConfirm = false
     @ObservedObject private var navigationController = NavigationController.shared
     
     var body: some View {
@@ -43,6 +44,19 @@ struct GarageView: View {
                             Image(systemName: cardsPerRow == 1 ? "rectangle.grid.1x2" : "square.grid.2x2")
                                 .font(.pTitle3)
                                 .foregroundStyle(.blue)
+                        }
+                        
+                        // Clear orphaned local data (visible when cards exist locally but Firebase is empty)
+                        Menu {
+                            Button(role: .destructive, action: {
+                                showClearLocalConfirm = true
+                            }) {
+                                Label("Clear Local Cache", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.pTitle3)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .padding(.horizontal)
@@ -236,6 +250,15 @@ struct GarageView: View {
                         }
                     )
                 }
+            }
+            .alert("Clear Local Cache?", isPresented: $showClearLocalConfirm) {
+                Button("Cancel", role: .cancel) {}
+                Button("Clear", role: .destructive) {
+                    AdminService.nukeLocalStorage()
+                    allCards = []
+                }
+            } message: {
+                Text("This removes all locally cached card images and metadata. Cards saved in the cloud will re-sync on next launch.")
             }
             } // GeometryReader
         }

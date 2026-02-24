@@ -378,12 +378,19 @@ class AdminService: ObservableObject {
         }
     }
     
-    /// Clear all local device data — UserDefaults, file-based images, caches
+    /// Clear all local device data — UserDefaults, file-based images, metadata JSON, caches
     private func clearAllLocalData() {
+        AdminService.nukeLocalStorage()
+    }
+    
+    /// Public static method so other views (e.g. Garage) can offer a "clear local data" button
+    static func nukeLocalStorage() {
         // UserDefaults keys
         let keys = [
-            "savedCards", "currentXP", "totalXP", "userLevel", "userCoins",
+            "savedCards", "savedDriverCards", "savedLocationCards",
+            "currentXP", "totalXP", "userLevel", "userCoins",
             "hasCompletedFlattenMigration_v3", "hasCompletedImageSync_v1",
+            "hasCompletedFileMigration_v1",
             "lastViewedFollowersAt", "profileExists"
             // NOTE: keep "onboardingComplete" so user doesn't see onboarding again
         ]
@@ -391,20 +398,24 @@ class AdminService: ObservableObject {
             UserDefaults.standard.removeObject(forKey: key)
         }
         
-        // Clear file-based card images
         let fileManager = FileManager.default
         if let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let cardImagesDir = docs.appendingPathComponent("CardImages")
-            try? fileManager.removeItem(at: cardImagesDir)
+            // Delete file-based card images
+            try? fileManager.removeItem(at: docs.appendingPathComponent("CardImages"))
             
-            // Also remove CSV export
+            // Delete metadata JSON files (THIS was missing before)
+            try? fileManager.removeItem(at: docs.appendingPathComponent("vehicle_cards.json"))
+            try? fileManager.removeItem(at: docs.appendingPathComponent("driver_cards.json"))
+            try? fileManager.removeItem(at: docs.appendingPathComponent("location_cards.json"))
+            
+            // Delete CSV export
             try? fileManager.removeItem(at: docs.appendingPathComponent("my_car_collection.csv"))
         }
         
         // Clear in-memory caches
         CardImageStore.shared.clearCache()
         
-        print("   ✅ Local data cleared (UserDefaults + CardImages + caches)")
+        print("   ✅ Local data nuked (UserDefaults + JSON metadata + CardImages + caches)")
     }
     
     func searchUsers(query: String) async throws -> [(id: String, username: String, totalCards: Int)] {
