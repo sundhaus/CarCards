@@ -113,7 +113,8 @@ struct ContentView: View {
                                 }
                             }
                             
-                            levelSystem.addXP(10)
+                            levelSystem.addXP(RewardConfig.cardCaptureXP)
+                            levelSystem.addCoins(RewardConfig.cardCaptureCoins)
                         }
                     )
                     .padding(.top, 50)
@@ -223,7 +224,8 @@ struct ContentView: View {
                         }
                     }
                     
-                    levelSystem.addXP(10)
+                    levelSystem.addXP(RewardConfig.cardCaptureXP)
+                    levelSystem.addCoins(RewardConfig.cardCaptureCoins)
                     showCamera = false
                     OrientationManager.lockToPortrait()
                 }
@@ -404,8 +406,9 @@ struct GarageViewContent: View {
     // MARK: - Helper Methods
     
     private func quickSellCard(_ card: SavedCard) {
-        // Award 250 coins
-        UserService.shared.addCoins(250)
+        // Award coins and XP for quick sell
+        UserService.shared.addCoins(RewardConfig.quickSellCoins)
+        UserService.shared.addXP(RewardConfig.quickSellXP)
         
         // Remove card from collection
         if let index = savedCards.firstIndex(where: { $0.id == card.id }) {

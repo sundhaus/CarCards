@@ -50,7 +50,7 @@ struct UserProfile: Codable, Identifiable {
         self.level = 1
         self.currentXP = 0
         self.totalXP = 0
-        self.coins = 0
+        self.coins = RewardConfig.starterCoins
         self.totalCardsCollected = 0
         self.createdAt = Date()
         self.linkedAccount = false

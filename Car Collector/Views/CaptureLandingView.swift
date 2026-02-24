@@ -179,7 +179,8 @@ struct CaptureLandingView: View {
                                 var localCards = CardStorage.loadDriverCards()
                                 localCards.append(driverCard)
                                 CardStorage.saveDriverCards(localCards)
-                                levelSystem.addXP(10)
+                                levelSystem.addXP(RewardConfig.driverCaptureXP)
+                                levelSystem.addCoins(RewardConfig.driverCaptureCoins)
                                 print("✅ Driver card saved")
                                 await MainActor.run {
                                     driverFormImage = nil
@@ -240,7 +241,8 @@ struct CaptureLandingView: View {
                                         var localCards = CardStorage.loadLocationCards()
                                         localCards.append(locationCard)
                                         CardStorage.saveLocationCards(localCards)
-                                        levelSystem.addXP(10)
+                                        levelSystem.addXP(RewardConfig.locationCaptureXP)
+                                        levelSystem.addCoins(RewardConfig.locationCaptureCoins)
                                         print("✅ Location card saved")
                                         await MainActor.run {
                                             previewCardImage = cardImage

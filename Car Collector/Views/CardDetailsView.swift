@@ -594,7 +594,8 @@ struct CardDetailsView: View {
     }
     
     private func quickSell() {
-        userService.addCoins(250)
+        userService.addCoins(RewardConfig.quickSellCoins)
+        userService.addXP(RewardConfig.quickSellXP)
         onDismiss()
     }
 }

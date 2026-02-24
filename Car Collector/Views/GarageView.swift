@@ -296,8 +296,9 @@ struct GarageView: View {
     }
     
     private func quickSellCard(_ card: AnyCard) {
-        // Award 250 coins
-        UserService.shared.addCoins(250)
+        // Award coins and XP for quick sell
+        UserService.shared.addCoins(RewardConfig.quickSellCoins)
+        UserService.shared.addXP(RewardConfig.quickSellXP)
         
         // Remove card from storage based on type
         switch card {

@@ -183,6 +183,11 @@ class MarketplaceService: ObservableObject {
         
         print("✅ Created listing: \(card.make) \(card.model)")
         
+        // Award XP for listing a card
+        await MainActor.run {
+            UserService.shared.addXP(RewardConfig.listCardXP)
+        }
+        
         // Return the listing
         let doc = try await listingsCollection.document(listingId).getDocument()
         guard let listing = CloudListing(document: doc) else {
@@ -261,6 +266,11 @@ class MarketplaceService: ObservableObject {
         }
         
         print("✅ Placed bid of \(Int(amount)) on \(listingId)")
+        
+        // Award XP for placing a bid
+        await MainActor.run {
+            UserService.shared.addXP(RewardConfig.placeBidXP)
+        }
     }
     
     // MARK: - Buy Now
@@ -348,6 +358,11 @@ class MarketplaceService: ObservableObject {
         }
         
         print("✅ Buy now completed for listing \(listingId)")
+        
+        // Award XP to buyer for completing a purchase
+        await MainActor.run {
+            UserService.shared.addXP(RewardConfig.purchaseCardXP)
+        }
     }
     
     // MARK: - Cancel Listing

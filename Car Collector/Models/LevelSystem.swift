@@ -123,8 +123,14 @@ class LevelSystem: ObservableObject {
         level += 1
         xpForNextLevel = LevelSystem.calculateXPForLevel(level + 1)
         
+        // Award coins for leveling up
+        let bonus = RewardConfig.levelUpCoins(for: level)
+        coins += bonus
+        
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
+        
+        print("🎉 Level up! Now level \(level) — awarded \(bonus) coins")
     }
     
     var progress: Double {
