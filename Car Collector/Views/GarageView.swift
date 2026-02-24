@@ -301,47 +301,64 @@ struct GarageView: View {
     // MARK: - Portrait Paged View
     
     private var portraitPagedView: some View {
-        GeometryReader { geometry in
-            let cardsPerPage = cardsPerRow == 1 ? 5 : 10
-            let totalPages = Int(ceil(Double(allCards.count) / Double(cardsPerPage)))
-            
-            ZStack(alignment: .bottom) {
-                TabView(selection: $currentPage) {
-                    ForEach(0..<max(1, totalPages), id: \.self) { pageIndex in
-                        let startIndex = pageIndex * cardsPerPage
-                        let endIndex = min(startIndex + cardsPerPage, allCards.count)
-                        let pageCards = Array(allCards[startIndex..<endIndex])
+        Group {
+            if cardsPerRow == 1 {
+                // Single column: scrollable list
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.flexible())], spacing: 12) {
+                        ForEach(allCards) { card in
+                            garageCardCell(card: card)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
+                }
+            } else {
+                // Grid: paged swipe
+                GeometryReader { geometry in
+                    let cardsPerPage = 10
+                    let totalPages = Int(ceil(Double(allCards.count) / Double(cardsPerPage)))
+                    
+                    ZStack(alignment: .bottom) {
+                        TabView(selection: $currentPage) {
+                            ForEach(0..<max(1, totalPages), id: \.self) { pageIndex in
+                                let startIndex = pageIndex * cardsPerPage
+                                let endIndex = min(startIndex + cardsPerPage, allCards.count)
+                                let pageCards = Array(allCards[startIndex..<endIndex])
+                                
+                                VStack {
+                                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 12) {
+                                        ForEach(pageCards) { card in
+                                            garageCardCell(card: card)
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.top, 20)
+                                    
+                                    Spacer()
+                                }
+                                .padding(.bottom, 40)
+                                .tag(pageIndex)
+                            }
+                        }
+                        .tabViewStyle(.page(indexDisplayMode: .never))
                         
-                        VStack {
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: cardsPerRow), spacing: 12) {
-                                ForEach(pageCards) { card in
-                                    garageCardCell(card: card)
+                        // Liquid Glass page indicator overlaid at bottom
+                        if totalPages > 1 {
+                            HStack(spacing: 8) {
+                                ForEach(0..<totalPages, id: \.self) { index in
+                                    Circle()
+                                        .fill(currentPage == index ? Color.primary : Color.primary.opacity(0.3))
+                                        .frame(width: 8, height: 8)
                                 }
                             }
-                            .padding(.horizontal)
-                            .padding(.top, 20)
-                            
-                            Spacer()
-                        }
-                        .padding(.bottom, 40)
-                        .tag(pageIndex)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                
-                // Liquid Glass page indicator overlaid at bottom
-                if totalPages > 1 {
-                    HStack(spacing: 8) {
-                        ForEach(0..<totalPages, id: \.self) { index in
-                            Circle()
-                                .fill(currentPage == index ? Color.primary : Color.primary.opacity(0.3))
-                                .frame(width: 8, height: 8)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 6)
+                            .glassEffect(.regular, in: .capsule)
+                            .padding(.bottom, 12)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
-                    .glassEffect(.regular, in: .capsule)
-                    .padding(.bottom, 12)
                 }
             }
         }
