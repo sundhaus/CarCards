@@ -654,6 +654,9 @@ struct ChallengeView: View {
     @State private var errorMessage: String?
     @State private var cooldownMessage: String?
     @State private var matchResult: MatchResult?
+    @State private var inviteListener: ListenerRegistration?
+    @State private var teammateAccepted = false
+    @State private var acceptedInvite: DuoInvite?
     
     enum ChallengeMode {
         case solo, duo
@@ -1149,30 +1152,69 @@ struct ChallengeView: View {
                     .font(.caption)
                     .foregroundStyle(.orange)
                 
-            case .waitingForTeammate(_):
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 50))
-                    .foregroundStyle(.blue)
-                
-                Text("INVITE SENT")
-                    .font(.title.bold())
-                    .foregroundStyle(.white)
-                
-                if let teammate = selectedTeammate {
-                    Text("Waiting for \(teammate.username) to pick a card...")
+            case .waitingForTeammate(let inviteId):
+                if teammateAccepted, let accepted = acceptedInvite {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundStyle(.green)
+                    
+                    Text("TEAM READY!")
+                        .font(.title.bold())
+                        .foregroundStyle(.white)
+                    
+                    Text("\(accepted.teammateUsername) joined with their card")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                    
+                    // Show teammate's card
+                    if !accepted.teammateCardImageURL.isEmpty {
+                        AsyncImage(url: URL(string: accepted.teammateCardImageURL)) { image in
+                            image.resizable().aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Rectangle().fill(Color.gray.opacity(0.3))
+                        }
+                        .frame(width: 140, height: 90)
+                        .cornerRadius(10)
+                    }
+                    
+                    Text("Your duo is entering matchmaking...")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                } else {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 50))
+                        .foregroundStyle(.blue)
+                    
+                    Text("INVITE SENT")
+                        .font(.title.bold())
+                        .foregroundStyle(.white)
+                    
+                    if let teammate = selectedTeammate {
+                        Text("Waiting for \(teammate.username) to pick a card...")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    
+                    ProgressView()
+                        .tint(.blue)
+                        .scaleEffect(1.2)
+                    
+                    Text("They have 5 minutes to accept")
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                    
+                    // Start listening for acceptance
+                    Color.clear.frame(height: 0)
+                        .onAppear {
+                            listenForInviteAcceptance(inviteId: inviteId)
+                        }
+                        .onDisappear {
+                            inviteListener?.remove()
+                            inviteListener = nil
+                        }
                 }
-                
-                ProgressView()
-                    .tint(.blue)
-                    .scaleEffect(1.2)
-                
-                Text("They have 5 minutes to accept")
-                    .font(.caption)
-                    .foregroundStyle(.blue)
                 
             case .none:
                 EmptyView()
@@ -1253,6 +1295,41 @@ struct ChallengeView: View {
                 isLoading = false
             }
         }
+    }
+    
+    private func listenForInviteAcceptance(inviteId: String) {
+        inviteListener?.remove()
+        
+        inviteListener = FirebaseManager.shared.db.collection("duoInvites")
+            .document(inviteId)
+            .addSnapshotListener { snapshot, error in
+                guard let data = snapshot?.data(),
+                      let status = data["status"] as? String else { return }
+                
+                if status == "accepted" {
+                    let invite = DuoInvite(document: snapshot!)
+                    withAnimation {
+                        acceptedInvite = invite
+                        teammateAccepted = true
+                    }
+                    
+                    // Auto-proceed to matchmaking after a brief delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                        guard let card = selectedCard else { return }
+                        inviteListener?.remove()
+                        inviteListener = nil
+                        // TODO: Duo matchmaking - for now fall through to solo
+                        startMatchmaking(card: card)
+                    }
+                } else if status == "declined" || status == "expired" {
+                    inviteListener?.remove()
+                    inviteListener = nil
+                    errorMessage = "Your teammate \(status) the invite"
+                    // Go back to mode selection
+                    step = .pickMode
+                    matchResult = nil
+                }
+            }
     }
     
     // MARK: - Helpers
