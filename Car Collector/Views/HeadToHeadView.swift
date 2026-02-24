@@ -881,19 +881,13 @@ struct ChallengeView: View {
         VStack(spacing: 20) {
             // Selected card preview
             if let card = selectedCard {
-                VStack(spacing: 6) {
-                    AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { image in
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Rectangle().fill(Color.gray.opacity(0.3))
-                    }
-                    .frame(width: 140, height: 90)
-                    .cornerRadius(10)
-                    
-                    Text("\(card.make) \(card.model)")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.white)
+                AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { image in
+                    image.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Rectangle().fill(Color.gray.opacity(0.3))
                 }
+                .frame(width: 140, height: 90)
+                .cornerRadius(10)
                 .padding(.top, 20)
             }
             
@@ -1361,27 +1355,17 @@ struct ChallengeView: View {
     }
     
     private func cardCell(card: CloudCard) -> some View {
-        VStack(spacing: 0) {
-            AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().aspectRatio(contentMode: .fill)
-                default:
-                    Rectangle().fill(Color.gray.opacity(0.3))
-                        .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.3)))
-                }
+        AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { phase in
+            switch phase {
+            case .success(let image):
+                image.resizable().aspectRatio(contentMode: .fill)
+            default:
+                Rectangle().fill(Color.gray.opacity(0.3))
+                    .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.3)))
             }
-            .frame(height: 100)
-            .clipped()
-            
-            Text("\(card.make) \(card.model)")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .padding(6)
-                .frame(maxWidth: .infinity)
-                .background(Color.black.opacity(0.7))
         }
+        .frame(height: 100)
+        .clipped()
         .cornerRadius(10)
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
     }
@@ -1947,11 +1931,6 @@ struct DuoInvitePopupView: View {
                                         RoundedRectangle(cornerRadius: 8)
                                             .stroke(selectedCard?.id == card.id ? Color.blue : Color.white.opacity(0.1), lineWidth: selectedCard?.id == card.id ? 2 : 1)
                                     )
-                                    
-                                    Text("\(card.make) \(card.model)")
-                                        .font(.system(size: 10, weight: .medium))
-                                        .foregroundStyle(.white.opacity(0.7))
-                                        .lineLimit(1)
                                 }
                             }
                             .buttonStyle(.plain)
