@@ -597,6 +597,7 @@ struct ChallengeView: View {
     @State private var errorMessage: String?
     @State private var cooldownMessage: String?
     @State private var matchResult: MatchResult?
+    @State private var unavailableCardIds: Set<String> = []
     
     enum ChallengeStep {
         case pickCard
@@ -650,7 +651,7 @@ struct ChallengeView: View {
                 .foregroundStyle(.white)
                 .padding(.top)
             
-            if cardService.myCards.filter({ $0.cardType == "vehicle" }).isEmpty {
+            if availableCards.isEmpty {
                 Spacer()
                 Text("No vehicle cards available")
                     .foregroundStyle(.white.opacity(0.5))
@@ -658,7 +659,7 @@ struct ChallengeView: View {
             } else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach(cardService.myCards.filter { $0.cardType == "vehicle" }) { card in
+                        ForEach(availableCards) { card in
                             Button(action: {
                                 Task {
                                     cooldownMessage = nil
@@ -693,6 +694,55 @@ struct ChallengeView: View {
                     .padding(.bottom, 8)
             }
         }
+        .task {
+            await loadUnavailableCards()
+        }
+    }
+    
+    private var availableCards: [CloudCard] {
+        cardService.myCards.filter { card in
+            card.cardType == "vehicle" && !unavailableCardIds.contains(card.id)
+        }
+    }
+    
+    private func loadUnavailableCards() async {
+        guard let uid = FirebaseManager.shared.currentUserId else { return }
+        var blocked = Set<String>()
+        
+        // Cards in active or open races
+        let db = FirebaseManager.shared.db
+        do {
+            let activeSnap = try await db.collection("races")
+                .whereField("status", isEqualTo: "active")
+                .getDocuments()
+            let openSnap = try await db.collection("races")
+                .whereField("status", isEqualTo: "open")
+                .getDocuments()
+            
+            for doc in activeSnap.documents + openSnap.documents {
+                let data = doc.data()
+                if let cId = data["challengerId"] as? String, cId == uid,
+                   let cardId = data["challengerCardId"] as? String {
+                    blocked.insert(cardId)
+                }
+                if let dId = data["defenderId"] as? String, dId == uid,
+                   let cardId = data["defenderCardId"] as? String {
+                    blocked.insert(cardId)
+                }
+            }
+        } catch {
+            print("⚠️ Error fetching active races for card filter: \(error)")
+        }
+        
+        // Cards on cooldown
+        for card in cardService.myCards where card.cardType == "vehicle" {
+            if let ok = try? await HeadToHeadService.shared.checkCardCooldown(cardId: card.id), !ok {
+                blocked.insert(card.id)
+            }
+        }
+        
+        unavailableCardIds = blocked
+        print("🃏 Blocked \(blocked.count) cards from challenge picker")
     }
     
     // MARK: Step 2 - Pick Vote Limit + Challenge
