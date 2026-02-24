@@ -101,24 +101,21 @@ class CardFlattener {
     // MARK: - Migration
     
     func migrateExistingCards(vehicles: [SavedCard], drivers: [DriverCard], locations: [LocationCard]) async {
-        let db = FirebaseManager.shared.db
-        print("🔄 Starting flatten migration...")
+        print("🔄 Starting flatten migration (v4 - rarity borders)...")
         var count = 0
         
         for card in vehicles {
             guard let fid = card.firebaseId else { continue }
-            if let doc = try? await db.collection("cards").document(fid).getDocument(),
-               doc.data()?["flatImageURL"] != nil { continue }
             do {
                 _ = try await flattenAndUpload(AnyCard.vehicle(card))
+                // Also update activity feed
+                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: fid, flatImageURL: "")
                 count += 1
             } catch { print("⚠️ Flatten vehicle failed: \(error)") }
         }
         
         for card in drivers {
             guard let fid = card.firebaseId else { continue }
-            if let doc = try? await db.collection("cards").document(fid).getDocument(),
-               doc.data()?["flatImageURL"] != nil { continue }
             do {
                 _ = try await flattenAndUpload(AnyCard.driver(card))
                 count += 1
@@ -127,8 +124,6 @@ class CardFlattener {
         
         for card in locations {
             guard let fid = card.firebaseId else { continue }
-            if let doc = try? await db.collection("cards").document(fid).getDocument(),
-               doc.data()?["flatImageURL"] != nil { continue }
             do {
                 _ = try await flattenAndUpload(AnyCard.location(card))
                 count += 1

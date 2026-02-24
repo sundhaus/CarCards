@@ -208,8 +208,8 @@ struct ContentView: View {
                     }
                 }
                 
-                // One-time flatten migration for existing cards
-                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v3") {
+                // One-time flatten migration for existing cards (v4: re-flatten with rarity borders)
+                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v4") {
                     let vehicles = savedCards
                     let drivers = driverCards
                     let locations = locationCards
@@ -219,7 +219,7 @@ struct ContentView: View {
                             drivers: drivers,
                             locations: locations
                         )
-                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v3")
+                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v4")
                     }
                 }
             }
@@ -313,6 +313,22 @@ struct ContentView: View {
                         CardStorage.saveCards(savedCards)
                         CardRenderer.shared.clearCache(for: card.id)
                         print("✅ Pre-fetched specs for \(card.make) \(card.model) — rarity: \(specs.rarity?.rawValue ?? "none")")
+                        
+                        // Re-flatten with rarity border and upload to Firebase
+                        let updatedCard = savedCards[index]
+                        Task {
+                            do {
+                                let flatURL = try await CardFlattener.shared.reflatten(updatedCard.asAnyCard)
+                                if let firebaseId = updatedCard.firebaseId {
+                                    try? await FriendsService.shared.updateActivityFlatImageURL(cardId: firebaseId, flatImageURL: flatURL)
+                                    // Update customFrame in Firebase too
+                                    try? await CardService.shared.updateCustomFrame(cardId: firebaseId, customFrame: specs.rarity?.borderAssetName ?? "Border_Common")
+                                }
+                                print("✅ Re-flattened with rarity border: \(flatURL.prefix(60))...")
+                            } catch {
+                                print("⚠️ Re-flatten failed: \(error)")
+                            }
+                        }
                     }
                 }
             } catch {
