@@ -22,6 +22,8 @@ struct AdminPanelView: View {
     @State private var showSystemResetConfirm1 = false
     @State private var showSystemResetConfirm2 = false
     @State private var isResetting = false
+    @State private var showH2HResetConfirm = false
+    @State private var isResettingH2H = false
     
     var body: some View {
         NavigationStack {
@@ -99,6 +101,47 @@ struct AdminPanelView: View {
                             
                             Divider().background(.white.opacity(0.2)).padding(.horizontal)
                             
+                            // H2H Reset Button
+                            VStack(spacing: 12) {
+                                if isResettingH2H {
+                                    HStack(spacing: 12) {
+                                        ProgressView().tint(.orange)
+                                        Text("Clearing H2H data...")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.orange)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                } else {
+                                    Button(action: {
+                                        showH2HResetConfirm = true
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "flag.checkered")
+                                                .foregroundStyle(.orange)
+                                            Text("Reset All Head-to-Head")
+                                                .font(.subheadline.bold())
+                                                .foregroundStyle(.orange)
+                                            Spacer()
+                                            Text("Races · Cooldowns · Votes")
+                                                .font(.caption2)
+                                                .foregroundStyle(.gray)
+                                        }
+                                        .padding()
+                                        .background(.orange.opacity(0.08))
+                                        .cornerRadius(12)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(.orange.opacity(0.2), lineWidth: 1)
+                                        )
+                                    }
+                                    .padding(.horizontal)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                            
+                            Divider().background(.white.opacity(0.2)).padding(.horizontal)
+
                             if let user = selectedUser {
                                 // User card list
                                 userCardSection(userId: user.id, username: user.username)
@@ -149,6 +192,15 @@ struct AdminPanelView: View {
                 }
             } message: {
                 Text("Last chance. Every card, every listing, every race, every follow — gone. All progress reset to zero. Are you absolutely sure?")
+            }
+            // H2H reset confirmation
+            .alert("Reset All Head-to-Head?", isPresented: $showH2HResetConfirm) {
+                Button("Cancel", role: .cancel) {}
+                Button("Reset H2H", role: .destructive) {
+                    performH2HReset()
+                }
+            } message: {
+                Text("This will delete all races, cooldowns, votes, duo invites, and vote streaks. All cards (including A-Z sim cards) will be freed to race again.")
             }
         }
     }
@@ -372,6 +424,36 @@ struct AdminPanelView: View {
                     isResetting = false
                     withAnimation {
                         statusMessage = "❌ Reset failed: \(error.localizedDescription)"
+                    }
+                }
+            }
+        }
+    }
+    
+    private func performH2HReset() {
+        isResettingH2H = true
+        statusMessage = "🔄 Resetting Head-to-Head..."
+        
+        Task {
+            do {
+                try await adminService.resetAllHeadToHead()
+                
+                await MainActor.run {
+                    isResettingH2H = false
+                    withAnimation {
+                        statusMessage = "✅ H2H Reset — all cards freed"
+                    }
+                }
+                
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                await MainActor.run {
+                    withAnimation { statusMessage = nil }
+                }
+            } catch {
+                await MainActor.run {
+                    isResettingH2H = false
+                    withAnimation {
+                        statusMessage = "❌ H2H reset failed: \(error.localizedDescription)"
                     }
                 }
             }
