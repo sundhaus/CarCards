@@ -311,6 +311,7 @@ struct ContentView: View {
                             firebaseId: existing.firebaseId
                         )
                         CardStorage.saveCards(savedCards)
+                        CardRenderer.shared.clearCache(for: card.id)
                         print("✅ Pre-fetched specs for \(card.make) \(card.model) — rarity: \(specs.rarity?.rawValue ?? "none")")
                     }
                 }

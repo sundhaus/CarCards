@@ -844,20 +844,17 @@ struct UnifiedCardDetailView: View {
 struct AnyCardDetailsFrontView: View {
     let card: AnyCard
     
-    private var cardTypeIcon: String {
-        switch card {
-        case .vehicle: return "car.fill"
-        case .driver: return "person.fill"
-        case .location: return "mappin.circle.fill"
-        }
-    }
-    
     var body: some View {
         GeometryReader { geometry in
             let cardHeight = geometry.size.width / (16/9)
             
-            ZStack {
-                // Card background with gradient
+            if let flatImage = CardRenderer.shared.landscapeCard(for: card, height: cardHeight * 2) {
+                Image(uiImage: flatImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: geometry.size.width, height: cardHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
+            } else {
                 RoundedRectangle(cornerRadius: cardHeight * 0.09)
                     .fill(
                         LinearGradient(
@@ -869,85 +866,11 @@ struct AnyCardDetailsFrontView: View {
                             endPoint: .bottom
                         )
                     )
-                
-                // Card image - full bleed (use thumbnail for grid)
-                Group {
-                    if let image = card.thumbnail ?? card.image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.3))
-                            .overlay(
-                                Image(systemName: cardTypeIcon)
-                                    .font(.system(size: cardHeight * 0.3))
-                                    .foregroundStyle(.gray.opacity(0.4))
-                            )
-                    }
-                }
-                .frame(width: geometry.size.width, height: cardHeight)
-                .clipped()
-                
-                // Border overlay
-                if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity).borderImageName {
-                    Image(borderImageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: geometry.size.width, height: cardHeight)
-                        .allowsHitTesting(false)
-                }
-                
-                // Title overlay
-                if case .driver(let driverCard) = card {
-                    let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(driverCard.firstName.uppercased())
-                            .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
-                        
-                        HStack(spacing: 4) {
-                            if !driverCard.nickname.isEmpty {
-                                Text("\"\(driverCard.nickname.uppercased())\"")
-                                    .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                            }
-                            
-                            Text(driverCard.lastName.uppercased())
-                                .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                        }
-                    }
-                    .foregroundStyle(config.textColor)
-                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                    .rotationEffect(.degrees(-90), anchor: .bottomLeading)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                    .padding(.bottom, cardHeight * 0.12)
-                    .padding(.leading, cardHeight * 0.30)
-                } else {
-                    // Vehicle / Location: existing horizontal layout
-                    VStack {
-                        HStack {
-                            HStack(spacing: 6) {
-                                let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
-                                Text(card.titleLine1.uppercased())
-                                    .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
-                                    .foregroundStyle(config.textColor)
-                                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                
-                                if !card.titleLine2.isEmpty {
-                                    Text(card.titleLine2.uppercased())
-                                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                                        .foregroundStyle(config.textColor)
-                                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                        .lineLimit(1)
-                                }
-                            }
-                            .padding(.top, cardHeight * 0.08)
-                            .padding(.leading, cardHeight * 0.08)
-                            Spacer()
-                        }
-                        Spacer()
-                    }
-                }
+                    .frame(width: geometry.size.width, height: cardHeight)
             }
+        }
+    }
+}
             .frame(width: geometry.size.width, height: cardHeight)
             .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
             .shadow(radius: 10)
@@ -1073,105 +996,29 @@ struct UnifiedCardView: View {
     private var cardWidth: CGFloat { cardHeight * (16/9) }
     
     var body: some View {
-        ZStack {
-            // Card background with gradient
-            RoundedRectangle(cornerRadius: cardHeight * 0.09)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.85, green: 0.85, blue: 0.88),
-                            Color(red: 0.75, green: 0.75, blue: 0.78)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            
-            // Card image - full bleed (use thumbnail for grid)
-            Group {
-                if let image = card.thumbnail ?? card.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.3))
-                        .overlay(
-                            Image(systemName: cardTypeIcon)
-                                .font(.system(size: isLargeSize ? 30 : 20))
-                                .foregroundStyle(.gray.opacity(0.4))
-                        )
-                }
-            }
-            .frame(width: cardWidth, height: cardHeight)
-            .clipped()
-            
-            // Border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity).borderImageName {
-                Image(borderImageName)
+        Group {
+            if let flatImage = CardRenderer.shared.landscapeCard(for: card, height: cardHeight * 2) {
+                Image(uiImage: flatImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: cardWidth, height: cardHeight)
-                    .allowsHitTesting(false)
-            }
-            
-            // Title overlay
-            if case .driver(let driverCard) = card {
-                let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
-                let inset = cardHeight * 0.08
-                
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(driverCard.firstName.uppercased())
-                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.09))
-                    
-                    if !driverCard.nickname.isEmpty {
-                        Text("\"\(driverCard.nickname.uppercased())\"")
-                            .font(.custom("Futura-Light", fixedSize: cardHeight * 0.06))
-                    }
-                    
-                    Text(driverCard.lastName.uppercased())
-                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.09))
-                }
-                .foregroundStyle(config.textColor)
-                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                .padding(.top, inset)
-                .padding(.leading, inset)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
-                // Vehicle / Location: existing top-left layout
-                VStack {
-                    HStack {
-                        HStack(spacing: isLargeSize ? 6 : 3) {
-                            let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
-                            Text(card.titleLine1.uppercased())
-                                .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(
-                                    color: config.textShadow.color,
-                                    radius: config.textShadow.radius,
-                                    x: config.textShadow.x,
-                                    y: config.textShadow.y
-                                )
-                            
-                            if !card.titleLine2.isEmpty {
-                                Text(card.titleLine2.uppercased())
-                                    .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                                    .foregroundStyle(config.textColor)
-                                    .shadow(
-                                        color: config.textShadow.color,
-                                        radius: config.textShadow.radius,
-                                        x: config.textShadow.x,
-                                        y: config.textShadow.y
-                                    )
-                                    .lineLimit(1)
-                            }
-                        }
-                        .padding(.top, cardHeight * 0.08)
-                        .padding(.leading, cardHeight * 0.08)
-                        Spacer()
-                    }
-                    Spacer()
-                }
+                // Fallback: placeholder while image loads
+                RoundedRectangle(cornerRadius: cardHeight * 0.09)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.85, green: 0.85, blue: 0.88),
+                                Color(red: 0.75, green: 0.75, blue: 0.78)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay(
+                        Image(systemName: cardTypeIcon)
+                            .font(.system(size: isLargeSize ? 30 : 20))
+                            .foregroundStyle(.gray.opacity(0.4))
+                    )
             }
         }
         .frame(width: cardWidth, height: cardHeight)

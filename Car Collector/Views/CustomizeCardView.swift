@@ -618,6 +618,7 @@ struct CustomizeCardView: View {
                     if !backgroundRemoved { savedCards[index].originalImageData = nil }
                 }
                 CardStorage.saveCards(savedCards)
+                CardRenderer.shared.clearCache(for: vehicleCard.id)
                 print("💾 Saved frame: \(customFrameValue) for vehicle: \(vehicleCard.make) \(vehicleCard.model)")
             }
             
