@@ -665,9 +665,8 @@ struct CardDetailView: View {
     
     // Front view of the card
     private func cardFrontView(cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
-        let displayCard = (updatedCard ?? card).asAnyCard
         ZStack {
-            if let flatImage = CardRenderer.shared.landscapeCard(for: displayCard, height: cardHeight * 2) {
+            if let flatImage = CardRenderer.shared.landscapeCard(for: (updatedCard ?? card).asAnyCard, height: cardHeight * 2) {
                 Image(uiImage: flatImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
