@@ -102,11 +102,13 @@ struct CardComposerView: View {
                                 }
                         )
                     
-                    // 16:9 horizontal frame border to show crop area
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.white, lineWidth: 2)
+                    // White border overlay to show border thickness during composition
+                    Image("Border_Def_Wht")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
                         .frame(width: 360, height: 202.5)
                         .allowsHitTesting(false)
+                        .opacity(0.85)
                     
                     // Processing overlay
                     if isProcessing {
