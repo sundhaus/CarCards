@@ -324,7 +324,8 @@ struct GarageView: View {
         // Reload cards
         loadAllCards()
         
-        print("💰 Sold card for 250 coins")
+        let coinAmount = card.rarity.map { RewardConfig.quickSellCoins(for: $0) } ?? RewardConfig.quickSellCoinsBase
+        print("💰 Quick sold card for \(coinAmount) coins (rarity: \(card.rarity?.rawValue ?? "base"))")
     }
     
     // MARK: - Portrait Paged View

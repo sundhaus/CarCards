@@ -19,6 +19,7 @@ class LevelSystem: ObservableObject {
     
     private let baseXP = 100
     private var cancellables = Set<AnyCancellable>()
+    private var isSyncing = false  // Guard against sync loops
     
     init() {
         // Load from UserDefaults as local cache
@@ -49,7 +50,10 @@ class LevelSystem: ObservableObject {
     }
     
     private func syncFromProfile(_ profile: UserProfile) {
-        // Only update if cloud values are different (avoid loops)
+        // Skip if we're currently pushing to cloud (prevents ping-pong loop)
+        guard !isSyncing else { return }
+        
+        // Only update if cloud values are different
         var changed = false
         var needsLevelCheck = false
         
@@ -76,18 +80,20 @@ class LevelSystem: ObservableObject {
             changed = true
         }
         
-        if changed {
-            save() // Update local cache
-            print("✅ Synced from cloud: Level \(level), XP \(currentXP)/\(xpForNextLevel), Total XP \(totalXP), Coins \(coins)")
-        }
+        guard changed else { return }
+        
+        save() // Update local cache
+        print("✅ Synced from cloud: Level \(level), XP \(currentXP)/\(xpForNextLevel), Total XP \(totalXP), Coins \(coins)")
         
         // Check for level-ups after sync (manual XP changes in Firestore)
         if needsLevelCheck {
+            let previousLevel = level
             while currentXP >= xpForNextLevel && xpForNextLevel > 0 {
                 levelUp()
             }
-            if needsLevelCheck && changed {
-                syncToCloud() // Sync back the level-up
+            // Only sync back if a level-up actually occurred
+            if level > previousLevel {
+                syncToCloud()
             }
         }
     }
@@ -161,8 +167,12 @@ class LevelSystem: ObservableObject {
     
     // Sync current progress to Firestore
     private func syncToCloud() {
+        isSyncing = true
         Task {
-            guard let uid = FirebaseManager.shared.currentUserId else { return }
+            guard let uid = FirebaseManager.shared.currentUserId else {
+                isSyncing = false
+                return
+            }
             
             do {
                 try await UserService.shared.syncProgress(
@@ -175,6 +185,12 @@ class LevelSystem: ObservableObject {
             } catch {
                 print("⚠️ Cloud sync failed (will retry): \(error)")
             }
+            
+            // Brief delay before re-enabling cloud listener acceptance
+            // This allows Firestore's listener to deliver our own write-back
+            // before we start processing incoming changes again
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+            isSyncing = false
         }
     }
     
