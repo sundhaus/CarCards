@@ -871,12 +871,6 @@ struct AnyCardDetailsFrontView: View {
         }
     }
 }
-            .frame(width: geometry.size.width, height: cardHeight)
-            .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-            .shadow(radius: 10)
-        }
-    }
-}
 
 // Card back view with specs
 struct CardBackView: View {
