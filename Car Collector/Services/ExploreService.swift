@@ -180,6 +180,7 @@ class ExploreService: ObservableObject {
                             cardModel: data["cardModel"] as? String ?? "",
                             cardYear: data["cardYear"] as? String ?? "",
                             imageURL: data["imageURL"] as? String ?? "",
+                            flatImageURL: data["flatImageURL"] as? String,
                             heatCount: data["heatCount"] as? Int ?? 0,
                             heatedBy: data["heatedBy"] as? [String] ?? [],
                             customFrame: data["customFrame"] as? String,

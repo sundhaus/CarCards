@@ -14,6 +14,7 @@ struct FIFACardView: View {
     
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
+    @State private var usedFlatImage = false  // Track if we loaded the flat (baked) image
     @State private var showHeartAnimation = false
     @State private var hasLiked = false
     
@@ -23,9 +24,14 @@ struct FIFACardView: View {
         FirebaseManager.shared.currentUserId
     }
     
+    /// Preferred display URL: flat image first (border+text baked in), raw image as fallback
+    private var preferredImageURL: String {
+        card.flatImageURL ?? card.imageURL
+    }
+    
     var body: some View {
         ZStack {
-            // Card background with gradient
+            // Card background gradient (visible while loading / as fallback)
             RoundedRectangle(cornerRadius: height * 0.09)
                 .fill(
                     LinearGradient(
@@ -38,81 +44,27 @@ struct FIFACardView: View {
                     )
                 )
             
-            // Car image - full bleed
+            // Card image
             cardImageView
                 .frame(width: cardWidth, height: height)
                 .clipped()
             
-            // Border PNG overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: cardWidth, height: height)
-                    .allowsHitTesting(false)
+            // Only show overlays if we're using the raw image (no flat image available)
+            if !usedFlatImage {
+                // Border PNG overlay based on customFrame
+                if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
+                    Image(borderImageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: cardWidth, height: height)
+                        .allowsHitTesting(false)
+                }
+                
+                // Card name overlay — adapts to card type
+                cardNameOverlay
             }
             
-            // Card name overlay — adapts to card type
-            let config = CardBorderConfig.forFrame(card.customFrame)
-            if card.cardType == "driver" {
-                // Driver: stacked first/last name
-                let inset = height * 0.08
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(card.cardMake.uppercased())
-                        .font(.custom("Futura-Bold", fixedSize: height * 0.09))
-                    
-                    if !card.cardYear.isEmpty {
-                        Text("\"\(card.cardYear.uppercased())\"")
-                            .font(.custom("Futura-Light", fixedSize: height * 0.06))
-                    }
-                    
-                    Text(card.cardModel.uppercased())
-                        .font(.custom("Futura-Bold", fixedSize: height * 0.09))
-                }
-                .foregroundStyle(config.textColor)
-                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                .padding(.top, inset)
-                .padding(.leading, inset)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else if card.cardType == "location" {
-                // Location: location name (bold)
-                VStack {
-                    HStack {
-                        Text(card.cardMake.uppercased())
-                            .font(.custom("Futura-Bold", fixedSize: height * 0.08))
-                            .foregroundStyle(config.textColor)
-                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            .padding(.top, height * 0.08)
-                            .padding(.leading, height * 0.08)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            } else {
-                // Vehicle: make (light) + model (bold) horizontal
-                VStack {
-                    HStack {
-                        HStack(spacing: 6) {
-                            Text(card.cardMake.uppercased())
-                                .font(.custom("Futura-Light", fixedSize: height * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            
-                            Text(card.cardModel.uppercased())
-                                .font(.custom("Futura-Bold", fixedSize: height * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                .lineLimit(1)
-                        }
-                        .padding(.top, height * 0.08)
-                        .padding(.leading, height * 0.08)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            }
-            
-            // Heat indicator - bottom right
+            // Heat indicator — always shown (not part of flat image)
             if displayHeatCount > 0 {
                 VStack {
                     Spacer()
@@ -155,6 +107,67 @@ struct FIFACardView: View {
             loadImage()
             if let uid = currentUserId {
                 hasLiked = card.heatedBy.contains(uid)
+            }
+        }
+    }
+    
+    // MARK: - Card Name Overlay (only used when no flat image)
+    
+    @ViewBuilder
+    private var cardNameOverlay: some View {
+        let config = CardBorderConfig.forFrame(card.customFrame)
+        if card.cardType == "driver" {
+            let inset = height * 0.08
+            VStack(alignment: .leading, spacing: 1) {
+                Text(card.cardMake.uppercased())
+                    .font(.custom("Futura-Bold", fixedSize: height * 0.09))
+                
+                if !card.cardYear.isEmpty {
+                    Text("\"\(card.cardYear.uppercased())\"")
+                        .font(.custom("Futura-Light", fixedSize: height * 0.06))
+                }
+                
+                Text(card.cardModel.uppercased())
+                    .font(.custom("Futura-Bold", fixedSize: height * 0.09))
+            }
+            .foregroundStyle(config.textColor)
+            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+            .padding(.top, inset)
+            .padding(.leading, inset)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        } else if card.cardType == "location" {
+            VStack {
+                HStack {
+                    Text(card.cardMake.uppercased())
+                        .font(.custom("Futura-Bold", fixedSize: height * 0.08))
+                        .foregroundStyle(config.textColor)
+                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                        .padding(.top, height * 0.08)
+                        .padding(.leading, height * 0.08)
+                    Spacer()
+                }
+                Spacer()
+            }
+        } else {
+            VStack {
+                HStack {
+                    HStack(spacing: 6) {
+                        Text(card.cardMake.uppercased())
+                            .font(.custom("Futura-Light", fixedSize: height * 0.08))
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                        
+                        Text(card.cardModel.uppercased())
+                            .font(.custom("Futura-Bold", fixedSize: height * 0.08))
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                            .lineLimit(1)
+                    }
+                    .padding(.top, height * 0.08)
+                    .padding(.leading, height * 0.08)
+                    Spacer()
+                }
+                Spacer()
             }
         }
     }
@@ -243,22 +256,46 @@ struct FIFACardView: View {
         
         isLoadingImage = true
         
-        guard let url = URL(string: card.imageURL) else {
-            isLoadingImage = false
+        // Prefer flat image (border + text baked in) over raw image
+        let urlString = card.flatImageURL ?? card.imageURL
+        let isFlatURL = card.flatImageURL != nil
+        
+        guard let url = URL(string: urlString) else {
+            // If flat URL failed, try raw URL as fallback
+            if isFlatURL, let fallbackURL = URL(string: card.imageURL) {
+                loadFromURL(fallbackURL, isFlat: false)
+            } else {
+                isLoadingImage = false
+            }
             return
         }
         
+        loadFromURL(url, isFlat: isFlatURL)
+    }
+    
+    private func loadFromURL(_ url: URL, isFlat: Bool) {
         URLSession.shared.dataTask(with: url) { data, _, error in
-            guard let data = data, let image = UIImage(data: data) else {
+            if let data = data, let image = UIImage(data: data) {
+                DispatchQueue.main.async {
+                    cardImage = image
+                    usedFlatImage = isFlat
+                    isLoadingImage = false
+                }
+            } else if isFlat, let fallbackURL = URL(string: card.imageURL) {
+                // Flat image failed to load — try raw image as fallback
+                URLSession.shared.dataTask(with: fallbackURL) { data2, _, _ in
+                    DispatchQueue.main.async {
+                        if let data2 = data2, let image2 = UIImage(data: data2) {
+                            cardImage = image2
+                            usedFlatImage = false
+                        }
+                        isLoadingImage = false
+                    }
+                }.resume()
+            } else {
                 DispatchQueue.main.async {
                     isLoadingImage = false
                 }
-                return
-            }
-            
-            DispatchQueue.main.async {
-                cardImage = image
-                isLoadingImage = false
             }
         }.resume()
     }

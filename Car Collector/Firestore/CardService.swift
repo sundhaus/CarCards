@@ -157,6 +157,9 @@ class CardService: ObservableObject {
                 let anyCard = AnyCard.vehicle(savedCardObj)
                 let flatURL = try await CardFlattener.shared.flattenAndUpload(anyCard)
                 print("✅ Flat image uploaded: \(flatURL.prefix(60))...")
+                
+                // Also update the activity feed entry with the flat image
+                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: cardId, flatImageURL: flatURL)
             } catch {
                 print("⚠️ Flatten failed (non-critical): \(error)")
             }
@@ -573,6 +576,9 @@ class CardService: ObservableObject {
                 let anyCard = AnyCard.driver(dc)
                 let flatURL = try await CardFlattener.shared.flattenAndUpload(anyCard)
                 print("✅ Driver flat image uploaded: \(flatURL.prefix(60))...")
+                
+                // Also update the activity feed entry with the flat image
+                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: cardId, flatImageURL: flatURL)
             } catch {
                 print("⚠️ Driver flatten failed (non-critical): \(error)")
             }
@@ -648,6 +654,9 @@ class CardService: ObservableObject {
                 let anyCard = AnyCard.location(lc)
                 let flatURL = try await CardFlattener.shared.flattenAndUpload(anyCard)
                 print("✅ Location flat image uploaded: \(flatURL.prefix(60))...")
+                
+                // Also update the activity feed entry with the flat image
+                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: cardId, flatImageURL: flatURL)
             } catch {
                 print("⚠️ Location flatten failed (non-critical): \(error)")
             }

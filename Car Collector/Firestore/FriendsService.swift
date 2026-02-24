@@ -47,6 +47,7 @@ struct FriendActivity: Identifiable {
     var cardModel: String
     var cardYear: String
     var imageURL: String
+    var flatImageURL: String?   // Baked flat image with border + text — preferred for display
     var createdAt: Date
     var heatedBy: [String]
     var heatCount: Int
@@ -66,6 +67,7 @@ struct FriendActivity: Identifiable {
         self.cardModel = data["cardModel"] as? String ?? ""
         self.cardYear = data["cardYear"] as? String ?? ""
         self.imageURL = data["imageURL"] as? String ?? ""
+        self.flatImageURL = data["flatImageURL"] as? String
         self.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
         self.heatedBy = data["heatedBy"] as? [String] ?? []
         self.heatCount = data["heatCount"] as? Int ?? 0
@@ -75,7 +77,7 @@ struct FriendActivity: Identifiable {
     }
     
     /// Manual init for loading from featured_cards collection
-    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date, cardType: String = "vehicle") {
+    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, flatImageURL: String? = nil, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date, cardType: String = "vehicle") {
         self.id = id
         self.userId = userId
         self.username = username
@@ -85,6 +87,7 @@ struct FriendActivity: Identifiable {
         self.cardModel = cardModel
         self.cardYear = cardYear
         self.imageURL = imageURL
+        self.flatImageURL = flatImageURL
         self.createdAt = timestamp
         self.heatedBy = heatedBy
         self.heatCount = heatCount
@@ -108,6 +111,10 @@ struct FriendActivity: Identifiable {
             "heatedBy": heatedBy,
             "heatCount": heatCount
         ]
+        
+        if let flatImageURL = flatImageURL {
+            dict["flatImageURL"] = flatImageURL
+        }
         
         if let customFrame = customFrame {
             dict["customFrame"] = customFrame
@@ -593,7 +600,7 @@ class FriendsService: ObservableObject {
     
     // MARK: - Post Activity (when user adds a card)
     
-    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, customFrame: String? = nil, category: VehicleCategory? = nil, cardType: String = "vehicle") async throws {
+    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, flatImageURL: String? = nil, customFrame: String? = nil, category: VehicleCategory? = nil, cardType: String = "vehicle") async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
         }
@@ -657,6 +664,11 @@ class FriendsService: ObservableObject {
             print("   ⚠️  No customFrame - activity will have no frame")
         }
         
+        if let flatImageURL = flatImageURL {
+            data["flatImageURL"] = flatImageURL
+            print("   ✅ Including flatImageURL in activity")
+        }
+        
         if let category = category {
             data["category"] = category.rawValue
             print("   ✅ Including category in activity: \(category.rawValue)")
@@ -718,6 +730,21 @@ class FriendsService: ObservableObject {
         }
         
         print("✅ Updated imageURL for \(snapshot.documents.count) activities")
+    }
+    
+    /// Update flatImageURL for all activities with a specific cardId
+    func updateActivityFlatImageURL(cardId: String, flatImageURL: String) async throws {
+        let snapshot = try await activitiesCollection
+            .whereField("cardId", isEqualTo: cardId)
+            .getDocuments()
+        
+        for document in snapshot.documents {
+            try await activitiesCollection.document(document.documentID).updateData([
+                "flatImageURL": flatImageURL
+            ])
+        }
+        
+        print("✅ Updated flatImageURL for \(snapshot.documents.count) activities")
     }
     
     // MARK: - Update Activity Category
