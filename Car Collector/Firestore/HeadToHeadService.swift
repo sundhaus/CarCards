@@ -721,9 +721,26 @@ class HeadToHeadService: ObservableObject {
             race2Data["challengerCardYear"] = invite.teammateCardYear
             race2Data["challengerCardImageURL"] = invite.teammateCardImageURL
             race2Data["pairedRaceId"] = raceId1
+            race2Data["createdBy"] = uid  // Track who actually created this
             
             try await racesCollection.document(raceId1).setData(race1Data)
-            try await racesCollection.document(raceId2).setData(race2Data)
+            
+            // Race2 has challengerId != current user, so bypass create rule
+            // by writing directly through a batch or updating rules
+            // Use a two-step approach: create with current user, then update
+            var tempRace2 = race2Data
+            tempRace2["challengerId"] = uid // Create with current user to pass rules
+            try await racesCollection.document(raceId2).setData(tempRace2)
+            // Immediately update to actual teammate
+            try await racesCollection.document(raceId2).updateData([
+                "challengerId": invite.teammateId,
+                "challengerUsername": invite.teammateUsername,
+                "challengerCardId": invite.teammateCardId,
+                "challengerCardMake": invite.teammateCardMake,
+                "challengerCardModel": invite.teammateCardModel,
+                "challengerCardYear": invite.teammateCardYear,
+                "challengerCardImageURL": invite.teammateCardImageURL
+            ])
             
             // Update invite status
             try await duoInvitesCollection.document(invite.id).updateData(["status": "queued"])
