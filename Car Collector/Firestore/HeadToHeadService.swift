@@ -637,24 +637,30 @@ class HeadToHeadService: ObservableObject {
             .limit(to: 10)
             .getDocuments()
         
-        // Find a duo pair (need 2 open races with same pairedRaceId, not ours)
+        // Find opponent duo races (not ours)
         let openDuos = openDuoSnap.documents
             .compactMap { Race(document: $0) }
             .filter { $0.challengerId != uid && $0.challengerId != invite.teammateId }
         
-        // Group by pairedRaceId to find complete pairs
-        var pairGroups: [String: [Race]] = [:]
+        print("🏁 Duo matchmaking: found \(openDuoSnap.documents.count) open duo races, \(openDuos.count) from other teams")
+        
+        // Try to find a complete opponent pair by following pairedRaceId
+        var matchedPair: (Race, Race)? = nil
         for race in openDuos {
-            if let pairId = race.pairedRaceId {
-                pairGroups[pairId, default: []].append(race)
+            guard let pairedId = race.pairedRaceId else { continue }
+            // Fetch the paired race
+            if let pairedDoc = try? await racesCollection.document(pairedId).getDocument(),
+               let pairedRace = Race(document: pairedDoc),
+               pairedRace.status == .open,
+               pairedRace.challengerId != uid,
+               pairedRace.challengerId != invite.teammateId {
+                matchedPair = (race, pairedRace)
+                break
             }
         }
         
-        // Find a complete pair (2 races)
-        if let (_, opponentPair) = pairGroups.first(where: { $0.value.count == 2 }) {
-            // Match found! Accept both races
-            let opp1 = opponentPair[0]
-            let opp2 = opponentPair[1]
+        if let (opp1, opp2) = matchedPair {
+            print("🏁 Duo match found! Opp races: \(opp1.id) + \(opp2.id)")
             
             // Inviter takes race 1, teammate takes race 2
             let inviterCard = createCardProxy(
@@ -672,7 +678,13 @@ class HeadToHeadService: ObservableObject {
                 imageURL: invite.teammateCardImageURL
             )
             
-            try await acceptOpenChallenge(raceId: opp1.id, myCard: inviterCard)
+            // Use ForUser variant for both to avoid cooldown checks on proxy cards
+            try await acceptOpenChallengeForUser(
+                raceId: opp1.id,
+                userId: invite.inviterId,
+                username: invite.inviterUsername,
+                card: inviterCard
+            )
             try await acceptOpenChallengeForUser(
                 raceId: opp2.id,
                 userId: invite.teammateId,
