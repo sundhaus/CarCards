@@ -63,8 +63,6 @@ struct LeaderboardView: View {
                     }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
-                .padding(.bottom, isLandscape ? 0 : 100)
-                .padding(.trailing, isLandscape ? 100 : 0)
             }
             .navigationTitle("Leaderboard")
             .navigationBarTitleDisplayMode(.inline)
