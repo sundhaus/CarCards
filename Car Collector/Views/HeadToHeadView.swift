@@ -7,6 +7,9 @@
 //
 
 import SwiftUI
+import FirebaseFirestore
+
+import SwiftUI
 
 struct HeadToHeadView: View {
     var isLandscape: Bool = false
