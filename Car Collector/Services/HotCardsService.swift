@@ -107,6 +107,15 @@ class HotCardsService: ObservableObject {
         fetchHotCards()
     }
     
+    /// Clear all in-memory data (used after admin wipe)
+    func reset() {
+        hotCards = []
+        allFeaturedCards = []
+        listener?.remove()
+        listener = nil
+        print("🔥 HotCardsService reset — all in-memory data cleared")
+    }
+    
     // MARK: - Fetch Carousel (top 10 by heat)
     
     private func fetchHotCards() {

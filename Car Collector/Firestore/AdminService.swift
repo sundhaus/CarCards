@@ -209,9 +209,10 @@ class AdminService: ObservableObject {
         // 13. Delete ALL card images from Firebase Storage
         await deleteAllStorageImages()
         
-        // 14. Clear local device data
+        // 14. Clear local device data + in-memory caches
         await MainActor.run {
             clearAllLocalData()
+            HotCardsService.shared.reset()
         }
         
         print("💣 SYSTEM-WIDE RESET COMPLETE")
@@ -448,6 +449,11 @@ class AdminService: ObservableObject {
         total += await deleteActivitiesWithComments()
         total += await deleteEntireCollection("featured_cards")
         total += await deleteEntireCollection("follows")
+        
+        // Clear in-memory caches on singletons so Explore doesn't show stale data
+        await MainActor.run {
+            HotCardsService.shared.reset()
+        }
         
         print("📰 Feed reset complete: \(total) documents deleted")
     }
