@@ -807,6 +807,63 @@ class HeadToHeadService: ObservableObject {
         return card
     }
     
+    // MARK: - Debug: Seed Fake Opponent Duo
+    
+    /// Creates a fake opponent duo pair in the queue for testing 2v2 without 4 devices
+    func seedFakeOpponentDuo(voteThreshold: Int) async throws {
+        let now = Date()
+        let raceId1 = UUID().uuidString
+        let raceId2 = UUID().uuidString
+        
+        let fakeNames = [
+            ("TestBot_A", "Porsche", "911 GT3", "2024"),
+            ("TestBot_B", "Ferrari", "F40", "1992")
+        ]
+        
+        let baseData: [String: Any] = [
+            "voteThreshold": voteThreshold,
+            "durationSeconds": 7200,
+            "status": "open",
+            "createdAt": Timestamp(date: now),
+            "voters": [String](),
+            "isDuo": true,
+            "challengerVotes": 0,
+            "defenderVotes": 0,
+            "defenderId": "",
+            "defenderUsername": "",
+            "defenderCardId": "",
+            "defenderCardMake": "",
+            "defenderCardModel": "",
+            "defenderCardYear": "",
+            "defenderCardImageURL": "",
+        ]
+        
+        var race1Data = baseData
+        race1Data["challengerId"] = "fakeBot_\(raceId1)"
+        race1Data["challengerUsername"] = fakeNames[0].0
+        race1Data["challengerCardId"] = "fakeCard_\(raceId1)"
+        race1Data["challengerCardMake"] = fakeNames[0].1
+        race1Data["challengerCardModel"] = fakeNames[0].2
+        race1Data["challengerCardYear"] = fakeNames[0].3
+        race1Data["challengerCardImageURL"] = ""
+        race1Data["pairedRaceId"] = raceId2
+        
+        var race2Data = baseData
+        race2Data["challengerId"] = "fakeBot_\(raceId2)"
+        race2Data["challengerUsername"] = fakeNames[1].0
+        race2Data["challengerCardId"] = "fakeCard_\(raceId2)"
+        race2Data["challengerCardMake"] = fakeNames[1].1
+        race2Data["challengerCardModel"] = fakeNames[1].2
+        race2Data["challengerCardYear"] = fakeNames[1].3
+        race2Data["challengerCardImageURL"] = ""
+        race2Data["pairedRaceId"] = raceId1
+        
+        try await racesCollection.document(raceId1).setData(race1Data)
+        try await racesCollection.document(raceId2).setData(race2Data)
+        
+        print("🤖 Seeded fake opponent duo: \(raceId1) + \(raceId2) at \(voteThreshold) votes")
+    }
+    
     /// Accept an open challenge by picking your card to race against
     func acceptOpenChallenge(raceId: String, myCard: CloudCard) async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {

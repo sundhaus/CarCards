@@ -1230,6 +1230,29 @@ struct ChallengeView: View {
             
             Spacer()
             
+            // Debug: Seed fake opponent duo (admin only)
+            if AdminService.shared.isAdmin && challengeMode == .duo {
+                Button(action: {
+                    Task {
+                        try? await HeadToHeadService.shared.seedFakeOpponentDuo(
+                            voteThreshold: selectedThreshold
+                        )
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "ant.fill")
+                        Text("SEED OPPONENT DUO")
+                            .font(.caption.bold())
+                    }
+                    .foregroundStyle(.yellow)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(.yellow.opacity(0.15))
+                    .cornerRadius(12)
+                }
+                .padding(.bottom, 8)
+            }
+            
             Button(action: { dismiss() }) {
                 Text("DONE")
                     .font(.headline.bold())
