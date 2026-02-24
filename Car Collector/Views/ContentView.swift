@@ -113,8 +113,10 @@ struct ContentView: View {
                                 }
                             }
                             
-                            levelSystem.addXP(RewardConfig.cardCaptureXP)
-                            levelSystem.addCoins(RewardConfig.cardCaptureCoins)
+                            // Award XP and coins scaled by rarity
+                            let rarity = card.specs?.rarity ?? .common
+                            levelSystem.addXP(RewardConfig.captureXP(for: rarity))
+                            levelSystem.addCoins(RewardConfig.captureCoins(for: rarity))
                         }
                     )
                     .padding(.top, 50)
@@ -406,9 +408,10 @@ struct GarageViewContent: View {
     // MARK: - Helper Methods
     
     private func quickSellCard(_ card: SavedCard) {
-        // Award coins and XP for quick sell
-        UserService.shared.addCoins(RewardConfig.quickSellCoins)
-        UserService.shared.addXP(RewardConfig.quickSellXP)
+        // Award coins and XP scaled by card rarity
+        let rarity = card.specs?.rarity ?? .common
+        UserService.shared.addCoins(RewardConfig.quickSellCoins(for: rarity))
+        UserService.shared.addXP(RewardConfig.quickSellXP(for: rarity))
         
         // Remove card from collection
         if let index = savedCards.firstIndex(where: { $0.id == card.id }) {

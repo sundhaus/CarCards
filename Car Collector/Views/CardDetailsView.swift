@@ -594,8 +594,9 @@ struct CardDetailsView: View {
     }
     
     private func quickSell() {
-        userService.addCoins(RewardConfig.quickSellCoins)
-        userService.addXP(RewardConfig.quickSellXP)
+        let rarity = card.specs?.rarity ?? .common
+        userService.addCoins(RewardConfig.quickSellCoins(for: rarity))
+        userService.addXP(RewardConfig.quickSellXP(for: rarity))
         onDismiss()
     }
 }

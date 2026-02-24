@@ -99,6 +99,15 @@ enum AnyCard: Identifiable {
         }
     }
     
+    /// Card rarity — only vehicles have AI-assigned rarity
+    var rarity: CardRarity? {
+        switch self {
+        case .vehicle(let card): return card.specs?.rarity
+        case .driver: return nil
+        case .location: return nil
+        }
+    }
+    
     /// Light-weight text for top-left of card (e.g. make / first name / location name)
     var titleLine1: String {
         switch self {

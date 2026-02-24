@@ -48,8 +48,8 @@ struct RewardConfig {
     
     // MARK: - Quick Sell (scaled by rarity)
     
-    /// Base coins for quick-selling — overridden by rarity
-    static let quickSellCoins = 50
+    /// Fallback coins when rarity is unknown (e.g. driver/location cards)
+    static let quickSellCoinsBase = 50
     
     /// Coins received for quick-selling based on card rarity
     static func quickSellCoins(for rarity: CardRarity) -> Int {
@@ -73,8 +73,8 @@ struct RewardConfig {
         }
     }
     
-    /// XP for quick-selling a card (fallback when rarity unknown)
-    static let quickSellXP = 5
+    /// Fallback XP when rarity is unknown (e.g. driver/location cards)
+    static let quickSellXPBase = 5
     
     // MARK: - Capture Bonuses (scaled by rarity)
     

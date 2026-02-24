@@ -296,9 +296,14 @@ struct GarageView: View {
     }
     
     private func quickSellCard(_ card: AnyCard) {
-        // Award coins and XP for quick sell
-        UserService.shared.addCoins(RewardConfig.quickSellCoins)
-        UserService.shared.addXP(RewardConfig.quickSellXP)
+        // Award coins and XP scaled by rarity (vehicles) or base (driver/location)
+        if let rarity = card.rarity {
+            UserService.shared.addCoins(RewardConfig.quickSellCoins(for: rarity))
+            UserService.shared.addXP(RewardConfig.quickSellXP(for: rarity))
+        } else {
+            UserService.shared.addCoins(RewardConfig.quickSellCoinsBase)
+            UserService.shared.addXP(RewardConfig.quickSellXPBase)
+        }
         
         // Remove card from storage based on type
         switch card {
