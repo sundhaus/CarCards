@@ -26,7 +26,8 @@ struct FIFACardView: View {
     
     /// Preferred display URL: flat image first (border+text baked in), raw image as fallback
     private var preferredImageURL: String {
-        card.flatImageURL ?? card.imageURL
+        if let flat = card.flatImageURL, !flat.isEmpty { return flat }
+        return card.imageURL
     }
     
     var body: some View {
@@ -257,8 +258,9 @@ struct FIFACardView: View {
         isLoadingImage = true
         
         // Prefer flat image (border + text baked in) over raw image
-        let urlString = card.flatImageURL ?? card.imageURL
-        let isFlatURL = card.flatImageURL != nil
+        let flatURL = card.flatImageURL.flatMap { $0.isEmpty ? nil : $0 }
+        let urlString = flatURL ?? card.imageURL
+        let isFlatURL = flatURL != nil
         
         guard let url = URL(string: urlString) else {
             // If flat URL failed, try raw URL as fallback

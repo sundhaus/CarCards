@@ -107,9 +107,12 @@ class CardFlattener {
         for card in vehicles {
             guard let fid = card.firebaseId else { continue }
             do {
-                _ = try await flattenAndUpload(AnyCard.vehicle(card))
-                // Also update activity feed
-                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: fid, flatImageURL: "")
+                let flatURL = try await flattenAndUpload(AnyCard.vehicle(card))
+                // Update activity feed with new flat image and border
+                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: fid, flatImageURL: flatURL)
+                if let frame = card.customFrame ?? card.specs?.rarity?.borderAssetName {
+                    try? await FriendsService.shared.updateActivityCustomFrame(cardId: fid, customFrame: frame)
+                }
                 count += 1
             } catch { print("⚠️ Flatten vehicle failed: \(error)") }
         }
