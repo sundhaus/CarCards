@@ -86,41 +86,7 @@ struct ContentView: View {
                         levelSystem: levelSystem,
                         selectedTab: $navigationController.selectedTab,
                         onCardSaved: { card in
-                            savedCards.append(card)
-                            CardStorage.saveCards(savedCards)
-                            
-                            if let image = card.image {
-                                Task {
-                                    do {
-                                        let cloudCard = try await CardService.shared.saveCard(
-                                            image: image,
-                                            make: card.make,
-                                            model: card.model,
-                                            color: card.color,
-                                            year: card.year,
-                                            rarity: card.specs?.rarity
-                                        )
-                                        
-                                        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                            var updatedCard = savedCards[index]
-                                            updatedCard.firebaseId = cloudCard.id
-                                            savedCards[index] = updatedCard
-                                            CardStorage.saveCards(savedCards)
-                                            print("🔗 Linked local card to Firebase ID: \(cloudCard.id)")
-                                        }
-                                    } catch {
-                                        print("❌ Cloud save failed: \(error)")
-                                    }
-                                }
-                            }
-                            
-                            // Award XP and coins scaled by rarity
-                            let rarity = card.specs?.rarity ?? .common
-                            levelSystem.addXP(RewardConfig.captureXP(for: rarity))
-                            levelSystem.addCoins(RewardConfig.captureCoins(for: rarity))
-                            
-                            // Pre-fetch specs immediately so they're ready when card is viewed
-                            fetchSpecsForNewCard(card)
+                            handleCardSaved(card)
                         }
                     )
                     .padding(.top, 50)
@@ -204,41 +170,7 @@ struct ContentView: View {
             CameraView(
                 isPresented: $showCamera,
                 onCardSaved: { card in
-                    savedCards.append(card)
-                    CardStorage.saveCards(savedCards)
-                    
-                    if let image = card.image {
-                        Task {
-                            do {
-                                let cloudCard = try await CardService.shared.saveCard(
-                                    image: image,
-                                    make: card.make,
-                                    model: card.model,
-                                    color: card.color,
-                                    year: card.year,
-                                    rarity: card.specs?.rarity
-                                )
-                                
-                                if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                    var updatedCard = savedCards[index]
-                                    updatedCard.firebaseId = cloudCard.id
-                                    savedCards[index] = updatedCard
-                                    CardStorage.saveCards(savedCards)
-                                }
-                            } catch {
-                                print("❌ Cloud save failed: \(error)")
-                            }
-                        }
-                    }
-                    
-                    // Award XP and coins scaled by rarity
-                    let rarity = card.specs?.rarity ?? .common
-                    levelSystem.addXP(RewardConfig.captureXP(for: rarity))
-                    levelSystem.addCoins(RewardConfig.captureCoins(for: rarity))
-                    
-                    // Pre-fetch specs immediately so they're ready when card is viewed
-                    fetchSpecsForNewCard(card)
-                    
+                    handleCardSaved(card)
                     showCamera = false
                     OrientationManager.lockToPortrait()
                 }
@@ -309,6 +241,84 @@ struct ContentView: View {
     }
     
     // Indicator offset functions removed - native Liquid Glass handles tab bar
+    
+    /// Handle saving a newly captured card — local storage, cloud sync, XP, and specs pre-fetch
+    private func handleCardSaved(_ card: SavedCard) {
+        savedCards.append(card)
+        CardStorage.saveCards(savedCards)
+        
+        if let image = card.image {
+            Task {
+                do {
+                    let cloudCard = try await CardService.shared.saveCard(
+                        image: image,
+                        make: card.make,
+                        model: card.model,
+                        color: card.color,
+                        year: card.year,
+                        rarity: card.specs?.rarity
+                    )
+                    
+                    if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                        var updatedCard = savedCards[index]
+                        updatedCard.firebaseId = cloudCard.id
+                        savedCards[index] = updatedCard
+                        CardStorage.saveCards(savedCards)
+                        print("🔗 Linked local card to Firebase ID: \(cloudCard.id)")
+                    }
+                } catch {
+                    print("❌ Cloud save failed: \(error)")
+                }
+            }
+        }
+        
+        let rarity = card.specs?.rarity ?? .common
+        levelSystem.addXP(RewardConfig.captureXP(for: rarity))
+        levelSystem.addCoins(RewardConfig.captureCoins(for: rarity))
+        
+        fetchSpecsForNewCard(card)
+    }
+    
+    /// Fetch specs immediately after a card is saved to garage
+    private func fetchSpecsForNewCard(_ card: SavedCard) {
+        guard !card.make.isEmpty, !card.model.isEmpty, !card.year.isEmpty else { return }
+        guard card.specs == nil else { return }
+        
+        Task {
+            do {
+                let vehicleService = VehicleIdentificationService()
+                let specs = try await vehicleService.fetchSpecs(
+                    make: card.make,
+                    model: card.model,
+                    year: card.year
+                )
+                
+                await MainActor.run {
+                    if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                        let existing = savedCards[index]
+                        savedCards[index] = SavedCard(
+                            id: existing.id,
+                            image: existing.image ?? UIImage(),
+                            make: existing.make,
+                            model: existing.model,
+                            color: existing.color,
+                            year: existing.year,
+                            specs: specs,
+                            capturedBy: existing.capturedBy,
+                            capturedLocation: existing.capturedLocation,
+                            previousOwners: existing.previousOwners,
+                            customFrame: specs.rarity?.borderAssetName,
+                            firebaseId: existing.firebaseId
+                        )
+                        CardStorage.saveCards(savedCards)
+                        print("✅ Pre-fetched specs for \(card.make) \(card.model) — rarity: \(specs.rarity?.rawValue ?? "none")")
+                    }
+                }
+            } catch {
+                print("⚠️ Pre-fetch specs failed: \(error)")
+            }
+        }
+    }
 }
 
 // Wrapper to pass savedCards to GarageView
@@ -428,48 +438,6 @@ struct GarageViewContent: View {
         if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
             savedCards.remove(at: index)
             CardStorage.saveCards(savedCards)
-        }
-    }
-    
-    /// Fetch specs immediately after a card is saved to garage
-    private func fetchSpecsForNewCard(_ card: SavedCard) {
-        // Only fetch for vehicle cards with make/model/year
-        guard !card.make.isEmpty, !card.model.isEmpty, !card.year.isEmpty else { return }
-        guard card.specs == nil else { return }
-        
-        Task {
-            do {
-                let vehicleService = VehicleIdentificationService()
-                let specs = try await vehicleService.fetchSpecs(
-                    make: card.make,
-                    model: card.model,
-                    year: card.year
-                )
-                
-                await MainActor.run {
-                    if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                        let existing = savedCards[index]
-                        savedCards[index] = SavedCard(
-                            id: existing.id,
-                            image: existing.image ?? UIImage(),
-                            make: existing.make,
-                            model: existing.model,
-                            color: existing.color,
-                            year: existing.year,
-                            specs: specs,
-                            capturedBy: existing.capturedBy,
-                            capturedLocation: existing.capturedLocation,
-                            previousOwners: existing.previousOwners,
-                            customFrame: specs.rarity?.borderAssetName,
-                            firebaseId: existing.firebaseId
-                        )
-                        CardStorage.saveCards(savedCards)
-                        print("✅ Pre-fetched specs for \(card.make) \(card.model) — rarity: \(specs.rarity?.rawValue ?? "none")")
-                    }
-                }
-            } catch {
-                print("⚠️ Pre-fetch specs failed: \(error)")
-            }
         }
     }
     
