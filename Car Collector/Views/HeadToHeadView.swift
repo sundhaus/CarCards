@@ -1075,7 +1075,7 @@ struct ChallengeView: View {
             var result: [(id: String, username: String, pfpURL: String?)] = []
             
             for doc in followSnap.documents {
-                guard let followedId = doc.data()["followedId"] as? String else { continue }
+                guard let followedId = doc.data()["followingId"] as? String else { continue }
                 if let userDoc = try? await db.collection("users").document(followedId).getDocument(),
                    let data = userDoc.data() {
                     let username = data["username"] as? String ?? "Unknown"
