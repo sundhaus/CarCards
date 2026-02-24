@@ -50,6 +50,24 @@ struct HeadToHeadView: View {
             VStack(spacing: 0) {
                 topBar
                 
+                // Vote history below top bar
+                Button(action: { showHistory = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 12, weight: .bold))
+                        Text("My Votes")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundStyle(.white.opacity(0.7))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(16)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 16)
+                .padding(.top, 4)
+                
                 // Timer directly under challenge button
                 finishLine
                     .padding(.top, 8)
@@ -181,15 +199,6 @@ struct HeadToHeadView: View {
                         .padding(.vertical, 6)
                         .background(.ultraThinMaterial)
                         .cornerRadius(20)
-                    }
-                    
-                    Button(action: { showHistory = true }) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(8)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
                     }
                 }
                 
