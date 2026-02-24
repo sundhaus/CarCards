@@ -9,8 +9,6 @@ import SwiftUI
 
 enum CardFrame: String, CaseIterable {
     case rarity = "Rarity"
-    case white = "White"
-    case black = "Black"
     
     var displayName: String { rawValue }
 }
@@ -104,21 +102,9 @@ struct CustomizeCardView: View {
                         }
                     }
                     
-                    // Border PNG/SVG overlay based on selection
-                    if selectedFrame == .rarity, let rarityBorder = card.rarity?.borderAssetName {
+                    // Border overlay based on rarity
+                    if let rarityBorder = card.rarity?.borderAssetName {
                         Image(rarityBorder)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
-                            .allowsHitTesting(false)
-                    } else if selectedFrame == .white {
-                        Image("Border_Def_Wht")
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
-                            .allowsHitTesting(false)
-                    } else {
-                        Image("Border_Def_Blk")
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
@@ -129,8 +115,8 @@ struct CustomizeCardView: View {
                     VStack {
                         HStack {
                             HStack(spacing: 4) {
-                                let textColor: Color = selectedFrame == .black ? .black : .white
-                                let shadowColor: Color = selectedFrame == .black ? .white.opacity(0.6) : .black.opacity(0.8)
+                                let textColor: Color = .white
+                                let shadowColor: Color = .black.opacity(0.8)
                                 
                                 Text(card.titleLine1.uppercased())
                                     .font(.custom("Futura-Light", fixedSize: 14))
@@ -227,22 +213,8 @@ struct CustomizeCardView: View {
         .onAppear {
             OrientationManager.lockOrientation(.portrait)
             
-            // Set initial frame from customFrame value
-            if let currentFrame = card.customFrame {
-                switch currentFrame {
-                case "Border_Def_Blk", "Black":
-                    selectedFrame = .black
-                case "Border_Def_Wht", "White":
-                    selectedFrame = .white
-                case "Border_Common", "Border_Uncommon", "Border_Rare", "Border_Epic", "Border_Legendary":
-                    selectedFrame = .rarity
-                default:
-                    selectedFrame = card.rarity != nil ? .rarity : .white
-                }
-            } else {
-                // No custom frame set yet — default to rarity if available
-                selectedFrame = card.rarity != nil ? .rarity : .white
-            }
+            // Frame is always rarity-based now
+            selectedFrame = .rarity
             
             // If card has original image stored, background was previously removed
             if case .vehicle(let vehicleCard) = card,
@@ -287,67 +259,32 @@ struct CustomizeCardView: View {
     
     private var borderTabContent: some View {
         VStack(spacing: 20) {
-            Text("BORDER COLOR")
+            Text("BORDER")
                 .font(.pHeadline)
                 .foregroundStyle(.primary)
                 .padding(.top, 20)
             
-            HStack(spacing: 30) {
-                // Rarity option (only if card has a rarity)
-                if card.rarity != nil {
-                    borderColorOption(frame: .rarity, label: card.rarity?.rawValue ?? "Rarity")
-                }
-                
-                // White option
-                borderColorOption(frame: .white, label: "White")
-                
-                // Black option
-                borderColorOption(frame: .black, label: "Black")
-            }
-            .padding(.horizontal, 40)
-            
-            Spacer()
-        }
-    }
-    
-    private func borderColorOption(frame: CardFrame, label: String) -> some View {
-        Button(action: {
-            withAnimation(.spring(response: 0.3)) {
-                selectedFrame = frame
-            }
-        }) {
-            VStack(spacing: 8) {
-                ZStack {
+            if let rarity = card.rarity {
+                VStack(spacing: 12) {
                     Circle()
-                        .fill(Color(white: 0.25))
+                        .fill(rarity.gradient)
                         .frame(width: 60, height: 60)
                     
-                    if frame == .rarity {
-                        Circle()
-                            .fill(card.rarity?.gradient ?? LinearGradient(colors: [.gray], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 50, height: 50)
-                    } else if frame == .white {
-                        Circle()
-                            .stroke(Color.white, lineWidth: 4)
-                            .frame(width: 50, height: 50)
-                    } else {
-                        Circle()
-                            .stroke(Color.black, lineWidth: 4)
-                            .frame(width: 50, height: 50)
-                    }
+                    Text(rarity.rawValue)
+                        .font(.pCaption)
+                        .foregroundStyle(.white)
                     
-                    // Selected indicator
-                    if selectedFrame == frame {
-                        Circle()
-                            .stroke(Color.blue, lineWidth: 3)
-                            .frame(width: 66, height: 66)
-                    }
+                    Text(rarity.description)
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.6))
                 }
-                
-                Text(label)
+            } else {
+                Text("Earn a rarity border by fetching specs")
                     .font(.pCaption)
-                    .foregroundStyle(selectedFrame == frame ? .white : .white.opacity(0.6))
+                    .foregroundStyle(.white.opacity(0.6))
             }
+            
+            Spacer()
         }
     }
     
@@ -653,14 +590,8 @@ struct CustomizeCardView: View {
             }
         }
         
-        // Map CardFrame enum to actual border asset names
-        let customFrameValue: String = {
-            switch selectedFrame {
-            case .rarity: return card.rarity?.borderAssetName ?? "Border_Def_Wht"
-            case .white: return "Border_Def_Wht"
-            case .black: return "Border_Def_Blk"
-            }
-        }()
+        // Always use rarity border
+        let customFrameValue: String = card.rarity?.borderAssetName ?? "Border_Common"
         
         switch card {
         case .vehicle(let vehicleCard):

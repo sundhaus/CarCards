@@ -44,34 +44,6 @@ struct CardBorderConfig {
 
 extension CardBorderConfig {
     
-    // Default black border - simple overlay
-    static let defaultBlack = CardBorderConfig(
-        borderImageName: "Border_Def_Blk",
-        textPosition: .topLeft,
-        textColor: .black,
-        textShadow: Shadow(
-            color: .white.opacity(0.6),
-            radius: 3,
-            x: 0,
-            y: 2
-        ),
-        heatPosition: .bottomRight
-    )
-    
-    // Default white border - simple overlay
-    static let defaultWhite = CardBorderConfig(
-        borderImageName: "Border_Def_Wht",
-        textPosition: .topLeft,
-        textColor: .white,
-        textShadow: Shadow(
-            color: .black.opacity(0.8),
-            radius: 3,
-            x: 0,
-            y: 2
-        ),
-        heatPosition: .bottomRight
-    )
-    
     // MARK: - Rarity Borders
     
     static let rarityCommon = CardBorderConfig(
@@ -126,21 +98,15 @@ extension CardBorderConfig {
     }
     
     // Get config based on customFrame value, with optional rarity fallback
-    // If customFrame is nil and rarity is provided, use the rarity border
     static func forFrame(_ frameName: String?, rarity: CardRarity? = nil) -> CardBorderConfig {
-        // If we have a rarity AND the frame is a default (or nil), prefer rarity border
+        // Rarity always takes priority
         if let rarity = rarity {
-            let isDefaultFrame = frameName == nil || frameName == "Border_Def_Wht" || frameName == "White" || frameName == "Border_Def_Blk" || frameName == "Black"
-            if isDefaultFrame {
-                return forRarity(rarity)
-            }
+            return forRarity(rarity)
         }
         
-        // Custom frame takes priority
+        // Fall back to frame name for legacy data
         if let frameName = frameName {
             switch frameName {
-            case "Border_Def_Blk", "Black":
-                return .defaultBlack
             case "Border_Common":
                 return .rarityCommon
             case "Border_Uncommon":
@@ -152,11 +118,11 @@ extension CardBorderConfig {
             case "Border_Legendary":
                 return .rarityLegendary
             default:
-                return .defaultWhite
+                return .rarityCommon
             }
         }
         
-        // No custom frame, no rarity — default fallback
-        return .defaultWhite
+        // No frame, no rarity — default to common
+        return .rarityCommon
     }
 }
