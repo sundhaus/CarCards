@@ -1473,6 +1473,20 @@ struct RaceHistoryView: View {
     @State private var isLoading = true
     @State private var pfpURLs: [String: String] = [:] // userId -> profilePictureURL
     
+    // Grouped display items
+    enum HistoryItem: Identifiable {
+        case solo(race: Race, pickCardId: String)
+        case duo(race1: Race, pick1: String, race2: Race, pick2: String)
+        
+        var id: String {
+            switch self {
+            case .solo(let race, _): return race.id
+            case .duo(let r1, _, let r2, _): return "\(r1.id)_\(r2.id)"
+            }
+        }
+    }
+    @State private var historyItems: [HistoryItem] = []
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -1480,7 +1494,7 @@ struct RaceHistoryView: View {
                 
                 if isLoading {
                     ProgressView().tint(.white)
-                } else if votedRaces.isEmpty {
+                } else if historyItems.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "hand.thumbsup")
                             .font(.system(size: 40))
@@ -1495,8 +1509,13 @@ struct RaceHistoryView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
-                            ForEach(Array(votedRaces.enumerated()), id: \.offset) { _, entry in
-                                voteHistoryRow(race: entry.race, myPickCardId: entry.votedForCardId)
+                            ForEach(historyItems) { item in
+                                switch item {
+                                case .solo(let race, let pickId):
+                                    voteHistoryRow(race: race, myPickCardId: pickId)
+                                case .duo(let r1, let p1, let r2, let p2):
+                                    duoHistoryRow(race1: r1, pick1: p1, race2: r2, pick2: p2)
+                                }
                             }
                         }
                         .padding()
@@ -1528,12 +1547,226 @@ struct RaceHistoryView: View {
                             pfpURLs[userId] = url
                         }
                     }
+                    
+                    // Group duo pairs together
+                    buildHistoryItems()
                 } catch {
                     print("❌ Failed to load vote history: \(error)")
                 }
                 isLoading = false
             }
         }
+    }
+    
+    private func buildHistoryItems() {
+        var items: [HistoryItem] = []
+        var consumed = Set<String>() // race IDs already grouped
+        
+        for entry in votedRaces {
+            let race = entry.race
+            if consumed.contains(race.id) { continue }
+            
+            // Check if this is a duo race with a pair
+            if race.isDuo, let pairedId = race.pairedRaceId,
+               let pairedEntry = votedRaces.first(where: { $0.race.id == pairedId }) {
+                consumed.insert(race.id)
+                consumed.insert(pairedId)
+                items.append(.duo(race1: race, pick1: entry.votedForCardId,
+                                  race2: pairedEntry.race, pick2: pairedEntry.votedForCardId))
+            } else {
+                consumed.insert(race.id)
+                items.append(.solo(race: race, pickCardId: entry.votedForCardId))
+            }
+        }
+        
+        historyItems = items
+    }
+    
+    // MARK: - Duo History Row (2v2 combined)
+    
+    private func duoHistoryRow(race1: Race, pick1: String, race2: Race, pick2: String) -> some View {
+        let isFinished = race1.status == .finished && race2.status == .finished
+        
+        // Combined votes across both matchups
+        let teamAVotes = race1.challengerVotes + race2.challengerVotes
+        let teamBVotes = race1.defenderVotes + race2.defenderVotes
+        let totalVotes = max(teamAVotes + teamBVotes, 1)
+        let teamARatio = CGFloat(teamAVotes) / CGFloat(totalVotes)
+        
+        return VStack(spacing: 10) {
+            // 2v2 badge + time
+            HStack {
+                Text("2v2")
+                    .font(.system(size: 9, weight: .heavy))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(8)
+                
+                Spacer()
+                
+                if isFinished {
+                    Text("FINISHED")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.4))
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 10))
+                        Text(race1.timeRemainingString)
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    }
+                    .foregroundStyle(.orange)
+                }
+            }
+            
+            // Team headers: 2 PFPs + names on each side
+            HStack(spacing: 0) {
+                // Team A (challengers)
+                HStack(spacing: -6) {
+                    pfpImage(userId: race1.challengerId, username: race1.challengerUsername)
+                    pfpImage(userId: race2.challengerId, username: race2.challengerUsername)
+                }
+                
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(race1.challengerUsername)
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(race2.challengerUsername)
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.leading, 6)
+                
+                Spacer()
+                
+                // Team B (defenders)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text(race1.defenderUsername)
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(race2.defenderUsername)
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.trailing, 6)
+                
+                HStack(spacing: -6) {
+                    pfpImage(userId: race2.defenderId, username: race2.defenderUsername)
+                    pfpImage(userId: race1.defenderId, username: race1.defenderUsername)
+                }
+            }
+            
+            // Combined progress bar
+            GeometryReader { geo in
+                let leftWidth = max(geo.size.width * teamARatio, 4)
+                let rightWidth = max(geo.size.width * (1 - teamARatio), 4)
+                let teamALeading = teamAVotes >= teamBVotes
+                
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.white.opacity(0.08)).frame(height: 6)
+                    
+                    Capsule()
+                        .fill(teamALeading ? Color.orange : Color.white.opacity(0.3))
+                        .frame(width: leftWidth, height: 6)
+                    
+                    HStack {
+                        Spacer()
+                        Capsule()
+                            .fill(!teamALeading ? Color.orange : Color.white.opacity(0.3))
+                            .frame(width: rightWidth, height: 6)
+                    }
+                    
+                    Text("🔥")
+                        .font(.system(size: 14))
+                        .offset(x: leftWidth - 10, y: -1)
+                }
+            }
+            .frame(height: 14)
+            
+            // Combined vote counts
+            HStack {
+                Text("\(teamAVotes)")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.5))
+                Spacer()
+                Text("\(teamBVotes)")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            
+            // All 4 cards in 2x2 grid: Team A left, Team B right
+            HStack(spacing: 12) {
+                // Team A cards (stacked)
+                VStack(spacing: 6) {
+                    duoVoteCard(imageURL: race1.challengerCardImageURL,
+                                isMyPick: pick1 == race1.challengerCardId)
+                    duoVoteCard(imageURL: race2.challengerCardImageURL,
+                                isMyPick: pick2 == race2.challengerCardId)
+                }
+                
+                Text("VS")
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(.white.opacity(0.3))
+                
+                // Team B cards (stacked)
+                VStack(spacing: 6) {
+                    duoVoteCard(imageURL: race1.defenderCardImageURL,
+                                isMyPick: pick1 == race1.defenderCardId)
+                    duoVoteCard(imageURL: race2.defenderCardImageURL,
+                                isMyPick: pick2 == race2.defenderCardId)
+                }
+            }
+        }
+        .padding(14)
+        .background(.white.opacity(0.05))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    LinearGradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing),
+                    lineWidth: 1
+                )
+        )
+    }
+    
+    private func duoVoteCard(imageURL: String, isMyPick: Bool) -> some View {
+        let cardH: CGFloat = 60
+        let cardW: CGFloat = cardH * (16.0 / 9.0)
+        let borderColor: Color = isMyPick ? .orange : .white.opacity(0.1)
+        
+        return ZStack(alignment: .bottomLeading) {
+            AsyncImage(url: URL(string: imageURL)) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: .fill)
+                default:
+                    Rectangle().fill(Color.gray.opacity(0.2))
+                        .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.2)))
+                }
+            }
+            .frame(width: cardW, height: cardH)
+            .clipped()
+            .cornerRadius(cardH * 0.09)
+            .overlay(
+                RoundedRectangle(cornerRadius: cardH * 0.09)
+                    .stroke(borderColor, lineWidth: isMyPick ? 2 : 1)
+            )
+            
+            if isMyPick {
+                Text("MY PICK")
+                    .font(.system(size: 6, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(borderColor)
+                    .cornerRadius(3)
+                    .padding(3)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
     
     // MARK: - Vote History Row
