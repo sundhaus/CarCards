@@ -1048,9 +1048,153 @@ extension UserService {
             ])
         }
     }
+    
+    // MARK: - Duo Invites
+    
+    private var duoInvitesCollection: CollectionReference {
+        db.collection("duoInvites")
+    }
+    
+    @Published var pendingDuoInvite: DuoInvite? = nil
+    private var duoInviteListener: ListenerRegistration?
+    
+    /// Send a duo invite to a teammate
+    func sendDuoInvite(
+        myCard: CloudCard,
+        teammateId: String,
+        teammateUsername: String,
+        voteThreshold: Int
+    ) async throws -> String {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        guard let profile = UserService.shared.currentProfile else {
+            throw UserServiceError.profileNotFound
+        }
+        
+        let inviteId = UUID().uuidString
+        let data: [String: Any] = [
+            "inviterId": uid,
+            "inviterUsername": profile.username,
+            "inviterCardId": myCard.id,
+            "inviterCardMake": myCard.make,
+            "inviterCardModel": myCard.model,
+            "inviterCardYear": myCard.year,
+            "inviterCardImageURL": myCard.flatImageURL ?? myCard.imageURL,
+            "teammateId": teammateId,
+            "teammateUsername": teammateUsername,
+            "teammateCardId": "",
+            "teammateCardImageURL": "",
+            "voteThreshold": voteThreshold,
+            "status": "pending",  // pending → accepted → matched → expired
+            "createdAt": Timestamp(date: Date()),
+            "expiresAt": Timestamp(date: Date().addingTimeInterval(300)) // 5 min to accept
+        ]
+        
+        try await duoInvitesCollection.document(inviteId).setData(data)
+        print("📨 Duo invite sent to \(teammateUsername)")
+        return inviteId
+    }
+    
+    /// Accept a duo invite by picking your card
+    func acceptDuoInvite(inviteId: String, myCard: CloudCard) async throws {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        guard let profile = UserService.shared.currentProfile else {
+            throw UserServiceError.profileNotFound
+        }
+        
+        try await duoInvitesCollection.document(inviteId).updateData([
+            "teammateCardId": myCard.id,
+            "teammateCardMake": myCard.make,
+            "teammateCardModel": myCard.model,
+            "teammateCardYear": myCard.year,
+            "teammateCardImageURL": myCard.flatImageURL ?? myCard.imageURL,
+            "status": "accepted"
+        ])
+        
+        print("✅ Duo invite accepted by \(profile.username)")
+    }
+    
+    /// Decline a duo invite
+    func declineDuoInvite(inviteId: String) async throws {
+        try await duoInvitesCollection.document(inviteId).updateData([
+            "status": "declined"
+        ])
+    }
+    
+    /// Listen for incoming duo invites (teammate side)
+    func startDuoInviteListener() {
+        guard let uid = FirebaseManager.shared.currentUserId else { return }
+        
+        duoInviteListener = duoInvitesCollection
+            .whereField("teammateId", isEqualTo: uid)
+            .whereField("status", isEqualTo: "pending")
+            .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    print("❌ Duo invite listener error: \(error)")
+                    return
+                }
+                guard let docs = snapshot?.documents else { return }
+                
+                Task { @MainActor in
+                    // Show the most recent pending invite
+                    let invites = docs.compactMap { DuoInvite(document: $0) }
+                        .filter { $0.expiresAt > Date() }
+                        .sorted { $0.createdAt > $1.createdAt }
+                    
+                    self?.pendingDuoInvite = invites.first
+                }
+            }
+    }
+    
+    func stopDuoInviteListener() {
+        duoInviteListener?.remove()
+        duoInviteListener = nil
+    }
 }
 
-// MARK: - Errors
+// MARK: - Duo Invite Model
+
+struct DuoInvite: Identifiable {
+    var id: String
+    var inviterId: String
+    var inviterUsername: String
+    var inviterCardId: String
+    var inviterCardMake: String
+    var inviterCardModel: String
+    var inviterCardYear: String
+    var inviterCardImageURL: String
+    var teammateId: String
+    var teammateUsername: String
+    var teammateCardId: String
+    var teammateCardImageURL: String
+    var voteThreshold: Int
+    var status: String
+    var createdAt: Date
+    var expiresAt: Date
+    
+    init?(document: DocumentSnapshot) {
+        guard let data = document.data() else { return nil }
+        self.id = document.documentID
+        self.inviterId = data["inviterId"] as? String ?? ""
+        self.inviterUsername = data["inviterUsername"] as? String ?? ""
+        self.inviterCardId = data["inviterCardId"] as? String ?? ""
+        self.inviterCardMake = data["inviterCardMake"] as? String ?? ""
+        self.inviterCardModel = data["inviterCardModel"] as? String ?? ""
+        self.inviterCardYear = data["inviterCardYear"] as? String ?? ""
+        self.inviterCardImageURL = data["inviterCardImageURL"] as? String ?? ""
+        self.teammateId = data["teammateId"] as? String ?? ""
+        self.teammateUsername = data["teammateUsername"] as? String ?? ""
+        self.teammateCardId = data["teammateCardId"] as? String ?? ""
+        self.teammateCardImageURL = data["teammateCardImageURL"] as? String ?? ""
+        self.voteThreshold = data["voteThreshold"] as? Int ?? 50
+        self.status = data["status"] as? String ?? ""
+        self.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+        self.expiresAt = (data["expiresAt"] as? Timestamp)?.dateValue() ?? Date()
+    }
+}
 
 enum HeadToHeadError: LocalizedError {
     case cardOnCooldown

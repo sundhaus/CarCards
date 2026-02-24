@@ -89,6 +89,7 @@ struct HeadToHeadView: View {
         .ignoresSafeArea(edges: .bottom)
         .onAppear {
             h2hService.startListening()
+            h2hService.startDuoInviteListener()
             Task {
                 await h2hService.checkExpiredRaces()
                 unavailableCardIds = await loadUnavailableCardIds()
@@ -101,6 +102,7 @@ struct HeadToHeadView: View {
         }
         .onDisappear {
             raceTimer.upstream.connect().cancel()
+            h2hService.stopDuoInviteListener()
         }
         .onReceive(raceTimer) { _ in
             updateTimer()
@@ -121,6 +123,9 @@ struct HeadToHeadView: View {
         }
         .sheet(isPresented: $showPendingChallenges) {
             PendingChallengesView()
+        }
+        .sheet(item: $h2hService.pendingDuoInvite) { invite in
+            DuoInvitePopupView(invite: invite)
         }
     }
     
@@ -659,6 +664,7 @@ struct ChallengeView: View {
     enum MatchResult {
         case matched(Race)   // Found an opponent, race started
         case queued          // No match, posted to queue
+        case waitingForTeammate(String) // Waiting for duo partner to accept (inviteId)
     }
     
     var body: some View {
@@ -1033,13 +1039,13 @@ struct ChallengeView: View {
                 }
                 
                 // Send invite button
-                Button(action: {
-                    guard let teammate = selectedTeammate, let card = selectedCard else { return }
-                    // TODO: Send duo invite to teammate, then matchmake
-                    startMatchmaking(card: card)
-                }) {
+                Button(action: sendDuoInvite) {
                     HStack {
-                        Image(systemName: "paperplane.fill")
+                        if isLoading {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "paperplane.fill")
+                        }
                         Text("SEND INVITE")
                             .font(.headline.bold())
                     }
@@ -1053,7 +1059,7 @@ struct ChallengeView: View {
                     )
                     .cornerRadius(16)
                 }
-                .disabled(selectedTeammate == nil)
+                .disabled(selectedTeammate == nil || isLoading)
                 .padding(.horizontal)
                 .padding(.bottom, 16)
             }
@@ -1137,6 +1143,31 @@ struct ChallengeView: View {
                     .font(.caption)
                     .foregroundStyle(.orange)
                 
+            case .waitingForTeammate(_):
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 50))
+                    .foregroundStyle(.blue)
+                
+                Text("INVITE SENT")
+                    .font(.title.bold())
+                    .foregroundStyle(.white)
+                
+                if let teammate = selectedTeammate {
+                    Text("Waiting for \(teammate.username) to pick a card...")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                
+                ProgressView()
+                    .tint(.blue)
+                    .scaleEffect(1.2)
+                
+                Text("They have 5 minutes to accept")
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+                
             case .none:
                 EmptyView()
             }
@@ -1184,6 +1215,31 @@ struct ChallengeView: View {
                 
                 isLoading = false
                 matchResult = result
+                step = .result
+                
+            } catch {
+                errorMessage = error.localizedDescription
+                isLoading = false
+            }
+        }
+    }
+    
+    private func sendDuoInvite() {
+        guard let card = selectedCard,
+              let teammate = selectedTeammate else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                let inviteId = try await HeadToHeadService.shared.sendDuoInvite(
+                    myCard: card,
+                    teammateId: teammate.id,
+                    teammateUsername: teammate.username,
+                    voteThreshold: selectedThreshold
+                )
+                
+                isLoading = false
+                matchResult = .waitingForTeammate(inviteId)
                 step = .result
                 
             } catch {
@@ -1629,6 +1685,219 @@ struct PendingChallengesView: View {
         .padding()
         .background(.white.opacity(0.05))
         .cornerRadius(16)
+    }
+}
+
+// MARK: - Duo Invite Popup (Teammate receives this)
+
+struct DuoInvitePopupView: View {
+    let invite: DuoInvite
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var cardService = CardService.shared
+    @State private var selectedCard: CloudCard?
+    @State private var isProcessing = false
+    @State private var step: InviteStep = .review
+    
+    enum InviteStep {
+        case review
+        case pickCard
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                switch step {
+                case .review:
+                    reviewView
+                case .pickCard:
+                    pickCardForDuoView
+                }
+            }
+            .navigationTitle("Duo Invite")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+    
+    private var reviewView: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 50))
+                .foregroundStyle(.blue)
+            
+            Text("DUO INVITE")
+                .font(.title.bold())
+                .foregroundStyle(.white)
+            
+            Text("\(invite.inviterUsername) wants to team up!")
+                .font(.headline)
+                .foregroundStyle(.white.opacity(0.8))
+            
+            // Show inviter's card
+            VStack(spacing: 8) {
+                AsyncImage(url: URL(string: invite.inviterCardImageURL)) { image in
+                    image.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Rectangle().fill(Color.gray.opacity(0.3))
+                }
+                .frame(width: 160, height: 100)
+                .cornerRadius(10)
+                
+                Text("\(invite.inviterCardMake) \(invite.inviterCardModel)")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                
+                Text("\(invite.voteThreshold) vote race")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            .padding()
+            .background(.white.opacity(0.05))
+            .cornerRadius(16)
+            
+            Spacer()
+            
+            // Accept / Decline buttons
+            HStack(spacing: 12) {
+                Button(action: {
+                    Task {
+                        isProcessing = true
+                        try? await HeadToHeadService.shared.declineDuoInvite(inviteId: invite.id)
+                        isProcessing = false
+                        dismiss()
+                    }
+                }) {
+                    Text("DECLINE")
+                        .font(.headline.bold())
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(.white.opacity(0.15))
+                        .cornerRadius(16)
+                }
+                
+                Button(action: {
+                    withAnimation { step = .pickCard }
+                }) {
+                    Text("ACCEPT")
+                        .font(.headline.bold())
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
+                        )
+                        .cornerRadius(16)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 30)
+            .disabled(isProcessing)
+        }
+    }
+    
+    private var pickCardForDuoView: some View {
+        VStack(spacing: 16) {
+            Text("Pick Your Card")
+                .font(.title3.bold())
+                .foregroundStyle(.white)
+                .padding(.top)
+            
+            Text("Choose a card to race alongside \(invite.inviterUsername)")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            let vehicleCards = cardService.myCards.filter { $0.cardType == "vehicle" }
+            
+            if vehicleCards.isEmpty {
+                Spacer()
+                Text("No vehicle cards available")
+                    .foregroundStyle(.white.opacity(0.5))
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ForEach(vehicleCards) { card in
+                            Button(action: {
+                                selectedCard = card
+                            }) {
+                                VStack(spacing: 4) {
+                                    AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { image in
+                                        image.resizable().aspectRatio(contentMode: .fill)
+                                    } placeholder: {
+                                        Rectangle().fill(Color.gray.opacity(0.3))
+                                    }
+                                    .frame(height: 80)
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(selectedCard?.id == card.id ? Color.blue : Color.white.opacity(0.1), lineWidth: selectedCard?.id == card.id ? 2 : 1)
+                                    )
+                                    
+                                    Text("\(card.make) \(card.model)")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.7))
+                                        .lineLimit(1)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // Confirm button
+                Button(action: {
+                    guard let card = selectedCard else { return }
+                    isProcessing = true
+                    Task {
+                        do {
+                            try await HeadToHeadService.shared.acceptDuoInvite(
+                                inviteId: invite.id,
+                                myCard: card
+                            )
+                            isProcessing = false
+                            dismiss()
+                        } catch {
+                            print("❌ Failed to accept duo invite: \(error)")
+                            isProcessing = false
+                        }
+                    }
+                }) {
+                    HStack {
+                        if isProcessing {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "checkmark")
+                        }
+                        Text("JOIN TEAM")
+                            .font(.headline.bold())
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        selectedCard != nil
+                        ? LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
+                        : LinearGradient(colors: [.gray, .gray.opacity(0.6)], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(16)
+                }
+                .disabled(selectedCard == nil || isProcessing)
+                .padding(.horizontal)
+                .padding(.bottom, 16)
+            }
+        }
     }
 }
 
