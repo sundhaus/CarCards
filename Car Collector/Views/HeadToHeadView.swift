@@ -326,11 +326,11 @@ struct HeadToHeadView: View {
                 x: geo.size.width / 2 - cardW * 0.5 - 8,
                 y: hasVoted ? leftY : trackBottom - cardH / 2
             )
-            .opacity(cardsVisible ? 1 : 0)
             .animation(
                 hasVoted ? .spring(response: 0.8, dampingFraction: 0.7) : .none,
-                value: race.challengerVotes
+                value: hasVoted
             )
+            .opacity(cardsVisible ? 1 : 0)
             
             // Right card (defender)
             let rightProgress = CGFloat(race.defenderVotes) / CGFloat(max(race.voteThreshold, 1))
@@ -355,11 +355,11 @@ struct HeadToHeadView: View {
                 x: geo.size.width / 2 + cardW * 0.5 + 8,
                 y: hasVoted ? rightY : trackBottom - cardH / 2
             )
-            .opacity(cardsVisible ? 1 : 0)
             .animation(
                 hasVoted ? .spring(response: 0.8, dampingFraction: 0.7) : .none,
-                value: race.defenderVotes
+                value: hasVoted
             )
+            .opacity(cardsVisible ? 1 : 0)
             
             // VS badge centered between cards
             Text("VS")
@@ -442,6 +442,7 @@ struct HeadToHeadView: View {
                         voteAnimation == side ? Color.orange : Color.white.opacity(0.2),
                         lineWidth: voteAnimation == side ? 3 : 1
                     )
+                    .animation(.spring(response: 0.3), value: voteAnimation)
             )
             .scaleEffect(voteAnimation == side ? 1.05 : 1.0)
             .animation(.spring(response: 0.3), value: voteAnimation)
