@@ -131,7 +131,7 @@ struct HeadToHeadView: View {
     
     private var topBar: some View {
         ZStack {
-            // Center: Challenge + History buttons
+            // Center: Challenge button
             HStack(spacing: 10) {
                 Button(action: { showChallenge = true }) {
                     HStack(spacing: 8) {
@@ -148,18 +148,9 @@ struct HeadToHeadView: View {
                     )
                     .cornerRadius(25)
                 }
-                
-                Button(action: { showHistory = true }) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(10)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                }
             }
             
-            // Left/Right: back, streak, bell
+            // Left/Right: back, history, streak, bell
             HStack {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
@@ -171,6 +162,15 @@ struct HeadToHeadView: View {
                 }
                 
                 Spacer()
+                
+                Button(action: { showHistory = true }) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(10)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                }
                 
                 if h2hService.myStreak.currentStreak > 0 {
                     HStack(spacing: 4) {
