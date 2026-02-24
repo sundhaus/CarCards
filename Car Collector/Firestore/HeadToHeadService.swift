@@ -1030,33 +1030,15 @@ class HeadToHeadService: ObservableObject {
         print("📋 Loaded \(results.count) voted races")
         return results
     }
-}
-
-// MARK: - XP Helper on UserService
-
-extension UserService {
-    func addXP(_ amount: Int) {
-        guard let uid = currentProfile?.id else { return }
-        
-        currentProfile?.totalXP += amount
-        currentProfile?.currentXP += amount
-        
-        Task {
-            try? await FirebaseManager.shared.db.collection("users").document(uid).updateData([
-                "totalXP": FieldValue.increment(Int64(amount)),
-                "currentXP": FieldValue.increment(Int64(amount))
-            ])
-        }
-    }
     
     // MARK: - Duo Invites
+    
+    @Published var pendingDuoInvite: DuoInvite? = nil
+    private var duoInviteListener: ListenerRegistration?
     
     private var duoInvitesCollection: CollectionReference {
         db.collection("duoInvites")
     }
-    
-    @Published var pendingDuoInvite: DuoInvite? = nil
-    private var duoInviteListener: ListenerRegistration?
     
     /// Send a duo invite to a teammate
     func sendDuoInvite(
@@ -1086,9 +1068,9 @@ extension UserService {
             "teammateCardId": "",
             "teammateCardImageURL": "",
             "voteThreshold": voteThreshold,
-            "status": "pending",  // pending → accepted → matched → expired
+            "status": "pending",
             "createdAt": Timestamp(date: Date()),
-            "expiresAt": Timestamp(date: Date().addingTimeInterval(300)) // 5 min to accept
+            "expiresAt": Timestamp(date: Date().addingTimeInterval(300))
         ]
         
         try await duoInvitesCollection.document(inviteId).setData(data)
@@ -1139,7 +1121,6 @@ extension UserService {
                 guard let docs = snapshot?.documents else { return }
                 
                 Task { @MainActor in
-                    // Show the most recent pending invite
                     let invites = docs.compactMap { DuoInvite(document: $0) }
                         .filter { $0.expiresAt > Date() }
                         .sorted { $0.createdAt > $1.createdAt }
@@ -1152,6 +1133,24 @@ extension UserService {
     func stopDuoInviteListener() {
         duoInviteListener?.remove()
         duoInviteListener = nil
+    }
+}
+
+// MARK: - XP Helper on UserService
+
+extension UserService {
+    func addXP(_ amount: Int) {
+        guard let uid = currentProfile?.id else { return }
+        
+        currentProfile?.totalXP += amount
+        currentProfile?.currentXP += amount
+        
+        Task {
+            try? await FirebaseManager.shared.db.collection("users").document(uid).updateData([
+                "totalXP": FieldValue.increment(Int64(amount)),
+                "currentXP": FieldValue.increment(Int64(amount))
+            ])
+        }
     }
 }
 
