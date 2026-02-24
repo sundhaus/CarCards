@@ -847,6 +847,12 @@ struct ChallengeView: View {
                             Button(action: {
                                 Task {
                                     cooldownMessage = nil
+                                    // Skip cooldown for sim cards
+                                    if card.id.hasPrefix("sim_") {
+                                        selectedCard = card
+                                        step = .pickLimit
+                                        return
+                                    }
                                     let ok = try await HeadToHeadService.shared.checkCardCooldown(cardId: card.id)
                                     if ok {
                                         selectedCard = card
@@ -881,9 +887,35 @@ struct ChallengeView: View {
     }
     
     private var availableCards: [CloudCard] {
-        cardService.myCards.filter { card in
+        var cards = cardService.myCards.filter { card in
             card.cardType == "vehicle" && !unavailableCardIds.contains(card.id)
         }
+        
+        // Admin: add sim cards for testing
+        if AdminService.shared.isAdmin {
+            let simCards: [(String, String, String, String)] = [
+                ("sim_mclaren_p1", "McLaren", "P1", "2015"),
+                ("sim_bugatti_chiron", "Bugatti", "Chiron", "2022"),
+                ("sim_koenigsegg_jesko", "Koenigsegg", "Jesko", "2023"),
+            ]
+            for (id, make, model, year) in simCards {
+                if !unavailableCardIds.contains(id) {
+                    var sim = CloudCard(
+                        id: id,
+                        ownerId: FirebaseManager.shared.currentUserId ?? "",
+                        make: make,
+                        model: model,
+                        color: "",
+                        year: year,
+                        imageURL: ""
+                    )
+                    sim.cardType = "vehicle"
+                    cards.insert(sim, at: 0)
+                }
+            }
+        }
+        
+        return cards
     }
     
     // MARK: Step 2 - Pick Vote Limit + Challenge
@@ -1449,19 +1481,37 @@ struct ChallengeView: View {
     }
     
     private func cardCell(card: CloudCard) -> some View {
-        AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().aspectRatio(contentMode: .fill)
-            default:
-                Rectangle().fill(Color.gray.opacity(0.3))
-                    .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.3)))
+        let isSim = card.id.hasPrefix("sim_")
+        
+        return ZStack(alignment: .bottom) {
+            AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: .fill)
+                default:
+                    Rectangle().fill(Color.gray.opacity(0.3))
+                        .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.3)))
+                }
+            }
+            .frame(height: 100)
+            .clipped()
+            
+            if isSim {
+                Text("\(card.make) \(card.model)")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(.yellow.opacity(0.8))
+                    .cornerRadius(4)
+                    .padding(.bottom, 4)
             }
         }
-        .frame(height: 100)
-        .clipped()
         .cornerRadius(10)
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isSim ? Color.yellow.opacity(0.5) : Color.white.opacity(0.15), lineWidth: isSim ? 2 : 1)
+        )
     }
 }
 
