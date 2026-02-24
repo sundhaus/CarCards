@@ -626,7 +626,7 @@ struct HeadToHeadView: View {
 
 
 
-// MARK: - Challenge View (Pick Card → Pick Limit → Auto-Match or Queue)
+// MARK: - Challenge View (Mode → Pick Card → Pick Limit → Auto-Match or Queue)
 
 struct ChallengeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -635,7 +635,8 @@ struct ChallengeView: View {
     
     let unavailableCardIds: Set<String>
     
-    @State private var step: ChallengeStep = .pickCard
+    @State private var step: ChallengeStep = .pickMode
+    @State private var challengeMode: ChallengeMode = .solo
     @State private var selectedCard: CloudCard?
     @State private var selectedThreshold: Int = 50
     @State private var isLoading = false
@@ -643,9 +644,15 @@ struct ChallengeView: View {
     @State private var cooldownMessage: String?
     @State private var matchResult: MatchResult?
     
+    enum ChallengeMode {
+        case solo, duo
+    }
+    
     enum ChallengeStep {
+        case pickMode
         case pickCard
         case pickLimit
+        case pickTeammate
         case result
     }
     
@@ -660,10 +667,14 @@ struct ChallengeView: View {
                 Color.black.ignoresSafeArea()
                 
                 switch step {
+                case .pickMode:
+                    pickModeView
                 case .pickCard:
                     pickCardView
                 case .pickLimit:
                     pickLimitView
+                case .pickTeammate:
+                    pickTeammateView
                 case .result:
                     resultView
                 }
@@ -686,7 +697,107 @@ struct ChallengeView: View {
         }
     }
     
-    // MARK: Step 1 - Pick a Card
+    // MARK: Step 1 - Pick Mode (Solo or Duo)
+    
+    private var pickModeView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Text("Choose Your Mode")
+                .font(.title2.bold())
+                .foregroundStyle(.white)
+            
+            Text("How do you want to race?")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.5))
+            
+            VStack(spacing: 16) {
+                // Solo button
+                Button(action: {
+                    challengeMode = .solo
+                    withAnimation { step = .pickCard }
+                }) {
+                    HStack(spacing: 16) {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 28))
+                            .frame(width: 50)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Solo")
+                                .font(.title3.bold())
+                            Text("1v1 — your card vs an opponent")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(20)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.orange.opacity(0.3), Color.red.opacity(0.2)],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.orange.opacity(0.4), lineWidth: 1)
+                    )
+                }
+                
+                // Duo button
+                Button(action: {
+                    challengeMode = .duo
+                    withAnimation { step = .pickCard }
+                }) {
+                    HStack(spacing: 16) {
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 28))
+                            .frame(width: 50)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Duo")
+                                .font(.title3.bold())
+                            Text("2v2 — team up with a friend")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(20)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.blue.opacity(0.3), Color.purple.opacity(0.2)],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.blue.opacity(0.4), lineWidth: 1)
+                    )
+                }
+            }
+            .padding(.horizontal, 24)
+            
+            Spacer()
+            Spacer()
+        }
+    }
+    
+    // MARK: Step 2 - Pick a Card
     
     private var pickCardView: some View {
         VStack(spacing: 16) {
@@ -824,7 +935,163 @@ struct ChallengeView: View {
         }
     }
     
-    // MARK: Step 3 - Result (Matched or Queued)
+    // MARK: Step 4 - Pick Teammate (Duo only)
+    
+    @State private var friends: [(id: String, username: String, pfpURL: String?)] = []
+    @State private var selectedTeammate: (id: String, username: String)?
+    @State private var loadingFriends = true
+    
+    private var pickTeammateView: some View {
+        VStack(spacing: 16) {
+            Text("Pick a Teammate")
+                .font(.title3.bold())
+                .foregroundStyle(.white)
+                .padding(.top)
+            
+            Text("Choose a friend to team up with")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.5))
+            
+            if loadingFriends {
+                Spacer()
+                ProgressView().tint(.white)
+                Spacer()
+            } else if friends.isEmpty {
+                Spacer()
+                VStack(spacing: 8) {
+                    Image(systemName: "person.2.slash")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.white.opacity(0.3))
+                    Text("No friends yet")
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("Follow people to team up!")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(friends, id: \.id) { friend in
+                            Button(action: {
+                                selectedTeammate = (id: friend.id, username: friend.username)
+                            }) {
+                                HStack(spacing: 12) {
+                                    // PFP
+                                    if let urlString = friend.pfpURL, let url = URL(string: urlString) {
+                                        AsyncImage(url: url) { image in
+                                            image.resizable().scaledToFill()
+                                        } placeholder: {
+                                            Circle().fill(Color(.systemGray4))
+                                                .overlay(
+                                                    Text(String(friend.username.prefix(1)).uppercased())
+                                                        .font(.system(size: 14, weight: .bold))
+                                                        .foregroundStyle(.white)
+                                                )
+                                        }
+                                        .frame(width: 40, height: 40)
+                                        .clipShape(Circle())
+                                    } else {
+                                        Circle()
+                                            .fill(Color(.systemGray4))
+                                            .frame(width: 40, height: 40)
+                                            .overlay(
+                                                Text(String(friend.username.prefix(1)).uppercased())
+                                                    .font(.system(size: 14, weight: .bold))
+                                                    .foregroundStyle(.white)
+                                            )
+                                    }
+                                    
+                                    Text(friend.username)
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                    
+                                    Spacer()
+                                    
+                                    if selectedTeammate?.id == friend.id {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.orange)
+                                            .font(.title3)
+                                    } else {
+                                        Circle()
+                                            .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
+                                            .frame(width: 24, height: 24)
+                                    }
+                                }
+                                .padding(12)
+                                .background(
+                                    selectedTeammate?.id == friend.id
+                                    ? Color.orange.opacity(0.15)
+                                    : Color.white.opacity(0.05)
+                                )
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // Send invite button
+                Button(action: {
+                    guard let teammate = selectedTeammate, let card = selectedCard else { return }
+                    // TODO: Send duo invite to teammate, then matchmake
+                    startMatchmaking(card: card)
+                }) {
+                    HStack {
+                        Image(systemName: "paperplane.fill")
+                        Text("SEND INVITE")
+                            .font(.headline.bold())
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        selectedTeammate != nil
+                        ? LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
+                        : LinearGradient(colors: [.gray, .gray.opacity(0.6)], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(16)
+                }
+                .disabled(selectedTeammate == nil)
+                .padding(.horizontal)
+                .padding(.bottom, 16)
+            }
+        }
+        .task {
+            await loadFriends()
+        }
+    }
+    
+    private func loadFriends() async {
+        guard let uid = FirebaseManager.shared.currentUserId else { return }
+        let db = FirebaseManager.shared.db
+        
+        do {
+            let followSnap = try await db.collection("follows")
+                .whereField("followerId", isEqualTo: uid)
+                .getDocuments()
+            
+            var result: [(id: String, username: String, pfpURL: String?)] = []
+            
+            for doc in followSnap.documents {
+                guard let followedId = doc.data()["followedId"] as? String else { continue }
+                if let userDoc = try? await db.collection("users").document(followedId).getDocument(),
+                   let data = userDoc.data() {
+                    let username = data["username"] as? String ?? "Unknown"
+                    let pfp = data["profilePictureURL"] as? String
+                    result.append((id: followedId, username: username, pfpURL: pfp))
+                }
+            }
+            
+            friends = result.sorted { $0.username.lowercased() < $1.username.lowercased() }
+        } catch {
+            print("⚠️ Error loading friends: \(error)")
+        }
+        loadingFriends = false
+    }
+    
+    // MARK: Step 5 - Result (Matched or Queued)
     
     private var resultView: some View {
         VStack(spacing: 24) {
@@ -894,6 +1161,18 @@ struct ChallengeView: View {
     
     private func submitChallenge() {
         guard let card = selectedCard else { return }
+        
+        // Duo mode: go to teammate selection first
+        if challengeMode == .duo {
+            withAnimation { step = .pickTeammate }
+            return
+        }
+        
+        // Solo mode: matchmake immediately
+        startMatchmaking(card: card)
+    }
+    
+    private func startMatchmaking(card: CloudCard) {
         isLoading = true
         
         Task {
