@@ -150,7 +150,7 @@ struct HeadToHeadView: View {
                 }
             }
             
-            // Left/Right: back, history, streak, bell
+            // Left/Right: back, streak+history, bell
             HStack {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
@@ -163,32 +163,34 @@ struct HeadToHeadView: View {
                 
                 Spacer()
                 
-                Button(action: { showHistory = true }) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(10)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                }
-                
-                if h2hService.myStreak.currentStreak > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "crown.fill")
-                            .foregroundStyle(.yellow)
-                        Text("\(h2hService.myStreak.currentStreak)")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                        if h2hService.myStreak.coinMultiplier > 1.0 {
-                            Text("\(Int(h2hService.myStreak.coinMultiplier))x")
-                                .font(.caption.bold())
+                VStack(spacing: 6) {
+                    if h2hService.myStreak.currentStreak > 0 {
+                        HStack(spacing: 4) {
+                            Image(systemName: "crown.fill")
                                 .foregroundStyle(.yellow)
+                            Text("\(h2hService.myStreak.currentStreak)")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(.white)
+                            if h2hService.myStreak.coinMultiplier > 1.0 {
+                                Text("\(Int(h2hService.myStreak.coinMultiplier))x")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.yellow)
+                            }
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(20)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(20)
+                    
+                    Button(action: { showHistory = true }) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(8)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                    }
                 }
                 
                 if !h2hService.myPendingChallenges.isEmpty {
