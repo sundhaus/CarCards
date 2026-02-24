@@ -25,6 +25,7 @@ struct HeadToHeadView: View {
     @State private var showNoRacesMessage = false
     @State private var raceTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var timeRemainingText = "--:--"
+    @State private var unavailableCardIds: Set<String> = []
     
     @Environment(\.dismiss) private var dismiss
     
@@ -88,7 +89,10 @@ struct HeadToHeadView: View {
         .ignoresSafeArea(edges: .bottom)
         .onAppear {
             h2hService.startListening()
-            Task { await h2hService.checkExpiredRaces() }
+            Task {
+                await h2hService.checkExpiredRaces()
+                unavailableCardIds = await loadUnavailableCardIds()
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 if h2hService.currentFeedRace == nil {
                     showNoRacesMessage = true
@@ -107,8 +111,10 @@ struct HeadToHeadView: View {
             hasVoted = false
             cardsVisible = true
             h2hService.loadNextFeedRace()
+            // Refresh blocked cards
+            Task { unavailableCardIds = await loadUnavailableCardIds() }
         }) {
-            ChallengeView()
+            ChallengeView(unavailableCardIds: unavailableCardIds)
         }
         .sheet(isPresented: $showHistory) {
             RaceHistoryView()
@@ -579,6 +585,43 @@ struct HeadToHeadView: View {
         }
         timeRemainingText = race.timeRemainingString
     }
+    
+    private func loadUnavailableCardIds() async -> Set<String> {
+        guard let uid = FirebaseManager.shared.currentUserId else { return [] }
+        var blocked = Set<String>()
+        
+        let db = FirebaseManager.shared.db
+        do {
+            let activeSnap = try await db.collection("races")
+                .whereField("status", isEqualTo: "active")
+                .getDocuments()
+            let openSnap = try await db.collection("races")
+                .whereField("status", isEqualTo: "open")
+                .getDocuments()
+            
+            for doc in activeSnap.documents + openSnap.documents {
+                let data = doc.data()
+                if let cId = data["challengerId"] as? String, cId == uid,
+                   let cardId = data["challengerCardId"] as? String {
+                    blocked.insert(cardId)
+                }
+                if let dId = data["defenderId"] as? String, dId == uid,
+                   let cardId = data["defenderCardId"] as? String {
+                    blocked.insert(cardId)
+                }
+            }
+        } catch {
+            print("⚠️ Error fetching active races for card filter: \(error)")
+        }
+        
+        for card in cardService.myCards where card.cardType == "vehicle" {
+            if let ok = try? await HeadToHeadService.shared.checkCardCooldown(cardId: card.id), !ok {
+                blocked.insert(card.id)
+            }
+        }
+        
+        return blocked
+    }
 }
 
 
@@ -590,6 +633,8 @@ struct ChallengeView: View {
     @ObservedObject private var cardService = CardService.shared
     @ObservedObject private var h2hService = HeadToHeadService.shared
     
+    let unavailableCardIds: Set<String>
+    
     @State private var step: ChallengeStep = .pickCard
     @State private var selectedCard: CloudCard?
     @State private var selectedThreshold: Int = 50
@@ -597,7 +642,6 @@ struct ChallengeView: View {
     @State private var errorMessage: String?
     @State private var cooldownMessage: String?
     @State private var matchResult: MatchResult?
-    @State private var unavailableCardIds: Set<String> = []
     
     enum ChallengeStep {
         case pickCard
@@ -694,55 +738,12 @@ struct ChallengeView: View {
                     .padding(.bottom, 8)
             }
         }
-        .task {
-            await loadUnavailableCards()
-        }
     }
     
     private var availableCards: [CloudCard] {
         cardService.myCards.filter { card in
             card.cardType == "vehicle" && !unavailableCardIds.contains(card.id)
         }
-    }
-    
-    private func loadUnavailableCards() async {
-        guard let uid = FirebaseManager.shared.currentUserId else { return }
-        var blocked = Set<String>()
-        
-        // Cards in active or open races
-        let db = FirebaseManager.shared.db
-        do {
-            let activeSnap = try await db.collection("races")
-                .whereField("status", isEqualTo: "active")
-                .getDocuments()
-            let openSnap = try await db.collection("races")
-                .whereField("status", isEqualTo: "open")
-                .getDocuments()
-            
-            for doc in activeSnap.documents + openSnap.documents {
-                let data = doc.data()
-                if let cId = data["challengerId"] as? String, cId == uid,
-                   let cardId = data["challengerCardId"] as? String {
-                    blocked.insert(cardId)
-                }
-                if let dId = data["defenderId"] as? String, dId == uid,
-                   let cardId = data["defenderCardId"] as? String {
-                    blocked.insert(cardId)
-                }
-            }
-        } catch {
-            print("⚠️ Error fetching active races for card filter: \(error)")
-        }
-        
-        // Cards on cooldown
-        for card in cardService.myCards where card.cardType == "vehicle" {
-            if let ok = try? await HeadToHeadService.shared.checkCardCooldown(cardId: card.id), !ok {
-                blocked.insert(card.id)
-            }
-        }
-        
-        unavailableCardIds = blocked
-        print("🃏 Blocked \(blocked.count) cards from challenge picker")
     }
     
     // MARK: Step 2 - Pick Vote Limit + Challenge
