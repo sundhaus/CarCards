@@ -1,8 +1,9 @@
 //
 //  CardDetailsView.swift
-//  CarCardCollector
+//  Car Collector
 //
-//  FIFA-style item details page
+//  Item Details page — redesigned to match CardOptionsView style
+//  Uses AppBackground, Liquid Glass effects, and gradient option buttons
 //
 
 import SwiftUI
@@ -13,7 +14,9 @@ struct CardDetailsView: View {
     let onListed: () -> Void
     let onComparePrice: () -> Void
     
-    @State private var showCardBack = false
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var userService = UserService.shared
+    
     @State private var showListingForm = false
     @State private var minStartBid = ""
     @State private var buyNowPrice = ""
@@ -21,12 +24,11 @@ struct CardDetailsView: View {
     @State private var isCreating = false
     @State private var errorMessage: String?
     @State private var showQuickSellConfirm = false
+    @State private var showVehicleSpecs = false
     
-    // Fetch specs when viewing back
+    // Specs fetching
     @State private var fetchedSpecs: VehicleSpecs?
     @State private var isFetchingSpecs = false
-    
-    @ObservedObject private var userService = UserService.shared
     
     let durations = [1, 3, 6, 12, 24]
     
@@ -44,26 +46,61 @@ struct CardDetailsView: View {
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color.appBackgroundSolid
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
+                // Header — matches CardOptionsView
                 headerView
                 
+                // Scrollable content
                 ScrollView {
                     VStack(spacing: 20) {
-                        cardDisplayView
-                        actionButtonsView
+                        // Card preview — flattened, centered
+                        cardPreview
+                            .padding(.horizontal, 30)
+                        
+                        // Action buttons — same style as CardOptionsView
+                        VStack(spacing: 10) {
+                            // List on Market (expandable)
+                            listOnMarketOption
+                            
+                            // Vehicle Specs (expandable)
+                            vehicleSpecsOption
+                            
+                            // Compare Price
+                            optionButton(
+                                icon: "chart.bar.fill",
+                                label: "Compare Price",
+                                subtitle: "See similar listings on the market",
+                                colors: [Color.teal, Color.cyan]
+                            ) {
+                                onComparePrice()
+                            }
+                            
+                            // Quick Sell
+                            optionButton(
+                                icon: "bolt.fill",
+                                label: "Quick Sell",
+                                subtitle: "Instantly sell for 250 coins",
+                                colors: [Color.orange, Color.red]
+                            ) {
+                                showQuickSellConfirm = true
+                            }
+                        }
+                        .padding(.horizontal, 20)
                     }
+                    .padding(.bottom, 40)
                 }
             }
         }
-        .alert("Quick Sell", isPresented: $showQuickSellConfirm) {
-            Button("Cancel", role: .cancel) { }
-            Button("Sell", role: .destructive) {
+        .alert("Quick Sell?", isPresented: $showQuickSellConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Sell for 250 coins", role: .destructive) {
                 quickSell()
             }
         } message: {
-            Text("Sell this card for 250 coins?")
+            Text("This will permanently remove the card from your garage and award you 250 coins.")
         }
     }
     
@@ -72,124 +109,255 @@ struct CardDetailsView: View {
     private var headerView: some View {
         HStack {
             Button(action: onDismiss) {
-                Image(systemName: "chevron.left")
-                    .font(.poppins(22))
-                    .foregroundStyle(.white)
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 36, height: 36)
+                    .glassEffect(.regular, in: .circle)
             }
             
             Spacer()
             
             Text("ITEM DETAILS")
-                .font(.poppins(20))
-                .foregroundStyle(.white)
+                .font(.pTitle3)
+                .fontWeight(.bold)
             
             Spacer()
             
+            // Coin counter
             coinCounter
         }
-        .padding()
+        .padding(.horizontal)
+        .padding(.top, 18)
+        .padding(.bottom, 12)
     }
     
     private var coinCounter: some View {
         HStack(spacing: 4) {
             Image(systemName: "dollarsign.circle.fill")
-                .font(.poppins(18))
+                .font(.system(size: 14))
                 .foregroundStyle(.yellow)
             Text("\(userService.coins)")
-                .font(.poppins(16))
-                .foregroundStyle(.white)
+                .font(.poppins(13))
+                .foregroundStyle(.primary)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(20)
+        .glassEffect(.regular, in: .capsule)
     }
     
-    // MARK: - Card Display
+    // MARK: - Card Preview
     
-    private var cardDisplayView: some View {
-        ZStack {
-            if !showCardBack {
-                // Front of card - FIFA style
-                CardDetailsFrontView(card: card)
+    private var cardPreview: some View {
+        Group {
+            let anyCard = AnyCard.vehicle(card)
+            if let flatImage = CardFlattener.shared.flatten(anyCard) {
+                Image(uiImage: flatImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxHeight: 240)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
             } else {
-                if isFetchingSpecs {
-                    specsLoadingView
-                        .frame(maxWidth: 500)
-                        .frame(height: 300)
+                // Fallback — show raw image with border
+                if let image = card.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxHeight: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
                 } else {
-                    cardBackView
-                        .frame(maxWidth: 500)
-                        .frame(height: 300)
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 320, height: 180)
                 }
             }
         }
-        .padding(.horizontal)
-        .padding(.top, 20)
+        .frame(maxWidth: .infinity)
     }
     
-    // MARK: - Action Buttons
+    // MARK: - List on Market (Expandable)
     
-    private var actionButtonsView: some View {
-        VStack(spacing: 16) {
-            listOnMarketButton
-            vehicleSpecsButton
-            comparePriceButton
-            quickSellButton
-        }
-        .padding(.horizontal)
-        .padding(.bottom, 30)
-    }
-    
-    private var listOnMarketButton: some View {
+    private var listOnMarketOption: some View {
         VStack(spacing: 0) {
             Button(action: {
                 withAnimation(.spring(response: 0.3)) {
                     showListingForm.toggle()
                 }
             }) {
-                HStack {
-                    Image(systemName: "tag.fill")
-                        .font(.poppins(18))
-                    Text("LIST ON TRANSFER MARKET")
-                        .font(.poppins(17))
+                HStack(spacing: 14) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.blue, Color.purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("List on Market")
+                            .font(.poppins(16))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                        
+                        Text("Set a price and sell to other players")
+                            .font(.poppins(12))
+                            .foregroundStyle(.secondary)
+                    }
+                    
                     Spacer()
-                    Image(systemName: showListingForm ? "chevron.up" : "chevron.down")
-                        .font(.poppins(14))
+                    
+                    Image(systemName: showListingForm ? "chevron.up" : "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(.white)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(
-                    LinearGradient(
-                        colors: [Color.blue, Color.purple],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(12)
+                .padding(16)
+                .glassEffect(.regular, in: .rect(cornerRadius: 14))
             }
             
+            // Expanded listing form
             if showListingForm {
                 listingFormView
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
     
+    // MARK: - Vehicle Specs (Expandable)
+    
+    private var vehicleSpecsOption: some View {
+        VStack(spacing: 0) {
+            Button(action: {
+                if !showVehicleSpecs {
+                    Task { await fetchSpecsIfNeeded() }
+                }
+                withAnimation(.spring(response: 0.3)) {
+                    showVehicleSpecs.toggle()
+                }
+            }) {
+                HStack(spacing: 14) {
+                    Image(systemName: "gauge.with.dots.needle.67percent")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.green, Color.mint],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Vehicle Specs")
+                            .font(.poppins(16))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                        
+                        Text("View performance and technical data")
+                            .font(.poppins(12))
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: showVehicleSpecs ? "chevron.up" : "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            }
+            
+            // Expanded specs panel
+            if showVehicleSpecs {
+                specsContentView
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+    
+    // MARK: - Specs Content
+    
+    private var specsContentView: some View {
+        VStack(spacing: 12) {
+            if isFetchingSpecs {
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .tint(.primary)
+                    Text("Loading specs...")
+                        .font(.poppins(14))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+            } else if let specs = displaySpecs {
+                // Stats grid
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(spacing: 10) {
+                        specRow(label: "HP", value: parseIntValue(specs.horsepower))
+                        specRow(label: "0-60", value: parseDoubleValue(specs.zeroToSixty))
+                        specRow(label: "ENGINE", value: specs.engine ?? "—")
+                    }
+                    
+                    VStack(spacing: 10) {
+                        specRow(label: "TRQ", value: parseIntValue(specs.torque))
+                        specRow(label: "TOP", value: parseIntValue(specs.topSpeed))
+                        specRow(label: "DRIVE", value: specs.drivetrain ?? "—")
+                    }
+                }
+                
+                // Description if available
+                if let description = specs.description, !description.isEmpty {
+                    Text(description)
+                        .font(.poppins(12))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .padding(.top, 4)
+                }
+            } else {
+                Text("No specs available")
+                    .font(.poppins(14))
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 12)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .glassEffect(.regular, in: .rect(cornerRadius: 14))
+        .padding(.top, -4)
+    }
+    
+    private func specRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.poppins(11))
+                .foregroundStyle(.secondary)
+                .frame(width: 55, alignment: .leading)
+            
+            Text(value)
+                .font(.poppins(14))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+    
+    // MARK: - Listing Form
+    
     private var listingFormView: some View {
         VStack(spacing: 16) {
-            priceControl(
-                label: "Start Price:",
-                value: $minStartBid
-            )
-            
-            priceControl(
-                label: "Buy Now Price:",
-                value: $buyNowPrice
-            )
-            
+            priceControl(label: "Start Price:", value: $minStartBid)
+            priceControl(label: "Buy Now Price:", value: $buyNowPrice)
             durationPicker
-            
             listButton
             
             if let error = errorMessage {
@@ -198,86 +366,66 @@ struct CardDetailsView: View {
                     .foregroundStyle(.red)
             }
         }
-        .padding()
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(12)
-        .transition(.opacity.combined(with: .move(edge: .top)))
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .glassEffect(.regular, in: .rect(cornerRadius: 14))
+        .padding(.top, -4)
     }
     
     private func priceControl(label: String, value: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(label)
-                    .font(.poppins(15))
-                    .foregroundStyle(.white)
-                Spacer()
-            }
+            Text(label)
+                .font(.poppins(14))
+                .foregroundStyle(.primary)
             
             HStack(spacing: 12) {
-                minusButton(value: value)
-                priceTextField(value: value)
-                coinIcon
-                plusButton(value: value)
+                Button(action: {
+                    if let current = Int(value.wrappedValue), current > 100 {
+                        value.wrappedValue = "\(current - 100)"
+                    }
+                }) {
+                    Image(systemName: "minus")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 40, height: 40)
+                        .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                }
+                
+                TextField("0", text: value)
+                    .font(.poppins(18))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 10))
+                    .keyboardType(.numberPad)
+                
+                Image(systemName: "dollarsign.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.yellow)
+                
+                Button(action: {
+                    if let current = Int(value.wrappedValue) {
+                        value.wrappedValue = "\(current + 100)"
+                    } else {
+                        value.wrappedValue = "100"
+                    }
+                }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 40, height: 40)
+                        .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                }
             }
         }
-    }
-    
-    private func minusButton(value: Binding<String>) -> some View {
-        Button(action: {
-            if let current = Int(value.wrappedValue), current > 100 {
-                value.wrappedValue = "\(current - 100)"
-            }
-        }) {
-            Image(systemName: "minus")
-                .font(.poppins(20))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(Color.white.opacity(0.2))
-                .cornerRadius(8)
-        }
-    }
-    
-    private func plusButton(value: Binding<String>) -> some View {
-        Button(action: {
-            if let current = Int(value.wrappedValue) {
-                value.wrappedValue = "\(current + 100)"
-            } else {
-                value.wrappedValue = "100"
-            }
-        }) {
-            Image(systemName: "plus")
-                .font(.poppins(20))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(Color.white.opacity(0.2))
-                .cornerRadius(8)
-        }
-    }
-    
-    private func priceTextField(value: Binding<String>) -> some View {
-        TextField("0", text: value)
-            .font(.poppins(18))
-            .foregroundStyle(.white)
-            .multilineTextAlignment(.center)
-            .padding()
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(10)
-            .keyboardType(.numberPad)
-    }
-    
-    private var coinIcon: some View {
-        HStack(spacing: 2) {
-            Image(systemName: "dollarsign.circle.fill")
-                .foregroundStyle(.yellow)
-        }
-        .font(.poppins(18))
     }
     
     private var durationPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("DURATION")
-                .font(.poppins(15))
-                .foregroundStyle(.white)
+            Text("Duration")
+                .font(.poppins(14))
+                .foregroundStyle(.primary)
             
             Picker("Duration", selection: $selectedDuration) {
                 ForEach(durations, id: \.self) { hours in
@@ -285,241 +433,111 @@ struct CardDetailsView: View {
                 }
             }
             .pickerStyle(.menu)
-            .padding()
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(10)
-            .tint(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassEffect(.regular, in: .rect(cornerRadius: 10))
+            .tint(.primary)
         }
     }
     
     private var listButton: some View {
         Button(action: {
-            Task {
-                await createListing()
-            }
+            Task { await createListing() }
         }) {
             if isCreating {
                 ProgressView()
                     .tint(.white)
                     .frame(maxWidth: .infinity)
-                    .padding()
+                    .padding(.vertical, 14)
             } else {
                 Text("List for Transfer")
-                    .font(.poppins(17))
+                    .font(.poppins(16))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding()
+                    .padding(.vertical, 14)
             }
         }
-        .background(listButtonBackground)
-        .cornerRadius(12)
+        .background(
+            LinearGradient(
+                colors: isFormValid && !isCreating
+                    ? [Color.green, Color.blue]
+                    : [Color.gray.opacity(0.5), Color.gray.opacity(0.5)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .disabled(!isFormValid || isCreating)
     }
     
-    private var listButtonBackground: LinearGradient {
-        isFormValid && !isCreating ?
-        LinearGradient(colors: [Color.green, Color.blue], startPoint: .leading, endPoint: .trailing) :
-        LinearGradient(colors: [Color.gray, Color.gray], startPoint: .leading, endPoint: .trailing)
-    }
+    // MARK: - Option Button (reusable — matches CardOptionsView)
     
-    private var vehicleSpecsButton: some View {
-        Button(action: {
-            if !showCardBack {
-                Task {
-                    await fetchSpecsIfNeeded()
-                }
-            }
-            withAnimation(.spring(response: 0.4)) {
-                showCardBack.toggle()
-            }
-        }) {
-            HStack {
-                Image(systemName: "gauge.with.dots.needle.67percent")
-                    .font(.poppins(18))
-                Text("VEHICLE SPECS")
-                    .font(.poppins(17))
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color(red: 0.3, green: 0.3, blue: 0.35))
-            .cornerRadius(12)
-        }
-    }
-    
-    private var comparePriceButton: some View {
-        Button(action: onComparePrice) {
-            HStack {
-                Image(systemName: "chart.bar.fill")
-                    .font(.poppins(18))
-                Text("COMPARE PRICE")
-                    .font(.poppins(17))
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color(red: 0.3, green: 0.3, blue: 0.35))
-            .cornerRadius(12)
-        }
-    }
-    
-    private var quickSellButton: some View {
-        Button(action: {
-            showQuickSellConfirm = true
-        }) {
-            HStack {
-                Text("QUICK SELL")
-                    .font(.poppins(17))
-                Spacer()
-                HStack(spacing: 4) {
-                    Text("250")
-                        .font(.poppins(16))
-                    Image(systemName: "dollarsign.circle.fill")
-                        .foregroundStyle(.yellow)
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color(red: 0.3, green: 0.3, blue: 0.35))
-            .cornerRadius(12)
-        }
-    }
-    
-    // MARK: - Card Back View
-    
-    private var cardBackView: some View {
-        ZStack {
-            Image("CardBackTexture")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-            
-            VStack(spacing: 12) {
-                Text("\(card.make.uppercased()) \(card.model.uppercased())")
-                    .font(.custom("Futura-Bold", fixedSize: 20))
+    private func optionButton(
+        icon: String,
+        label: String,
+        subtitle: String,
+        colors: [Color],
+        disabled: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        LinearGradient(
+                            colors: disabled ? [Color.gray.opacity(0.4)] : colors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 
-                Text(card.year)
-                    .font(.poppins(14))
-                    .foregroundStyle(.white.opacity(0.8))
-                
-                // Summary/Description
-                if let description = displaySpecs?.description, !description.isEmpty {
-                    Text(description)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label)
+                        .font(.poppins(16))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(disabled ? .secondary : .primary)
+                    
+                    Text(subtitle)
                         .font(.poppins(12))
-                        .foregroundStyle(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 4)
+                        .foregroundStyle(.secondary)
                 }
                 
-                compactStatsGrid
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
             }
-            .padding()
-            
-            // PNG border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .allowsHitTesting(false)
-            }
+            .padding(16)
+            .glassEffect(.regular, in: .rect(cornerRadius: 14))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 300 * 0.09))
-        .cardTilt()
-    }
-    
-    private var compactStatsGrid: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Left column
-            VStack(spacing: 6) {
-                compactStatRow(label: "HP", value: parseIntValue(displaySpecs?.horsepower))
-                compactStatRow(label: "0-60", value: parseDoubleValue(displaySpecs?.zeroToSixty))
-                compactStatRow(label: "ENGINE", value: displaySpecs?.engine ?? "???")
-            }
-            
-            // Right column
-            VStack(spacing: 6) {
-                compactStatRow(label: "TRQ", value: parseIntValue(displaySpecs?.torque))
-                compactStatRow(label: "TOP", value: parseIntValue(displaySpecs?.topSpeed))
-                compactStatRow(label: "DRIVE", value: displaySpecs?.drivetrain ?? "???")
-            }
-        }
-        .padding(.horizontal)
-    }
-    
-    private func compactStatRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.poppins(10))
-                .foregroundStyle(.white.opacity(0.6))
-                .frame(width: 50, alignment: .leading)
-            
-            Text(value)
-                .font(.poppins(14))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-    }
-    
-    private var specsLoadingView: some View {
-        ZStack {
-            Image("CardBackTexture")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-            
-            VStack(spacing: 12) {
-                ProgressView()
-                    .tint(.white)
-                    .scaleEffect(1.5)
-                Text("Loading specs...")
-                    .font(.pCaption)
-                    .foregroundStyle(.white.opacity(0.8))
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 300 * 0.09))
-    }
-    
-    private func statItem(label: String, value: String, compact: Bool = false) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.poppins(compact ? 12 : 18))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            
-            Text(label)
-                .font(.poppins(9))
-                .foregroundStyle(.white.opacity(0.7))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, compact ? 4 : 8)
-        .background(Color.white.opacity(0.15))
-        .cornerRadius(6)
+        .disabled(disabled)
+        .opacity(disabled ? 0.5 : 1)
     }
     
     // MARK: - Helper Functions
     
     private func parseIntValue(_ string: String?) -> String {
-        guard let string = string, string != "N/A" else { return "???" }
+        guard let string = string, string != "N/A" else { return "—" }
         let cleaned = string.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
-        return cleaned.isEmpty ? "???" : cleaned
+        return cleaned.isEmpty ? "—" : cleaned
     }
     
     private func parseDoubleValue(_ string: String?) -> String {
-        guard let string = string, string != "N/A" else { return "???" }
+        guard let string = string, string != "N/A" else { return "—" }
         let cleaned = string.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
-        return cleaned.isEmpty ? "???" : cleaned + "s"
+        return cleaned.isEmpty ? "—" : cleaned + "s"
     }
     
     private func fetchSpecsIfNeeded() async {
         guard displaySpecs == nil else { return }
         
-        await MainActor.run {
-            isFetchingSpecs = true
-        }
+        await MainActor.run { isFetchingSpecs = true }
         
         do {
             let vehicleService = VehicleIdentificationService()
@@ -528,16 +546,13 @@ struct CardDetailsView: View {
                 model: card.model,
                 year: card.year
             )
-            
             await MainActor.run {
                 fetchedSpecs = specs
                 isFetchingSpecs = false
             }
         } catch {
             print("❌ Failed to fetch specs: \(error)")
-            await MainActor.run {
-                isFetchingSpecs = false
-            }
+            await MainActor.run { isFetchingSpecs = false }
         }
     }
     
@@ -586,106 +601,17 @@ struct CardDetailsView: View {
     }
 }
 
-// MARK: - Card Details Front View
-
-struct CardDetailsFrontView: View {
-    let card: SavedCard
-    
-    var body: some View {
-        GeometryReader { geometry in
-            let cardHeight = geometry.size.width / (16/9)
-            
-            ZStack {
-                // Card background with gradient
-                RoundedRectangle(cornerRadius: cardHeight * 0.09)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.85, green: 0.85, blue: 0.88),
-                                Color(red: 0.75, green: 0.75, blue: 0.78)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                
-                // Car image - full bleed
-                Group {
-                    if let image = card.image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.3))
-                            .overlay(
-                                Image(systemName: "car.fill")
-                                    .font(.system(size: cardHeight * 0.3))
-                                    .foregroundStyle(.gray.opacity(0.4))
-                            )
-                    }
-                }
-                .frame(width: geometry.size.width, height: cardHeight)
-                .clipped()
-                
-            // PNG border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: geometry.size.width, height: cardHeight)
-                    .allowsHitTesting(false)
-            }
-                
-                // Car name overlay - top left, horizontal
-                VStack {
-                    HStack {
-                        HStack(spacing: 6) {
-                            let config = CardBorderConfig.forFrame(card.customFrame)
-                            Text(card.make.uppercased())
-                                .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            
-                            Text(card.model.uppercased())
-                                .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                .lineLimit(1)
-                        }
-                        .padding(.top, cardHeight * 0.08)
-                        .padding(.leading, cardHeight * 0.08)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            }
-            .frame(width: geometry.size.width, height: cardHeight)
-            .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-            .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
-            .cardTilt()
-        }
-        .frame(maxWidth: 500)
-        .aspectRatio(16/9, contentMode: .fit)
-    }
-    
-    // Calculate card level based on category rarity
-    private var cardLevel: Int {
-        guard let category = card.specs?.category else { return 1 }
-        
-        switch category {
-        case .hypercar: return 10
-        case .supercar: return 9
-        case .track: return 8
-        case .sportsCar: return 7
-        case .muscle: return 6
-        case .rally: return 5
-        case .electric, .hybrid: return 5
-        case .luxury: return 4
-        case .classic, .concept: return 6
-        case .coupe, .convertible: return 4
-        case .offRoad, .suv, .truck: return 3
-        case .sedan, .wagon, .hatchback, .van: return 2
-        }
-    }
+#Preview {
+    CardDetailsView(
+        card: SavedCard(
+            image: UIImage(systemName: "car.fill")!,
+            make: "Porsche",
+            model: "911 GT3",
+            color: "White",
+            year: "2024"
+        ),
+        onDismiss: {},
+        onListed: {},
+        onComparePrice: {}
+    )
 }
