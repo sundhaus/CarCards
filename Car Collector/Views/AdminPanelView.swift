@@ -24,6 +24,8 @@ struct AdminPanelView: View {
     @State private var isResetting = false
     @State private var showH2HResetConfirm = false
     @State private var isResettingH2H = false
+    @State private var showFeedResetConfirm = false
+    @State private var isResettingFeed = false
     
     var body: some View {
         NavigationStack {
@@ -140,6 +142,45 @@ struct AdminPanelView: View {
                             }
                             .padding(.vertical, 4)
                             
+                            // Feed & Featured Reset Button
+                            VStack(spacing: 12) {
+                                if isResettingFeed {
+                                    HStack(spacing: 12) {
+                                        ProgressView().tint(.purple)
+                                        Text("Clearing feed & featured...")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.purple)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                } else {
+                                    Button(action: {
+                                        showFeedResetConfirm = true
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "newspaper")
+                                                .foregroundStyle(.purple)
+                                            Text("Reset Feed & Featured")
+                                                .font(.subheadline.bold())
+                                                .foregroundStyle(.purple)
+                                            Spacer()
+                                            Text("Activities · Featured · Follows")
+                                                .font(.caption2)
+                                                .foregroundStyle(.gray)
+                                        }
+                                        .padding()
+                                        .background(.purple.opacity(0.08))
+                                        .cornerRadius(12)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(.purple.opacity(0.2), lineWidth: 1)
+                                        )
+                                    }
+                                    .padding(.horizontal)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                            
                             Divider().background(.white.opacity(0.2)).padding(.horizontal)
 
                             if let user = selectedUser {
@@ -201,6 +242,15 @@ struct AdminPanelView: View {
                 }
             } message: {
                 Text("This will delete all races, cooldowns, votes, duo invites, and vote streaks. All cards (including A-Z sim cards) will be freed to race again.")
+            }
+            // Feed & Featured reset confirmation
+            .alert("Reset Feed & Featured?", isPresented: $showFeedResetConfirm) {
+                Button("Cancel", role: .cancel) {}
+                Button("Reset Feed", role: .destructive) {
+                    performFeedReset()
+                }
+            } message: {
+                Text("This will delete all activity posts (and their comments), featured cards, and follows. The Explore page and friend feeds will be empty.")
             }
         }
     }
@@ -454,6 +504,36 @@ struct AdminPanelView: View {
                     isResettingH2H = false
                     withAnimation {
                         statusMessage = "❌ H2H reset failed: \(error.localizedDescription)"
+                    }
+                }
+            }
+        }
+    }
+    
+    private func performFeedReset() {
+        isResettingFeed = true
+        statusMessage = "🔄 Resetting feed & featured..."
+        
+        Task {
+            do {
+                try await adminService.resetFeedAndFeatured()
+                
+                await MainActor.run {
+                    isResettingFeed = false
+                    withAnimation {
+                        statusMessage = "✅ Feed & featured cleared"
+                    }
+                }
+                
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                await MainActor.run {
+                    withAnimation { statusMessage = nil }
+                }
+            } catch {
+                await MainActor.run {
+                    isResettingFeed = false
+                    withAnimation {
+                        statusMessage = "❌ Feed reset failed: \(error.localizedDescription)"
                     }
                 }
             }

@@ -421,7 +421,6 @@ class AdminService: ObservableObject {
     // MARK: - Reset All Head-to-Head Data
     
     /// Wipes all H2H races, cooldowns, votes, invites, and streaks.
-    /// Frees all cards (including sim A-Z) from "in a match" status.
     func resetAllHeadToHead() async throws {
         guard isAdmin else { throw AdminError.notAdmin }
         
@@ -435,7 +434,22 @@ class AdminService: ObservableObject {
         total += await deleteEntireCollection("cardCooldowns")
         
         print("🏁 H2H Reset complete: \(total) documents deleted")
-        print("   All cards are now free to race again.")
+    }
+    
+    // MARK: - Reset Feed & Featured
+    
+    /// Wipes all activity feed posts, featured cards, and follows.
+    func resetFeedAndFeatured() async throws {
+        guard isAdmin else { throw AdminError.notAdmin }
+        
+        print("📰 ADMIN: Resetting feed, featured, and follows...")
+        
+        var total = 0
+        total += await deleteActivitiesWithComments()
+        total += await deleteEntireCollection("featured_cards")
+        total += await deleteEntireCollection("follows")
+        
+        print("📰 Feed reset complete: \(total) documents deleted")
     }
     
     func searchUsers(query: String) async throws -> [(id: String, username: String, totalCards: Int)] {
