@@ -1097,6 +1097,11 @@ struct ChallengeView: View {
             
             var result: [(id: String, username: String, pfpURL: String?)] = []
             
+            // Admin: add bot teammate at top
+            if AdminService.shared.isAdmin {
+                result.append((id: "bot_teammate_001", username: "🤖 BotTeammate", pfpURL: nil))
+            }
+            
             for doc in followSnap.documents {
                 guard let followedId = doc.data()["followingId"] as? String else { continue }
                 if let userDoc = try? await db.collection("users").document(followedId).getDocument(),
@@ -1107,7 +1112,7 @@ struct ChallengeView: View {
                 }
             }
             
-            friends = result.sorted { $0.username.lowercased() < $1.username.lowercased() }
+            friends = result
         } catch {
             print("⚠️ Error loading friends: \(error)")
         }
@@ -1307,6 +1312,49 @@ struct ChallengeView: View {
         guard let card = selectedCard,
               let teammate = selectedTeammate else { return }
         isLoading = true
+        
+        // Bot teammate: skip invite, go straight to duo matchmaking
+        if teammate.id.hasPrefix("bot_teammate") {
+            Task {
+                do {
+                    let inviteId = try await HeadToHeadService.shared.sendDuoInvite(
+                        myCard: card,
+                        teammateId: teammate.id,
+                        teammateUsername: teammate.username,
+                        voteThreshold: selectedThreshold
+                    )
+                    
+                    // Auto-accept with a fake bot card
+                    let botCard = CloudCard(
+                        id: "botCard_\(UUID().uuidString.prefix(8))",
+                        ownerId: teammate.id,
+                        make: "Lamborghini",
+                        model: "Countach",
+                        color: "",
+                        year: "1988",
+                        imageURL: ""
+                    )
+                    try await HeadToHeadService.shared.acceptDuoInvite(
+                        inviteId: inviteId,
+                        myCard: botCard
+                    )
+                    
+                    // Read back the accepted invite and go to matchmaking
+                    let doc = try await FirebaseManager.shared.db
+                        .collection("duoInvites").document(inviteId).getDocument()
+                    if let invite = DuoInvite(document: doc) {
+                        let result = try await HeadToHeadService.shared.duoMatchmaking(invite: invite)
+                        isLoading = false
+                        matchResult = result
+                        step = .result
+                    }
+                } catch {
+                    errorMessage = error.localizedDescription
+                    isLoading = false
+                }
+            }
+            return
+        }
         
         Task {
             do {
