@@ -40,9 +40,9 @@ struct ListingFormView: View {
                 Spacer()
                 
                 VStack(spacing: 20) {
-                    // Card preview
-                    if let image = card.image {
-                        Image(uiImage: image)
+                    // Card preview - flat rendered
+                    if let flatImage = CardRenderer.shared.landscapeCard(for: card.asAnyCard, height: DeviceScale.h(202.5) * 2) {
+                        Image(uiImage: flatImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: DeviceScale.w(360), height: DeviceScale.h(202.5))

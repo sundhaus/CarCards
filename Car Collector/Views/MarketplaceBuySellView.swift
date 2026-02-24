@@ -953,47 +953,20 @@ struct CompactGarageCard: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Card image
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
-                
-                if let image = card.thumbnail ?? card.image {
-                    Image(uiImage: image)
+            // Card image - single flat render
+            Group {
+                if let flatImage = CardRenderer.shared.landscapeCard(for: card.asAnyCard, height: 200) {
+                    Image(uiImage: flatImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 } else {
-                    Image(systemName: "car.fill")
-                        .font(.poppins(24))
-                        .foregroundStyle(.gray.opacity(0.4))
-                }
-                
-                // Border overlay
-                if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.specs?.rarity).borderImageName {
-                    Image(borderImageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .allowsHitTesting(false)
-                }
-                
-                // Name overlay
-                VStack {
-                    HStack {
-                        let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.specs?.rarity)
-                        HStack(spacing: 3) {
-                            Text(card.make.uppercased())
-                                .font(.custom("Futura-Light", fixedSize: 9))
-                                .foregroundStyle(config.textColor)
-                            Text(card.model.uppercased())
-                                .font(.custom("Futura-Bold", fixedSize: 9))
-                                .foregroundStyle(config.textColor)
-                                .lineLimit(1)
-                        }
-                        .padding(.top, 8)
-                        .padding(.leading, 8)
-                        Spacer()
-                    }
-                    Spacer()
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
+                        .overlay(
+                            Image(systemName: "car.fill")
+                                .font(.poppins(24))
+                                .foregroundStyle(.gray.opacity(0.4))
+                        )
                 }
             }
             .aspectRatio(16/9, contentMode: .fit)

@@ -665,22 +665,14 @@ struct CardDetailView: View {
     
     // Front view of the card
     private func cardFrontView(cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
+        let displayCard = (updatedCard ?? card).asAnyCard
         ZStack {
-            if let image = card.image {
-                Image(uiImage: image)
+            if let flatImage = CardRenderer.shared.landscapeCard(for: displayCard, height: cardHeight * 2) {
+                Image(uiImage: flatImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: cardWidth, height: cardHeight)
                     .clipped()
-            }
-            
-            // PNG border overlay based on customFrame (on top of image)
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.specs?.rarity).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: cardWidth, height: cardHeight)
-                    .allowsHitTesting(false)
             }
             
             // Card info overlay at bottom
