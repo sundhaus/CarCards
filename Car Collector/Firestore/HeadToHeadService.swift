@@ -756,20 +756,16 @@ class HeadToHeadService: ObservableObject {
         ])
     }
     
-    /// Helper to create a CloudCard-like proxy from invite data
+    /// Helper to create a minimal CloudCard proxy from invite data
     private func createCardProxy(id: String, make: String, model: String, year: String, imageURL: String) -> CloudCard {
         var card = CloudCard(
             id: id,
             ownerId: "",
-            ownerUsername: "",
             make: make,
             model: model,
+            color: "",
             year: year,
-            cardType: "vehicle",
-            imageURL: imageURL,
-            thumbnailURL: imageURL,
-            rarity: "common",
-            createdAt: Date()
+            imageURL: imageURL
         )
         card.flatImageURL = imageURL
         return card
@@ -1390,6 +1386,9 @@ struct DuoInvite: Identifiable {
     var teammateId: String
     var teammateUsername: String
     var teammateCardId: String
+    var teammateCardMake: String
+    var teammateCardModel: String
+    var teammateCardYear: String
     var teammateCardImageURL: String
     var voteThreshold: Int
     var status: String
@@ -1409,6 +1408,9 @@ struct DuoInvite: Identifiable {
         self.teammateId = data["teammateId"] as? String ?? ""
         self.teammateUsername = data["teammateUsername"] as? String ?? ""
         self.teammateCardId = data["teammateCardId"] as? String ?? ""
+        self.teammateCardMake = data["teammateCardMake"] as? String ?? ""
+        self.teammateCardModel = data["teammateCardModel"] as? String ?? ""
+        self.teammateCardYear = data["teammateCardYear"] as? String ?? ""
         self.teammateCardImageURL = data["teammateCardImageURL"] as? String ?? ""
         self.voteThreshold = data["voteThreshold"] as? Int ?? 50
         self.status = data["status"] as? String ?? ""
