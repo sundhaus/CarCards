@@ -33,13 +33,47 @@ struct CardPreviewView: View {
                     .minimumScaleFactor(0.6)
                     .foregroundStyle(.green)
                 
-                // Card preview (horizontal 16:9)
-                Image(uiImage: cardImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 320, height: 180)
-                    .cornerRadius(15)
-                    .shadow(color: .white.opacity(0.3), radius: 10)
+                // Card preview (horizontal 16:9) with border and name overlay
+                ZStack {
+                    Image(uiImage: cardImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 320, height: 180)
+                        .clipped()
+                    
+                    // White border overlay
+                    Image("Border_Def_Wht")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 320, height: 180)
+                        .allowsHitTesting(false)
+                    
+                    // Car name overlay (top-left, matching garage style)
+                    VStack {
+                        HStack {
+                            HStack(spacing: 4) {
+                                Text(make.uppercased())
+                                    .font(.custom("Futura-Light", fixedSize: 14))
+                                    .foregroundStyle(.white)
+                                    .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                                
+                                if !model.isEmpty {
+                                    Text(model.uppercased())
+                                        .font(.custom("Futura-Bold", fixedSize: 14))
+                                        .foregroundStyle(.white)
+                                        .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
+                                }
+                            }
+                            .padding(.leading, 12)
+                            .padding(.top, 10)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                }
+                .frame(width: 320, height: 180)
+                .clipShape(RoundedRectangle(cornerRadius: 15))
+                .shadow(color: .white.opacity(0.3), radius: 10)
                 
                 // Car details
                 VStack(spacing: 8) {
