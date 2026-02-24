@@ -19,6 +19,9 @@ struct AdminPanelView: View {
     @State private var isLoadingCards = false
     @State private var confirmDelete: CloudCard? = nil
     @State private var statusMessage: String? = nil
+    @State private var showSystemResetConfirm1 = false
+    @State private var showSystemResetConfirm2 = false
+    @State private var isResetting = false
     
     var body: some View {
         NavigationStack {
@@ -51,6 +54,51 @@ struct AdminPanelView: View {
                     
                     ScrollView {
                         LazyVStack(spacing: 0) {
+                            // System Reset Button (danger zone)
+                            VStack(spacing: 12) {
+                                if isResetting {
+                                    VStack(spacing: 16) {
+                                        ProgressView()
+                                            .tint(.red)
+                                            .scaleEffect(1.5)
+                                        Text("Wiping all data...")
+                                            .font(.headline)
+                                            .foregroundStyle(.red)
+                                        Text("Do not close the app")
+                                            .font(.caption)
+                                            .foregroundStyle(.gray)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 30)
+                                } else {
+                                    Button(action: {
+                                        showSystemResetConfirm1 = true
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundStyle(.yellow)
+                                            Text("SYSTEM-WIDE RESET")
+                                                .font(.headline.bold())
+                                                .foregroundStyle(.red)
+                                            Spacer()
+                                            Image(systemName: "trash.fill")
+                                                .foregroundStyle(.red)
+                                        }
+                                        .padding()
+                                        .background(.red.opacity(0.1))
+                                        .cornerRadius(12)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(.red.opacity(0.3), lineWidth: 1)
+                                        )
+                                    }
+                                    .padding(.horizontal)
+                                }
+                            }
+                            .padding(.vertical, 8)
+                            
+                            Divider().background(.white.opacity(0.2)).padding(.horizontal)
+                            
                             if let user = selectedUser {
                                 // User card list
                                 userCardSection(userId: user.id, username: user.username)
@@ -83,6 +131,24 @@ struct AdminPanelView: View {
                 if let card = confirmDelete {
                     Text("This will permanently delete \(card.make) \(card.model) and remove it from all feeds, listings, and races. This cannot be undone.")
                 }
+            }
+            // System-wide reset — confirmation 1
+            .alert("⚠️ System-Wide Reset", isPresented: $showSystemResetConfirm1) {
+                Button("Cancel", role: .cancel) {}
+                Button("I understand, continue", role: .destructive) {
+                    showSystemResetConfirm2 = true
+                }
+            } message: {
+                Text("This will DELETE ALL cards, activities, listings, races, follows, and reset ALL users' coins, levels, and XP to zero. Only accounts will be preserved.\n\nThis affects EVERY user. This cannot be undone.")
+            }
+            // System-wide reset — confirmation 2 (final)
+            .alert("🔴 FINAL CONFIRMATION", isPresented: $showSystemResetConfirm2) {
+                Button("Cancel", role: .cancel) {}
+                Button("WIPE EVERYTHING", role: .destructive) {
+                    performSystemReset()
+                }
+            } message: {
+                Text("Last chance. Every card, every listing, every race, every follow — gone. All progress reset to zero. Are you absolutely sure?")
             }
         }
     }
@@ -278,6 +344,35 @@ struct AdminPanelView: View {
             } catch {
                 withAnimation {
                     statusMessage = "❌ Error: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+    
+    private func performSystemReset() {
+        isResetting = true
+        statusMessage = "🔄 System reset in progress..."
+        
+        Task {
+            do {
+                try await adminService.systemWideReset()
+                
+                await MainActor.run {
+                    isResetting = false
+                    searchResults = []
+                    userCards = []
+                    selectedUser = nil
+                    
+                    withAnimation {
+                        statusMessage = "✅ SYSTEM RESET COMPLETE — Restart the app"
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isResetting = false
+                    withAnimation {
+                        statusMessage = "❌ Reset failed: \(error.localizedDescription)"
+                    }
                 }
             }
         }
