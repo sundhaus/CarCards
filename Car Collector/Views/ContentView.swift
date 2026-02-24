@@ -616,7 +616,7 @@ struct CardDetailView: View {
                 year: currentCard.year
             )
             
-            // Create updated card with specs
+            // Create updated card with specs and rarity border
             let newCard = SavedCard(
                 id: currentCard.id,
                 image: currentCard.image ?? UIImage(),
@@ -627,7 +627,8 @@ struct CardDetailView: View {
                 specs: specs,
                 capturedBy: currentCard.capturedBy,
                 capturedLocation: currentCard.capturedLocation,
-                previousOwners: currentCard.previousOwners
+                previousOwners: currentCard.previousOwners,
+                customFrame: currentCard.customFrame ?? specs?.rarity?.borderAssetName
             )
             
             await MainActor.run {

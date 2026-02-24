@@ -101,6 +101,9 @@ class CardService: ObservableObject {
         let imageURL = try await uploadCardImage(image, uid: uid, cardId: cardId)
         
         // 2. Save metadata to Firestore (with new fields)
+        // If no custom frame specified, use rarity border as default
+        let effectiveFrame = customFrame ?? rarity?.borderAssetName
+        
         let card = CloudCard(
             id: cardId,
             ownerId: uid,
@@ -112,7 +115,7 @@ class CardService: ObservableObject {
             capturedBy: capturedBy,
             capturedLocation: capturedLocation,
             previousOwners: previousOwners,
-            customFrame: customFrame,
+            customFrame: effectiveFrame,
             rarity: rarity?.rawValue
         )
         
