@@ -21,6 +21,8 @@ struct ContentView: View {
     // Track which tabs have been visited (for lazy loading)
     @State private var visitedTabs: Set<Int> = [1] // Home is pre-loaded
     @ObservedObject private var navigationController = NavigationController.shared
+    @ObservedObject private var h2hService = HeadToHeadService.shared
+    @State private var showDuoInvite = false
     
     // Merge all card types for marketplace
     private var allSellableCards: [SavedCard] {
@@ -277,6 +279,16 @@ struct ContentView: View {
             // Pre-warm Capture tab after a brief delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 visitedTabs.insert(2)
+            }
+            // Start listening for duo invites globally
+            h2hService.startDuoInviteListener()
+        }
+        .onChange(of: h2hService.pendingDuoInvite?.id) { _, newId in
+            showDuoInvite = newId != nil
+        }
+        .sheet(isPresented: $showDuoInvite) {
+            if let invite = h2hService.pendingDuoInvite {
+                DuoInvitePopupView(invite: invite)
             }
         }
     }

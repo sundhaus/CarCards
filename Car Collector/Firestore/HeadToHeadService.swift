@@ -927,6 +927,9 @@ class HeadToHeadService: ObservableObject {
         
         // Also clean up old finished/cancelled races
         await cleanupOldRaces()
+        
+        // Clean up expired duo invites
+        await cleanupExpiredDuoInvites()
     }
     
     /// Delete finished/cancelled races older than 24 hours + their votes
@@ -979,6 +982,26 @@ class HeadToHeadService: ObservableObject {
             print("🧹 Cleaned up \(allOld.count) old race(s)")
         } catch {
             print("⚠️ Error cleaning up old races: \(error)")
+        }
+    }
+    
+    /// Clean up expired duo invites
+    func cleanupExpiredDuoInvites() async {
+        do {
+            let expiredSnap = try await duoInvitesCollection
+                .whereField("status", isEqualTo: "pending")
+                .whereField("expiresAt", isLessThan: Timestamp(date: Date()))
+                .getDocuments()
+            
+            for doc in expiredSnap.documents {
+                try await doc.reference.updateData(["status": "expired"])
+            }
+            
+            if !expiredSnap.documents.isEmpty {
+                print("🧹 Expired \(expiredSnap.documents.count) duo invites")
+            }
+        } catch {
+            print("⚠️ Error cleaning expired duo invites: \(error)")
         }
     }
     

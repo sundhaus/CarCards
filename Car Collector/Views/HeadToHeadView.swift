@@ -89,7 +89,6 @@ struct HeadToHeadView: View {
         .ignoresSafeArea(edges: .bottom)
         .onAppear {
             h2hService.startListening()
-            h2hService.startDuoInviteListener()
             Task {
                 await h2hService.checkExpiredRaces()
                 unavailableCardIds = await loadUnavailableCardIds()
@@ -102,7 +101,6 @@ struct HeadToHeadView: View {
         }
         .onDisappear {
             raceTimer.upstream.connect().cancel()
-            h2hService.stopDuoInviteListener()
         }
         .onReceive(raceTimer) { _ in
             updateTimer()
@@ -123,9 +121,6 @@ struct HeadToHeadView: View {
         }
         .sheet(isPresented: $showPendingChallenges) {
             PendingChallengesView()
-        }
-        .sheet(item: $h2hService.pendingDuoInvite) { invite in
-            DuoInvitePopupView(invite: invite)
         }
     }
     
@@ -612,6 +607,17 @@ struct HeadToHeadView: View {
                 }
                 if let dId = data["defenderId"] as? String, dId == uid,
                    let cardId = data["defenderCardId"] as? String {
+                    blocked.insert(cardId)
+                }
+            }
+            
+            // Also block cards in pending duo invites
+            let pendingInvites = try await db.collection("duoInvites")
+                .whereField("inviterId", isEqualTo: uid)
+                .whereField("status", isEqualTo: "pending")
+                .getDocuments()
+            for doc in pendingInvites.documents {
+                if let cardId = doc.data()["inviterCardId"] as? String {
                     blocked.insert(cardId)
                 }
             }
