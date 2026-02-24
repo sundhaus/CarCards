@@ -55,6 +55,7 @@ struct VehicleSpecs: Codable {
     let drivetrain: String
     let description: String
     let category: VehicleCategory?  // Optional category for Explore page
+    let rarity: CardRarity?  // Rarity tier for economy scaling
     
     // Metadata
     let fetchedAt: Date
@@ -63,13 +64,14 @@ struct VehicleSpecs: Codable {
     // Coding keys for custom decoder
     enum CodingKeys: String, CodingKey {
         case engine, horsepower, torque, zeroToSixty, topSpeed
-        case transmission, drivetrain, description, category
+        case transmission, drivetrain, description, category, rarity
         case fetchedAt, fetchedBy
     }
     
     init(engine: String, horsepower: String, torque: String, zeroToSixty: String,
          topSpeed: String, transmission: String, drivetrain: String, description: String,
-         fetchedAt: Date = Date(), fetchedBy: String? = nil, category: VehicleCategory? = nil) {
+         fetchedAt: Date = Date(), fetchedBy: String? = nil, category: VehicleCategory? = nil,
+         rarity: CardRarity? = nil) {
         self.engine = engine
         self.horsepower = horsepower
         self.torque = torque
@@ -81,6 +83,7 @@ struct VehicleSpecs: Codable {
         self.fetchedAt = fetchedAt
         self.fetchedBy = fetchedBy
         self.category = category
+        self.rarity = rarity
     }
     
     // Custom decoder for backward compatibility (handles missing category field)
@@ -100,6 +103,7 @@ struct VehicleSpecs: Codable {
         
         // NEW: category is optional for backward compatibility
         category = try container.decodeIfPresent(VehicleCategory.self, forKey: .category)
+        rarity = try container.decodeIfPresent(CardRarity.self, forKey: .rarity)
     }
     
     // Custom encoder to ensure category is included
@@ -117,8 +121,9 @@ struct VehicleSpecs: Codable {
         try container.encode(fetchedAt, forKey: .fetchedAt)
         try container.encodeIfPresent(fetchedBy, forKey: .fetchedBy)
         try container.encodeIfPresent(category, forKey: .category)
+        try container.encodeIfPresent(rarity, forKey: .rarity)
         
-        print("📝 Encoding specs with category: \(category?.rawValue ?? "none")")
+        print("📝 Encoding specs with category: \(category?.rawValue ?? "none"), rarity: \(rarity?.rawValue ?? "none")")
     }
 }
 
@@ -351,27 +356,43 @@ class VehicleIdentificationService: ObservableObject {
                         decoder.dateDecodingStrategy = .iso8601
                         var cached = try decoder.decode(VehicleSpecs.self, from: jsonData)
                         
-                        // If cached specs don't have category, fetch and update
-                        if cached.category == nil {
-                            print("⚠️ Cached specs missing category - fetching from AI now")
+                        // If cached specs don't have category or rarity, fetch and update
+                        if cached.category == nil || cached.rarity == nil {
+                            print("⚠️ Cached specs missing category/rarity - fetching from AI now")
                             
-                            // Fetch category from AI
+                            // Fetch category and rarity from AI
                             let categoryPrompt = """
                             Categorize: \(year) \(make) \(model)
                             
-                            Return ONLY ONE category from this list (copy exactly):
+                            LINE 1: Return ONLY ONE category from this list (copy exactly):
                             Hypercar, Supercar, Sports Car, Muscle, Track, Off-Road, Rally, SUV, Truck, Van, Luxury, Sedan, Coupe, Convertible, Wagon, Electric, Hybrid, Classic, Concept, Hatchback
                             
-                            Just the category name, nothing else.
+                            LINE 2: Return ONLY ONE rarity from this list (copy exactly):
+                            Common, Uncommon, Rare, Epic, Legendary
+                            
+                            Rarity guide:
+                            - Common: Mass-market (Camry, Civic, F-150)
+                            - Uncommon: Premium (BMW 3 Series, Mustang GT, Tesla Model 3)
+                            - Rare: Enthusiast (Porsche 911, Corvette, AMG)
+                            - Epic: Supercars/high luxury (Ferrari, Lamborghini, Rolls-Royce)
+                            - Legendary: Hypercars/unicorns (Bugatti, Pagani, Koenigsegg)
+                            
+                            Two lines only, nothing else.
                             """
                             
                             if let categoryResponse = try? await self.model.generateContent(categoryPrompt),
-                               let categoryText = categoryResponse.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-                               let category = VehicleCategory(rawValue: categoryText) {
+                               let responseText = categoryResponse.text?.trimmingCharacters(in: .whitespacesAndNewlines) {
                                 
-                                print("✅ Fetched category: \(category.rawValue)")
+                                let responseLines = responseText.components(separatedBy: .newlines)
+                                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                                    .filter { !$0.isEmpty }
                                 
-                                // Update cached specs with category
+                                let fetchedCategory = cached.category ?? responseLines.first.flatMap { VehicleCategory(rawValue: $0) }
+                                let fetchedRarity = cached.rarity ?? (responseLines.count > 1 ? CardRarity(rawValue: responseLines[1]) : nil)
+                                
+                                print("✅ Fetched category: \(fetchedCategory?.rawValue ?? "none"), rarity: \(fetchedRarity?.rawValue ?? "none")")
+                                
+                                // Update cached specs with category and rarity
                                 cached = VehicleSpecs(
                                     engine: cached.engine,
                                     horsepower: cached.horsepower,
@@ -383,10 +404,11 @@ class VehicleIdentificationService: ObservableObject {
                                     description: cached.description,
                                     fetchedAt: cached.fetchedAt,
                                     fetchedBy: cached.fetchedBy,
-                                    category: category
+                                    category: fetchedCategory,
+                                    rarity: fetchedRarity
                                 )
                                 
-                                // Update Firestore with category
+                                // Update Firestore with category and rarity
                                 Task {
                                     do {
                                         let encoder = JSONEncoder()
@@ -394,13 +416,13 @@ class VehicleIdentificationService: ObservableObject {
                                         let jsonData = try encoder.encode(cached)
                                         let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] ?? [:]
                                         try await docRef.setData(json, merge: true)
-                                        print("✅ Updated Firestore with category: \(category.rawValue)")
+                                        print("✅ Updated Firestore with category: \(fetchedCategory?.rawValue ?? "none"), rarity: \(fetchedRarity?.rawValue ?? "none")")
                                     } catch {
                                         print("⚠️ Failed to update Firestore: \(error)")
                                     }
                                 }
                             } else {
-                                print("⚠️ Could not fetch category for cached specs")
+                                print("⚠️ Could not fetch category/rarity for cached specs")
                             }
                         }
                         
@@ -429,11 +451,22 @@ class VehicleIdentificationService: ObservableObject {
         LINE 1: Category (choose ONE from this list, copy exactly):
         Hypercar, Supercar, Sports Car, Muscle, Track, Off-Road, Rally, SUV, Truck, Van, Luxury, Sedan, Coupe, Convertible, Wagon, Electric, Hybrid, Classic, Concept, Hatchback
         
-        LINE 2 onwards: Specs as JSON:
+        LINE 2: Rarity (choose ONE based on real-world rarity and desirability):
+        Common, Uncommon, Rare, Epic, Legendary
+        
+        Rarity guide:
+        - Common: Mass-market daily drivers (Toyota Camry, Honda Civic, Ford F-150, Nissan Altima)
+        - Uncommon: Premium or enthusiast-level (BMW 3 Series, Audi A4, Mustang GT, Jeep Wrangler, Tesla Model 3)
+        - Rare: Enthusiast favorites, sports cars, luxury (Porsche 911, Corvette, Mercedes AMG, Land Rover Defender)
+        - Epic: Supercars and high luxury (Ferrari 488, Lamborghini Huracan, McLaren 720S, Rolls-Royce, Bentley)
+        - Legendary: Hypercars and truly rare (Bugatti Chiron, Pagani, Koenigsegg, LaFerrari, classic 1960s Ferrari, Shelby Cobra)
+        
+        LINE 3 onwards: Specs as JSON:
         {"engine":"","horsepower":"","torque":"","zeroToSixty":"","topSpeed":"","transmission":"","drivetrain":"","description":""}
         
         Example format:
         Sports Car
+        Rare
         {"engine":"3.0L V6","horsepower":"400 hp",...}
         
         Specs details:
@@ -457,10 +490,12 @@ class VehicleIdentificationService: ObservableObject {
         print("📥 Raw AI response:")
         print(text)
         
-        // Parse category from first line, specs from rest
+        // Parse category from first line, rarity from second line, specs from rest
         let lines = text.components(separatedBy: .newlines)
         var category: VehicleCategory? = nil
+        var rarity: CardRarity? = nil
         var specsText = text
+        var linesToDrop = 0
         
         // Try to get category from first line
         if let firstLine = lines.first?.trimmingCharacters(in: .whitespacesAndNewlines), !firstLine.isEmpty {
@@ -468,11 +503,26 @@ class VehicleIdentificationService: ObservableObject {
             if let parsedCategory = VehicleCategory(rawValue: firstLine) {
                 print("✅ Found category on first line: \(firstLine)")
                 category = parsedCategory
-                // Remove first line for specs parsing
-                specsText = lines.dropFirst().joined(separator: "\n")
+                linesToDrop = 1
             } else {
                 print("⚠️ First line '\(firstLine)' is not a valid category, treating as part of specs")
             }
+        }
+        
+        // Try to get rarity from second line (or first if no category found)
+        let rarityLineIndex = linesToDrop
+        if rarityLineIndex < lines.count {
+            let rarityLine = lines[rarityLineIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+            if let parsedRarity = CardRarity(rawValue: rarityLine) {
+                print("✅ Found rarity: \(rarityLine)")
+                rarity = parsedRarity
+                linesToDrop += 1
+            }
+        }
+        
+        // Remove parsed header lines for specs parsing
+        if linesToDrop > 0 {
+            specsText = lines.dropFirst(linesToDrop).joined(separator: "\n")
         }
         
         // Parse specs
@@ -491,10 +541,11 @@ class VehicleIdentificationService: ObservableObject {
             description: specs.description,
             fetchedAt: Date(),
             fetchedBy: uid,
-            category: category
+            category: category,
+            rarity: rarity
         )
         
-        print("✅ Final specs with category: \(category?.rawValue ?? "NONE - THIS IS A PROBLEM!")")
+        print("✅ Final specs with category: \(category?.rawValue ?? "NONE"), rarity: \(rarity?.rawValue ?? "NONE")")
         
         // Save to Firestore for ALL users
         Task {

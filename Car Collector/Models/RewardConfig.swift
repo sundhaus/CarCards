@@ -46,13 +46,59 @@ struct RewardConfig {
     /// XP for placing a bid
     static let placeBidXP = 5
     
-    // MARK: - Quick Sell
+    // MARK: - Quick Sell (scaled by rarity)
     
-    /// Coins received for quick-selling a card
-    static let quickSellCoins = 250
+    /// Base coins for quick-selling — overridden by rarity
+    static let quickSellCoins = 50
     
-    /// XP for quick-selling a card
+    /// Coins received for quick-selling based on card rarity
+    static func quickSellCoins(for rarity: CardRarity) -> Int {
+        switch rarity {
+        case .common:    return 50
+        case .uncommon:  return 100
+        case .rare:      return 250
+        case .epic:      return 500
+        case .legendary: return 1000
+        }
+    }
+    
+    /// XP for quick-selling based on card rarity
+    static func quickSellXP(for rarity: CardRarity) -> Int {
+        switch rarity {
+        case .common:    return 5
+        case .uncommon:  return 10
+        case .rare:      return 20
+        case .epic:      return 35
+        case .legendary: return 50
+        }
+    }
+    
+    /// XP for quick-selling a card (fallback when rarity unknown)
     static let quickSellXP = 5
+    
+    // MARK: - Capture Bonuses (scaled by rarity)
+    
+    /// Bonus XP on top of base capture XP for rarer cards
+    static func captureXP(for rarity: CardRarity) -> Int {
+        switch rarity {
+        case .common:    return cardCaptureXP         // 25
+        case .uncommon:  return cardCaptureXP + 10    // 35
+        case .rare:      return cardCaptureXP + 25    // 50
+        case .epic:      return cardCaptureXP + 50    // 75
+        case .legendary: return cardCaptureXP + 100   // 125
+        }
+    }
+    
+    /// Bonus coins on top of base capture coins for rarer cards
+    static func captureCoins(for rarity: CardRarity) -> Int {
+        switch rarity {
+        case .common:    return cardCaptureCoins        // 5
+        case .uncommon:  return cardCaptureCoins + 5    // 10
+        case .rare:      return cardCaptureCoins + 15   // 20
+        case .epic:      return cardCaptureCoins + 35   // 40
+        case .legendary: return cardCaptureCoins + 70   // 75
+        }
+    }
     
     // MARK: - Social XP
     
