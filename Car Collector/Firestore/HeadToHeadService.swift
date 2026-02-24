@@ -722,7 +722,7 @@ class HeadToHeadService: ObservableObject {
             ]
             
             var race1Data = baseData
-            race1Data["challengerId"] = invite.inviterId
+            race1Data["challengerId"] = uid  // Create with current user
             race1Data["challengerUsername"] = invite.inviterUsername
             race1Data["challengerCardId"] = invite.inviterCardId
             race1Data["challengerCardMake"] = invite.inviterCardMake
@@ -732,7 +732,7 @@ class HeadToHeadService: ObservableObject {
             race1Data["pairedRaceId"] = raceId2
             
             var race2Data = baseData
-            race2Data["challengerId"] = invite.teammateId
+            race2Data["challengerId"] = uid  // Create with current user
             race2Data["challengerUsername"] = invite.teammateUsername
             race2Data["challengerCardId"] = invite.teammateCardId
             race2Data["challengerCardMake"] = invite.teammateCardMake
@@ -740,25 +740,16 @@ class HeadToHeadService: ObservableObject {
             race2Data["challengerCardYear"] = invite.teammateCardYear
             race2Data["challengerCardImageURL"] = invite.teammateCardImageURL
             race2Data["pairedRaceId"] = raceId1
-            race2Data["createdBy"] = uid  // Track who actually created this
             
             try await racesCollection.document(raceId1).setData(race1Data)
+            try await racesCollection.document(raceId2).setData(race2Data)
             
-            // Race2 has challengerId != current user, so bypass create rule
-            // by writing directly through a batch or updating rules
-            // Use a two-step approach: create with current user, then update
-            var tempRace2 = race2Data
-            tempRace2["challengerId"] = uid // Create with current user to pass rules
-            try await racesCollection.document(raceId2).setData(tempRace2)
-            // Immediately update to actual teammate
+            // Update challengerIds to actual users
+            try await racesCollection.document(raceId1).updateData([
+                "challengerId": invite.inviterId
+            ])
             try await racesCollection.document(raceId2).updateData([
-                "challengerId": invite.teammateId,
-                "challengerUsername": invite.teammateUsername,
-                "challengerCardId": invite.teammateCardId,
-                "challengerCardMake": invite.teammateCardMake,
-                "challengerCardModel": invite.teammateCardModel,
-                "challengerCardYear": invite.teammateCardYear,
-                "challengerCardImageURL": invite.teammateCardImageURL
+                "challengerId": invite.teammateId
             ])
             
             // Update invite status
@@ -811,6 +802,10 @@ class HeadToHeadService: ObservableObject {
     
     /// Creates a fake opponent duo pair in the queue for testing 2v2 without 4 devices
     func seedFakeOpponentDuo(voteThreshold: Int) async throws {
+        guard let uid = FirebaseManager.shared.currentUserId else {
+            throw FirebaseError.notAuthenticated
+        }
+        
         let now = Date()
         let raceId1 = UUID().uuidString
         let raceId2 = UUID().uuidString
@@ -838,28 +833,26 @@ class HeadToHeadService: ObservableObject {
             "defenderCardImageURL": "",
         ]
         
-        var race1Data = baseData
-        race1Data["challengerId"] = "fakeBot_\(raceId1)"
-        race1Data["challengerUsername"] = fakeNames[0].0
-        race1Data["challengerCardId"] = "fakeCard_\(raceId1)"
-        race1Data["challengerCardMake"] = fakeNames[0].1
-        race1Data["challengerCardModel"] = fakeNames[0].2
-        race1Data["challengerCardYear"] = fakeNames[0].3
-        race1Data["challengerCardImageURL"] = ""
-        race1Data["pairedRaceId"] = raceId2
-        
-        var race2Data = baseData
-        race2Data["challengerId"] = "fakeBot_\(raceId2)"
-        race2Data["challengerUsername"] = fakeNames[1].0
-        race2Data["challengerCardId"] = "fakeCard_\(raceId2)"
-        race2Data["challengerCardMake"] = fakeNames[1].1
-        race2Data["challengerCardModel"] = fakeNames[1].2
-        race2Data["challengerCardYear"] = fakeNames[1].3
-        race2Data["challengerCardImageURL"] = ""
-        race2Data["pairedRaceId"] = raceId1
-        
-        try await racesCollection.document(raceId1).setData(race1Data)
-        try await racesCollection.document(raceId2).setData(race2Data)
+        // Create with current user to pass Firestore rules, then update to bot
+        for (index, raceId) in [raceId1, raceId2].enumerated() {
+            let pairedId = index == 0 ? raceId2 : raceId1
+            let fakeBotId = "fakeBot_\(raceId)"
+            
+            var createData = baseData
+            createData["challengerId"] = uid
+            createData["challengerUsername"] = fakeNames[index].0
+            createData["challengerCardId"] = "fakeCard_\(raceId)"
+            createData["challengerCardMake"] = fakeNames[index].1
+            createData["challengerCardModel"] = fakeNames[index].2
+            createData["challengerCardYear"] = fakeNames[index].3
+            createData["challengerCardImageURL"] = ""
+            createData["pairedRaceId"] = pairedId
+            
+            try await racesCollection.document(raceId).setData(createData)
+            try await racesCollection.document(raceId).updateData([
+                "challengerId": fakeBotId
+            ])
+        }
         
         print("🤖 Seeded fake opponent duo: \(raceId1) + \(raceId2) at \(voteThreshold) votes")
     }
