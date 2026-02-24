@@ -26,6 +26,9 @@ struct CardDetailsView: View {
     @State private var showQuickSellConfirm = false
     @State private var showVehicleSpecs = false
     
+    // Cached flat image (computed once, not on every body eval)
+    @State private var flatImage: UIImage?
+    
     // Specs fetching
     @State private var fetchedSpecs: VehicleSpecs?
     @State private var isFetchingSpecs = false
@@ -150,31 +153,26 @@ struct CardDetailsView: View {
     
     private var cardPreview: some View {
         Group {
-            let anyCard = AnyCard.vehicle(card)
-            if let flatImage = CardFlattener.shared.flatten(anyCard) {
-                Image(uiImage: flatImage)
+            if let image = flatImage ?? card.image {
+                Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxHeight: 240)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
             } else {
-                // Fallback — show raw image with border
-                if let image = card.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxHeight: 240)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
-                } else {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 320, height: 180)
-                }
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 320, height: 180)
             }
         }
         .frame(maxWidth: .infinity)
+        .onAppear {
+            // Flatten once on appear, not on every body evaluation
+            if flatImage == nil {
+                flatImage = CardFlattener.shared.flatten(AnyCard.vehicle(card))
+            }
+        }
     }
     
     // MARK: - List on Market (Expandable)
