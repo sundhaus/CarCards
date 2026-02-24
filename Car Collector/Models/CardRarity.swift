@@ -97,7 +97,7 @@ enum CardRarity: String, Codable, CaseIterable, Comparable {
     /// Asset name for the rarity border PNG
     var borderAssetName: String {
         switch self {
-        case .common:    return "Border_Rare"
+        case .common:    return "Border_Common"
         case .uncommon:  return "Border_Uncommon"
         case .rare:      return "Border_Rare"
         case .epic:      return "Border_Epic"
