@@ -186,30 +186,32 @@ class VehicleIdentificationService: ObservableObject {
             #endif
             
             let prompt = """
-            You are an expert automotive spotter. Return your TOP 3 identifications.
+            A previous AI attempt misidentified this vehicle. You are a second-opinion expert.
             
-            Examine carefully before answering:
-            - Headlight/taillight shape and LED signature
-            - Grille design, badge/emblem style and placement
-            - Body lines, fender flares, roofline, window shape
-            - Wheel design, mirror shape, bumper/diffuser details
-            - Any visible badges, model numbers, trim indicators
+            TAKE A COMPLETELY DIFFERENT APPROACH than a standard identification:
+            1. First, read any visible text: badges, model numbers, emblems, dealer plates, license plate frame text
+            2. Look at country-of-origin cues: plate style, road markings, driving side — this narrows the brand pool
+            3. Examine UNIQUE details that distinguish trims and generations:
+               - Exhaust tip count and shape (quad = performance variant?)
+               - Fender vents, hood scoops, spoiler style, diffuser complexity
+               - Specific wheel pattern (OEM wheels are model-specific)
+               - DRL (daytime running light) signature — each model year has a unique pattern
+               - Side mirror indicators, shark fin antenna, roof rail style
+            4. Consider less obvious brands — the first attempt likely guessed a common brand. Think broader.
+            5. Consider modified/aftermarket vehicles — body kits can make one car look like another
             
-            Return JSON with 3 options ranked by confidence:
+            Return your TOP 3 alternative identifications as JSON, most likely first:
             {"options":[
                 {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 GT3","generation":"992","confidence":"high"},
                 {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 Carrera S","generation":"992","confidence":"medium"},
                 {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 GT3","generation":"991.2","confidence":"low"}
             ]}
             
-            If NOT a vehicle or inappropriate:
-            {"options":[{"isVehicle":false,"isAppropriate":true,"rejectionReason":"No vehicle detected","make":"","model":"","generation":"","confidence":""}]}
-            
             RULES:
             - make: manufacturer (e.g. "Mercedes-Benz", "Land Rover")
             - model: full name with sub-model (e.g. "911 GT3 RS", "M3 Competition", "Civic Type R")
             - generation: chassis code preferred (e.g. "992", "G80", "FL5"). Use "Nth Gen" only if no code exists.
-            - Option 1: best match. Options 2-3: plausible alternatives (different trims, facelifts, or similar models).
+            - Each option should be a MEANINGFULLY different identification, not just trim variations.
             - Do NOT return "Unknown". Always give your best identification.
             
             Return ONLY JSON, no markdown.
