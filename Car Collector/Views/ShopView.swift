@@ -21,7 +21,13 @@ struct ShopView: View {
     
     var body: some View {
         ZStack {
-            AppBackground()
+            Image("ShopBackground")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .blur(radius: 3)
+                .ignoresSafeArea()
+                .overlay(Color.black.opacity(0.45))
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Header
