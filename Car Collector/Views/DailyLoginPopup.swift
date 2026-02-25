@@ -87,218 +87,219 @@ struct DailyLoginPopup: View {
                     }
                     
                     // Content
-                    VStack(spacing: DeviceScale.h(12)) {
-                    // Flame icon with enhanced glow
-                    ZStack {
-                        // Floating particles
-                        ForEach(0..<8, id: \.self) { index in
-                            FloatingParticle(
-                                color: streakGradient[index % 2],
-                                size: CGFloat.random(in: 3...6),
-                                delay: Double(index) * 0.2,
-                                duration: Double.random(in: 2...4)
-                            )
-                            .offset(
-                                x: cos(Double(index) * .pi / 4) * 50,
-                                y: sin(Double(index) * .pi / 4) * 50
-                            )
-                        }
-                        
-                        // Outer glow ring
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [
-                                        streakGradient[0].opacity(0.3),
-                                        streakGradient[1].opacity(0.15),
-                                        streakGradient[0].opacity(0.0)
-                                    ],
-                                    center: .center,
-                                    startRadius: 10,
-                                    endRadius: 70
+                    VStack(spacing: DeviceScale.h(10)) {
+                        // Flame icon with enhanced glow
+                        ZStack {
+                            // Floating particles
+                            ForEach(0..<8, id: \.self) { index in
+                                FloatingParticle(
+                                    color: streakGradient[index % 2],
+                                    size: CGFloat.random(in: 3...6),
+                                    delay: Double(index) * 0.2,
+                                    duration: Double.random(in: 2...4)
                                 )
-                            )
-                            .frame(width: 140, height: 140)
-                            .scaleEffect(showRewardPulse ? 1.2 : 1.0)
-                            .opacity(animateIn ? 1 : 0)
-                        
-                        // Inner glow
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [
-                                        streakGradient[0].opacity(0.4),
-                                        streakGradient[0].opacity(0.0)
-                                    ],
-                                    center: .center,
-                                    startRadius: 15,
-                                    endRadius: 45
+                                .offset(
+                                    x: cos(Double(index) * .pi / 4) * 50,
+                                    y: sin(Double(index) * .pi / 4) * 50
                                 )
-                            )
-                            .frame(width: 90, height: 90)
-                            .scaleEffect(showRewardPulse ? 1.15 : 1.0)
-                            .opacity(animateIn ? 1 : 0)
-                        
-                        // Flame icon
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 48))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: streakGradient,
-                                    startPoint: .bottom,
-                                    endPoint: .top
-                                )
-                            )
-                            .scaleEffect(animateIn ? 1.0 : 0.5)
-                            .opacity(animateIn ? 1 : 0)
-                            .shadow(color: streakGradient[1].opacity(0.6), radius: 8, y: 4)
-                    }
-                    .padding(.top, DeviceScale.h(8))
-                    
-                    // Streak count with "Day X of 7" subtext
-                    VStack(spacing: 2) {
-                        Text("\(loginService.currentStreak) Day Streak")
-                            .font(.system(size: 26, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .opacity(animateIn ? 1 : 0)
-                        
-                        if loginService.currentStreak > 0 {
-                            let cycleDay = ((loginService.currentStreak - 1) % 7) + 1
-                            Text("Day \(cycleDay) of 7 this cycle")
-                                .font(.poppins(11))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .opacity(animateIn ? 1 : 0)
-                        }
-                    }
-                    
-                    // 7-Day progress tracker
-                    weekProgressTracker
-                        .padding(.top, DeviceScale.h(8))
-                        .opacity(animateIn ? 1 : 0)
-                    
-                    if !claimedToday {
-                        // Rewards preview
-                        HStack(spacing: DeviceScale.w(24)) {
-                            rewardBubble(
-                                icon: "star.fill",
-                                value: "+\(RewardConfig.dailyLoginXP)",
-                                label: "XP",
-                                colors: [.cyan, .blue]
-                            )
-                            
-                            rewardBubble(
-                                icon: "dollarsign.circle.fill",
-                                value: "+\(RewardConfig.dailyLoginCoins)",
-                                label: "Coins",
-                                colors: [.yellow, .orange]
-                            )
-                        }
-                        .padding(.vertical, DeviceScale.h(8))
-                        .opacity(animateIn ? 1 : 0)
-                        
-                        // Claim button - more exciting
-                        Button(action: {
-                            claimReward()
-                        }) {
-                            Group {
-                                if isClaiming {
-                                    ProgressView()
-                                        .tint(.white)
-                                } else {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "gift.fill")
-                                            .font(.system(size: 16))
-                                        Text("Claim Reward")
-                                            .font(.poppins(16))
-                                            .fontWeight(.semibold)
-                                    }
-                                }
                             }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 15)
-                            .background(
-                                ZStack {
-                                    // Gradient background
+                            
+                            // Outer glow ring
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [
+                                            streakGradient[0].opacity(0.3),
+                                            streakGradient[1].opacity(0.15),
+                                            streakGradient[0].opacity(0.0)
+                                        ],
+                                        center: .center,
+                                        startRadius: 10,
+                                        endRadius: 60
+                                    )
+                                )
+                                .frame(width: 120, height: 120)
+                                .scaleEffect(showRewardPulse ? 1.2 : 1.0)
+                                .opacity(animateIn ? 1 : 0)
+                            
+                            // Inner glow
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [
+                                            streakGradient[0].opacity(0.4),
+                                            streakGradient[0].opacity(0.0)
+                                        ],
+                                        center: .center,
+                                        startRadius: 12,
+                                        endRadius: 38
+                                    )
+                                )
+                                .frame(width: 76, height: 76)
+                                .scaleEffect(showRewardPulse ? 1.15 : 1.0)
+                                .opacity(animateIn ? 1 : 0)
+                            
+                            // Flame icon
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 40))
+                                .foregroundStyle(
                                     LinearGradient(
                                         colors: streakGradient,
-                                        startPoint: .leading,
-                                        endPoint: .trailing
+                                        startPoint: .bottom,
+                                        endPoint: .top
                                     )
+                                )
+                                .scaleEffect(animateIn ? 1.0 : 0.5)
+                                .opacity(animateIn ? 1 : 0)
+                                .shadow(color: streakGradient[1].opacity(0.6), radius: 6, y: 3)
+                        }
+                        .padding(.top, DeviceScale.h(6))
+                        
+                        // Streak count with "Day X of 7" subtext
+                        VStack(spacing: 1) {
+                            Text("\(loginService.currentStreak) Day Streak")
+                                .font(.system(size: 22, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .opacity(animateIn ? 1 : 0)
+                            
+                            if loginService.currentStreak > 0 {
+                                let cycleDay = ((loginService.currentStreak - 1) % 7) + 1
+                                Text("Day \(cycleDay) of 7 this cycle")
+                                    .font(.poppins(10))
+                                    .foregroundStyle(.white.opacity(0.6))
+                                    .opacity(animateIn ? 1 : 0)
+                            }
+                        }
+                        
+                        // 7-Day progress tracker
+                        weekProgressTracker
+                            .padding(.top, DeviceScale.h(6))
+                            .opacity(animateIn ? 1 : 0)
+                        
+                        if !claimedToday {
+                            // Rewards preview
+                            HStack(spacing: DeviceScale.w(20)) {
+                                rewardBubble(
+                                    icon: "star.fill",
+                                    value: "+\(RewardConfig.dailyLoginXP)",
+                                    label: "XP",
+                                    colors: [.cyan, .blue]
+                                )
+                                
+                                rewardBubble(
+                                    icon: "dollarsign.circle.fill",
+                                    value: "+\(RewardConfig.dailyLoginCoins)",
+                                    label: "Coins",
+                                    colors: [.yellow, .orange]
+                                )
+                            }
+                            .padding(.vertical, DeviceScale.h(6))
+                            .opacity(animateIn ? 1 : 0)
+                            
+                            // Claim button - more exciting
+                            Button(action: {
+                                claimReward()
+                            }) {
+                                Group {
+                                    if isClaiming {
+                                        ProgressView()
+                                            .tint(.white)
+                                    } else {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "gift.fill")
+                                                .font(.system(size: 14))
+                                            Text("Claim Reward")
+                                                .font(.poppins(15))
+                                                .fontWeight(.semibold)
+                                        }
+                                    }
+                                }
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 13)
+                                .background(
+                                    ZStack {
+                                        // Gradient background
+                                        LinearGradient(
+                                            colors: streakGradient,
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                        
+                                        // Shimmer effect
+                                        LinearGradient(
+                                            colors: [
+                                                .clear,
+                                                .white.opacity(0.3),
+                                                .clear
+                                            ],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                        .offset(x: animateIn ? 200 : -200)
+                                        .animation(.linear(duration: 2).repeatForever(autoreverses: false), value: animateIn)
+                                    }
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .shadow(color: streakGradient[1].opacity(0.5), radius: 10, y: 5)
+                            }
+                            .disabled(isClaiming)
+                            .opacity(animateIn ? 1 : 0)
+                        } else {
+                            // Already claimed - show celebration
+                            VStack(spacing: 6) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 18))
+                                        .foregroundStyle(.green)
                                     
-                                    // Shimmer effect
+                                    Text("Reward Claimed!")
+                                        .font(.poppins(15))
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white)
+                                }
+                                .padding(.vertical, 12)
+                                
+                                Text("Come back tomorrow for Day \((loginService.currentStreak % 7) + 1)!")
+                                    .font(.poppins(11))
+                                    .foregroundStyle(.white.opacity(0.7))
+                            }
+                            .opacity(animateIn ? 1 : 0)
+                        }
+                        
+                        // Tap to dismiss hint
+                        Text("Tap anywhere to continue")
+                            .font(.poppins(10))
+                            .foregroundStyle(.white.opacity(0.5))
+                            .padding(.top, 2)
+                            .opacity(animateIn ? 1 : 0)
+                    }
+                    .padding(DeviceScale.w(20))
+                }
+                .background {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: .black.opacity(0.5), radius: 40, y: 20)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 20)
+                                .strokeBorder(
                                     LinearGradient(
                                         colors: [
-                                            .clear,
-                                            .white.opacity(0.3),
-                                            .clear
+                                            streakGradient[0].opacity(0.5),
+                                            streakGradient[1].opacity(0.3),
+                                            streakGradient[0].opacity(0.2)
                                         ],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                    .offset(x: animateIn ? 200 : -200)
-                                    .animation(.linear(duration: 2).repeatForever(autoreverses: false), value: animateIn)
-                                }
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .shadow(color: streakGradient[1].opacity(0.5), radius: 12, y: 6)
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
                         }
-                        .disabled(isClaiming)
-                        .opacity(animateIn ? 1 : 0)
-                    } else {
-                        // Already claimed - show celebration
-                        VStack(spacing: 8) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(.green)
-                                
-                                Text("Reward Claimed!")
-                                    .font(.poppins(16))
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.white)
-                            }
-                            .padding(.vertical, 14)
-                            
-                            Text("Come back tomorrow for Day \((loginService.currentStreak % 7) + 1)!")
-                                .font(.poppins(12))
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-                        .opacity(animateIn ? 1 : 0)
-                    }
-                    
-                    // Tap to dismiss hint
-                    Text("Tap anywhere to continue")
-                        .font(.poppins(11))
-                        .foregroundStyle(.white.opacity(0.5))
-                        .padding(.top, 4)
-                        .opacity(animateIn ? 1 : 0)
                 }
-                .padding(DeviceScale.w(24))
-            }
-            .background {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.5), radius: 40, y: 20)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 24)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [
-                                        streakGradient[0].opacity(0.5),
-                                        streakGradient[1].opacity(0.3),
-                                        streakGradient[0].opacity(0.2)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 2
-                            )
-                    }
-            }
-            .padding(.horizontal, DeviceScale.w(32))
-            .scaleEffect(animateIn ? 1.0 : 0.85)
-            .opacity(animateIn ? 1 : 0)
+                .frame(maxWidth: 340)  // Max width constraint
+                .padding(.horizontal, DeviceScale.w(40))
+                .scaleEffect(animateIn ? 1.0 : 0.85)
+                .opacity(animateIn ? 1 : 0)
                 
                 Spacer()
             }
