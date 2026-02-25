@@ -281,7 +281,7 @@ struct GarageView: View {
         let locationCards = CardStorage.loadLocationCards()
         cards.append(contentsOf: locationCards.map { AnyCard.location($0) })
         
-        // Sort: crowned card first, then oldest first (new cards at end)
+        // Sort: crowned card first, then rarest first, then oldest within each rarity
         let crownId = UserService.shared.crownCardId
         allCards = cards.sorted { card1, card2 in
             let id1 = card1.firebaseId ?? card1.id.uuidString
@@ -289,6 +289,13 @@ struct GarageView: View {
             let card1Crowned = id1 == crownId
             let card2Crowned = id2 == crownId
             if card1Crowned != card2Crowned { return card1Crowned }
+            
+            // Rarity: legendary > epic > rare > uncommon > common > nil
+            let r1 = card1.rarity?.sortIndex ?? -1
+            let r2 = card2.rarity?.sortIndex ?? -1
+            if r1 != r2 { return r1 > r2 }
+            
+            // Within same rarity: oldest first
             return card1.capturedDate < card2.capturedDate
         }
         

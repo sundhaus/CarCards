@@ -17,7 +17,7 @@ enum CardRarity: String, Codable, CaseIterable, Comparable {
     
     // MARK: - Sort Order (for Comparable)
     
-    private var sortIndex: Int {
+    var sortIndex: Int {
         switch self {
         case .common:    return 0
         case .uncommon:  return 1
