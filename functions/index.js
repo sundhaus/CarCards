@@ -173,8 +173,9 @@ function escapeXML(str) {
  * @returns {string} Download URL of the flat image
  */
 async function flattenCard(cardId, cardData) {
-  const uid = cardData.userId || cardData.ownerId;
-  if (!uid) throw new Error(`Card ${cardId} has no userId/ownerId`);
+  console.log(`[flatten v2] Card ${cardId} fields: ${Object.keys(cardData).join(", ")}`);
+  const uid = cardData.ownerId || cardData.userId;
+  if (!uid) throw new Error(`Card ${cardId} has no ownerId/userId. Fields: ${Object.keys(cardData).join(", ")}`);
 
   // 1. Determine the original photo path
   const photoURL = cardData.imageURL || cardData.photoURL;
