@@ -1562,19 +1562,20 @@ struct ChallengeView: View {
     
     private func cardCell(card: CloudCard) -> some View {
         let isSim = card.id.hasPrefix("sim_")
+        let flatURL = card.flatImageURL.flatMap { $0.isEmpty ? nil : $0 }
         
         return ZStack(alignment: .bottom) {
-            AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { phase in
+            AsyncImage(url: URL(string: flatURL ?? card.imageURL)) { phase in
                 switch phase {
                 case .success(let image):
-                    image.resizable().aspectRatio(contentMode: .fill)
+                    image.resizable().aspectRatio(contentMode: .fit)
                 default:
                     Rectangle().fill(Color.gray.opacity(0.3))
+                        .aspectRatio(16/9, contentMode: .fit)
                         .overlay(Image(systemName: "car.fill").foregroundStyle(.white.opacity(0.3)))
                 }
             }
-            .frame(height: 100)
-            .clipped()
+            .frame(maxHeight: 100)
             
             if isSim {
                 Text("\(card.make) \(card.model)")
@@ -2377,12 +2378,14 @@ struct DuoInvitePopupView: View {
                                 selectedCard = card
                             }) {
                                 VStack(spacing: 4) {
-                                    AsyncImage(url: URL(string: card.flatImageURL ?? card.imageURL)) { image in
-                                        image.resizable().aspectRatio(contentMode: .fill)
+                                    let flatURL = card.flatImageURL.flatMap { $0.isEmpty ? nil : $0 }
+                                    AsyncImage(url: URL(string: flatURL ?? card.imageURL)) { image in
+                                        image.resizable().aspectRatio(contentMode: .fit)
                                     } placeholder: {
                                         Rectangle().fill(Color.gray.opacity(0.3))
+                                            .aspectRatio(16/9, contentMode: .fit)
                                     }
-                                    .frame(height: 80)
+                                    .frame(maxHeight: 100)
                                     .cornerRadius(8)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
