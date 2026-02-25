@@ -138,15 +138,8 @@ struct HomeView: View {
                 Spacer()
             }
             .background {
-                LinearGradient(
-                    colors: [
-                        Color(white: 0.08),
-                        Color(white: 0.13)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                Color(red: 0.07, green: 0.06, blue: 0.05)
+                    .ignoresSafeArea()
             }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
