@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ── Users ───────────────────────────────────────────────
+    match /users/{userId} {
+      allow read:   if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // ── Cards ───────────────────────────────────────────────
+    match /cards/{cardId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ── Marketplace Listings ────────────────────────────────
+    match /listings/{listingId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+    }
+
+    // ── Follows ─────────────────────────────────────────────
+    match /follows/{followId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.followerId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.followerId == request.auth.uid;
+    }
+
+    // ── Friend Activities (feed + heat system) ──────────────
+    match /friend_activities/{activityId} {
+      // Anyone signed in can read activities
+      allow read: if isSignedIn();
+
+      // Only the activity owner can create
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+
+      // Heat updates: any signed-in user can update ONLY heatedBy + heatCount
+      // This supports FieldValue.arrayUnion / arrayRemove / increment
+      allow update: if isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['heatedBy', 'heatCount']);
+
+      // Only the activity owner can delete
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Featured Cards ──────────────────────────────────────
+    match /featured_cards/{cardId} {
+      allow read: if isSignedIn();
+      // Only server / admin should write featured cards
+      // If HotCardsService writes from client, open create:
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+    }
+
+    // ── Vehicle Specs (shared cache) ────────────────────────
+    match /vehicleSpecs/{docId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+    }
+
+    // ── Leaderboard ─────────────────────────────────────────
+    match /leaderboard/{entryId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isOwner(resource.data.userId);
+    }
+
+    // ── Transfer Offers ─────────────────────────────────────
+    match /transfer_offers/{offerId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.fromUserId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.fromUserId == request.auth.uid ||
+        resource.data.toUserId == request.auth.uid
+      );
+      allow delete: if isSignedIn() && resource.data.fromUserId == request.auth.uid;
+    }
+
+    // ── Head to Head ────────────────────────────────────────
+    match /head_to_head/{matchId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+    }
+
+    // ── Comments ────────────────────────────────────────────
+    match /comments/{commentId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}
