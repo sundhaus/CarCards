@@ -56,11 +56,11 @@ struct HotCardsCarousel: View {
                                     .scaleEffect(getScale(for: cardGeometry, screenWidth: geometry.size.width))
                                     .cardTilt(intensity: 0.8, perspective: 0.6)
                             }
-                            .frame(width: DeviceScale.w(280), height: DeviceScale.h(157.5))
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                             .id(item.id)
                         }
                     }
-                    .padding(.horizontal, (geometry.size.width - DeviceScale.w(280)) / 2)
+                    .padding(.horizontal, (geometry.size.width - DeviceScale.w(320)) / 2)
                 }
                 .frame(height: DeviceScale.h(180))
                 .padding(.top, DeviceScale.h(12))
@@ -86,7 +86,7 @@ struct HotCardsCarousel: View {
                 }
             }
         }
-        .frame(height: DeviceScale.h(205))
+        .frame(height: DeviceScale.h(220))
     }
     
     // MARK: - Swipe Direction Handler
@@ -261,7 +261,7 @@ struct HotCardItem: View {
     @ObservedObject var imageCache: CarouselImageCache
     
     // Responsive dimensions for carousel
-    private let cardHeight: CGFloat = DeviceScale.h(157.5)
+    private let cardHeight: CGFloat = DeviceScale.h(180)
     private var cardWidth: CGFloat { cardHeight * (16/9) }
     
     var body: some View {

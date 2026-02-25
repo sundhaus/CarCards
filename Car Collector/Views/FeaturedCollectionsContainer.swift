@@ -62,7 +62,6 @@ struct FeaturedCollectionsContainer: View {
     private var carouselSection: some View {
         HotCardsCarousel()
             .padding(.horizontal, 8)
-            .padding(.bottom, 12)
     }
     
     private var containerBackground: some View {
