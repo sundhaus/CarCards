@@ -238,9 +238,7 @@ struct ListingCardView: View {
                 
                 HStack(spacing: 8) {
                     HStack(spacing: 4) {
-                        Image(systemName: "dollarsign.circle.fill")
-                            .foregroundStyle(.green)
-                            .font(.pCaption)
+                        HeatCheckCoin(size: 14, tint: .green)
                         Text(listing.currentBid > 0 ? "\(Int(listing.currentBid))" : "None")
                             .font(.pCaption)
                             .fontWeight(.semibold)
@@ -319,8 +317,7 @@ struct CompactTargetCard: View {
                         .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
                     HStack(spacing: 4) {
-                        Image(systemName: "dollarsign.circle.fill")
-                            .font(.system(size: 10))
+                        HeatCheckCoin(size: 20))
                             .foregroundStyle(.green)
                         Text(listing.currentBid > 0 ? "\(Int(listing.currentBid))" : "None")
                             .font(.system(size: 11, weight: .bold))

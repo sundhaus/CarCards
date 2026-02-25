@@ -207,8 +207,7 @@ struct EarningsLeaderboard: View {
             if entries.isEmpty {
                 VStack {
                     Spacer()
-                    Image(systemName: "dollarsign.circle")
-                        .font(.poppins(60))
+                    HeatCheckCoin(size: 20))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                         .foregroundStyle(.gray)

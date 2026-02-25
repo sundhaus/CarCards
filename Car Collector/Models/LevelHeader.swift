@@ -395,9 +395,7 @@ struct LevelHeader: View {
     // Coins section (reusable)
     private var coinsSection: some View {
         HStack(spacing: 6) {
-            Image(systemName: "dollarsign.circle.fill")
-                .font(.poppins(20))
-                .foregroundStyle(.yellow)
+            HeatCheckCoin(size: 20)
             
             Text("\(levelSystem.coins)")
                 .font(.poppins(18))

@@ -134,8 +134,7 @@ struct DailyLoginView: View {
             
             // Coin counter
             HStack(spacing: 4) {
-                Image(systemName: "dollarsign.circle.fill")
-                    .font(.system(size: 14))
+                HeatCheckCoin(size: 14))
                     .foregroundStyle(.yellow)
                 Text("\(userService.coins)")
                     .font(.poppins(13))

@@ -126,8 +126,7 @@ struct CardDetailsView: View {
     
     private var coinCounter: some View {
         HStack(spacing: 4) {
-            Image(systemName: "dollarsign.circle.fill")
-                .font(.system(size: 14))
+            HeatCheckCoin(size: 14))
                 .foregroundStyle(.yellow)
             Text("\(userService.coins)")
                 .font(.poppins(13))
@@ -265,8 +264,7 @@ struct CardDetailsView: View {
                     .glassEffect(.regular, in: .rect(cornerRadius: 10))
                     .keyboardType(.numberPad)
                 
-                Image(systemName: "dollarsign.circle.fill")
-                    .font(.system(size: 20))
+                HeatCheckCoin(size: 20))
                     .foregroundStyle(.yellow)
                 
                 Button(action: {

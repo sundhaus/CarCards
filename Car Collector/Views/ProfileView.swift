@@ -230,7 +230,7 @@ struct ProfileView: View {
                                 .foregroundStyle(.secondary)
                             Spacer()
                             HStack(spacing: 4) {
-                                Image(systemName: "dollarsign.circle.fill")
+                                HeatCheckCoin(size: 20)
                                     .foregroundStyle(.yellow)
                                 Text("\(levelSystem.coins)")
                                     .fontWeight(.semibold)

@@ -971,7 +971,7 @@ struct ChallengeView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 4) {
-                                    Image(systemName: "dollarsign.circle.fill")
+                                    HeatCheckCoin(size: 20)
                                         .foregroundStyle(.yellow)
                                     Text("\(fee)")
                                         .font(.title2.bold())
@@ -1021,7 +1021,7 @@ struct ChallengeView: View {
             
             // Balance display
             HStack(spacing: 4) {
-                Image(systemName: "dollarsign.circle.fill")
+                HeatCheckCoin(size: 20)
                     .foregroundStyle(.yellow)
                 Text("Balance: \(userCoins)")
                     .font(.caption.bold())

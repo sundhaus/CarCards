@@ -242,9 +242,7 @@ struct UserProfileView: View {
                                     
                                     VStack(spacing: 4) {
                                         HStack(spacing: 4) {
-                                            Image(systemName: "dollarsign.circle.fill")
-                                                .font(.pCaption)
-                                                .foregroundStyle(.yellow)
+                                            HeatCheckCoin(size: 14, tint: Color.yellow)
                                             Text("\(profile.coins)")
                                                 .font(.pHeadline)
                                                 .fontWeight(.semibold)

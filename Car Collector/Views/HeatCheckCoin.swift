@@ -23,7 +23,7 @@ private enum CoinDisplayMode {
 }
 
 /// ⬇️  Change this ONE line to flip all coins across the entire app
-private let coinMode: CoinDisplayMode = .system
+private let coinMode: CoinDisplayMode = .svg
 
 // MARK: - HeatCheckCoin View
 
@@ -64,11 +64,10 @@ struct HeatCheckCoin: View {
     // MARK: - SVG asset
 
     private var svgCoin: some View {
-        // Expects an image named "heatcheck_coin" in Assets.xcassets
-        // or the app bundle. Add the SVG there when ready.
-        Image("heatcheck_coin")
+        // Uses the "HeatCheckCoin" asset from Assets.xcassets
+        Image("HeatCheckCoin")
             .resizable()
-            .renderingMode(.template)   // remove if SVG has its own colours
+            .renderingMode(.template)   // Allows tinting with foregroundStyle
             .scaledToFit()
             .frame(width: size, height: size)
             .foregroundStyle(tint)
