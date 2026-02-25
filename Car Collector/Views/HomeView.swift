@@ -138,7 +138,12 @@ struct HomeView: View {
                 Spacer()
             }
             .background {
-                Color(white: 0.92)
+                Image("ShopBackground")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .blur(radius: 3)
+                    .ignoresSafeArea()
+                    .overlay(Color.black.opacity(0.45))
                     .ignoresSafeArea()
             }
             .navigationDestination(isPresented: $showTransferList) {
