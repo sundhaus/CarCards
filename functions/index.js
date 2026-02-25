@@ -22,17 +22,17 @@ const storage = admin.storage();
 // ─── Border Config ───────────────────────────────────────────────────────────
 
 const BORDER_MAP = {
-  "common":    "Border_Common.png",
+  "common":    "Border_Common.svg",
   "uncommon":  "Border_Uncommon.png",
-  "rare":      "Border_Rare.png",
-  "epic":      "Border_Epic.png",
-  "legendary": "Border_Legendary.png",
+  "rare":      "Border_Rare.svg",
+  "epic":      "Border_Epic.svg",
+  "legendary": "Border_Legendary.svg",
   // Legacy frame names
-  "Border_Common":    "Border_Common.png",
+  "Border_Common":    "Border_Common.svg",
   "Border_Uncommon":  "Border_Uncommon.png",
-  "Border_Rare":      "Border_Rare.png",
-  "Border_Epic":      "Border_Epic.png",
-  "Border_Legendary": "Border_Legendary.png",
+  "Border_Rare":      "Border_Rare.svg",
+  "Border_Epic":      "Border_Epic.svg",
+  "Border_Legendary": "Border_Legendary.svg",
   "Border_Def_Wht":   "Border_Def_Wht.png",
 };
 
@@ -296,10 +296,20 @@ async function compositeCard(photoBuffer, borderPath, textBuffer) {
     .resize(CARD_WIDTH, CARD_HEIGHT, { fit: "cover", position: "centre" })
     .toBuffer();
 
-  // Load and resize the border to match card dimensions
-  const borderBuffer = await sharp(borderPath)
-    .resize(CARD_WIDTH, CARD_HEIGHT, { fit: "fill" })
-    .toBuffer();
+  // Load border — SVGs need density option for crisp rendering at target size
+  const isSVG = borderPath.toLowerCase().endsWith(".svg");
+  let borderBuffer;
+  if (isSVG) {
+    // Render SVG at high density then resize to exact card dimensions
+    borderBuffer = await sharp(borderPath, { density: 300 })
+      .resize(CARD_WIDTH, CARD_HEIGHT, { fit: "fill" })
+      .png()  // Convert to PNG buffer for compositing (preserves transparency)
+      .toBuffer();
+  } else {
+    borderBuffer = await sharp(borderPath)
+      .resize(CARD_WIDTH, CARD_HEIGHT, { fit: "fill" })
+      .toBuffer();
+  }
 
   // Build composite layers: photo → border → text
   const layers = [
