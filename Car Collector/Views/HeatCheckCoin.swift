@@ -67,10 +67,9 @@ struct HeatCheckCoin: View {
         // Uses the "HeatCheckCoin" asset from Assets.xcassets
         Image("HeatCheckCoin")
             .resizable()
-            .renderingMode(.template)   // Allows tinting with foregroundStyle
+            .renderingMode(.original)   // Use original colors from PNG
             .scaledToFit()
             .frame(width: size, height: size)
-            .foregroundStyle(tint)
     }
 }
 
