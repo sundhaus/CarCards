@@ -87,51 +87,19 @@ struct DailyLoginPopup: View {
                     }
                     
                     // Content
-                    VStack(spacing: DeviceScale.h(8)) {
-                        // Flame icon with enhanced glow - much smaller
+                    VStack(spacing: 6) {
+                        // Flame icon - very small
                         ZStack {
-                            // Floating particles
-                            ForEach(0..<6, id: \.self) { index in
-                                FloatingParticle(
-                                    color: streakGradient[index % 2],
-                                    size: CGFloat.random(in: 2...4),
-                                    delay: Double(index) * 0.2,
-                                    duration: Double.random(in: 2...4)
-                                )
-                                .offset(
-                                    x: cos(Double(index) * .pi / 3) * 30,
-                                    y: sin(Double(index) * .pi / 3) * 30
-                                )
-                            }
-                            
-                            // Outer glow ring
+                            // Simplified glow
                             Circle()
                                 .fill(
                                     RadialGradient(
                                         colors: [
                                             streakGradient[0].opacity(0.3),
-                                            streakGradient[1].opacity(0.15),
                                             streakGradient[0].opacity(0.0)
                                         ],
                                         center: .center,
-                                        startRadius: 8,
-                                        endRadius: 40
-                                    )
-                                )
-                                .frame(width: 80, height: 80)
-                                .scaleEffect(showRewardPulse ? 1.2 : 1.0)
-                                .opacity(animateIn ? 1 : 0)
-                            
-                            // Inner glow
-                            Circle()
-                                .fill(
-                                    RadialGradient(
-                                        colors: [
-                                            streakGradient[0].opacity(0.4),
-                                            streakGradient[0].opacity(0.0)
-                                        ],
-                                        center: .center,
-                                        startRadius: 8,
+                                        startRadius: 5,
                                         endRadius: 25
                                     )
                                 )
@@ -141,7 +109,7 @@ struct DailyLoginPopup: View {
                             
                             // Flame icon
                             Image(systemName: "flame.fill")
-                                .font(.system(size: 28))
+                                .font(.system(size: 20))
                                 .foregroundStyle(
                                     LinearGradient(
                                         colors: streakGradient,
@@ -151,61 +119,56 @@ struct DailyLoginPopup: View {
                                 )
                                 .scaleEffect(animateIn ? 1.0 : 0.5)
                                 .opacity(animateIn ? 1 : 0)
-                                .shadow(color: streakGradient[1].opacity(0.6), radius: 4, y: 2)
+                                .shadow(color: streakGradient[1].opacity(0.5), radius: 3, y: 1)
                         }
-                        .padding(.top, DeviceScale.h(4))
                         
                         // Streak count - compact
                         Text("\(loginService.currentStreak) Day Streak")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                             .opacity(animateIn ? 1 : 0)
                         
-                        // 7-Day progress tracker - more compact
-                        HStack(spacing: 4) {
+                        // 7-Day progress tracker - minimal
+                        HStack(spacing: 3) {
                             ForEach(Array(weekProgress.enumerated()), id: \.offset) { index, day in
-                                compactDayCircle(day, index: index)
+                                miniDayCircle(day, index: index)
                             }
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 8)
                         .background {
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.black.opacity(0.2))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
-                                }
                         }
                         .opacity(animateIn ? 1 : 0)
                         
                         if !claimedToday {
-                            // Rewards preview - inline
-                            HStack(spacing: 12) {
-                                HStack(spacing: 4) {
+                            // Rewards preview - very compact
+                            HStack(spacing: 10) {
+                                HStack(spacing: 3) {
                                     Image(systemName: "star.fill")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 10))
                                         .foregroundStyle(.cyan)
                                     Text("+\(RewardConfig.dailyLoginXP)")
-                                        .font(.poppins(13))
+                                        .font(.poppins(11))
                                         .fontWeight(.bold)
                                         .foregroundStyle(.white)
                                 }
                                 
-                                HStack(spacing: 4) {
+                                HStack(spacing: 3) {
                                     Image(systemName: "dollarsign.circle.fill")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 10))
                                         .foregroundStyle(.yellow)
                                     Text("+\(RewardConfig.dailyLoginCoins)")
-                                        .font(.poppins(13))
+                                        .font(.poppins(11))
                                         .fontWeight(.bold)
                                         .foregroundStyle(.white)
                                 }
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 2)
                             .opacity(animateIn ? 1 : 0)
                             
-                            // Claim button - compact
+                            // Claim button - minimal
                             Button(action: {
                                 claimReward()
                             }) {
@@ -213,16 +176,16 @@ struct DailyLoginPopup: View {
                                     if isClaiming {
                                         ProgressView()
                                             .tint(.white)
-                                            .scaleEffect(0.8)
+                                            .scaleEffect(0.7)
                                     } else {
                                         Text("Claim")
-                                            .font(.poppins(14))
+                                            .font(.poppins(13))
                                             .fontWeight(.semibold)
                                     }
                                 }
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
+                                .padding(.vertical, 8)
                                 .background(
                                     LinearGradient(
                                         colors: streakGradient,
@@ -230,58 +193,58 @@ struct DailyLoginPopup: View {
                                         endPoint: .trailing
                                     )
                                 )
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .shadow(color: streakGradient[1].opacity(0.4), radius: 8, y: 4)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .shadow(color: streakGradient[1].opacity(0.3), radius: 6, y: 3)
                             }
                             .disabled(isClaiming)
                             .opacity(animateIn ? 1 : 0)
                         } else {
-                            // Already claimed - compact
-                            HStack(spacing: 6) {
+                            // Already claimed - minimal
+                            HStack(spacing: 4) {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 12))
                                     .foregroundStyle(.green)
                                 
                                 Text("Claimed!")
-                                    .font(.poppins(13))
+                                    .font(.poppins(12))
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.white)
                             }
-                            .padding(.vertical, 8)
+                            .padding(.vertical, 6)
                             .opacity(animateIn ? 1 : 0)
                         }
                         
-                        // Tap to dismiss hint - smaller
+                        // Tap to dismiss hint - tiny
                         Text("Tap to dismiss")
-                            .font(.poppins(9))
-                            .foregroundStyle(.white.opacity(0.4))
-                            .padding(.top, 2)
+                            .font(.poppins(8))
+                            .foregroundStyle(.white.opacity(0.35))
+                            .padding(.top, 1)
                             .opacity(animateIn ? 1 : 0)
                     }
-                    .padding(16)
+                    .padding(12)
                 }
                 .background {
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 14)
                         .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.4), radius: 30, y: 15)
+                        .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: 14)
                                 .strokeBorder(
                                     LinearGradient(
                                         colors: [
-                                            streakGradient[0].opacity(0.4),
-                                            streakGradient[1].opacity(0.2),
-                                            streakGradient[0].opacity(0.1)
+                                            streakGradient[0].opacity(0.3),
+                                            streakGradient[1].opacity(0.15),
+                                            streakGradient[0].opacity(0.05)
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
-                                    lineWidth: 1.5
+                                    lineWidth: 1
                                 )
                         }
                 }
-                .frame(maxWidth: 280)  // Much smaller max width
-                .padding(.horizontal, 50)
+                .frame(maxWidth: 220)  // Much smaller max width
+                .padding(.horizontal, 60)
                 .scaleEffect(animateIn ? 1.0 : 0.85)
                 .opacity(animateIn ? 1 : 0)
                 
@@ -366,6 +329,60 @@ struct DailyLoginPopup: View {
             }
         }
         .allowsHitTesting(false)
+    }
+    
+    private func miniDayCircle(_ day: DayProgress, index: Int) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    day.isCompleted || day.isToday
+                        ? LinearGradient(
+                            colors: day.isMilestone ? [.yellow, .orange] : streakGradient,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        : LinearGradient(
+                            colors: [Color.white.opacity(0.08), Color.white.opacity(0.04)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                )
+                .frame(width: 20, height: 20)
+                .overlay {
+                    Circle()
+                        .strokeBorder(
+                            day.isToday ? Color.white.opacity(0.3) : Color.clear,
+                            lineWidth: 1
+                        )
+                }
+                .scaleEffect(day.isToday ? 1.05 : 1.0)
+                .shadow(
+                    color: day.isCompleted || day.isToday ? streakGradient[1].opacity(0.3) : .clear,
+                    radius: day.isToday ? 4 : 2,
+                    y: 1
+                )
+            
+            if day.isCompleted && animateCheckmarks[index] {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white)
+                    .transition(.scale.combined(with: .opacity))
+            } else if day.isMilestone && !day.isCompleted && !day.isToday {
+                Image(systemName: "trophy.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.white.opacity(0.25))
+            } else if !day.isCompleted && !day.isToday {
+                Text("\(day.dayNumber)")
+                    .font(.poppins(8))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white.opacity(0.25))
+            } else if day.isToday {
+                Text("\(day.dayNumber)")
+                    .font(.poppins(9))
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+            }
+        }
     }
     
     private func compactDayCircle(_ day: DayProgress, index: Int) -> some View {
