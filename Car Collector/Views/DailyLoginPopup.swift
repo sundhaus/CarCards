@@ -18,6 +18,8 @@ struct DailyLoginPopup: View {
     @State private var claimedToday = false
     @State private var isClaiming = false
     @State private var animateCheckmarks: [Bool] = Array(repeating: false, count: 7)
+    @State private var showConfetti = false
+    @State private var waveOffset: CGFloat = 0
     
     // Streak gradient that shifts from cool to warm as streak grows
     private var streakGradient: [Color] {
@@ -64,8 +66,8 @@ struct DailyLoginPopup: View {
     
     var body: some View {
         ZStack {
-            // Minimal dark transparent background
-            Color.black.opacity(0.4)
+            // Darker transparent background
+            Color.black.opacity(0.5)
                 .ignoresSafeArea()
                 .onTapGesture {
                     dismiss()
@@ -74,10 +76,34 @@ struct DailyLoginPopup: View {
             VStack(spacing: 0) {
                 Spacer()
                 
-                // Main reward card - compact and minimal
-                VStack(spacing: DeviceScale.h(12)) {
+                // Main reward card with animated checkered background
+                ZStack {
+                    // Animated checkered flag background
+                    checkeredBackground
+                    
+                    // Confetti overlay
+                    if showConfetti {
+                        confettiOverlay
+                    }
+                    
+                    // Content
+                    VStack(spacing: DeviceScale.h(12)) {
                     // Flame icon with enhanced glow
                     ZStack {
+                        // Floating particles
+                        ForEach(0..<8, id: \.self) { index in
+                            FloatingParticle(
+                                color: streakGradient[index % 2],
+                                size: CGFloat.random(in: 3...6),
+                                delay: Double(index) * 0.2,
+                                duration: Double.random(in: 2...4)
+                            )
+                            .offset(
+                                x: cos(Double(index) * .pi / 4) * 50,
+                                y: sin(Double(index) * .pi / 4) * 50
+                            )
+                        }
+                        
                         // Outer glow ring
                         Circle()
                             .fill(
@@ -249,28 +275,30 @@ struct DailyLoginPopup: View {
                         .opacity(animateIn ? 1 : 0)
                 }
                 .padding(DeviceScale.w(24))
-                .background {
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.4), radius: 30, y: 15)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 24)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [
-                                            streakGradient[0].opacity(0.3),
-                                            streakGradient[1].opacity(0.1)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1
-                                )
-                        }
-                }
-                .padding(.horizontal, DeviceScale.w(32))
-                .scaleEffect(animateIn ? 1.0 : 0.85)
-                .opacity(animateIn ? 1 : 0)
+            }
+            .background {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.5), radius: 40, y: 20)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        streakGradient[0].opacity(0.5),
+                                        streakGradient[1].opacity(0.3),
+                                        streakGradient[0].opacity(0.2)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    }
+            }
+            .padding(.horizontal, DeviceScale.w(32))
+            .scaleEffect(animateIn ? 1.0 : 0.85)
+            .opacity(animateIn ? 1 : 0)
                 
                 Spacer()
             }
@@ -293,6 +321,64 @@ struct DailyLoginPopup: View {
                 }
             }
         }
+    }
+    
+    // Animated checkered flag background
+    private var checkeredBackground: some View {
+        GeometryReader { geometry in
+            let squareSize: CGFloat = 20
+            let columns = Int(geometry.size.width / squareSize) + 2
+            let rows = Int(geometry.size.height / squareSize) + 2
+            
+            ZStack {
+                ForEach(0..<rows, id: \.self) { row in
+                    ForEach(0..<columns, id: \.self) { col in
+                        let isChecked = (row + col) % 2 == 0
+                        let xPos = CGFloat(col) * squareSize
+                        let yPos = CGFloat(row) * squareSize
+                        
+                        Rectangle()
+                            .fill(
+                                isChecked
+                                    ? Color.white.opacity(0.03)
+                                    : Color.black.opacity(0.15)
+                            )
+                            .frame(width: squareSize, height: squareSize)
+                            .position(x: xPos + squareSize/2, y: yPos + squareSize/2)
+                            .opacity(
+                                // Wave effect
+                                1.0 - (abs(sin((xPos + yPos + waveOffset) / 100)) * 0.3)
+                            )
+                    }
+                }
+            }
+            .blur(radius: 0.5)
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
+                waveOffset = 500
+            }
+        }
+    }
+    
+    // Confetti overlay for celebration
+    private var confettiOverlay: some View {
+        GeometryReader { geometry in
+            ZStack {
+                ForEach(0..<30, id: \.self) { index in
+                    ConfettiPiece(
+                        color: [Color.yellow, Color.orange, Color.red, Color.cyan, Color.blue].randomElement()!,
+                        size: CGFloat.random(in: 4...10),
+                        x: CGFloat.random(in: 0...geometry.size.width),
+                        y: -20,
+                        rotation: Double.random(in: 0...360),
+                        delay: Double(index) * 0.03
+                    )
+                }
+            }
+        }
+        .allowsHitTesting(false)
     }
     
     private func rewardBubble(icon: String, value: String, label: String, colors: [Color]) -> some View {
@@ -436,6 +522,9 @@ struct DailyLoginPopup: View {
                 if reward != nil {
                     claimedToday = true
                     
+                    // Trigger confetti celebration
+                    showConfetti = true
+                    
                     // Animate today's checkmark
                     let todayIndex = weekProgress.firstIndex(where: { $0.isToday }) ?? 0
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.6).delay(0.2)) {
@@ -456,8 +545,13 @@ struct DailyLoginPopup: View {
                         withAnimation { showRewardPulse = false }
                     }
                     
-                    // Auto-dismiss after brief delay
+                    // Hide confetti
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        showConfetti = false
+                    }
+                    
+                    // Auto-dismiss after brief delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                         dismiss()
                     }
                 }
@@ -487,4 +581,76 @@ struct DailyLoginPopup: View {
     service.todayRewardClaimed = true
     
     return DailyLoginPopup(isPresented: .constant(true))
+}
+
+// MARK: - Confetti Piece Animation
+
+struct ConfettiPiece: View {
+    let color: Color
+    let size: CGFloat
+    let x: CGFloat
+    let y: CGFloat
+    let rotation: Double
+    let delay: Double
+    
+    @State private var yOffset: CGFloat = 0
+    @State private var rotationAmount: Double = 0
+    @State private var opacity: Double = 1
+    
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(color)
+            .frame(width: size, height: size)
+            .rotationEffect(.degrees(rotationAmount))
+            .opacity(opacity)
+            .position(x: x, y: y + yOffset)
+            .onAppear {
+                withAnimation(
+                    .easeOut(duration: 2.0)
+                    .delay(delay)
+                ) {
+                    yOffset = 600
+                    opacity = 0
+                }
+                
+                withAnimation(
+                    .linear(duration: 2.0)
+                    .repeatCount(3, autoreverses: false)
+                    .delay(delay)
+                ) {
+                    rotationAmount = rotation + 720
+                }
+            }
+    }
+}
+
+// MARK: - Floating Particle Animation
+
+struct FloatingParticle: View {
+    let color: Color
+    let size: CGFloat
+    let delay: Double
+    let duration: Double
+    
+    @State private var yOffset: CGFloat = 0
+    @State private var opacity: Double = 0
+    
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: size, height: size)
+            .blur(radius: 1)
+            .opacity(opacity)
+            .offset(y: yOffset)
+            .onAppear {
+                withAnimation(
+                    .easeInOut(duration: duration)
+                    .repeatForever(autoreverses: true)
+                    .delay(delay)
+                ) {
+                    yOffset = -20
+                    opacity = 0.6
+                }
+            }
+    }
 }
