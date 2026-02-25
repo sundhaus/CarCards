@@ -148,27 +148,8 @@ class CardService: ObservableObject {
         
         print("✅ Saved card: \(make) \(model) - Captured by: \(capturedBy ?? "unknown"), Location: \(capturedLocation ?? "unknown")")
         
-        // 6. Flatten card image (border + text baked in) for universal display
-        Task {
-            do {
-                let savedCardObj = SavedCard(
-                    id: UUID(uuidString: cardId) ?? UUID(),
-                    image: image,
-                    make: make, model: model, color: color, year: year,
-                    capturedBy: capturedBy, capturedLocation: capturedLocation,
-                    previousOwners: previousOwners, customFrame: customFrame,
-                    firebaseId: cardId
-                )
-                let anyCard = AnyCard.vehicle(savedCardObj)
-                let flatURL = try await CardFlattener.shared.flattenAndUpload(anyCard)
-                print("✅ Flat image uploaded: \(flatURL.prefix(60))...")
-                
-                // Also update the activity feed entry with the flat image
-                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: cardId, flatImageURL: flatURL)
-            } catch {
-                print("⚠️ Flatten failed (non-critical): \(error)")
-            }
-        }
+        // Note: Flatten + upload happens later in fetchSpecsForNewCard() once rarity is known,
+        // ensuring the flat image always has the correct rarity border.
         
         return card
     }
