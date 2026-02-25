@@ -18,6 +18,7 @@ struct UserProfile: Codable, Identifiable {
     var currentXP: Int
     var totalXP: Int
     var coins: Int
+    var gems: Int
     var totalCardsCollected: Int
     var createdAt: Date
     var linkedAccount: Bool
@@ -35,6 +36,7 @@ struct UserProfile: Codable, Identifiable {
         self.currentXP = data["currentXP"] as? Int ?? 0
         self.totalXP = data["totalXP"] as? Int ?? 0
         self.coins = data["coins"] as? Int ?? 0
+        self.gems = data["gems"] as? Int ?? 0
         self.totalCardsCollected = data["totalCardsCollected"] as? Int ?? 0
         self.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
         self.linkedAccount = data["linkedAccount"] as? Bool ?? false
@@ -51,6 +53,7 @@ struct UserProfile: Codable, Identifiable {
         self.currentXP = 0
         self.totalXP = 0
         self.coins = RewardConfig.starterCoins
+        self.gems = 0
         self.totalCardsCollected = 0
         self.createdAt = Date()
         self.linkedAccount = false
@@ -68,6 +71,7 @@ struct UserProfile: Codable, Identifiable {
             "currentXP": currentXP,
             "totalXP": totalXP,
             "coins": coins,
+            "gems": gems,
             "totalCardsCollected": totalCardsCollected,
             "createdAt": Timestamp(date: createdAt),
             "linkedAccount": linkedAccount,
@@ -218,12 +222,13 @@ class UserService: ObservableObject {
     
     // MARK: - Sync Level/XP/Coins to Firestore
     
-    func syncProgress(uid: String, level: Int, currentXP: Int, totalXP: Int, coins: Int) async throws {
+    func syncProgress(uid: String, level: Int, currentXP: Int, totalXP: Int, coins: Int, gems: Int) async throws {
         try await updateProfile(uid: uid, fields: [
             "level": level,
             "currentXP": currentXP,
             "totalXP": totalXP,
-            "coins": coins
+            "coins": coins,
+            "gems": gems
         ])
     }
     
@@ -272,6 +277,41 @@ class UserService: ObservableObject {
     
     var coins: Int {
         currentProfile?.coins ?? 0
+    }
+    
+    // MARK: - Gem Management
+    
+    func addGems(_ amount: Int) {
+        guard let uid = currentProfile?.id else { return }
+        
+        currentProfile?.gems += amount
+        
+        Task {
+            try? await usersCollection.document(uid).updateData([
+                "gems": FieldValue.increment(Int64(amount))
+            ])
+        }
+    }
+    
+    func spendGems(_ amount: Int) -> Bool {
+        guard let currentGems = currentProfile?.gems, currentGems >= amount else {
+            return false
+        }
+        guard let uid = currentProfile?.id else { return false }
+        
+        currentProfile?.gems -= amount
+        
+        Task {
+            try? await usersCollection.document(uid).updateData([
+                "gems": FieldValue.increment(Int64(-amount))
+            ])
+        }
+        
+        return true
+    }
+    
+    var gems: Int {
+        currentProfile?.gems ?? 0
     }
     
     // MARK: - Crown Card

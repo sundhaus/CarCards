@@ -16,6 +16,7 @@ class LevelSystem: ObservableObject {
     @Published var xpForNextLevel: Int
     @Published var totalXP: Int
     @Published var coins: Int
+    @Published var gems: Int
     
     private let baseXP = 100
     private var cancellables = Set<AnyCancellable>()
@@ -27,11 +28,13 @@ class LevelSystem: ObservableObject {
         let savedXP = UserDefaults.standard.integer(forKey: "currentXP")
         let savedTotalXP = UserDefaults.standard.integer(forKey: "totalXP")
         let savedCoins = UserDefaults.standard.integer(forKey: "userCoins")
+        let savedGems = UserDefaults.standard.integer(forKey: "userGems")
         
         self.level = savedLevel == 0 ? 1 : savedLevel
         self.currentXP = savedXP
         self.totalXP = savedTotalXP
         self.coins = savedCoins
+        self.gems = savedGems
         self.xpForNextLevel = 0
         self.xpForNextLevel = LevelSystem.calculateXPForLevel(self.level + 1)
         
@@ -80,10 +83,15 @@ class LevelSystem: ObservableObject {
             changed = true
         }
         
+        if profile.gems != gems {
+            gems = profile.gems
+            changed = true
+        }
+        
         guard changed else { return }
         
         save() // Update local cache
-        print("✅ Synced from cloud: Level \(level), XP \(currentXP)/\(xpForNextLevel), Total XP \(totalXP), Coins \(coins)")
+        print("✅ Synced from cloud: Level \(level), XP \(currentXP)/\(xpForNextLevel), Total XP \(totalXP), Coins \(coins), Gems \(gems)")
         
         // Check for level-ups after sync (manual XP changes in Firestore)
         if needsLevelCheck {
@@ -163,6 +171,7 @@ class LevelSystem: ObservableObject {
         UserDefaults.standard.set(currentXP, forKey: "currentXP")
         UserDefaults.standard.set(totalXP, forKey: "totalXP")
         UserDefaults.standard.set(coins, forKey: "userCoins")
+        UserDefaults.standard.set(gems, forKey: "userGems")
     }
     
     // Sync current progress to Firestore
@@ -180,7 +189,8 @@ class LevelSystem: ObservableObject {
                     level: level,
                     currentXP: currentXP,
                     totalXP: totalXP,
-                    coins: coins
+                    coins: coins,
+                    gems: gems
                 )
             } catch {
                 print("⚠️ Cloud sync failed (will retry): \(error)")
@@ -205,6 +215,7 @@ class LevelSystem: ObservableObject {
         currentXP = 0
         totalXP = 0
         coins = 0
+        gems = 0
         xpForNextLevel = baseXP
         save()
         syncToCloud()

@@ -104,4 +104,20 @@ enum CardRarity: String, Codable, CaseIterable, Comparable {
         case .legendary: return "Border_Legendary"
         }
     }
+    
+    /// Next rarity tier, or nil if already max
+    var nextRarity: CardRarity? {
+        switch self {
+        case .common:    return .uncommon
+        case .uncommon:  return .rare
+        case .rare:      return .epic
+        case .epic:      return .legendary
+        case .legendary: return nil
+        }
+    }
+    
+    /// Whether this rarity can be upgraded
+    var canUpgrade: Bool {
+        return self != .legendary
+    }
 }

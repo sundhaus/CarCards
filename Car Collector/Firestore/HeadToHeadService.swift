@@ -1142,6 +1142,15 @@ class HeadToHeadService: ObservableObject {
         // Increment win count on the winning card
         try await incrementCardWins(cardId: winnerCardId)
         
+        // Award evolution points to both cards
+        let isDuo = race.isDuo
+        let winnerPoints = isDuo ? RarityUpgradeConfig.duo2v2Win : RarityUpgradeConfig.solo1v1Win
+        let loserPoints = isDuo ? RarityUpgradeConfig.duo2v2Loss : RarityUpgradeConfig.solo1v1Loss
+        let loserCardId = (winnerId == race.challengerId) ? race.defenderCardId : race.challengerCardId
+        
+        try? await RarityUpgradeService.shared.awardEvolutionPoints(cardId: winnerCardId, points: winnerPoints)
+        try? await RarityUpgradeService.shared.awardEvolutionPoints(cardId: loserCardId, points: loserPoints)
+        
         // Distribute voter rewards (coins for correct picks + streak updates)
         await distributeVoterRewards(raceId: raceId, winnerCardId: winnerCardId)
         

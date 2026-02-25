@@ -24,6 +24,7 @@ struct CardDetailsView: View {
     @State private var isCreating = false
     @State private var errorMessage: String?
     @State private var showQuickSellConfirm = false
+    @State private var showRarityUpgrade = false
     
     // Cached flat image (computed once, not on every body eval)
     @State private var flatImage: UIImage?
@@ -57,6 +58,18 @@ struct CardDetailsView: View {
                         
                         // Action buttons — same style as CardOptionsView
                         VStack(spacing: 10) {
+                            // Upgrade Rarity
+                            if card.specs?.rarity != .legendary {
+                                optionButton(
+                                    icon: "arrow.up.diamond.fill",
+                                    label: "Upgrade Rarity",
+                                    subtitle: "\(card.specs?.rarity?.rawValue ?? "Common") → \(RarityUpgradeConfig.nextRarity(from: card.specs?.rarity ?? .common)?.rawValue ?? "")",
+                                    colors: [Color.yellow, Color.orange]
+                                ) {
+                                    showRarityUpgrade = true
+                                }
+                            }
+                            
                             // List on Market (expandable)
                             listOnMarketOption
                             
@@ -93,6 +106,20 @@ struct CardDetailsView: View {
             }
         } message: {
             Text("This will permanently remove the card from your garage and award you 250 coins.")
+        }
+        .fullScreenCover(isPresented: $showRarityUpgrade) {
+            let cloudCard = CardService.shared.myCards.first { cc in
+                cc.make == card.make && cc.model == card.model && cc.year == card.year
+            }
+            RarityUpgradeView(
+                card: card,
+                cloudCard: cloudCard,
+                onDismiss: { showRarityUpgrade = false },
+                onUpgraded: { _ in
+                    // Card rarity updated in Firestore — will sync via listener
+                    showRarityUpgrade = false
+                }
+            )
         }
     }
     

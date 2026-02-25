@@ -41,6 +41,10 @@ struct CloudCard: Identifiable, Codable {
     // Rarity tier for economy scaling
     var rarity: String?
     
+    // Evolution points for rarity upgrade system
+    var evolutionPoints: Int
+    var lastBattleUsed: Date?
+    
     // From Firestore document
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -85,6 +89,8 @@ struct CloudCard: Identifiable, Codable {
         self.customFrame = data["customFrame"] as? String
         self.flatImageURL = data["flatImageURL"] as? String
         self.rarity = data["rarity"] as? String
+        self.evolutionPoints = data["evolutionPoints"] as? Int ?? 0
+        self.lastBattleUsed = (data["lastBattleUsed"] as? Timestamp)?.dateValue()
     }
     
     // New card
@@ -105,7 +111,8 @@ struct CloudCard: Identifiable, Codable {
         lastName: String? = nil,
         nickname: String? = nil,
         locationName: String? = nil,
-        rarity: String? = nil
+        rarity: String? = nil,
+        evolutionPoints: Int = 0
     ) {
         self.id = id
         self.ownerId = ownerId
@@ -126,6 +133,8 @@ struct CloudCard: Identifiable, Codable {
         self.nickname = nickname
         self.locationName = locationName
         self.rarity = rarity
+        self.evolutionPoints = evolutionPoints
+        self.lastBattleUsed = nil
     }
     
     var dictionary: [String: Any] {
