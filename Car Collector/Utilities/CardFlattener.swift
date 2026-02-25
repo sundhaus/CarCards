@@ -124,7 +124,8 @@ class CardFlattener {
         for card in drivers {
             guard let fid = card.firebaseId else { continue }
             do {
-                _ = try await flattenAndUpload(AnyCard.driver(card))
+                let flatURL = try await flattenAndUpload(AnyCard.driver(card))
+                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: fid, flatImageURL: flatURL)
                 count += 1
             } catch { print("⚠️ Flatten driver failed: \(error)") }
         }
@@ -132,7 +133,8 @@ class CardFlattener {
         for card in locations {
             guard let fid = card.firebaseId else { continue }
             do {
-                _ = try await flattenAndUpload(AnyCard.location(card))
+                let flatURL = try await flattenAndUpload(AnyCard.location(card))
+                try? await FriendsService.shared.updateActivityFlatImageURL(cardId: fid, flatImageURL: flatURL)
                 count += 1
             } catch { print("⚠️ Flatten location failed: \(error)") }
         }
@@ -163,7 +165,9 @@ class CardFlattener {
             throw FlattenError.renderFailed
         }
         
-        let path = "cards/\(uid)/\(cardId)_flat.jpg"
+        // Include timestamp to bust CDN/client caches when border changes
+        let ts = Int(Date().timeIntervalSince1970)
+        let path = "cards/\(uid)/\(cardId)_flat_\(ts).jpg"
         let ref = storage.reference().child(path)
         
         let metadata = StorageMetadata()
@@ -171,6 +175,16 @@ class CardFlattener {
         
         _ = try await ref.putDataAsync(data, metadata: metadata)
         let downloadURL = try await ref.downloadURL()
+        
+        // Clean up old flat images for this card (best-effort)
+        let folderRef = storage.reference().child("cards/\(uid)")
+        Task {
+            if let list = try? await folderRef.listAll() {
+                for item in list.items where item.name.hasPrefix("\(cardId)_flat_") && item.name != "\(cardId)_flat_\(ts).jpg" {
+                    try? await item.delete()
+                }
+            }
+        }
         
         print("✅ Uploaded flat image: \(path) (\(data.count / 1024)KB)")
         return downloadURL.absoluteString
