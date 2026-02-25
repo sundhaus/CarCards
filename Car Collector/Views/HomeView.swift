@@ -37,7 +37,7 @@ struct HomeView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: DeviceScale.h(140))
                                 .clipped()
-                                .brightness(-0.2)
+                                .brightness(-0.35)
                             
                             Text("LEADERBOARD")
                                 .font(.poppins(16))
@@ -63,7 +63,7 @@ struct HomeView: View {
                                 .frame(height: DeviceScale.h(140))
                                 .offset(y: 10)
                                 .clipped()
-                                .brightness(-0.2)
+                                .brightness(-0.35)
                             
                             Text("FRIENDS")
                                 .font(.poppins(16))
@@ -121,7 +121,7 @@ struct HomeView: View {
                 Spacer()
             }
             .background {
-                AppBackground(animateShapes: true)
+                Color.black.ignoresSafeArea()
             }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
