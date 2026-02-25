@@ -138,23 +138,15 @@ struct HomeView: View {
                 Spacer()
             }
             .background {
-                ZStack {
-                    // Deep charcoal base with slight blue undertone
-                    Color(red: 0.06, green: 0.06, blue: 0.10)
-                        .ignoresSafeArea()
-                    
-                    // Subtle top-center glow for depth
-                    RadialGradient(
-                        colors: [
-                            Color(red: 0.12, green: 0.14, blue: 0.25).opacity(0.6),
-                            Color.clear
-                        ],
-                        center: .top,
-                        startRadius: 20,
-                        endRadius: UIScreen.main.bounds.height * 0.5
-                    )
-                    .ignoresSafeArea()
-                }
+                LinearGradient(
+                    colors: [
+                        Color(white: 0.08),
+                        Color(white: 0.13)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
             }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
