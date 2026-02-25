@@ -17,6 +17,7 @@ struct DailyLoginPopup: View {
     @State private var showRewardPulse = false
     @State private var claimedToday = false
     @State private var isClaiming = false
+    @State private var animateCheckmarks: [Bool] = Array(repeating: false, count: 7)
     
     // Streak gradient that shifts from cool to warm as streak grows
     private var streakGradient: [Color] {
@@ -34,6 +35,33 @@ struct DailyLoginPopup: View {
         }
     }
     
+    // Calculate which days in the 7-day cycle are completed
+    private var weekProgress: [DayProgress] {
+        let currentDay = (loginService.currentStreak % 7)
+        let cycleNumber = loginService.currentStreak / 7
+        
+        return (0..<7).map { index in
+            let dayNumber = index + 1
+            let isCompleted = index < currentDay
+            let isToday = index == currentDay && !claimedToday
+            let isMilestone = dayNumber == 7
+            
+            return DayProgress(
+                dayNumber: dayNumber,
+                isCompleted: isCompleted,
+                isToday: isToday,
+                isMilestone: isMilestone
+            )
+        }
+    }
+    
+    private struct DayProgress {
+        let dayNumber: Int
+        let isCompleted: Bool
+        let isToday: Bool
+        let isMilestone: Bool
+    }
+    
     var body: some View {
         ZStack {
             // Minimal dark transparent background
@@ -47,29 +75,47 @@ struct DailyLoginPopup: View {
                 Spacer()
                 
                 // Main reward card - compact and minimal
-                VStack(spacing: DeviceScale.h(16)) {
-                    // Flame icon with subtle glow
+                VStack(spacing: DeviceScale.h(12)) {
+                    // Flame icon with enhanced glow
                     ZStack {
-                        // Subtle glow
+                        // Outer glow ring
                         Circle()
                             .fill(
                                 RadialGradient(
                                     colors: [
-                                        streakGradient[0].opacity(0.2),
+                                        streakGradient[0].opacity(0.3),
+                                        streakGradient[1].opacity(0.15),
                                         streakGradient[0].opacity(0.0)
                                     ],
                                     center: .center,
-                                    startRadius: 20,
-                                    endRadius: 50
+                                    startRadius: 10,
+                                    endRadius: 70
                                 )
                             )
-                            .frame(width: 100, height: 100)
+                            .frame(width: 140, height: 140)
+                            .scaleEffect(showRewardPulse ? 1.2 : 1.0)
+                            .opacity(animateIn ? 1 : 0)
+                        
+                        // Inner glow
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [
+                                        streakGradient[0].opacity(0.4),
+                                        streakGradient[0].opacity(0.0)
+                                    ],
+                                    center: .center,
+                                    startRadius: 15,
+                                    endRadius: 45
+                                )
+                            )
+                            .frame(width: 90, height: 90)
                             .scaleEffect(showRewardPulse ? 1.15 : 1.0)
                             .opacity(animateIn ? 1 : 0)
                         
                         // Flame icon
                         Image(systemName: "flame.fill")
-                            .font(.system(size: 44))
+                            .font(.system(size: 48))
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: streakGradient,
@@ -79,12 +125,29 @@ struct DailyLoginPopup: View {
                             )
                             .scaleEffect(animateIn ? 1.0 : 0.5)
                             .opacity(animateIn ? 1 : 0)
+                            .shadow(color: streakGradient[1].opacity(0.6), radius: 8, y: 4)
+                    }
+                    .padding(.top, DeviceScale.h(8))
+                    
+                    // Streak count with "Day X of 7" subtext
+                    VStack(spacing: 2) {
+                        Text("\(loginService.currentStreak) Day Streak")
+                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .opacity(animateIn ? 1 : 0)
+                        
+                        if loginService.currentStreak > 0 {
+                            let cycleDay = ((loginService.currentStreak - 1) % 7) + 1
+                            Text("Day \(cycleDay) of 7 this cycle")
+                                .font(.poppins(11))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .opacity(animateIn ? 1 : 0)
+                        }
                     }
                     
-                    // Streak count
-                    Text("\(loginService.currentStreak) Day Streak")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                    // 7-Day progress tracker
+                    weekProgressTracker
+                        .padding(.top, DeviceScale.h(8))
                         .opacity(animateIn ? 1 : 0)
                     
                     if !claimedToday {
@@ -107,7 +170,7 @@ struct DailyLoginPopup: View {
                         .padding(.vertical, DeviceScale.h(8))
                         .opacity(animateIn ? 1 : 0)
                         
-                        // Claim button
+                        // Claim button - more exciting
                         Button(action: {
                             claimReward()
                         }) {
@@ -116,53 +179,94 @@ struct DailyLoginPopup: View {
                                     ProgressView()
                                         .tint(.white)
                                 } else {
-                                    Text("Claim Reward")
-                                        .font(.poppins(16))
-                                        .fontWeight(.semibold)
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "gift.fill")
+                                            .font(.system(size: 16))
+                                        Text("Claim Reward")
+                                            .font(.poppins(16))
+                                            .fontWeight(.semibold)
+                                    }
                                 }
                             }
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, 15)
                             .background(
-                                LinearGradient(
-                                    colors: streakGradient,
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
+                                ZStack {
+                                    // Gradient background
+                                    LinearGradient(
+                                        colors: streakGradient,
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                    
+                                    // Shimmer effect
+                                    LinearGradient(
+                                        colors: [
+                                            .clear,
+                                            .white.opacity(0.3),
+                                            .clear
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                    .offset(x: animateIn ? 200 : -200)
+                                    .animation(.linear(duration: 2).repeatForever(autoreverses: false), value: animateIn)
+                                }
                             )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .shadow(color: streakGradient[1].opacity(0.5), radius: 12, y: 6)
                         }
                         .disabled(isClaiming)
                         .opacity(animateIn ? 1 : 0)
                     } else {
-                        // Already claimed
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 20))
-                                .foregroundStyle(.green)
+                        // Already claimed - show celebration
+                        VStack(spacing: 8) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(.green)
+                                
+                                Text("Reward Claimed!")
+                                    .font(.poppins(16))
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(.vertical, 14)
                             
-                            Text("Reward Claimed!")
-                                .font(.poppins(16))
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
+                            Text("Come back tomorrow for Day \((loginService.currentStreak % 7) + 1)!")
+                                .font(.poppins(12))
+                                .foregroundStyle(.white.opacity(0.7))
                         }
-                        .padding(.vertical, 14)
                         .opacity(animateIn ? 1 : 0)
                     }
                     
                     // Tap to dismiss hint
                     Text("Tap anywhere to continue")
-                        .font(.poppins(12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.poppins(11))
+                        .foregroundStyle(.white.opacity(0.5))
                         .padding(.top, 4)
                         .opacity(animateIn ? 1 : 0)
                 }
                 .padding(DeviceScale.w(24))
                 .background {
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: 24)
                         .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
+                        .shadow(color: .black.opacity(0.4), radius: 30, y: 15)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 24)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            streakGradient[0].opacity(0.3),
+                                            streakGradient[1].opacity(0.1)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
+                        }
                 }
                 .padding(.horizontal, DeviceScale.w(32))
                 .scaleEffect(animateIn ? 1.0 : 0.85)
@@ -176,6 +280,17 @@ struct DailyLoginPopup: View {
             
             withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
                 animateIn = true
+            }
+            
+            // Stagger checkmark animations for completed days
+            for (index, day) in weekProgress.enumerated() {
+                if day.isCompleted {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6 + (Double(index) * 0.08)) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                            animateCheckmarks[index] = true
+                        }
+                    }
+                }
             }
         }
     }
@@ -215,6 +330,94 @@ struct DailyLoginPopup: View {
         }
     }
     
+    // 7-Day week progress tracker
+    private var weekProgressTracker: some View {
+        VStack(spacing: 8) {
+            // "Week Progress" label
+            Text("WEEKLY PROGRESS")
+                .font(.poppins(10))
+                .fontWeight(.semibold)
+                .foregroundStyle(.white.opacity(0.6))
+                .tracking(1.2)
+            
+            // 7 day circles in a row
+            HStack(spacing: 6) {
+                ForEach(Array(weekProgress.enumerated()), id: \.offset) { index, day in
+                    dayCircle(day, index: index)
+                }
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.black.opacity(0.2))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(
+                            Color.white.opacity(0.1),
+                            lineWidth: 1
+                        )
+                }
+        }
+    }
+    
+    private func dayCircle(_ day: DayProgress, index: Int) -> some View {
+        ZStack {
+            // Background circle
+            Circle()
+                .fill(
+                    day.isCompleted || day.isToday
+                        ? LinearGradient(
+                            colors: day.isMilestone ? [.yellow, .orange] : streakGradient,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        : LinearGradient(
+                            colors: [Color.white.opacity(0.15), Color.white.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                )
+                .frame(width: 36, height: 36)
+                .overlay {
+                    Circle()
+                        .strokeBorder(
+                            day.isToday ? Color.white.opacity(0.5) : Color.clear,
+                            lineWidth: 2
+                        )
+                }
+                .scaleEffect(day.isToday ? 1.1 : 1.0)
+                .shadow(
+                    color: day.isCompleted || day.isToday ? streakGradient[1].opacity(0.6) : .clear,
+                    radius: day.isToday ? 8 : 4,
+                    y: 2
+                )
+            
+            // Content
+            if day.isCompleted && animateCheckmarks[index] {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.white)
+                    .transition(.scale.combined(with: .opacity))
+            } else if day.isMilestone && !day.isCompleted && !day.isToday {
+                Image(systemName: "trophy.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white.opacity(0.3))
+            } else if !day.isCompleted && !day.isToday {
+                Text("\(day.dayNumber)")
+                    .font(.poppins(12))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white.opacity(0.4))
+            } else if day.isToday {
+                Text("\(day.dayNumber)")
+                    .font(.poppins(14))
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+            }
+        }
+    }
+    
     private func claimReward() {
         guard !isClaiming else { return }
         isClaiming = true
@@ -233,6 +436,12 @@ struct DailyLoginPopup: View {
                 if reward != nil {
                     claimedToday = true
                     
+                    // Animate today's checkmark
+                    let todayIndex = weekProgress.firstIndex(where: { $0.isToday }) ?? 0
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.6).delay(0.2)) {
+                        animateCheckmarks[todayIndex] = true
+                    }
+                    
                     // Pulse animation
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                         showRewardPulse = true
@@ -248,7 +457,7 @@ struct DailyLoginPopup: View {
                     }
                     
                     // Auto-dismiss after brief delay
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         dismiss()
                     }
                 }
