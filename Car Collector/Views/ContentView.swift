@@ -17,11 +17,13 @@ struct ContentView: View {
     @State private var forceOrientationUpdate = false
     @StateObject private var levelSystem = LevelSystem()
     @State private var showProfile = false
+    @State private var showDailyLoginPopup = false
     
     // Track which tabs have been visited (for lazy loading)
     @State private var visitedTabs: Set<Int> = [1] // Home is pre-loaded
     @ObservedObject private var navigationController = NavigationController.shared
     @ObservedObject private var h2hService = HeadToHeadService.shared
+    @ObservedObject private var dailyLoginService = DailyLoginService.shared
     @State private var showDuoInvite = false
     
     // Merge all card types for marketplace
@@ -166,6 +168,12 @@ struct ContentView: View {
                 )
             }
         }
+        .overlay {
+            // Daily login popup - appears automatically on first login
+            if showDailyLoginPopup {
+                DailyLoginPopup(isPresented: $showDailyLoginPopup)
+            }
+        }
         .fullScreenCover(isPresented: $showCamera) {
             CameraView(
                 isPresented: $showCamera,
@@ -229,6 +237,27 @@ struct ContentView: View {
             }
             // Start listening for duo invites globally
             h2hService.startDuoInviteListener()
+            
+            // Load and check daily login (automatic popup)
+            Task {
+                guard let uid = FirebaseManager.shared.currentUserId else { return }
+                
+                // Load daily login data
+                dailyLoginService.load(uid: uid)
+                
+                // Wait for data to load
+                try? await Task.sleep(nanoseconds: 600_000_000) // 600ms
+                
+                await MainActor.run {
+                    // Show popup if reward hasn't been claimed today
+                    if !dailyLoginService.todayRewardClaimed {
+                        // Delay popup slightly so user sees the app first
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            showDailyLoginPopup = true
+                        }
+                    }
+                }
+            }
         }
         .onChange(of: h2hService.pendingDuoInvite?.id) { _, newId in
             showDuoInvite = newId != nil

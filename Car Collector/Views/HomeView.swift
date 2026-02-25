@@ -17,7 +17,6 @@ struct HomeView: View {
     @State private var showLeaderboard = false
     @State private var showExplore = false
     @State private var showHeadToHead = false
-    @State private var showDailyLogin = false
     @ObservedObject private var friendsService = FriendsService.shared
     @ObservedObject private var h2hService = HeadToHeadService.shared
     @ObservedObject private var navigationController = NavigationController.shared
@@ -51,16 +50,8 @@ struct HomeView: View {
                 FeaturedCollectionsContainer(action: { showExplore = true })
                     .padding(.horizontal)
                 
-                // Middle row - Daily Login and Head to Head
+                // Middle row - Head to Head (full width)
                 HStack(spacing: DeviceScale.w(16)) {
-                    // Daily Login
-                    HomeContainer(
-                        title: "DAILY LOGIN",
-                        icon: "flame.fill",
-                        gradient: [Color.orange, Color.red],
-                        action: { showDailyLogin = true }
-                    )
-                    
                     // Head to Head
                     ZStack(alignment: .topTrailing) {
                         HomeContainer(
@@ -116,9 +107,6 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $showLeaderboard) {
                 LeaderboardView(isLandscape: isLandscape)
             }
-            .fullScreenCover(isPresented: $showDailyLogin) {
-                DailyLoginView(onDismiss: { showDailyLogin = false })
-            }
             .onChange(of: navigationController.homeNavigationPath) { oldValue, newValue in
                 if newValue.isEmpty {
                     showTransferList = false
@@ -126,7 +114,6 @@ struct HomeView: View {
                     showLeaderboard = false
                     showExplore = false
                     showHeadToHead = false
-                    showDailyLogin = false
                 }
             }
             .onChange(of: showFriends) { _, isFriendsOpen in
@@ -145,7 +132,6 @@ struct HomeView: View {
                 showLeaderboard = false
                 showExplore = false
                 showHeadToHead = false
-                showDailyLogin = false
                 navigationController.unpreserveTab(1)
                 print("🏠 HomeView: Reset all navigation booleans from trigger")
             }
