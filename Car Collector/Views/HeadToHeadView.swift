@@ -972,7 +972,6 @@ struct ChallengeView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 4) {
                                     HeatCheckCoin(size: 20)
-                                        .foregroundStyle(.yellow)
                                     Text("\(fee)")
                                         .font(.title2.bold())
                                         .foregroundStyle(canAfford ? .white : .white.opacity(0.3))
@@ -1022,7 +1021,6 @@ struct ChallengeView: View {
             // Balance display
             HStack(spacing: 4) {
                 HeatCheckCoin(size: 20)
-                    .foregroundStyle(.yellow)
                 Text("Balance: \(userCoins)")
                     .font(.caption.bold())
                     .foregroundStyle(.white.opacity(0.6))

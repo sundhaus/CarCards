@@ -207,10 +207,7 @@ struct EarningsLeaderboard: View {
             if entries.isEmpty {
                 VStack {
                     Spacer()
-                    HeatCheckCoin(size: 20))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                        .foregroundStyle(.gray)
+                    HeatCheckCoin(size: 60, tint: .gray)
                     Text("No data available")
                         .font(.pTitle2)
                         .foregroundStyle(.secondary)

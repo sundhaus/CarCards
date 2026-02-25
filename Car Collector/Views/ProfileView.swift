@@ -231,7 +231,6 @@ struct ProfileView: View {
                             Spacer()
                             HStack(spacing: 4) {
                                 HeatCheckCoin(size: 20)
-                                    .foregroundStyle(.yellow)
                                 Text("\(levelSystem.coins)")
                                     .fontWeight(.semibold)
                             }

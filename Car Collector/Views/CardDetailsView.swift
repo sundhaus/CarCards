@@ -126,8 +126,7 @@ struct CardDetailsView: View {
     
     private var coinCounter: some View {
         HStack(spacing: 4) {
-            HeatCheckCoin(size: 14))
-                .foregroundStyle(.yellow)
+            HeatCheckCoin(size: 14)
             Text("\(userService.coins)")
                 .font(.poppins(13))
                 .foregroundStyle(.primary)
@@ -264,8 +263,7 @@ struct CardDetailsView: View {
                     .glassEffect(.regular, in: .rect(cornerRadius: 10))
                     .keyboardType(.numberPad)
                 
-                HeatCheckCoin(size: 20))
-                    .foregroundStyle(.yellow)
+                HeatCheckCoin(size: 20)
                 
                 Button(action: {
                     if let current = Int(value.wrappedValue) {
