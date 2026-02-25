@@ -325,36 +325,38 @@ struct DailyLoginPopup: View {
     
     // Animated checkered flag background
     private var checkeredBackground: some View {
-        GeometryReader { geometry in
+        Canvas { context, size in
             let squareSize: CGFloat = 20
-            let columns = Int(geometry.size.width / squareSize) + 2
-            let rows = Int(geometry.size.height / squareSize) + 2
+            let columns = Int(size.width / squareSize) + 2
+            let rows = Int(size.height / squareSize) + 2
             
-            ZStack {
-                ForEach(0..<rows, id: \.self) { row in
-                    ForEach(0..<columns, id: \.self) { col in
-                        let isChecked = (row + col) % 2 == 0
-                        let xPos = CGFloat(col) * squareSize
-                        let yPos = CGFloat(row) * squareSize
-                        
-                        Rectangle()
-                            .fill(
-                                isChecked
-                                    ? Color.white.opacity(0.03)
-                                    : Color.black.opacity(0.15)
-                            )
-                            .frame(width: squareSize, height: squareSize)
-                            .position(x: xPos + squareSize/2, y: yPos + squareSize/2)
-                            .opacity(
-                                // Wave effect
-                                1.0 - (abs(sin((xPos + yPos + waveOffset) / 100)) * 0.3)
-                            )
-                    }
+            for row in 0..<rows {
+                for col in 0..<columns {
+                    let isChecked = (row + col) % 2 == 0
+                    let rect = CGRect(
+                        x: CGFloat(col) * squareSize,
+                        y: CGFloat(row) * squareSize,
+                        width: squareSize,
+                        height: squareSize
+                    )
+                    
+                    let baseOpacity = isChecked ? 0.03 : 0.15
+                    let waveEffect = abs(sin((rect.minX + rect.minY + waveOffset) / 100)) * 0.3
+                    let finalOpacity = baseOpacity * (1.0 - waveEffect)
+                    
+                    let color = isChecked
+                        ? Color.white.opacity(finalOpacity)
+                        : Color.black.opacity(finalOpacity)
+                    
+                    context.fill(
+                        Path(rect),
+                        with: .color(color)
+                    )
                 }
             }
-            .blur(radius: 0.5)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
         }
+        .blur(radius: 0.5)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
         .onAppear {
             withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
                 waveOffset = 500
