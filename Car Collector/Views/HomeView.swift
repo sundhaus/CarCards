@@ -50,7 +50,7 @@ struct HomeView: View {
                 FeaturedCollectionsContainer(action: { showExplore = true })
                     .padding(.horizontal)
                 
-                // Middle row - Head to Head (full width)
+                // Bottom row - Head to Head and Transfer List (side by side)
                 HStack(spacing: DeviceScale.w(16)) {
                     // Head to Head
                     ZStack(alignment: .topTrailing) {
@@ -72,11 +72,7 @@ struct HomeView: View {
                                 .offset(x: -8, y: 8)
                         }
                     }
-                }
-                .padding(.horizontal)
-                
-                // Bottom row - Transfer List
-                HStack(spacing: DeviceScale.w(16)) {
+                    
                     // Transfer List
                     HomeContainer(
                         title: "TRANSFER LIST",
