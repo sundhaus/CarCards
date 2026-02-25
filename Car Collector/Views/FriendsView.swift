@@ -575,9 +575,11 @@ struct TabButton: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Text(title)
-                    .font(.pSubheadline)
-                    .fontWeight(isSelected ? .semibold : .regular)
+                    .font(.pCaption)
+                    .fontWeight(isSelected ? .bold : .regular)
                     .foregroundStyle(isSelected ? .primary : .secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 
                 HStack(spacing: 4) {
                     Text("\(count)")
