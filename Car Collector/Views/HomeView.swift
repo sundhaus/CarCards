@@ -61,7 +61,7 @@ struct HomeView: View {
                                 .aspectRatio(contentMode: .fill)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: DeviceScale.h(140))
-                                .offset(y: 20)
+                                .offset(y: 10)
                                 .clipped()
                                 .brightness(-0.2)
                             
