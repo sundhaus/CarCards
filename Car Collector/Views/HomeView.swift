@@ -37,12 +37,33 @@ struct HomeView: View {
                     )
                     
                     // Friends
-                    HomeContainer(
-                        title: "FRIENDS",
-                        icon: "person.2.fill",
-                        gradient: friendsService.newFollowersCount > 0 ? [Color.green, Color.teal] : [Color.blue, Color.cyan],
-                        action: { showFriends = true }
-                    )
+                    Button(action: { showFriends = true }) {
+                        ZStack(alignment: .bottom) {
+                            Image("FriendsHero")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: DeviceScale.h(140))
+                                .clipped()
+                            
+                            // Dark gradient at bottom for text legibility
+                            LinearGradient(
+                                colors: [.clear, .black.opacity(0.7)],
+                                startPoint: .center,
+                                endPoint: .bottom
+                            )
+                            
+                            Text("FRIENDS")
+                                .font(.poppins(16))
+                                .foregroundStyle(.white)
+                                .padding(.bottom, DeviceScale.h(16))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: DeviceScale.h(140))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal)
                 
