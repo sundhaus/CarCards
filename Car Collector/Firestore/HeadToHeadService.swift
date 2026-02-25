@@ -724,6 +724,14 @@ class HeadToHeadService: ObservableObject {
             )
             
             let updatedDoc = try await racesCollection.document(opp1.id).getDocument()
+            
+            // Update invite so the teammate can see the result
+            try await duoInvitesCollection.document(invite.id).updateData([
+                "status": "matched",
+                "inviterRaceId": opp1.id,
+                "teammateRaceId": opp2.id
+            ])
+            
             if let race = Race(document: updatedDoc) {
                 return .matched(race)
             }
@@ -787,7 +795,11 @@ class HeadToHeadService: ObservableObject {
             ])
             
             // Update invite status
-            try await duoInvitesCollection.document(invite.id).updateData(["status": "queued"])
+            try await duoInvitesCollection.document(invite.id).updateData([
+                "status": "queued",
+                "inviterRaceId": raceId1,
+                "teammateRaceId": raceId2
+            ])
             
             print("🏁 Duo posted to queue: \(raceId1) paired with \(raceId2)")
             return .queued

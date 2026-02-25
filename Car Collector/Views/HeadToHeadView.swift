@@ -2240,10 +2240,15 @@ struct DuoInvitePopupView: View {
     @State private var isProcessing = false
     @State private var step: InviteStep = .review
     @State private var unavailableCardIds: Set<String> = []
+    @State private var inviteListener: ListenerRegistration?
+    @State private var matchedRace: Race?
     
     enum InviteStep {
         case review
         case pickCard
+        case matchmaking   // Waiting for inviter to run matchmaking
+        case queued        // Duo posted to queue, waiting for opponent
+        case matched       // Race found
     }
     
     var body: some View {
@@ -2256,6 +2261,12 @@ struct DuoInvitePopupView: View {
                     reviewView
                 case .pickCard:
                     pickCardForDuoView
+                case .matchmaking:
+                    matchmakingView
+                case .queued:
+                    queuedView
+                case .matched:
+                    matchedView
                 }
             }
             .navigationTitle("Duo Invite")
@@ -2410,7 +2421,8 @@ struct DuoInvitePopupView: View {
                                 myCard: card
                             )
                             isProcessing = false
-                            dismiss()
+                            withAnimation { step = .matchmaking }
+                            listenForInviteUpdates()
                         } catch {
                             print("❌ Failed to accept duo invite: \(error)")
                             isProcessing = false
@@ -2444,6 +2456,186 @@ struct DuoInvitePopupView: View {
         .task {
             await loadBlockedCards()
         }
+    }
+    
+    // MARK: - Matchmaking State Views
+    
+    private var matchmakingView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            ProgressView()
+                .scaleEffect(1.5)
+                .tint(.blue)
+                .padding(.bottom, 8)
+            
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 50))
+                .foregroundStyle(.blue)
+            
+            Text("TEAM READY!")
+                .font(.title.bold())
+                .foregroundStyle(.white)
+            
+            Text("Waiting for \(invite.inviterUsername) to enter matchmaking...")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Text("You'll be updated automatically")
+                .font(.caption)
+                .foregroundStyle(.blue)
+            
+            Spacer()
+            
+            Button(action: { dismiss() }) {
+                Text("CLOSE")
+                    .font(.headline.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(.white.opacity(0.15))
+                    .cornerRadius(16)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 30)
+        }
+    }
+    
+    private var queuedView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Image(systemName: "clock.badge.checkmark")
+                .font(.system(size: 50))
+                .foregroundStyle(.orange)
+            
+            Text("IN THE QUEUE")
+                .font(.title.bold())
+                .foregroundStyle(.white)
+            
+            Text("Your duo is waiting for an opponent.")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Text("You'll be matched automatically!")
+                .font(.caption)
+                .foregroundStyle(.orange)
+            
+            Spacer()
+            
+            Button(action: { 
+                stopListeners()
+                dismiss() 
+            }) {
+                Text("DONE")
+                    .font(.headline.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(16)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 30)
+        }
+    }
+    
+    private var matchedView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Image(systemName: "car.2.fill")
+                .font(.system(size: 50))
+                .foregroundStyle(.green)
+            
+            Text("MATCHED!")
+                .font(.title.bold())
+                .foregroundStyle(.white)
+            
+            Text("Your duo race is live — go vote!")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Text("Check Head-to-Head for your active race")
+                .font(.caption)
+                .foregroundStyle(.green)
+            
+            Spacer()
+            
+            Button(action: { 
+                stopListeners()
+                dismiss() 
+            }) {
+                Text("LET'S GO!")
+                    .font(.headline.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        LinearGradient(colors: [.green, .mint], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(16)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 30)
+        }
+    }
+    
+    // MARK: - Invite Listener
+    
+    @State private var raceListener: ListenerRegistration?
+    
+    private func listenForInviteUpdates() {
+        inviteListener?.remove()
+        
+        inviteListener = FirebaseManager.shared.db.collection("duoInvites")
+            .document(invite.id)
+            .addSnapshotListener { snapshot, error in
+                guard let data = snapshot?.data(),
+                      let status = data["status"] as? String else { return }
+                
+                if status == "matched" {
+                    withAnimation { step = .matched }
+                    stopListeners()
+                } else if status == "queued" {
+                    withAnimation { step = .queued }
+                    // Start listening on the teammate's race for when an opponent accepts
+                    if let raceId = data["teammateRaceId"] as? String {
+                        listenForRaceMatch(raceId: raceId)
+                    }
+                }
+            }
+    }
+    
+    private func listenForRaceMatch(raceId: String) {
+        raceListener?.remove()
+        
+        raceListener = FirebaseManager.shared.db.collection("races")
+            .document(raceId)
+            .addSnapshotListener { snapshot, error in
+                guard let data = snapshot?.data(),
+                      let status = data["status"] as? String else { return }
+                
+                if status == "active" {
+                    withAnimation { step = .matched }
+                    stopListeners()
+                }
+            }
+    }
+    
+    private func stopListeners() {
+        inviteListener?.remove()
+        inviteListener = nil
+        raceListener?.remove()
+        raceListener = nil
     }
     
     private func loadBlockedCards() async {
