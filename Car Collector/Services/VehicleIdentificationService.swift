@@ -162,7 +162,7 @@ class VehicleIdentificationService: ObservableObject {
     
     init() {
         ai = FirebaseAI.firebaseAI(backend: .googleAI())
-        model = ai.generativeModel(modelName: "gemini-2.5-flash")
+        model = ai.generativeModel(modelName: "gemini-3-flash-preview")
         
         #if DEBUG
         print("🤖 VehicleIdentificationService initialized (OPTIMIZED)")
@@ -186,37 +186,31 @@ class VehicleIdentificationService: ObservableObject {
             #endif
             
             let prompt = """
-            VALIDATE then IDENTIFY - Return TOP 3 matches:
+            You are an expert automotive spotter. Return your TOP 3 identifications.
             
-            Step 1 - VALIDATION:
-            - Does this contain a REAL vehicle?
-            - Is content appropriate?
+            Examine carefully before answering:
+            - Headlight/taillight shape and LED signature
+            - Grille design, badge/emblem style and placement
+            - Body lines, fender flares, roofline, window shape
+            - Wheel design, mirror shape, bumper/diffuser details
+            - Any visible badges, model numbers, trim indicators
             
-            Step 2 - Return JSON with 3 options:
+            Return JSON with 3 options ranked by confidence:
             {"options":[
-                {
-                  "isVehicle": true,
-                  "isAppropriate": true,
-                  "rejectionReason": null,
-                  "make":"Toyota",
-                  "model":"Camry",
-                  "generation":"8th Gen",
-                  "confidence":"high"
-                },
-                {"make":"Toyota","model":"Camry","generation":"7th Gen","confidence":"medium","isVehicle":true,"isAppropriate":true,"rejectionReason":null},
-                {"make":"Toyota","model":"Avalon","generation":"5th Gen","confidence":"low","isVehicle":true,"isAppropriate":true,"rejectionReason":null}
+                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 GT3","generation":"992","confidence":"high"},
+                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 Carrera S","generation":"992","confidence":"medium"},
+                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 GT3","generation":"991.2","confidence":"low"}
             ]}
             
-            REJECTION CASES:
-            - If NOT a vehicle or inappropriate, return SINGLE option with flags:
+            If NOT a vehicle or inappropriate:
             {"options":[{"isVehicle":false,"isAppropriate":true,"rejectionReason":"No vehicle detected","make":"","model":"","generation":"","confidence":""}]}
             
-            If VALID, return EXACTLY 3 vehicle options ordered by confidence:
-            - make: manufacturer
-            - model: model name  
-            - generation: generation name (e.g. "Evo IX", "Mk7") - NOT years unless unknown
-            - confidence: "high", "medium", or "low"
-            - Focus on different generations/trims if uncertain
+            RULES:
+            - make: manufacturer (e.g. "Mercedes-Benz", "Land Rover")
+            - model: full name with sub-model (e.g. "911 GT3 RS", "M3 Competition", "Civic Type R")
+            - generation: chassis code preferred (e.g. "992", "G80", "FL5"). Use "Nth Gen" only if no code exists.
+            - Option 1: best match. Options 2-3: plausible alternatives (different trims, facelifts, or similar models).
+            - Do NOT return "Unknown". Always give your best identification.
             
             Return ONLY JSON, no markdown.
             """
@@ -266,35 +260,45 @@ class VehicleIdentificationService: ObservableObject {
             #endif
             
             let prompt = """
-            VALIDATE then IDENTIFY this image:
+            You are an expert automotive spotter. VALIDATE then IDENTIFY this vehicle.
             
-            Step 1 - VALIDATION (Critical):
-            - Does this image contain a REAL vehicle (car, truck, motorcycle, bus)?
-            - Is the content appropriate (no offensive material, nudity, violence)?
+            Step 1 - VALIDATION:
+            - Is this a REAL vehicle (car, truck, motorcycle, bus, SUV)?
+            - Is content appropriate?
             
-            Step 2 - Return JSON:
+            Step 2 - IDENTIFICATION (be precise):
+            Examine these visual cues carefully before answering:
+            - Headlight and taillight shape, LED signature pattern
+            - Grille design, badge/emblem placement and style
+            - Body lines, fender flares, roofline silhouette
+            - Wheel design, mirror shape, door handle style
+            - Bumper design, exhaust tip layout, diffuser shape
+            - Any visible badges, model numbers, or trim indicators
+            
+            Use these cues to distinguish between similar models (e.g. Porsche 911 992 vs 991, BMW M3 vs M4, Civic Type R vs Si).
+            Pay close attention to facelift vs pre-facelift differences within a generation.
+            
+            Return JSON:
             {
               "isVehicle": true/false,
               "isAppropriate": true/false,
-              "rejectionReason": "reason if rejected, null if valid",
-              "make": "Toyota",
-              "model": "Camry",
-              "generation": "8th Gen"
+              "rejectionReason": null,
+              "make": "Porsche",
+              "model": "911 GT3",
+              "generation": "992"
             }
             
-            REJECTION RULES:
-            - NOT a vehicle: Set isVehicle=false, rejectionReason="No vehicle detected in image"
-            - Screenshot/meme: Set isVehicle=false, rejectionReason="Please capture a real vehicle with your camera"
-            - Drawing/toy car: Set isVehicle=false, rejectionReason="Please capture a real, full-size vehicle"
-            - Inappropriate content: Set isAppropriate=false, rejectionReason="Inappropriate content detected"
-            - Valid vehicle: Set both true, rejectionReason=null
+            REJECTION (if not a real vehicle or inappropriate):
+            {"isVehicle":false,"isAppropriate":true,"rejectionReason":"No vehicle detected","make":"","model":"","generation":""}
             
-            If VALID vehicle:
-            - make: manufacturer name
-            - model: model name
-            - generation: generation name (e.g. "8th Gen", "Mk7", "E90") - NOT years unless unknown
+            RULES:
+            - make: manufacturer (e.g. "Lamborghini", "Mercedes-Benz", "Land Rover")
+            - model: full model name including sub-model (e.g. "911 GT3 RS", "M3 Competition", "Civic Type R")
+            - generation: chassis code or gen name preferred (e.g. "992", "G80", "FL5", "W206"). Use "Nth Gen" only if no code exists.
+            - Do NOT guess "Unknown". If uncertain, give your best identification with the visual evidence available.
+            - Reject screenshots, drawings, toy cars, memes.
             
-            Return ONLY the JSON, no markdown, no explanation.
+            Return ONLY JSON, no markdown.
             """
             
             let response = try await self.model.generateContent(
