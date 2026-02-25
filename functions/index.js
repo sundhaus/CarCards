@@ -26,13 +26,13 @@ const BORDER_MAP = {
   "uncommon":  "Border_Uncommon.png",
   "rare":      "Border_Rare.svg",
   "epic":      "Border_Epic.svg",
-  "legendary": "Border_Legendary.svg",
+  "legendary": "Border_Legendary.png",
   // Legacy frame names
   "Border_Common":    "Border_Common.svg",
   "Border_Uncommon":  "Border_Uncommon.png",
   "Border_Rare":      "Border_Rare.svg",
   "Border_Epic":      "Border_Epic.svg",
-  "Border_Legendary": "Border_Legendary.svg",
+  "Border_Legendary": "Border_Legendary.png",
   "Border_Def_Wht":   "Border_Def_Wht.png",
 };
 
