@@ -42,10 +42,131 @@ const DEFAULT_BORDER = "Border_Def_Wht.png";
 const CARD_WIDTH = 1920;
 const CARD_HEIGHT = 1080;
 
+// ─── Font Loading ────────────────────────────────────────────────────────────
+
+// Load fonts as base64 once at cold start for SVG embedding
+let _fontBoldB64 = null;
+let _fontLightB64 = null;
+
+function getFontBoldB64() {
+  if (!_fontBoldB64) {
+    const fontPath = path.join(__dirname, "fonts", "Jost-Bold.ttf");
+    if (fs.existsSync(fontPath)) {
+      _fontBoldB64 = fs.readFileSync(fontPath).toString("base64");
+    }
+  }
+  return _fontBoldB64;
+}
+
+function getFontLightB64() {
+  if (!_fontLightB64) {
+    const fontPath = path.join(__dirname, "fonts", "Jost-Light.ttf");
+    if (fs.existsSync(fontPath)) {
+      _fontLightB64 = fs.readFileSync(fontPath).toString("base64");
+    }
+  }
+  return _fontLightB64;
+}
+
+// ─── Text Overlay SVG ────────────────────────────────────────────────────────
+
+/**
+ * Build an SVG overlay with the card name text.
+ * Matches the SwiftUI layout: make (light) + model (bold), top-left with shadow.
+ * For driver cards: make (bold) on line 1, year on line 2, model (bold) on line 3.
+ */
+function buildTextOverlaySVG(cardData) {
+  const make = (cardData.make || "").toUpperCase();
+  const model = (cardData.model || "").toUpperCase();
+  const year = (cardData.year || "").toUpperCase();
+  const cardType = cardData.type || cardData.cardType || "vehicle";
+
+  const boldB64 = getFontBoldB64();
+  const lightB64 = getFontLightB64();
+
+  // Font size proportional to card dimensions (matches height * 0.08)
+  const fontSize = Math.round(CARD_HEIGHT * 0.08); // ~86px at 1080
+  const smallFontSize = Math.round(CARD_HEIGHT * 0.06); // ~65px for year
+  const inset = Math.round(CARD_HEIGHT * 0.08); // ~86px padding
+
+  // Build @font-face declarations
+  let fontFaces = "";
+  if (boldB64) {
+    fontFaces += `@font-face { font-family: 'CardFont'; font-weight: 700; src: url('data:font/ttf;base64,${boldB64}') format('truetype'); }\n`;
+  }
+  if (lightB64) {
+    fontFaces += `@font-face { font-family: 'CardFont'; font-weight: 300; src: url('data:font/ttf;base64,${lightB64}') format('truetype'); }\n`;
+  }
+
+  // Fallback font family
+  const fontFamily = boldB64 ? "CardFont" : "sans-serif";
+
+  // Shadow filter
+  const shadowFilter = `
+    <filter id="textShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.8)" />
+    </filter>`;
+
+  let textElements = "";
+
+  if (cardType === "driver") {
+    // Driver card: stacked layout (make, year, model)
+    const line1Y = inset + fontSize;
+    const line2Y = line1Y + smallFontSize + 2;
+    const line3Y = line2Y + fontSize + 2;
+    
+    textElements = `
+      <text x="${inset}" y="${line1Y}" font-family="${fontFamily}" font-weight="700" font-size="${fontSize}" fill="white" filter="url(#textShadow)">${escapeXML(make)}</text>`;
+    
+    if (year) {
+      textElements += `
+      <text x="${inset}" y="${line2Y}" font-family="${fontFamily}" font-weight="300" font-size="${smallFontSize}" fill="white" filter="url(#textShadow)">"${escapeXML(year)}"</text>`;
+    }
+    
+    textElements += `
+      <text x="${inset}" y="${line3Y}" font-family="${fontFamily}" font-weight="700" font-size="${fontSize}" fill="white" filter="url(#textShadow)">${escapeXML(model)}</text>`;
+
+  } else if (cardType === "location") {
+    // Location card: just the name, top-left
+    const textY = inset + fontSize;
+    textElements = `
+      <text x="${inset}" y="${textY}" font-family="${fontFamily}" font-weight="700" font-size="${fontSize}" fill="white" filter="url(#textShadow)">${escapeXML(make)}</text>`;
+
+  } else {
+    // Vehicle card: make (light) + model (bold) on one line
+    const textY = inset + fontSize;
+    textElements = `
+      <text x="${inset}" y="${textY}" filter="url(#textShadow)">
+        <tspan font-family="${fontFamily}" font-weight="300" font-size="${fontSize}" fill="white">${escapeXML(make)}</tspan>
+        <tspan dx="8" font-family="${fontFamily}" font-weight="700" font-size="${fontSize}" fill="white">${escapeXML(model)}</tspan>
+      </text>`;
+  }
+
+  return `<svg width="${CARD_WIDTH}" height="${CARD_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>${fontFaces}</style>
+    ${shadowFilter}
+  </defs>
+  ${textElements}
+</svg>`;
+}
+
+/**
+ * Escape special XML characters in text.
+ */
+function escapeXML(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 // ─── Core Flatten Logic ──────────────────────────────────────────────────────
 
 /**
- * Flatten a single card: download photo, composite border, upload result.
+ * Flatten a single card: download photo, composite border + text, upload result.
  * 
  * @param {string} cardId - Firestore document ID
  * @param {object} cardData - Card document data
@@ -74,10 +195,14 @@ async function flattenCard(cardId, cardData) {
     ? borderPath 
     : path.join(__dirname, "borders", DEFAULT_BORDER);
 
-  // 4. Composite: resize photo to card dimensions, overlay border
-  const flatBuffer = await compositeCard(photoBuffer, actualBorderPath);
+  // 4. Build text overlay SVG
+  const textSVG = buildTextOverlaySVG(cardData);
+  const textBuffer = Buffer.from(textSVG);
 
-  // 5. Upload with cache-busting timestamp
+  // 5. Composite: photo → border → text
+  const flatBuffer = await compositeCard(photoBuffer, actualBorderPath, textBuffer);
+
+  // 6. Upload with cache-busting timestamp
   const ts = Math.floor(Date.now() / 1000);
   const uploadPath = `cards/${uid}/${cardId}_flat_${ts}.jpg`;
   
@@ -95,17 +220,17 @@ async function flattenCard(cardId, cardData) {
   await file.makePublic();
   const downloadURL = `https://storage.googleapis.com/${bucket.name}/${uploadPath}`;
 
-  // 6. Clean up old flat images (best-effort)
+  // 7. Clean up old flat images (best-effort)
   await cleanupOldFlats(bucket, uid, cardId, ts);
 
-  // 7. Update Firestore
-  await db.collection("cards").document(cardId).update({
+  // 8. Update Firestore
+  await db.collection("cards").doc(cardId).update({
     flatImageURL: downloadURL,
     flattenedAt: admin.firestore.FieldValue.serverTimestamp(),
     flattenedBy: "cloud-function",
   });
 
-  // 8. Update activity feed if exists
+  // 9. Update activity feed if exists
   await updateActivityFeed(cardId, downloadURL, cardData);
 
   console.log(`✅ Flattened card ${cardId} (${borderFile}) → ${uploadPath}`);
@@ -163,9 +288,9 @@ async function downloadFromURL(url) {
 }
 
 /**
- * Composite the card photo with a border overlay using Sharp.
+ * Composite the card photo with a border overlay and text using Sharp.
  */
-async function compositeCard(photoBuffer, borderPath) {
+async function compositeCard(photoBuffer, borderPath, textBuffer) {
   // Resize the photo to card dimensions (cover crop, centered)
   const resizedPhoto = await sharp(photoBuffer)
     .resize(CARD_WIDTH, CARD_HEIGHT, { fit: "cover", position: "centre" })
@@ -176,9 +301,23 @@ async function compositeCard(photoBuffer, borderPath) {
     .resize(CARD_WIDTH, CARD_HEIGHT, { fit: "fill" })
     .toBuffer();
 
-  // Composite: photo on bottom, border on top (border has alpha transparency)
+  // Build composite layers: photo → border → text
+  const layers = [
+    { input: borderBuffer, blend: "over" },
+  ];
+
+  if (textBuffer) {
+    // Render SVG text to PNG at card dimensions for crisp overlay
+    const textPng = await sharp(textBuffer)
+      .resize(CARD_WIDTH, CARD_HEIGHT)
+      .png()
+      .toBuffer();
+    layers.push({ input: textPng, blend: "over" });
+  }
+
+  // Composite all layers
   const result = await sharp(resizedPhoto)
-    .composite([{ input: borderBuffer, blend: "over" }])
+    .composite(layers)
     .jpeg({ quality: 85 })
     .toBuffer();
 
