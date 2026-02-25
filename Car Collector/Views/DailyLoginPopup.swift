@@ -311,7 +311,7 @@ struct DailyLoginPopup: View {
     // Animated checkered flag background
     private var checkeredBackground: some View {
         Canvas { context, size in
-            let squareSize: CGFloat = 120  // Increased to 120 for ~6 rows
+            let squareSize: CGFloat = 140  // Larger squares for compact popup
             let columns = Int(size.width / squareSize) + 2
             let rows = Int(size.height / squareSize) + 2
             
@@ -341,7 +341,7 @@ struct DailyLoginPopup: View {
             }
         }
         .blur(radius: 0.5)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .onAppear {
             withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
                 waveOffset = 500
