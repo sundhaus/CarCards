@@ -1603,6 +1603,7 @@ struct RaceHistoryView: View {
     @State private var votedRaces: [(race: Race, votedForCardId: String)] = []
     @State private var isLoading = true
     @State private var pfpURLs: [String: String] = [:] // userId -> profilePictureURL
+    @State private var refreshTimer: Timer?
     
     // Grouped display items
     enum HistoryItem: Identifiable {
@@ -1651,6 +1652,9 @@ struct RaceHistoryView: View {
                         }
                         .padding()
                     }
+                    .refreshable {
+                        await refreshData()
+                    }
                 }
             }
             .navigationTitle("My Votes")
@@ -1661,31 +1665,44 @@ struct RaceHistoryView: View {
                 }
             }
             .task {
-                do {
-                    votedRaces = try await HeadToHeadService.shared.fetchVotedRaces()
-                    
-                    // Fetch PFP URLs for all users in races
-                    var userIds = Set<String>()
-                    for entry in votedRaces {
-                        userIds.insert(entry.race.challengerId)
-                        userIds.insert(entry.race.defenderId)
-                    }
-                    
-                    let db = FirebaseManager.shared.db
-                    for userId in userIds where !userId.isEmpty {
-                        if let doc = try? await db.collection("users").document(userId).getDocument(),
-                           let url = doc.data()?["profilePictureURL"] as? String {
-                            pfpURLs[userId] = url
-                        }
-                    }
-                    
-                    // Group duo pairs together
-                    buildHistoryItems()
-                } catch {
-                    print("❌ Failed to load vote history: \(error)")
-                }
+                await refreshData()
                 isLoading = false
+                
+                // Auto-refresh every 15 seconds while viewing
+                refreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
+                    Task { await refreshData() }
+                }
             }
+            .onDisappear {
+                refreshTimer?.invalidate()
+                refreshTimer = nil
+            }
+        }
+    }
+    
+    private func refreshData() async {
+        do {
+            let freshRaces = try await HeadToHeadService.shared.fetchVotedRaces()
+            
+            // Fetch PFP URLs for any new users
+            var userIds = Set<String>()
+            for entry in freshRaces {
+                userIds.insert(entry.race.challengerId)
+                userIds.insert(entry.race.defenderId)
+            }
+            
+            let db = FirebaseManager.shared.db
+            for userId in userIds where !userId.isEmpty && pfpURLs[userId] == nil {
+                if let doc = try? await db.collection("users").document(userId).getDocument(),
+                   let url = doc.data()?["profilePictureURL"] as? String {
+                    pfpURLs[userId] = url
+                }
+            }
+            
+            votedRaces = freshRaces
+            buildHistoryItems()
+        } catch {
+            print("❌ Failed to refresh vote history: \(error)")
         }
     }
     
