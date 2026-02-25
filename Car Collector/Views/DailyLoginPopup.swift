@@ -326,7 +326,7 @@ struct DailyLoginPopup: View {
     // Animated checkered flag background
     private var checkeredBackground: some View {
         Canvas { context, size in
-            let squareSize: CGFloat = 60  // Increased from 20 to 60 for larger squares
+            let squareSize: CGFloat = 120  // Increased to 120 for ~6 rows
             let columns = Int(size.width / squareSize) + 2
             let rows = Int(size.height / squareSize) + 2
             
