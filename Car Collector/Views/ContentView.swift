@@ -75,7 +75,7 @@ struct ContentView: View {
                     levelSystem: levelSystem,
                     totalCards: savedCards.count
                 )
-                .padding(.top, 50)
+                .padding(.top, DeviceScale.h(58))
             }
             
             // Capture Tab - pre-loaded for fast access
@@ -89,7 +89,7 @@ struct ContentView: View {
                             handleCardSaved(card)
                         }
                     )
-                    .padding(.top, 50)
+                    .padding(.top, DeviceScale.h(58))
                 } else {
                     Color.clear
                 }
@@ -108,7 +108,7 @@ struct ContentView: View {
                             }
                         }
                     )
-                    .padding(.top, 50)
+                    .padding(.top, DeviceScale.h(58))
                 } else {
                     Color.clear
                 }
@@ -118,7 +118,7 @@ struct ContentView: View {
             Tab("Garage", systemImage: "wrench.and.screwdriver", value: 4) {
                 if visitedTabs.contains(4) {
                     GarageView()
-                        .padding(.top, 58)
+                        .padding(.top, DeviceScale.h(58))
                 } else {
                     Color.clear
                 }
