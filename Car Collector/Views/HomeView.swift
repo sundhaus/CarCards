@@ -138,7 +138,7 @@ struct HomeView: View {
                 Spacer()
             }
             .background {
-                Color(red: 0.07, green: 0.06, blue: 0.05)
+                Color(white: 0.92)
                     .ignoresSafeArea()
             }
             .navigationDestination(isPresented: $showTransferList) {
