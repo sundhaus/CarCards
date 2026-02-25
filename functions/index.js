@@ -479,8 +479,9 @@ exports.batchFlattenAll = onCall(
     timeoutSeconds: 540,
   },
   async (request) => {
-    // Auth check temporarily removed for shell-based batch re-flatten
-    // TODO: re-enable after batch run:  if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Must be authenticated");
+    // Restrict to authenticated users
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Must be authenticated");
 
     const batchSize = request.data?.batchSize || 50;
     const startAfter = request.data?.startAfter || null;
