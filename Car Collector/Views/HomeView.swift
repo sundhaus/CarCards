@@ -89,12 +89,29 @@ struct HomeView: View {
                 HStack(spacing: DeviceScale.w(16)) {
                     // Head to Head
                     ZStack(alignment: .topTrailing) {
-                        HomeContainer(
-                            title: "HEAD TO HEAD",
-                            icon: "flag.checkered",
-                            gradient: [Color.red, Color.orange],
-                            action: { showHeadToHead = true }
-                        )
+                        Button(action: { showHeadToHead = true }) {
+                            ZStack(alignment: .bottomLeading) {
+                                Image("HeadToHeadHero")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: DeviceScale.h(140))
+                                    .clipped()
+                                    .brightness(-0.35)
+                                
+                                Text("HEAD TO HEAD")
+                                    .font(.poppins(16))
+                                    .foregroundStyle(.white)
+                                    .padding(.bottom, DeviceScale.h(16))
+                                    .padding(.leading, 12)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: DeviceScale.h(140))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                         
                         // Pending challenges badge
                         if !h2hService.myPendingChallenges.isEmpty {
