@@ -501,7 +501,7 @@ struct GarageViewContent: View {
             LazyHGrid(rows: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
                 ForEach(savedCards) { card in
                     SavedCardView(card: card, isLargeSize: false)
-                        .frame(width: DeviceScale.w(340))
+                        .frame(width: DeviceScale.w(300))
                         .onTapGesture {
                             actionSheetCard = card
                             showActionSheet = true

@@ -187,10 +187,10 @@ struct FeaturedRow: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(cards) { card in
-                        FIFACardView(card: card, height: 140, onSingleTap: {
+                        FIFACardView(card: card, height: DeviceScale.h(140), onSingleTap: {
                             onCardTap(card)
                         })
-                            .frame(width: 140 * (16/9), height: 140)
+                            .frame(width: DeviceScale.h(140) * (16/9), height: DeviceScale.h(140))
                     }
                 }
                 .padding(.horizontal, 16)
@@ -248,10 +248,10 @@ struct CategoryRow: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(cards) { card in
-                        FIFACardView(card: card, height: 140, onSingleTap: {
+                        FIFACardView(card: card, height: DeviceScale.h(140), onSingleTap: {
                             onCardTap(card)
                         })
-                            .frame(width: 140 * (16/9), height: 140)
+                            .frame(width: DeviceScale.h(140) * (16/9), height: DeviceScale.h(140))
                     }
                 }
                 .padding(.horizontal, 16)

@@ -993,38 +993,41 @@ struct UnifiedCardView: View {
     let card: AnyCard
     let isLargeSize: Bool
     
-    private var cardHeight: CGFloat { isLargeSize ? 195.75 : 100 }
-    private var cardWidth: CGFloat { cardHeight * (16/9) }
-    
     var body: some View {
-        Group {
-            if let flatImage = CardRenderer.shared.landscapeCard(for: card, height: cardHeight * 2) {
-                Image(uiImage: flatImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                // Fallback: placeholder while image loads
-                RoundedRectangle(cornerRadius: cardHeight * 0.09)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.85, green: 0.85, blue: 0.88),
-                                Color(red: 0.75, green: 0.75, blue: 0.78)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = w / (16.0 / 9.0)
+            
+            Group {
+                if let flatImage = CardRenderer.shared.landscapeCard(for: card, height: h * 2) {
+                    Image(uiImage: flatImage)
+                        .resizable()
+                        .aspectRatio(16/9, contentMode: .fit)
+                } else {
+                    // Fallback: placeholder while image loads
+                    RoundedRectangle(cornerRadius: h * 0.09)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.85, green: 0.85, blue: 0.88),
+                                    Color(red: 0.75, green: 0.75, blue: 0.78)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                    )
-                    .overlay(
-                        Image(systemName: cardTypeIcon)
-                            .font(.system(size: isLargeSize ? 30 : 20))
-                            .foregroundStyle(.gray.opacity(0.4))
-                    )
+                        .overlay(
+                            Image(systemName: cardTypeIcon)
+                                .font(.system(size: isLargeSize ? 30 : 20))
+                                .foregroundStyle(.gray.opacity(0.4))
+                        )
+                }
             }
+            .frame(width: w, height: h)
+            .clipShape(RoundedRectangle(cornerRadius: h * 0.09))
+            .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
         }
-        .frame(width: cardWidth, height: cardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
+        .aspectRatio(16/9, contentMode: .fit)
     }
     
     private var cardTypeIcon: String {
