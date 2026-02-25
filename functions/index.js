@@ -173,8 +173,8 @@ function escapeXML(str) {
  * @returns {string} Download URL of the flat image
  */
 async function flattenCard(cardId, cardData) {
-  const uid = cardData.userId;
-  if (!uid) throw new Error(`Card ${cardId} has no userId`);
+  const uid = cardData.userId || cardData.ownerId;
+  if (!uid) throw new Error(`Card ${cardId} has no userId/ownerId`);
 
   // 1. Determine the original photo path
   const photoURL = cardData.imageURL || cardData.photoURL;
@@ -357,7 +357,7 @@ async function cleanupOldFlats(bucket, uid, cardId, currentTs) {
  */
 async function updateActivityFeed(cardId, flatImageURL, cardData) {
   try {
-    const uid = cardData.userId;
+    const uid = cardData.userId || cardData.ownerId;
     if (!uid) return;
 
     // Query activity feed for this card
@@ -452,7 +452,7 @@ exports.flattenSingleCard = onCall(
     if (!cardDoc.exists) throw new HttpsError("not-found", "Card not found");
 
     const cardData = cardDoc.data();
-    if (cardData.userId !== uid) {
+    if ((cardData.userId || cardData.ownerId) !== uid) {
       throw new HttpsError("permission-denied", "Not your card");
     }
 
