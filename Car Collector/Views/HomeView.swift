@@ -38,25 +38,21 @@ struct HomeView: View {
                     
                     // Friends
                     Button(action: { showFriends = true }) {
-                        ZStack(alignment: .bottom) {
+                        ZStack(alignment: .topTrailing) {
                             Image("FriendsHero")
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: DeviceScale.h(140))
+                                .offset(y: 20)
                                 .clipped()
-                            
-                            // Dark gradient at bottom for text legibility
-                            LinearGradient(
-                                colors: [.clear, .black.opacity(0.7)],
-                                startPoint: .center,
-                                endPoint: .bottom
-                            )
+                                .brightness(-0.2)
                             
                             Text("FRIENDS")
                                 .font(.poppins(16))
                                 .foregroundStyle(.white)
-                                .padding(.bottom, DeviceScale.h(16))
+                                .padding(.top, DeviceScale.h(12))
+                                .padding(.trailing, 12)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: DeviceScale.h(140))
