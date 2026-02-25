@@ -358,18 +358,15 @@ async function cleanupOldFlats(bucket, uid, cardId, currentTs) {
  */
 async function updateActivityFeed(cardId, flatImageURL, cardData) {
   try {
-    const uid = cardData.userId || cardData.ownerId;
+    const uid = cardData.ownerId || cardData.userId;
     if (!uid) return;
 
-    // Query activity feed for this card
-    const snapshot = await db.collection("activity")
+    // Update in friend_activities collection (primary feed collection)
+    const snapshot = await db.collection("friend_activities")
       .where("cardId", "==", cardId)
-      .where("userId", "==", uid)
-      .limit(1)
       .get();
 
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
+    for (const doc of snapshot.docs) {
       const updateData = { flatImageURL };
       
       // Also update customFrame in activity if available
@@ -380,6 +377,20 @@ async function updateActivityFeed(cardId, flatImageURL, cardData) {
       }
 
       await doc.ref.update(updateData);
+    }
+
+    if (snapshot.docs.length > 0) {
+      console.log(`✅ Updated ${snapshot.docs.length} friend_activities for card ${cardId}`);
+    }
+
+    // Also try legacy "activity" collection
+    const legacySnapshot = await db.collection("activity")
+      .where("cardId", "==", cardId)
+      .limit(5)
+      .get();
+
+    for (const doc of legacySnapshot.docs) {
+      await doc.ref.update({ flatImageURL });
     }
   } catch (err) {
     console.warn(`Activity feed update warning for ${cardId}:`, err.message);
