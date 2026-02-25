@@ -24,14 +24,10 @@ struct CardDetailsView: View {
     @State private var isCreating = false
     @State private var errorMessage: String?
     @State private var showQuickSellConfirm = false
-    @State private var showVehicleSpecs = false
     
     // Cached flat image (computed once, not on every body eval)
     @State private var flatImage: UIImage?
     
-    // Specs fetching
-    @State private var fetchedSpecs: VehicleSpecs?
-    @State private var isFetchingSpecs = false
     
     let durations = [1, 3, 6, 12, 24]
     
@@ -41,10 +37,6 @@ struct CardDetailsView: View {
             return false
         }
         return minBid > 0 && buyNow > minBid
-    }
-    
-    private var displaySpecs: VehicleSpecs? {
-        fetchedSpecs ?? card.specs
     }
     
     var body: some View {
@@ -67,9 +59,6 @@ struct CardDetailsView: View {
                         VStack(spacing: 10) {
                             // List on Market (expandable)
                             listOnMarketOption
-                            
-                            // Vehicle Specs (expandable)
-                            vehicleSpecsOption
                             
                             // Compare Price
                             optionButton(
@@ -224,128 +213,6 @@ struct CardDetailsView: View {
                 listingFormView
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
-        }
-    }
-    
-    // MARK: - Vehicle Specs (Expandable)
-    
-    private var vehicleSpecsOption: some View {
-        VStack(spacing: 0) {
-            Button(action: {
-                if !showVehicleSpecs {
-                    Task { await fetchSpecsIfNeeded() }
-                }
-                withAnimation(.spring(response: 0.3)) {
-                    showVehicleSpecs.toggle()
-                }
-            }) {
-                HStack(spacing: 14) {
-                    Image(systemName: "gauge.with.dots.needle.67percent")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.green, Color.mint],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Vehicle Specs")
-                            .font(.poppins(16))
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                        
-                        Text("View performance and technical data")
-                            .font(.poppins(12))
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Image(systemName: showVehicleSpecs ? "chevron.up" : "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                .glassEffect(.regular, in: .rect(cornerRadius: 14))
-            }
-            
-            // Expanded specs panel
-            if showVehicleSpecs {
-                specsContentView
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-    }
-    
-    // MARK: - Specs Content
-    
-    private var specsContentView: some View {
-        VStack(spacing: 12) {
-            if isFetchingSpecs {
-                HStack(spacing: 12) {
-                    ProgressView()
-                        .tint(.primary)
-                    Text("Loading specs...")
-                        .font(.poppins(14))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
-            } else if let specs = displaySpecs {
-                // Stats grid
-                HStack(alignment: .top, spacing: 16) {
-                    VStack(spacing: 10) {
-                        specRow(label: "HP", value: parseIntValue(specs.horsepower))
-                        specRow(label: "0-60", value: parseDoubleValue(specs.zeroToSixty))
-                        specRow(label: "ENGINE", value: specs.engine.isEmpty ? "—" : specs.engine)
-                    }
-                    
-                    VStack(spacing: 10) {
-                        specRow(label: "TRQ", value: parseIntValue(specs.torque))
-                        specRow(label: "TOP", value: parseIntValue(specs.topSpeed))
-                        specRow(label: "DRIVE", value: specs.drivetrain.isEmpty ? "—" : specs.drivetrain)
-                    }
-                }
-                
-                // Description if available
-                if !specs.description.isEmpty {
-                    Text(specs.description)
-                        .font(.poppins(12))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .padding(.top, 4)
-                }
-            } else {
-                Text("No specs available")
-                    .font(.poppins(14))
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 12)
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity)
-        .glassEffect(.regular, in: .rect(cornerRadius: 14))
-        .padding(.top, -4)
-    }
-    
-    private func specRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.poppins(11))
-                .foregroundStyle(.secondary)
-                .frame(width: 55, alignment: .leading)
-            
-            Text(value)
-                .font(.poppins(14))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
         }
     }
     
@@ -519,40 +386,6 @@ struct CardDetailsView: View {
     }
     
     // MARK: - Helper Functions
-    
-    private func parseIntValue(_ string: String?) -> String {
-        guard let string = string, string != "N/A" else { return "—" }
-        let cleaned = string.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
-        return cleaned.isEmpty ? "—" : cleaned
-    }
-    
-    private func parseDoubleValue(_ string: String?) -> String {
-        guard let string = string, string != "N/A" else { return "—" }
-        let cleaned = string.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
-        return cleaned.isEmpty ? "—" : cleaned + "s"
-    }
-    
-    private func fetchSpecsIfNeeded() async {
-        guard displaySpecs == nil else { return }
-        
-        await MainActor.run { isFetchingSpecs = true }
-        
-        do {
-            let vehicleService = VehicleIdentificationService()
-            let specs = try await vehicleService.fetchSpecs(
-                make: card.make,
-                model: card.model,
-                year: card.year
-            )
-            await MainActor.run {
-                fetchedSpecs = specs
-                isFetchingSpecs = false
-            }
-        } catch {
-            print("❌ Failed to fetch specs: \(error)")
-            await MainActor.run { isFetchingSpecs = false }
-        }
-    }
     
     private func createListing() async {
         guard let minBid = Double(minStartBid),
