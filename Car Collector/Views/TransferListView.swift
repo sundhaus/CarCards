@@ -105,9 +105,6 @@ struct TransferListView: View {
                                         .foregroundStyle(.white.opacity(0.3))
                                     Text("No active listings")
                                         .foregroundStyle(.white.opacity(0.5))
-                                    Text("List cards from the marketplace")
-                                        .font(.pCaption)
-                                        .foregroundStyle(.white.opacity(0.3))
                                 }
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 150)
