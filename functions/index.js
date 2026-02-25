@@ -490,10 +490,7 @@ exports.batchFlattenAll = onCall(
     timeoutSeconds: 540,
   },
   async (request) => {
-    // Restrict to authenticated users
-    const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError("unauthenticated", "Must be authenticated");
-
+    // Auth temporarily disabled for batch re-flatten
     const batchSize = request.data?.batchSize || 50;
     const startAfter = request.data?.startAfter || null;
 
