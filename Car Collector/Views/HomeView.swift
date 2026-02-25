@@ -38,7 +38,7 @@ struct HomeView: View {
                     
                     // Friends
                     Button(action: { showFriends = true }) {
-                        ZStack(alignment: .topTrailing) {
+                        ZStack(alignment: .bottomLeading) {
                             Image("FriendsHero")
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
@@ -51,12 +51,13 @@ struct HomeView: View {
                             Text("FRIENDS")
                                 .font(.poppins(16))
                                 .foregroundStyle(.white)
-                                .padding(.top, DeviceScale.h(12))
-                                .padding(.trailing, 12)
+                                .padding(.bottom, DeviceScale.h(16))
+                                .padding(.leading, 12)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: DeviceScale.h(140))
                         .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .glassEffect(.regular, in: .rect(cornerRadius: 16))
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
