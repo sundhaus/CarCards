@@ -86,9 +86,9 @@ struct RarityEffectOverlay: View {
                 FullBleedEdgeOverlay(rarity: rarity, cornerRadius: cornerRadius)
             }
             
-            // Legendary: specular strip (clipped to card)
-            if rarity == .legendary {
-                GyroSpecularStrip(cornerRadius: cornerRadius)
+            // Specular strip (Epic + Legendary)
+            if rarity >= .epic {
+                GyroSpecularStrip(rarity: rarity, cornerRadius: cornerRadius)
             }
             
             // Particles (Epic + Legendary)
@@ -200,17 +200,28 @@ struct GyroRimLight: View {
 
 // MARK: - Gyro Specular Strip (Legendary)
 
-/// A Gaussian-intensity light band oriented along the card's height
-/// (green arrow / short screen axis after rotation). Sweeps left/right
-/// across the card width driven by device pitch.
+/// A Gaussian-intensity light band oriented along the card's height.
+/// Sweeps left/right across the card width driven by device pitch.
+/// Purple tint for Epic, gold tint for Legendary.
 struct GyroSpecularStrip: View {
+    let rarity: CardRarity
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
     
     private let sigmaFraction: CGFloat = 0.15
     private let shineBoost: CGFloat = 0.50
-    private let tintColor = Color(red: 0.6, green: 0.85, blue: 1.0)
+    
+    private var tintColor: Color {
+        switch rarity {
+        case .legendary:
+            return Color(red: 1.0, green: 0.85, blue: 0.4)  // Gold
+        case .epic:
+            return Color(red: 0.7, green: 0.4, blue: 1.0)   // Purple
+        default:
+            return .white
+        }
+    }
     
     private var normalizedCenter: CGFloat {
         let pitchRange: CGFloat = 0.15
@@ -222,7 +233,6 @@ struct GyroSpecularStrip: View {
         Canvas { context, size in
             let w = size.width
             let h = size.height
-            // Sigma based on the axis we're sliding along (width)
             let sigma = w * sigmaFraction
             let center = normalizedCenter * w
             
@@ -236,7 +246,6 @@ struct GyroSpecularStrip: View {
                 
                 guard intensity > 0.005 else { x += step; continue }
                 
-                // Each column spans full height
                 let rect = CGRect(x: x, y: 0, width: step, height: h)
                 context.opacity = intensity
                 context.fill(Path(rect), with: .color(tintColor))
