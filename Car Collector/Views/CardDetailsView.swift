@@ -393,6 +393,7 @@ struct CardDetailsView: View {
                     Text(subtitle)
                         .font(.poppins(12))
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
                 }
                 
                 Spacer()
