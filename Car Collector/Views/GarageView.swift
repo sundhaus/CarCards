@@ -15,6 +15,7 @@ struct GarageView: View {
     @State private var currentPage = 0
     @State private var showCardDetail = false
     @State private var selectedCard: AnyCard?
+    @State private var cardDetailID = UUID()
     @State private var showCustomize = false
     @State private var showContextMenu = false
     @State private var showCardOptions = false
@@ -183,6 +184,7 @@ struct GarageView: View {
                             loadAllCards()
                         }
                     )
+                    .id(cardDetailID)
                 }
             }
             .coordinateSpace(name: "garageStack")
@@ -201,6 +203,12 @@ struct GarageView: View {
             }
             .onDisappear {
                 OrientationManager.unlockOrientation()
+            }
+            .onChange(of: showCardDetail) { _, newValue in
+                if !newValue {
+                    selectedCard = nil
+                    cardDetailID = UUID()
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CardSaved"))) { _ in
                 print("📬 Garage received card saved notification")

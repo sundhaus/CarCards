@@ -14,7 +14,6 @@ struct ContentView: View {
     @State private var locationCards: [LocationCard] = []
     @State private var showCardDetail = false
     @State private var selectedCard: SavedCard?
-    @State private var cardDetailID = UUID()
     @State private var forceOrientationUpdate = false
     @StateObject private var levelSystem = LevelSystem()
     @State private var showProfile = false
@@ -162,7 +161,7 @@ struct ContentView: View {
                         }
                     }
                 )
-                .id(cardDetailID)
+                .id(card.id)
             }
         }
         .overlay {
@@ -216,10 +215,7 @@ struct ContentView: View {
         }
         .onChange(of: showCardDetail) { _, newValue in
             if !newValue {
-                // Clear selected card and rotate the detail ID
-                // so the next open creates a completely new SwiftUI view
                 selectedCard = nil
-                cardDetailID = UUID()
             }
         }
         .onAppear {
@@ -499,7 +495,6 @@ struct GarageViewContent: View {
         .confirmationDialog("Card Options", isPresented: $showActionSheet, presenting: actionSheetCard) { card in
             Button("View Full Screen") {
                 selectedCard = card
-                cardDetailID = UUID()
                 withAnimation {
                     showCardDetail = true
                 }
