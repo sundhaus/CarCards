@@ -157,6 +157,7 @@ struct HomeView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: cardWidth, height: cardHeight)
                         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
+                        .thumbnailShimmer(for: card.rarity.flatMap { CardRarity(rawValue: $0) })
                         .shadow(color: crownGlowColor(for: card).opacity(0.5), radius: 16, x: 0, y: 4)
                         .cardTilt(intensity: 1.2, perspective: 0.4)
                     
