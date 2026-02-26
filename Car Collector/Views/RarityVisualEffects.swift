@@ -200,12 +200,13 @@ struct GyroRimLight: View {
 
 // MARK: - Gyro Specular Strip (Legendary)
 
-/// A horizontal Gaussian-intensity light band that sweeps up/down the card
-/// driven by device pitch. Simulates directional light reflecting off a
-/// holographic surface as you tilt forward/back.
+/// A Gaussian-intensity light band that sweeps across the card driven by
+/// device pitch. The band runs along the short axis (height in local coords)
+/// and slides along the long axis (width), so after the card's 90° rotation
+/// it appears as a vertical stripe sweeping left/right on screen.
 ///
-/// Math: brightness(y) = boost * exp(-0.5 * ((y - center) / sigma)^2)
-/// Sigma ≈ 15% of card height. Screen blend — only brightens.
+/// Math: brightness(x) = boost * exp(-0.5 * ((x - center) / sigma)^2)
+/// Sigma ≈ 15% of card width. Screen blend — only brightens.
 struct GyroSpecularStrip: View {
     let cornerRadius: CGFloat
     
@@ -216,8 +217,8 @@ struct GyroSpecularStrip: View {
     private let tintColor = Color(red: 0.6, green: 0.85, blue: 1.0)
     
     /// Map pitch [-0.15, 0.15] → band center [0, 1] along card height.
-    /// Zero tilt = 0.5 (center). Tilt forward = slides up, back = down.
-    private var normalizedCenterY: CGFloat {
+    /// After 90° rotation this becomes the horizontal screen axis.
+    private var normalizedCenter: CGFloat {
         let pitchRange: CGFloat = 0.15
         let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
         return 0.5 + (clamped / pitchRange) * 0.5
@@ -228,9 +229,9 @@ struct GyroSpecularStrip: View {
             let w = size.width
             let h = size.height
             let sigma = h * sigmaFraction
-            let center = normalizedCenterY * h
+            let center = normalizedCenter * h
             
-            // Horizontal rows at 2pt steps
+            // Horizontal rows — each row spans full width (short on screen after rotation)
             let step: CGFloat = 2.0
             var y: CGFloat = 0
             
