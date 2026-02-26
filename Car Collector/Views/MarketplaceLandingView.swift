@@ -82,7 +82,15 @@ struct MarketplaceLandingView: View {
                 .padding(.bottom, isLandscape ? 0 : 80)
                 .padding(.trailing, isLandscape ? 100 : 0)
             }
-            .background { AppBackground() }
+            .background {
+                Image("MarketBackground")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .blur(radius: 3)
+                    .ignoresSafeArea()
+                    .overlay(Color.black.opacity(0.45))
+                    .ignoresSafeArea()
+            }
             .navigationDestination(isPresented: $showBuySell) {
                 MarketplaceFilterView(isLandscape: isLandscape)
             }
