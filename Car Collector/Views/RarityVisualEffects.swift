@@ -473,8 +473,7 @@ extension View {
 struct ThumbnailShimmerModifier: ViewModifier {
     let rarity: CardRarity?
     
-    @State private var shimmerOffset: CGFloat = -1.5  // Start off-screen left
-    @State private var hasPlayed = false
+    @State private var shimmerOffset: CGFloat = -1.5
     
     func body(content: Content) -> some View {
         if let rarity = rarity, rarity >= .epic {
@@ -505,10 +504,9 @@ struct ThumbnailShimmerModifier: ViewModifier {
                     .clipped()
                 }
                 .onAppear {
-                    guard !hasPlayed else { return }
-                    hasPlayed = true
-                    // Small delay so the card image loads first
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    // Reset to start position instantly
+                    shimmerOffset = -1.5
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                         withAnimation(.easeInOut(duration: 0.8)) {
                             shimmerOffset = 1.5
                         }
