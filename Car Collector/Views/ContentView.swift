@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var locationCards: [LocationCard] = []
     @State private var showCardDetail = false
     @State private var selectedCard: SavedCard?
+    @State private var cardDetailID = UUID()
     @State private var forceOrientationUpdate = false
     @StateObject private var levelSystem = LevelSystem()
     @State private var showProfile = false
@@ -161,7 +162,7 @@ struct ContentView: View {
                         }
                     }
                 )
-                .id(card.id)
+                .id(cardDetailID)
             }
         }
         .overlay {
@@ -215,9 +216,10 @@ struct ContentView: View {
         }
         .onChange(of: showCardDetail) { _, newValue in
             if !newValue {
-                // Clear selected card when detail view is dismissed
-                // so next card opens with completely fresh state
+                // Clear selected card and rotate the detail ID
+                // so the next open creates a completely new SwiftUI view
                 selectedCard = nil
+                cardDetailID = UUID()
             }
         }
         .onAppear {
@@ -496,21 +498,10 @@ struct GarageViewContent: View {
         }
         .confirmationDialog("Card Options", isPresented: $showActionSheet, presenting: actionSheetCard) { card in
             Button("View Full Screen") {
-                if showCardDetail {
-                    // Another card is already showing - dismiss it first, then open the new one
-                    showCardDetail = false
-                    selectedCard = nil
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        selectedCard = card
-                        withAnimation {
-                            showCardDetail = true
-                        }
-                    }
-                } else {
-                    selectedCard = card
-                    withAnimation {
-                        showCardDetail = true
-                    }
+                selectedCard = card
+                cardDetailID = UUID()
+                withAnimation {
+                    showCardDetail = true
                 }
             }
             
@@ -619,16 +610,6 @@ struct CardDetailView: View {
     @State private var flipDegrees: Double = 0
     @State private var isFetchingSpecs = false
     @State private var updatedCard: SavedCard?
-    @State private var viewID = UUID()
-    
-    /// Resets all flip/spec state to default
-    private func resetState() {
-        isFlipped = false
-        flipDegrees = 0
-        isFetchingSpecs = false
-        updatedCard = nil
-        viewID = UUID()
-    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -639,7 +620,6 @@ struct CardDetailView: View {
                 Color.black.opacity(0.7)
                     .ignoresSafeArea()
                     .onTapGesture {
-                        resetState()
                         withAnimation {
                             isShowing = false
                         }
@@ -666,7 +646,6 @@ struct CardDetailView: View {
                 VStack {
                     HStack {
                         Button(action: {
-                            resetState()
                             withAnimation {
                                 isShowing = false
                             }
@@ -687,10 +666,6 @@ struct CardDetailView: View {
                     Spacer()
                 }
             }
-        }
-        .id(viewID)
-        .onAppear {
-            resetState()
         }
         .transition(.opacity)
     }
