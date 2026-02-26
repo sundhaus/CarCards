@@ -208,7 +208,6 @@ struct TransferListView: View {
 // Listing card for Transfer List
 struct TransferListingCard: View {
     let listing: CloudListing
-    @State private var cardImage: UIImage?
     
     var timeRemaining: String {
         let now = Date()
@@ -233,30 +232,10 @@ struct TransferListingCard: View {
         VStack(spacing: 0) {
             // Top: image + name + status
             HStack(spacing: 12) {
-                // Card thumbnail
-                ZStack {
-                    if let image = cardImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    } else {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(.systemGray5))
-                            .frame(width: 80, height: 80)
-                            .overlay { ProgressView() }
-                    }
-                    
-                    if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
-                        Image(borderImageName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .allowsHitTesting(false)
-                    }
-                }
+                // Card thumbnail with rarity effects
+                CloudCardThumbnail(listing: listing, height: 80)
+                    .frame(width: 80 * (16/9), height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 // Name + status inline
                 VStack(alignment: .leading, spacing: 4) {
@@ -320,24 +299,12 @@ struct TransferListingCard: View {
         }
         .background(.clear)
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
-        .task { await loadImage() }
-    }
-    
-    private func loadImage() async {
-        guard !listing.imageURL.isEmpty else { return }
-        do {
-            let image = try await CardService.shared.loadImage(from: listing.imageURL)
-            await MainActor.run { cardImage = image }
-        } catch {
-            print("❌ Failed to load listing image: \(error)")
-        }
     }
 }
 
 // Compact listing card for double column mode
 struct CompactTransferListingCard: View {
     let listing: CloudListing
-    @State private var cardImage: UIImage?
     
     private var statusColor: Color {
         if listing.status == .sold { return .green }
@@ -346,25 +313,9 @@ struct CompactTransferListingCard: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Card image
+            // Card image with rarity effects
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
-                
-                if let image = cardImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    ProgressView().tint(.gray)
-                }
-                
-                if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
-                    Image(borderImageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .allowsHitTesting(false)
-                }
+                CloudCardThumbnail(listing: listing, height: 100)
                 
                 // Status badge overlay
                 VStack {
@@ -387,7 +338,6 @@ struct CompactTransferListingCard: View {
                 }
             }
             .aspectRatio(16/9, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
             
             // Name
             HStack {
@@ -429,17 +379,6 @@ struct CompactTransferListingCard: View {
         }
         .background(.clear)
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
-        .task { await loadImage() }
-    }
-    
-    private func loadImage() async {
-        guard !listing.imageURL.isEmpty else { return }
-        do {
-            let image = try await CardService.shared.loadImage(from: listing.imageURL)
-            await MainActor.run { cardImage = image }
-        } catch {
-            print("❌ Failed to load listing image: \(error)")
-        }
     }
 }
 

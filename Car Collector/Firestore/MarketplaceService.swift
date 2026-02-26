@@ -30,6 +30,9 @@ struct CloudListing: Identifiable, Equatable {
     var expirationDate: Date
     var status: ListingStatus
     var customFrame: String?  // Custom border: "None", "White", "Black"
+    var flatImageURL: String?  // Baked flat image (border + text) — preferred for display
+    var rarity: String?  // Rarity tier for visual effects
+    var holoEffect: String?  // Holographic pattern effect
     
     enum ListingStatus: String, Codable {
         case active
@@ -60,6 +63,9 @@ struct CloudListing: Identifiable, Equatable {
         self.expirationDate = (data["expirationDate"] as? Timestamp)?.dateValue() ?? Date()
         self.status = ListingStatus(rawValue: data["status"] as? String ?? "active") ?? .active
         self.customFrame = data["customFrame"] as? String
+        self.flatImageURL = data["flatImageURL"] as? String
+        self.rarity = data["rarity"] as? String
+        self.holoEffect = data["holoEffect"] as? String
     }
     
     var dictionary: [String: Any] {
@@ -88,6 +94,15 @@ struct CloudListing: Identifiable, Equatable {
         }
         if let frame = customFrame {
             dict["customFrame"] = frame
+        }
+        if let flat = flatImageURL {
+            dict["flatImageURL"] = flat
+        }
+        if let rarity = rarity {
+            dict["rarity"] = rarity
+        }
+        if let holo = holoEffect {
+            dict["holoEffect"] = holo
         }
         
         return dict
@@ -177,6 +192,16 @@ class MarketplaceService: ObservableObject {
         // Add customFrame if present
         if let frame = card.customFrame {
             data["customFrame"] = frame
+        }
+        
+        // Add flat image URL for proper display with baked borders
+        if let flatURL = card.flatImageURL, !flatURL.isEmpty {
+            data["flatImageURL"] = flatURL
+        }
+        
+        // Add rarity for visual effects
+        if let rarity = card.rarity {
+            data["rarity"] = rarity
         }
         
         try await listingsCollection.document(listingId).setData(data)

@@ -586,136 +586,21 @@ struct UserCardView: View {
     let card: CloudCard
     let isLargeSize: Bool
     var isCrowned: Bool = false
-    @State private var cardImage: UIImage?
-    @State private var isLoadingImage = true
     
     private var cardHeight: CGFloat { isLargeSize ? 202.5 : 100 }
     private var cardWidth: CGFloat { cardHeight * (16/9) }
     
     var body: some View {
-        ZStack {
-            // Card background with gradient
-            RoundedRectangle(cornerRadius: cardHeight * 0.09)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.85, green: 0.85, blue: 0.88),
-                            Color(red: 0.75, green: 0.75, blue: 0.78)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            
-            // Car image - full bleed
-            Group {
-                if isLoadingImage {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.3))
-                        .overlay(
-                            ProgressView()
-                                .tint(.gray)
-                        )
-                } else if let image = cardImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.3))
-                        .overlay(
-                            Image(systemName: card.cardType == "driver" ? "person.fill" : card.cardType == "location" ? "mappin.circle.fill" : "car.fill")
-                                .font(.system(size: isLargeSize ? 30 : 20))
-                                .foregroundStyle(.gray.opacity(0.4))
-                        )
+        CloudCardThumbnail(card: card, height: cardHeight)
+            .overlay(alignment: .topTrailing) {
+                if isCrowned {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: isLargeSize ? 14 : 10, weight: .bold))
+                        .foregroundStyle(.yellow)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                        .padding(isLargeSize ? 8 : 5)
                 }
             }
-            .frame(width: cardWidth, height: cardHeight)
-            .clipped()
-            
-            // PNG border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity.flatMap { CardRarity(rawValue: $0) }).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: cardWidth, height: cardHeight)
-                    .allowsHitTesting(false)
-            }
-            
-            // Car name overlay
-            if card.cardType == "driver" {
-                // Driver: top-left in landscape, name stacked
-                let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity.flatMap { CardRarity(rawValue: $0) })
-                VStack(alignment: .leading, spacing: 1) {
-                    Text((card.firstName ?? card.make).uppercased())
-                        .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
-                    Text((card.lastName ?? card.model).uppercased())
-                        .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                }
-                .foregroundStyle(config.textColor)
-                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                .padding(.top, cardHeight * 0.08)
-                .padding(.leading, cardHeight * 0.08)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else if card.cardType == "location" {
-                let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity.flatMap { CardRarity(rawValue: $0) })
-                Text((card.locationName ?? card.make).uppercased())
-                    .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                    .foregroundStyle(config.textColor)
-                    .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                    .padding(.top, cardHeight * 0.08)
-                    .padding(.leading, cardHeight * 0.08)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else {
-                // Vehicle: make + model horizontal
-                VStack {
-                    HStack {
-                        HStack(spacing: isLargeSize ? 6 : 3) {
-                            let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity.flatMap { CardRarity(rawValue: $0) })
-                            Text(card.make.uppercased())
-                                .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            
-                            Text(card.model.uppercased())
-                                .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                .lineLimit(1)
-                        }
-                        .padding(.top, cardHeight * 0.08)
-                        .padding(.leading, cardHeight * 0.08)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            }
-        }
-        .frame(width: cardWidth, height: cardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .overlay(alignment: .topTrailing) {
-            if isCrowned {
-                Image(systemName: "star.fill")
-                    .font(.system(size: isLargeSize ? 14 : 10, weight: .bold))
-                    .foregroundStyle(.yellow)
-                    .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
-                    .padding(isLargeSize ? 8 : 5)
-            }
-        }
-        .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
-        .task {
-            await loadCardImage()
-        }
-    }
-    
-    private func loadCardImage() async {
-        do {
-            cardImage = try await CardService.shared.loadImage(from: card.imageURL)
-            isLoadingImage = false
-        } catch {
-            print("❌ Failed to load card image: \(error)")
-            isLoadingImage = false
-        }
     }
 }
 

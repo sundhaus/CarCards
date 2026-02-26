@@ -702,84 +702,13 @@ struct SellTabCardView: View {
 
 struct MarketplaceFIFACard: View {
     let listing: CloudListing
-    @State private var cardImage: UIImage?
-    @State private var isLoadingImage = false
     
     private let cardHeight: CGFloat = 202.5
     private var cardWidth: CGFloat { cardHeight * (16/9) }
     
     var body: some View {
         ZStack {
-            // Card background with gradient
-            RoundedRectangle(cornerRadius: cardHeight * 0.09)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.85, green: 0.85, blue: 0.88),
-                            Color(red: 0.75, green: 0.75, blue: 0.78)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            
-            // Car image - full bleed
-            Group {
-                if let image = cardImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else if isLoadingImage {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.3))
-                        .overlay(
-                            ProgressView()
-                                .tint(.gray)
-                        )
-                } else {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.3))
-                        .overlay(
-                            Image(systemName: "car.fill")
-                                .font(.system(size: cardHeight * 0.3))
-                                .foregroundStyle(.gray.opacity(0.4))
-                        )
-                }
-            }
-            .frame(width: cardWidth, height: cardHeight)
-            .clipped()
-            
-            // PNG border overlay based on customFrame
-            if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
-                Image(borderImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: cardWidth, height: cardHeight)
-                    .allowsHitTesting(false)
-            }
-            
-            // Car name overlay - top left, horizontal
-            VStack {
-                HStack {
-                    HStack(spacing: 6) {
-                        let config = CardBorderConfig.forFrame(listing.customFrame)
-                        Text(listing.make.uppercased())
-                            .font(.custom("Futura-Light", fixedSize: cardHeight * 0.08))
-                            .foregroundStyle(config.textColor)
-                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                        
-                        Text(listing.model.uppercased())
-                            .font(.custom("Futura-Bold", fixedSize: cardHeight * 0.08))
-                            .foregroundStyle(config.textColor)
-                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            .lineLimit(1)
-                    }
-                    .padding(.top, cardHeight * 0.08)
-                    .padding(.leading, cardHeight * 0.08)
-                    Spacer()
-                }
-                Spacer()
-            }
+            CloudCardThumbnail(listing: listing, height: cardHeight)
             
             // "FOR SALE" badge - bottom right
             VStack {
@@ -807,95 +736,20 @@ struct MarketplaceFIFACard: View {
             }
         }
         .frame(width: cardWidth, height: cardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
-        .onAppear {
-            loadImage()
-        }
     }
-    
-    private func loadImage() {
-        guard !isLoadingImage, cardImage == nil else { return }
-        
-        isLoadingImage = true
-        
-        guard let url = URL(string: listing.imageURL) else {
-            isLoadingImage = false
-            return
-        }
-        
-        URLSession.shared.dataTask(with: url) { data, _, error in
-            guard let data = data, let image = UIImage(data: data) else {
-                DispatchQueue.main.async {
-                    isLoadingImage = false
-                }
-                return
-            }
-            
-            DispatchQueue.main.async {
-                cardImage = image
-                isLoadingImage = false
-            }
-        }.resume()
-    }
+}
 }
 
 // MARK: - Compact Listing Card (Double Column - Buy Tab)
 
 struct CompactListingCard: View {
     let listing: CloudListing
-    @State private var cardImage: UIImage?
-    @State private var isLoadingImage = false
     
     var body: some View {
         VStack(spacing: 0) {
-            // Card image
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0.85, green: 0.85, blue: 0.88))
-                
-                if let image = cardImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else if isLoadingImage {
-                    ProgressView().tint(.gray)
-                } else {
-                    Image(systemName: "car.fill")
-                        .font(.poppins(24))
-                        .foregroundStyle(.gray.opacity(0.4))
-                }
-                
-                // Border overlay
-                if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
-                    Image(borderImageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .allowsHitTesting(false)
-                }
-                
-                // Name overlay
-                VStack {
-                    HStack {
-                        let config = CardBorderConfig.forFrame(listing.customFrame)
-                        HStack(spacing: 3) {
-                            Text(listing.make.uppercased())
-                                .font(.custom("Futura-Light", fixedSize: 9))
-                                .foregroundStyle(config.textColor)
-                            Text(listing.model.uppercased())
-                                .font(.custom("Futura-Bold", fixedSize: 9))
-                                .foregroundStyle(config.textColor)
-                                .lineLimit(1)
-                        }
-                        .padding(.top, 8)
-                        .padding(.leading, 8)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            }
-            .aspectRatio(16/9, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            // Card image with flat image + rarity effects
+            CloudCardThumbnail(listing: listing, height: 100)
+                .aspectRatio(16/9, contentMode: .fit)
             
             // Info bar — split bid/buy
             HStack(spacing: 0) {
@@ -927,22 +781,6 @@ struct CompactListingCard: View {
         }
         .background(.clear)
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
-        .onAppear { loadImage() }
-    }
-    
-    private func loadImage() {
-        guard !isLoadingImage, cardImage == nil, let url = URL(string: listing.imageURL) else { return }
-        isLoadingImage = true
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data = data, let image = UIImage(data: data) else {
-                DispatchQueue.main.async { isLoadingImage = false }
-                return
-            }
-            DispatchQueue.main.async {
-                cardImage = image
-                isLoadingImage = false
-            }
-        }.resume()
     }
 }
 

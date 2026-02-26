@@ -13,7 +13,6 @@ struct ListingDetailView: View {
     @ObservedObject private var marketplaceService = MarketplaceService.shared
     
     @State private var bidAmount: String = ""
-    @State private var cardImage: UIImage?
     @State private var isPlacingBid = false
     @State private var isBuyingNow = false
     @State private var showError = false
@@ -131,9 +130,6 @@ struct ListingDetailView: View {
         } message: {
             Text("Buy \(listing.make) \(listing.model) for $\(Int(listing.buyNowPrice)) coins?")
         }
-        .task {
-            await loadImage()
-        }
     }
     
     // MARK: - Card Image
@@ -142,60 +138,9 @@ struct ListingDetailView: View {
         GeometryReader { geo in
             let cardWidth = geo.size.width
             let cardHeight = cardWidth / (16.0/9.0)
-            let cornerRadius = cardHeight * 0.09
-            let fontSize = cardHeight * 0.08
-            let textPadding = cardHeight * 0.08
             
-            ZStack {
-                if let image = cardImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: cardWidth, height: cardHeight)
-                        .clipped()
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(width: cardWidth, height: cardHeight)
-                        .overlay(
-                            ProgressView()
-                                .tint(.gray)
-                        )
-                }
-                
-                // Border overlay
-                if let borderImageName = CardBorderConfig.forFrame(listing.customFrame).borderImageName {
-                    Image(borderImageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: cardWidth, height: cardHeight)
-                        .allowsHitTesting(false)
-                }
-                
-                // Make/Model overlay — matching UnifiedCardView
-                VStack {
-                    HStack {
-                        HStack(spacing: 6) {
-                            let config = CardBorderConfig.forFrame(listing.customFrame)
-                            Text(listing.make.uppercased())
-                                .font(.custom("Futura-Light", fixedSize: fontSize))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                            Text(listing.model.uppercased())
-                                .font(.custom("Futura-Bold", fixedSize: fontSize))
-                                .foregroundStyle(config.textColor)
-                                .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
-                                .lineLimit(1)
-                        }
-                        .padding(.top, textPadding)
-                        .padding(.leading, textPadding)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            }
-            .frame(width: cardWidth, height: cardHeight)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            CloudCardThumbnail(listing: listing, height: cardHeight)
+                .frame(width: cardWidth, height: cardHeight)
         }
         .aspectRatio(16/9, contentMode: .fit)
     }
@@ -423,17 +368,6 @@ struct ListingDetailView: View {
         }
     }
     
-    // MARK: - Load Image
-    
-    private func loadImage() async {
-        guard !listing.imageURL.isEmpty else { return }
-        do {
-            let image = try await CardService.shared.loadImage(from: listing.imageURL)
-            await MainActor.run { cardImage = image }
-        } catch {
-            print("❌ Failed to load listing image: \(error)")
-        }
-    }
 }
 
 // Preview not available — requires Firestore CloudListing
