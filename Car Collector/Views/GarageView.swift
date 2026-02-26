@@ -1058,10 +1058,26 @@ struct UnifiedCardView: View {
             }
             .frame(width: w, height: h)
             .clipShape(RoundedRectangle(cornerRadius: h * 0.09))
+            .overlay {
+                if let rarity = card.rarity, rarity >= .epic {
+                    ThumbnailRarityBorderOverlay(rarity: rarity, cornerRadius: h * 0.09)
+                }
+            }
             .thumbnailShimmer(for: card.rarity)
-            .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
+            .shadow(color: rarityGlowColor(for: card.rarity).opacity(0.5), radius: isLargeSize ? 8 : 4, x: 0, y: 3)
         }
         .aspectRatio(16/9, contentMode: .fit)
+    }
+    
+    private func rarityGlowColor(for rarity: CardRarity?) -> Color {
+        guard let r = rarity else { return Color.black.opacity(0.3) }
+        switch r {
+        case .common:    return Color.black.opacity(0.3)
+        case .uncommon:  return Color.green.opacity(0.4)
+        case .rare:      return Color.blue
+        case .epic:      return Color.purple
+        case .legendary: return Color.yellow
+        }
     }
     
     private var cardTypeIcon: String {

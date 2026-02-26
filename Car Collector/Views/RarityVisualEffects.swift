@@ -525,3 +525,85 @@ struct ThumbnailShimmerModifier: ViewModifier {
         }
     }
 }
+
+// MARK: - Thumbnail Rarity Border Overlay
+
+/// Lightweight animated border effects for card thumbnails in feeds.
+/// Epic: rotating shimmer border. Legendary: glow pulse + shimmer border.
+/// Designed to be performant in scroll views.
+struct ThumbnailRarityBorderOverlay: View {
+    let rarity: CardRarity
+    let cornerRadius: CGFloat
+    
+    @State private var shimmerPhase: CGFloat = 0
+    @State private var glowIntensity: CGFloat = 0.2
+    
+    private var borderColors: [Color] {
+        switch rarity {
+        case .legendary:
+            return [
+                Color.yellow.opacity(0),
+                Color.orange.opacity(0.6),
+                Color.white.opacity(0.85),
+                Color.orange.opacity(0.6),
+                Color.yellow.opacity(0),
+                Color.yellow.opacity(0),
+                Color.yellow.opacity(0),
+            ]
+        case .epic:
+            return [
+                Color.purple.opacity(0),
+                Color.pink.opacity(0.5),
+                Color.white.opacity(0.75),
+                Color.pink.opacity(0.5),
+                Color.purple.opacity(0),
+                Color.purple.opacity(0),
+                Color.purple.opacity(0),
+            ]
+        default:
+            return [Color.clear]
+        }
+    }
+    
+    private var glowColor: Color {
+        rarity == .legendary ? .yellow : .purple
+    }
+    
+    var body: some View {
+        ZStack {
+            // Animated shimmer border stroke
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: borderColors),
+                        center: .center,
+                        startAngle: .degrees(shimmerPhase),
+                        endAngle: .degrees(shimmerPhase + 360)
+                    ),
+                    lineWidth: 2.0
+                )
+            
+            // Legendary gets an additional glow pulse
+            if rarity == .legendary {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(Color.yellow.opacity(Double(glowIntensity)), lineWidth: 3)
+                    .shadow(color: Color.yellow.opacity(Double(glowIntensity) * 0.5), radius: 6)
+            }
+        }
+        .allowsHitTesting(false)
+        .onAppear {
+            withAnimation(
+                .linear(duration: 4.0)
+                .repeatForever(autoreverses: false)
+            ) {
+                shimmerPhase = 360
+            }
+            
+            if rarity == .legendary {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    glowIntensity = 0.5
+                }
+            }
+        }
+    }
+}

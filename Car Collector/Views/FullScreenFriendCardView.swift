@@ -138,7 +138,7 @@ struct FullScreenFriendCardView: View {
         return ZStack {
             // Front
             if !isFlipped {
-                FIFACardView(card: activity, height: cardHeight)
+                FIFACardView(card: activity, height: cardHeight, showRarityEffects: false)
                     .frame(width: cardWidth, height: cardHeight)
                     .rarityEffects(for: displayRarity)
                     .allowsHitTesting(false)

@@ -11,6 +11,7 @@ struct FIFACardView: View {
     let card: FriendActivity
     let height: CGFloat
     var onSingleTap: (() -> Void)? = nil
+    var showRarityEffects: Bool = true  // Disable when parent adds full rarityEffects
     
     @State private var cardImage: UIImage?
     @State private var isLoadingImage = false
@@ -105,8 +106,19 @@ struct FIFACardView: View {
         }
         .frame(width: cardWidth, height: height)
         .clipShape(RoundedRectangle(cornerRadius: height * 0.09))
+        // Rarity border effects (shimmer border for Epic, glow pulse for Legendary)
+        .overlay {
+            if showRarityEffects, let rarityStr = card.rarity, let rarity = CardRarity(rawValue: rarityStr), rarity >= .epic {
+                ThumbnailRarityBorderOverlay(rarity: rarity, cornerRadius: height * 0.09)
+            }
+        }
         .thumbnailShimmer(for: card.rarity.flatMap { CardRarity(rawValue: $0) })
-        .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
+        // Rarity-colored glow shadow
+        .shadow(
+            color: showRarityEffects ? rarityGlowColor.opacity(0.5) : Color.black.opacity(0.3),
+            radius: showRarityEffects && hasHighRarity ? 8 : 6,
+            x: 0, y: 3
+        )
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
             toggleHeat()
@@ -191,6 +203,28 @@ struct FIFACardView: View {
                 }
                 Spacer()
             }
+        }
+    }
+    
+    // MARK: - Rarity Glow
+    
+    private var parsedRarity: CardRarity? {
+        card.rarity.flatMap { CardRarity(rawValue: $0) }
+    }
+    
+    private var hasHighRarity: Bool {
+        guard let r = parsedRarity else { return false }
+        return r >= .rare
+    }
+    
+    private var rarityGlowColor: Color {
+        guard let r = parsedRarity else { return Color.black.opacity(0.3) }
+        switch r {
+        case .common:    return Color.black.opacity(0.3)
+        case .uncommon:  return Color.green.opacity(0.4)
+        case .rare:      return Color.blue
+        case .epic:      return Color.purple
+        case .legendary: return Color.yellow
         }
     }
     
