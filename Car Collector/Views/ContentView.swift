@@ -461,7 +461,7 @@ struct GarageViewContent: View {
                 showCustomize = true
             }
             
-            Button("Quick Sell - 250 coins") {
+            Button("Quick Sell - \(RewardConfig.quickSellCoins(for: card.specs?.rarity ?? .common)) coins") {
                 quickSellCard(card)
             }
             

@@ -87,7 +87,7 @@ struct CardDetailsView: View {
                             optionButton(
                                 icon: "bolt.fill",
                                 label: "Quick Sell",
-                                subtitle: "Instantly sell for 250 coins",
+                                subtitle: "Instantly sell for \(RewardConfig.quickSellCoins(for: card.specs?.rarity ?? .common)) coins",
                                 colors: [Color.orange, Color.red]
                             ) {
                                 showQuickSellConfirm = true
@@ -101,11 +101,11 @@ struct CardDetailsView: View {
         }
         .alert("Quick Sell?", isPresented: $showQuickSellConfirm) {
             Button("Cancel", role: .cancel) {}
-            Button("Sell for 250 coins", role: .destructive) {
+            Button("Sell for \(RewardConfig.quickSellCoins(for: card.specs?.rarity ?? .common)) coins", role: .destructive) {
                 quickSell()
             }
         } message: {
-            Text("This will permanently remove the card from your garage and award you 250 coins.")
+            Text("This will permanently remove the card from your garage and award you \(RewardConfig.quickSellCoins(for: card.specs?.rarity ?? .common)) coins.")
         }
         .fullScreenCover(isPresented: $showRarityUpgrade) {
             let cloudCard = CardService.shared.myCards.first { cc in
