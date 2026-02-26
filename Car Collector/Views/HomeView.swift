@@ -141,6 +141,9 @@ struct HomeView: View {
                 Image("HomeBackground")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                    .blur(radius: 3)
+                    .ignoresSafeArea()
+                    .overlay(Color.black.opacity(0.45))
                     .ignoresSafeArea()
             }
             .navigationDestination(isPresented: $showTransferList) {
