@@ -130,38 +130,24 @@ struct LevelHeader: View {
                         .rotationEffect(.degrees(-90))
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: levelSystem.progress)
                     
-                    if let profileImage = profileImage {
-                        Image(uiImage: profileImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: DeviceScale.w(40), height: DeviceScale.w(40))
-                            .clipShape(Circle())
-                    } else {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: levelGradient(for: levelSystem.level),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                    // Level number centered in the ring
+                    Text("\(levelSystem.level)")
+                        .font(.poppins(DeviceScale.f(16)))
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: levelGradient(for: levelSystem.level),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             )
-                            .frame(width: DeviceScale.w(40), height: DeviceScale.w(40))
-                            .overlay {
-                                Image(systemName: "person.fill")
-                                    .font(.poppins(18))
-                                    .foregroundStyle(.white)
-                            }
-                    }
+                        )
                 }
                 
-                // Username
+                // Username only — no level badge
                 Text(username)
                     .font(.poppins(17))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                
-                // Level badge to the right of username
-                levelBadge(size: DeviceScale.w(26))
             }
             .padding(.bottom, 4)
         }
@@ -198,14 +184,12 @@ struct LevelHeader: View {
             }
         }) {
             HStack(spacing: 10) {
-                // Profile picture with progress ring (no level badge overlay)
+                // Level meter with level number in center
                 ZStack {
-                    // Background circle for ring
                     Circle()
                         .stroke(Color(.systemGray5), lineWidth: 3)
                         .frame(width: DeviceScale.w(48), height: DeviceScale.w(48))
                     
-                    // Progress ring (fills clockwise)
                     Circle()
                         .trim(from: 0, to: levelSystem.progress)
                         .stroke(
@@ -217,42 +201,27 @@ struct LevelHeader: View {
                             style: StrokeStyle(lineWidth: 3, lineCap: .round)
                         )
                         .frame(width: DeviceScale.w(48), height: DeviceScale.w(48))
-                        .rotationEffect(.degrees(-90)) // Start at top
+                        .rotationEffect(.degrees(-90))
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: levelSystem.progress)
                     
-                    // Profile picture or placeholder
-                    if let profileImage = profileImage {
-                        Image(uiImage: profileImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: DeviceScale.w(40), height: DeviceScale.w(40))
-                            .clipShape(Circle())
-                    } else {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: levelGradient(for: levelSystem.level),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                    // Level number centered in the ring
+                    Text("\(levelSystem.level)")
+                        .font(.poppins(DeviceScale.f(16)))
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: levelGradient(for: levelSystem.level),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             )
-                            .frame(width: DeviceScale.w(40), height: DeviceScale.w(40))
-                            .overlay {
-                                Image(systemName: "person.fill")
-                                    .font(.poppins(18))
-                                    .foregroundStyle(.white)
-                            }
-                    }
+                        )
                 }
                 
-                // Username
+                // Username only — no level badge
                 Text(username)
                     .font(.poppins(16))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                
-                // Level badge to the right of username
-                levelBadge(size: 26)
             }
             .padding(8)
             .glassEffect(.regular, in: .rect(cornerRadius: 12))
@@ -262,7 +231,6 @@ struct LevelHeader: View {
             await loadProfilePicture()
         }
         .onChange(of: profilePictureURL) { oldValue, newValue in
-            // Reload image whenever URL changes
             if oldValue != newValue {
                 Task {
                     await loadProfilePicture()
