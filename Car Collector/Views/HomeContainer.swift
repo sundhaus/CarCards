@@ -53,12 +53,7 @@ struct HomeContainer: View {
             .frame(maxWidth: .infinity)
             .frame(height: DeviceScale.h(140))
             .contentShape(Rectangle())
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(red: 20/255, green: 20/255, blue: 24/255))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.06), lineWidth: 1))
+            .glassEffect(.regular, in: .rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)
         .disabled(disabled)
