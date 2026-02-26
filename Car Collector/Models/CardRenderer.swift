@@ -36,7 +36,9 @@ final class CardRenderer {
     /// Get a flattened landscape card image (all card types).
     /// This is the standard display format with border + text baked in.
     func landscapeCard(for card: AnyCard, height: CGFloat = 400) -> UIImage? {
-        let key = "\(card.id.uuidString)-L-\(Int(height))" as NSString
+        let rarityKey = card.rarity?.rawValue ?? "none"
+        let frameKey = card.customFrame ?? "noframe"
+        let key = "\(card.id.uuidString)-L-\(Int(height))-\(rarityKey)-\(frameKey)" as NSString
         if let cached = landscapeCache.object(forKey: key) {
             return cached
         }
@@ -56,7 +58,9 @@ final class CardRenderer {
     func portraitCard(for card: AnyCard, width: CGFloat = 300) -> UIImage? {
         guard case .driver(let dc) = card, !dc.isDriverPlusVehicle else { return nil }
         
-        let key = "\(card.id.uuidString)-P-\(Int(width))" as NSString
+        let rarityKey = card.rarity?.rawValue ?? "none"
+        let frameKey = card.customFrame ?? "noframe"
+        let key = "\(card.id.uuidString)-P-\(Int(width))-\(rarityKey)-\(frameKey)" as NSString
         if let cached = portraitCache.object(forKey: key) {
             return cached
         }
@@ -85,14 +89,13 @@ final class CardRenderer {
         portraitCache.removeAllObjects()
     }
     
-    /// Clear cache for a specific card
+    /// Clear cache for a specific card (clears entire cache since keys include rarity/frame variants)
     func clearCache(for cardId: UUID) {
-        let prefix = cardId.uuidString
-        // NSCache doesn't support prefix removal, so we clear specific known keys
-        for height in [200, 300, 400] {
-            landscapeCache.removeObject(forKey: "\(prefix)-L-\(height)" as NSString)
-            portraitCache.removeObject(forKey: "\(prefix)-P-\(height)" as NSString)
-        }
+        // NSCache doesn't support prefix removal or enumeration.
+        // Since rarity/frame are part of the key, we must clear everything
+        // to guarantee stale entries are removed.
+        landscapeCache.removeAllObjects()
+        portraitCache.removeAllObjects()
     }
     
     // MARK: - Rendering

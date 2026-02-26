@@ -672,6 +672,10 @@ struct UnifiedCardDetailView: View {
             await MainActor.run {
                 cardSpecs = specs
                 isFetchingSpecs = false
+                
+                // Clear renderer cache so garage thumbnails re-render with new rarity border
+                CardRenderer.shared.clearCache(for: vehicleCard.id)
+                
                 // Notify parent to reload
                 onCardUpdated(.vehicle(updatedVehicleCard))
                 
@@ -680,6 +684,23 @@ struct UnifiedCardDetailView: View {
                     flipDegrees += 180
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         isFlipped.toggle()
+                    }
+                }
+            }
+            
+            // Re-flatten and upload with new rarity border (runs after UI update)
+            if updatedVehicleCard.firebaseId != nil {
+                Task {
+                    do {
+                        let flatURL = try await CardFlattener.shared.reflatten(.vehicle(updatedVehicleCard))
+                        print("✅ Re-flattened card with rarity border: \(flatURL)")
+                        // Update activity feed with new flat image and rarity border
+                        if let fid = updatedVehicleCard.firebaseId, let rarity = specs.rarity {
+                            try? await FriendsService.shared.updateActivityFlatImageURL(cardId: fid, flatImageURL: flatURL)
+                            try? await FriendsService.shared.updateActivityCustomFrame(cardId: fid, customFrame: rarity.borderAssetName)
+                        }
+                    } catch {
+                        print("⚠️ Re-flatten after specs failed: \(error)")
                     }
                 }
             }
