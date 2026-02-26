@@ -182,9 +182,14 @@ struct CardDetailsView: View {
         }
         .frame(maxWidth: .infinity)
         .onAppear {
-            // Flatten once on appear, not on every body evaluation
+            // Flatten on a background-priority task so UI appears instantly
             if flatImage == nil {
-                flatImage = CardFlattener.shared.flatten(AnyCard.vehicle(card))
+                Task.detached(priority: .userInitiated) {
+                    let image = await CardFlattener.shared.flatten(AnyCard.vehicle(card))
+                    await MainActor.run {
+                        flatImage = image
+                    }
+                }
             }
         }
     }
@@ -395,10 +400,8 @@ struct CardDetailsView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
