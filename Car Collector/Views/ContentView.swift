@@ -379,6 +379,18 @@ struct ContentView: View {
                                         try? await FriendsService.shared.updateActivityRarity(cardId: firebaseId, rarity: rarity.rawValue)
                                         // Write rarity to Firestore card doc so CloudCard reads it
                                         try? await CardService.shared.updateField(cardId: firebaseId, field: "rarity", value: rarity.rawValue)
+                                        
+                                        // Legendary cards get a global sequential mint number
+                                        if rarity == .legendary {
+                                            if let mintNum = try? await MintNumberService.shared.stampMintNumber(cardId: firebaseId) {
+                                                await MainActor.run {
+                                                    if let idx = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                                        savedCards[idx].mintNumber = mintNum
+                                                        CardStorage.saveCards(savedCards)
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                     // Update customFrame in Firebase card doc too
                                     try? await CardService.shared.updateCustomFrame(cardId: firebaseId, customFrame: rarityBorder)

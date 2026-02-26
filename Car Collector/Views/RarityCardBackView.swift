@@ -25,6 +25,7 @@ struct RarityCardBackView: View {
     var cardHeight: CGFloat = 200
     var capturedBy: String? = nil
     var capturedLocation: String? = nil
+    var mintNumber: Int? = nil
     
     // Card is 16:9 landscape
     private var cardWidth: CGFloat { cardHeight * (16.0 / 9.0) }
@@ -249,10 +250,10 @@ struct RarityCardBackView: View {
                 .foregroundStyle(.white.opacity(0.5))
             }
             
-            // Serial number (Legendary)
+            // Mint number (Legendary)
             if rarity == .legendary {
                 Spacer()
-                Text("#\(serialNumber)")
+                Text("#\(mintDisplayNumber)")
                     .font(.custom("Futura-Bold", fixedSize: 6 * scale))
                     .foregroundStyle(Color.yellow.opacity(0.6))
             }
@@ -261,8 +262,13 @@ struct RarityCardBackView: View {
         .padding(.bottom, 8 * scale)
     }
     
-    /// Deterministic serial from card identity
-    private var serialNumber: String {
+    /// Display string for mint number — real sequential number if available,
+    /// otherwise a deterministic placeholder from card identity
+    private var mintDisplayNumber: String {
+        if let mint = mintNumber {
+            return String(format: "%05d", mint)
+        }
+        // Fallback for cards minted before sequential numbering
         let hash = abs("\(make)\(model)\(year)".hashValue)
         return String(format: "%05d", hash % 99999)
     }

@@ -701,6 +701,11 @@ struct UnifiedCardDetailView: View {
                             try? await FriendsService.shared.updateActivityRarity(cardId: fid, rarity: rarity.rawValue)
                             // Write rarity to Firestore card doc so CloudCard reads it
                             try? await CardService.shared.updateField(cardId: fid, field: "rarity", value: rarity.rawValue)
+                            
+                            // Legendary cards get a global sequential mint number
+                            if rarity == .legendary, updatedVehicleCard.mintNumber == nil {
+                                let _ = try? await MintNumberService.shared.stampMintNumber(cardId: fid)
+                            }
                         }
                     } catch {
                         print("⚠️ Re-flatten after specs failed: \(error)")
@@ -848,7 +853,8 @@ struct UnifiedCardDetailView: View {
                         customFrame: vehicleCard.customFrame,
                         cardHeight: cardHeight,
                         capturedBy: vehicleCard.capturedBy,
-                        capturedLocation: vehicleCard.capturedLocation
+                        capturedLocation: vehicleCard.capturedLocation,
+                        mintNumber: vehicleCard.mintNumber
                     )
                     .frame(width: cardWidth, height: cardHeight)
                     .rotation3DEffect(

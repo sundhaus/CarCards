@@ -44,6 +44,9 @@ struct CloudCard: Identifiable, Codable {
     // Holographic pattern effect
     var holoEffect: String?
     
+    // Global sequential mint number (Legendary cards only)
+    var mintNumber: Int?
+    
     // Evolution points for rarity upgrade system
     var evolutionPoints: Int
     var lastBattleUsed: Date?
@@ -93,6 +96,7 @@ struct CloudCard: Identifiable, Codable {
         self.flatImageURL = data["flatImageURL"] as? String
         self.rarity = data["rarity"] as? String
         self.holoEffect = data["holoEffect"] as? String
+        self.mintNumber = data["mintNumber"] as? Int
         self.evolutionPoints = data["evolutionPoints"] as? Int ?? 0
         self.lastBattleUsed = (data["lastBattleUsed"] as? Timestamp)?.dateValue()
     }
@@ -117,7 +121,8 @@ struct CloudCard: Identifiable, Codable {
         locationName: String? = nil,
         rarity: String? = nil,
         evolutionPoints: Int = 0,
-        holoEffect: String? = nil
+        holoEffect: String? = nil,
+        mintNumber: Int? = nil
     ) {
         self.id = id
         self.ownerId = ownerId
@@ -139,6 +144,7 @@ struct CloudCard: Identifiable, Codable {
         self.locationName = locationName
         self.rarity = rarity
         self.holoEffect = holoEffect
+        self.mintNumber = mintNumber
         self.evolutionPoints = evolutionPoints
         self.lastBattleUsed = nil
     }
@@ -184,6 +190,11 @@ struct CloudCard: Identifiable, Codable {
         // Include rarity if present
         if let rarity = rarity {
             dict["rarity"] = rarity
+        }
+        
+        // Include mint number if present (Legendary cards)
+        if let mintNumber = mintNumber {
+            dict["mintNumber"] = mintNumber
         }
         
         return dict

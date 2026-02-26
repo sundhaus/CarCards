@@ -21,6 +21,7 @@ struct SavedCard: Identifiable, Codable {
     var customFrame: String?  // Custom frame/border ("none", "white", "black")
     var holoEffect: String?   // Holographic pattern effect ("geometric", "waves", or nil)
     var firebaseId: String?  // CloudCard ID from Firebase (for syncing)
+    var mintNumber: Int?     // Global sequential mint number (Legendary cards only)
     var originalImageData: Data?  // Original image before background removal
     
     init(
@@ -37,6 +38,7 @@ struct SavedCard: Identifiable, Codable {
         customFrame: String? = nil,
         holoEffect: String? = nil,
         firebaseId: String? = nil,
+        mintNumber: Int? = nil,
         originalImage: UIImage? = nil
     ) {
         self.id = id
@@ -52,6 +54,7 @@ struct SavedCard: Identifiable, Codable {
         self.customFrame = customFrame
         self.holoEffect = holoEffect
         self.firebaseId = firebaseId
+        self.mintNumber = mintNumber
         self.originalImageData = originalImage?.jpegData(compressionQuality: 0.8)
     }
     
@@ -60,7 +63,7 @@ struct SavedCard: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id, imageData, make, model, color, year
         case specs, capturedBy, capturedLocation, previousOwners, customFrame, holoEffect, firebaseId
-        case originalImageData
+        case mintNumber, originalImageData
     }
     
     init(from decoder: Decoder) throws {
@@ -82,6 +85,7 @@ struct SavedCard: Identifiable, Codable {
         customFrame = try container.decodeIfPresent(String.self, forKey: .customFrame)
         holoEffect = try container.decodeIfPresent(String.self, forKey: .holoEffect)
         firebaseId = try container.decodeIfPresent(String.self, forKey: .firebaseId)
+        mintNumber = try container.decodeIfPresent(Int.self, forKey: .mintNumber)
         originalImageData = try container.decodeIfPresent(Data.self, forKey: .originalImageData)
     }
     
@@ -104,6 +108,7 @@ struct SavedCard: Identifiable, Codable {
         try container.encodeIfPresent(customFrame, forKey: .customFrame)
         try container.encodeIfPresent(holoEffect, forKey: .holoEffect)
         try container.encodeIfPresent(firebaseId, forKey: .firebaseId)
+        try container.encodeIfPresent(mintNumber, forKey: .mintNumber)
         // originalImageData NOT encoded to metadata JSON - stored as separate file
     }
     

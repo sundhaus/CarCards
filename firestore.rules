@@ -147,5 +147,10 @@ match /featured_cards/{docId} {
   allow read: if true;
   allow write, delete: if request.auth.uid in ['Ydnk69jI6kba4JiUYWEYBX8xDPU2'];
 }
+
+match /counters/{counterId} {
+  allow read: if isAuthenticated();
+  allow write: if isAuthenticated();
+}
 }
 }
