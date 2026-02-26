@@ -297,8 +297,11 @@ struct RarityCardBackView: View {
     @ViewBuilder
     private var epicEffectsLayer: some View {
         let cornerRadius = cardHeight * 0.09
+        // Use the diagonal so the strip covers the card in any rotation
+        let diagonal = sqrt(cardWidth * cardWidth + cardHeight * cardHeight)
         
-        // Shimmer sweep — full-height strip traveling along X axis
+        // Shimmer sweep — travels along the card's X axis (left→right in landscape,
+        // top→bottom when viewed in portrait rotation)
         LinearGradient(
             gradient: Gradient(colors: [
                 Color.clear,
@@ -310,7 +313,7 @@ struct RarityCardBackView: View {
             startPoint: .leading,
             endPoint: .trailing
         )
-        .frame(width: cardWidth * 0.4, height: cardHeight)
+        .frame(width: cardWidth * 0.4, height: diagonal)
         .offset(x: shimmerPhase)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .blendMode(.overlay)
