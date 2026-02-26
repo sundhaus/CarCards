@@ -274,37 +274,44 @@ struct AnimatedShimmerBorder: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
     
-    @State private var rotation: Double = 0
+    @State private var phase: CGFloat = 0
     
+    // Smooth-wrapping gradient: the highlight fades out fully before
+    // reaching the end, so there's no visible seam at 0°/360°.
     private var shimmerColors: [Color] {
         [
-            Color.purple.opacity(0),
+            Color.clear,
+            Color.clear,
+            Color.purple.opacity(0.15),
             Color.pink.opacity(0.5),
             Color.white.opacity(0.75),
             Color.pink.opacity(0.5),
-            Color.purple.opacity(0),
-            Color.purple.opacity(0),
-            Color.purple.opacity(0),
+            Color.purple.opacity(0.15),
+            Color.clear,
+            Color.clear,
+            Color.clear,
+            Color.clear,
+            Color.clear,
         ]
     }
     
     var body: some View {
-        // Static gradient rotated via transform — GPU-composited, no seam glitch
         RoundedRectangle(cornerRadius: cornerRadius)
             .stroke(
                 AngularGradient(
                     gradient: Gradient(colors: shimmerColors),
-                    center: .center
+                    center: .center,
+                    startAngle: .degrees(phase),
+                    endAngle: .degrees(phase + 360)
                 ),
                 lineWidth: 2.5
             )
-            .rotationEffect(.degrees(rotation))
             .onAppear {
                 withAnimation(
                     .linear(duration: 3.5)
                     .repeatForever(autoreverses: false)
                 ) {
-                    rotation = 360
+                    phase = 360
                 }
             }
     }
@@ -669,38 +676,46 @@ struct ThumbnailRarityBorderOverlay: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
     
-    @State private var rotation: Double = 0
+    @State private var phase: CGFloat = 0
     @State private var glowIntensity: CGFloat = 0.2
     
+    // Smooth-wrapping gradients: highlight fades to clear on both sides
+    // with enough clear padding to eliminate the seam at 0°/360°.
     private var borderColors: [Color] {
         switch rarity {
         case .legendary:
             return [
-                Color.yellow.opacity(0),
+                Color.clear,
+                Color.clear,
+                Color.yellow.opacity(0.15),
                 Color.orange.opacity(0.6),
                 Color.white.opacity(0.85),
                 Color.orange.opacity(0.6),
-                Color.yellow.opacity(0),
-                Color.yellow.opacity(0),
-                Color.yellow.opacity(0),
+                Color.yellow.opacity(0.15),
+                Color.clear,
+                Color.clear,
+                Color.clear,
+                Color.clear,
+                Color.clear,
             ]
         case .epic:
             return [
-                Color.purple.opacity(0),
+                Color.clear,
+                Color.clear,
+                Color.purple.opacity(0.15),
                 Color.pink.opacity(0.5),
                 Color.white.opacity(0.75),
                 Color.pink.opacity(0.5),
-                Color.purple.opacity(0),
-                Color.purple.opacity(0),
-                Color.purple.opacity(0),
+                Color.purple.opacity(0.15),
+                Color.clear,
+                Color.clear,
+                Color.clear,
+                Color.clear,
+                Color.clear,
             ]
         default:
             return [Color.clear]
         }
-    }
-    
-    private var glowColor: Color {
-        rarity == .legendary ? .yellow : .purple
     }
     
     var body: some View {
@@ -710,16 +725,17 @@ struct ThumbnailRarityBorderOverlay: View {
                 HolographicPatternOverlay(cornerRadius: cornerRadius, useGyro: false)
             }
             
-            // Static gradient rotated via transform — GPU-composited, no seam glitch
+            // Animated shimmer border — gradient travels along the border path
             RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(
                     AngularGradient(
                         gradient: Gradient(colors: borderColors),
-                        center: .center
+                        center: .center,
+                        startAngle: .degrees(phase),
+                        endAngle: .degrees(phase + 360)
                     ),
                     lineWidth: 2.0
                 )
-                .rotationEffect(.degrees(rotation))
             
             // Legendary gets an additional glow pulse
             if rarity == .legendary {
@@ -734,7 +750,7 @@ struct ThumbnailRarityBorderOverlay: View {
                 .linear(duration: 4.0)
                 .repeatForever(autoreverses: false)
             ) {
-                rotation = 360
+                phase = 360
             }
             
             if rarity == .legendary {
