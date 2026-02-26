@@ -738,7 +738,6 @@ struct MarketplaceFIFACard: View {
         .frame(width: cardWidth, height: cardHeight)
     }
 }
-}
 
 // MARK: - Compact Listing Card (Double Column - Buy Tab)
 
