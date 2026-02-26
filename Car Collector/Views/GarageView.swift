@@ -186,7 +186,15 @@ struct GarageView: View {
                 }
             }
             .coordinateSpace(name: "garageStack")
-            .background { AppBackground() }
+            .background {
+                Image("GarageBackground")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .blur(radius: 3)
+                    .ignoresSafeArea()
+                    .overlay(Color.black.opacity(0.45))
+                    .ignoresSafeArea()
+            }
             .onAppear {
                 OrientationManager.lockOrientation(.portrait)
                 loadAllCards()
