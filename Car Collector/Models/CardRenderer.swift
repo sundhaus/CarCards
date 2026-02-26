@@ -128,10 +128,12 @@ final class CardRenderer {
             let imageRect = aspectFillRect(imageSize: sourceImage.size, targetRect: rect)
             sourceImage.draw(in: imageRect)
             
-            // Draw border overlay
+            // Draw border overlay (slightly oversized to fully cover card edges)
             let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
             if let borderName = config.borderImageName, let borderImage = UIImage(named: borderName) {
-                borderImage.draw(in: rect)
+                let borderInset: CGFloat = -3
+                let borderRect = rect.insetBy(dx: borderInset, dy: borderInset)
+                borderImage.draw(in: borderRect)
             }
             
             // Draw text

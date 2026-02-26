@@ -979,12 +979,12 @@ struct CardBackView: View {
             }
             .frame(width: cardWidth, height: cardHeight)
             
-            // Border overlay — always on top
+            // Border overlay — always on top, slightly oversized to cover card edges
             if let borderImageName = CardBorderConfig.forFrame(customFrame).borderImageName {
                 Image(borderImageName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: cardWidth, height: cardHeight)
+                    .frame(width: cardWidth + 6, height: cardHeight + 6)
                     .clipped()
                     .allowsHitTesting(false)
             }
