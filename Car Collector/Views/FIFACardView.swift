@@ -123,8 +123,10 @@ struct FIFACardView: View {
             // flatImageURL changed (migration updated Firestore) — reload
             let currentPreferred = newURL.flatMap { $0.isEmpty ? nil : $0 } ?? card.imageURL
             if currentPreferred != lastLoadedURL {
+                // Clear immediately — no flash of stale card design
                 cardImage = nil
                 isLoadingImage = false
+                lastLoadedURL = nil
                 loadImage()
             }
         }
@@ -297,11 +299,7 @@ struct FIFACardView: View {
     }
     
     private func loadFromURL(_ url: URL, isFlat: Bool) {
-        // Use cache policy that revalidates with server to avoid stale flat images
-        var request = URLRequest(url: url)
-        request.cachePolicy = .reloadRevalidatingCacheData
-        
-        URLSession.shared.dataTask(with: request) { data, _, error in
+        URLSession.shared.dataTask(with: url) { data, _, error in
             if let data = data, let image = UIImage(data: data) {
                 DispatchQueue.main.async {
                     cardImage = image
