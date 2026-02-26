@@ -19,6 +19,10 @@ struct ContentView: View {
     @State private var showProfile = false
     @State private var showDailyLoginPopup = false
     
+    // Rarity reveal system
+    @State private var showRarityReveal = false
+    @State private var revealCard: SavedCard?
+    
     // Track which tabs have been visited (for lazy loading)
     @State private var visitedTabs: Set<Int> = [1] // Home is pre-loaded
     @ObservedObject private var navigationController = NavigationController.shared
@@ -182,8 +186,22 @@ struct ContentView: View {
                     handleCardSaved(card)
                     showCamera = false
                     OrientationManager.lockToPortrait()
+                    
+                    // Trigger rarity reveal animation
+                    revealCard = card
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showRarityReveal = true
+                    }
                 }
             )
+        }
+        .fullScreenCover(isPresented: $showRarityReveal) {
+            if let card = revealCard {
+                RarityRevealView(card: card.asAnyCard) {
+                    showRarityReveal = false
+                    revealCard = nil
+                }
+            }
         }
         .onChange(of: navigationController.selectedTab) { oldValue, newValue in
             OrientationManager.lockToPortrait()
@@ -760,8 +778,9 @@ struct CardDetailView: View {
             .frame(width: cardWidth, height: cardHeight)
         }
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
+        .rarityEffects(for: card.specs?.rarity)
         .shadow(color: .black.opacity(0.5), radius: 20)
-        .cardTilt()
+        .cardTilt(for: card.specs?.rarity)
     }
     
     // Back view of the card
@@ -860,7 +879,7 @@ struct CardDetailView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: .black.opacity(0.5), radius: 20)
-        .cardTilt()
+        .cardTilt(for: card.specs?.rarity)
     }
     
     // MARK: - Stat Item View

@@ -185,13 +185,18 @@ final class CardRenderer {
             let imageRect = aspectFillRect(imageSize: sourceImage.size, targetRect: rect)
             sourceImage.draw(in: imageRect)
             
-            // Border
+            // Border — full-bleed for Epic+, brushed-metal for lower tiers
             let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
             
             if let rarity = card.rarity {
-                // Programmatic brushed-metal border
-                let palette = RarityBorderPalette.forRarity(rarity)
-                drawBrushedMetalBorder(context: context, rect: rect, cornerRadius: cornerRadius, height: height, palette: palette)
+                if rarity.hasFullBleedArt {
+                    // Epic+ : No border frame — edge-to-edge art with subtle vignette
+                    drawFullBleedOverlay(context: context, rect: rect, cornerRadius: cornerRadius, rarity: rarity)
+                } else {
+                    // Common/Uncommon/Rare: Programmatic brushed-metal border
+                    let palette = RarityBorderPalette.forRarity(rarity)
+                    drawBrushedMetalBorder(context: context, rect: rect, cornerRadius: cornerRadius, height: height, palette: palette)
+                }
             } else if let borderName = config.borderImageName, let borderImage = UIImage(named: borderName) {
                 // PNG fallback for non-rarity cards
                 let borderInset: CGFloat = -3
@@ -201,6 +206,66 @@ final class CardRenderer {
             
             // Text
             drawCardText(card: card, config: config, in: rect, height: height)
+        }
+    }
+    
+    // MARK: - Full-Bleed Art Overlay (Epic+)
+    
+    /// Edge-to-edge card treatment for Epic and Legendary.
+    /// Instead of a thick border, uses:
+    ///   1. A subtle darkened vignette around the edges
+    ///   2. A thin 1.5pt rarity-colored accent line at the card edge
+    ///   3. (Legendary) A faint gold inner-glow to hint at the shimmer
+    private func drawFullBleedOverlay(context: CGContext, rect: CGRect, cornerRadius: CGFloat, rarity: CardRarity) {
+        let palette = RarityBorderPalette.forRarity(rarity)
+        
+        // --- 1. Edge vignette (dark fade from edges inward) ---
+        context.saveGState()
+        let clipPath = UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius)
+        context.addPath(clipPath.cgPath)
+        context.clip()
+        
+        // Radial gradient from center (clear) to edges (dark)
+        let vignetteColors = [
+            UIColor.clear.cgColor,
+            UIColor.clear.cgColor,
+            UIColor.black.withAlphaComponent(0.15).cgColor,
+            UIColor.black.withAlphaComponent(0.45).cgColor
+        ] as CFArray
+        let vignetteLocs: [CGFloat] = [0.0, 0.55, 0.85, 1.0]
+        
+        if let vignetteGrad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: vignetteColors, locations: vignetteLocs) {
+            let center = CGPoint(x: rect.midX, y: rect.midY)
+            let maxRadius = sqrt(pow(rect.width / 2, 2) + pow(rect.height / 2, 2))
+            context.drawRadialGradient(vignetteGrad, startCenter: center, startRadius: 0, endCenter: center, endRadius: maxRadius, options: [])
+        }
+        context.restoreGState()
+        
+        // --- 2. Thin rarity accent stroke at card edge ---
+        context.saveGState()
+        let strokeInset: CGFloat = 1.0
+        let strokeRect = rect.insetBy(dx: strokeInset, dy: strokeInset)
+        let strokePath = UIBezierPath(roundedRect: strokeRect, cornerRadius: cornerRadius - strokeInset)
+        
+        context.setStrokeColor(palette.highlight.withAlphaComponent(0.6).cgColor)
+        context.setLineWidth(1.5)
+        context.addPath(strokePath.cgPath)
+        context.strokePath()
+        context.restoreGState()
+        
+        // --- 3. Legendary inner glow ---
+        if rarity == .legendary {
+            context.saveGState()
+            let glowInset: CGFloat = 3.0
+            let glowRect = rect.insetBy(dx: glowInset, dy: glowInset)
+            let glowPath = UIBezierPath(roundedRect: glowRect, cornerRadius: cornerRadius - glowInset)
+            
+            context.setShadow(offset: .zero, blur: 8, color: palette.glow.cgColor)
+            context.setStrokeColor(palette.glow.withAlphaComponent(0.3).cgColor)
+            context.setLineWidth(2.0)
+            context.addPath(glowPath.cgPath)
+            context.strokePath()
+            context.restoreGState()
         }
     }
     

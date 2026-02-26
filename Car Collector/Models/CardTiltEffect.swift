@@ -134,4 +134,11 @@ extension View {
     func cardTilt(intensity: Double = 1.0, perspective: CGFloat = 0.5) -> some View {
         modifier(CardTiltModifier(intensity: intensity, perspective: perspective))
     }
+    
+    /// Rarity-aware tilt — automatically adjusts intensity based on rarity tier.
+    /// Higher rarity = more dramatic tilt response.
+    func cardTilt(for rarity: CardRarity?, perspective: CGFloat = 0.5) -> some View {
+        let intensity = rarity?.tiltIntensity ?? 1.0
+        return modifier(CardTiltModifier(intensity: intensity, perspective: perspective))
+    }
 }

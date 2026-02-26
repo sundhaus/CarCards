@@ -737,14 +737,14 @@ struct UnifiedCardDetailView: View {
                                 .frame(maxWidth: geometry.size.width * 0.85)
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .shadow(radius: 10)
-                                .cardTilt()
+                                .cardTilt(for: card.rarity)
                         } else {
                             // Vehicle, Driver+Vehicle, Location: landscape card rotated to portrait
                             ZStack {
                                 cardContent(screenSize: geometry.size)
                                     .rotationEffect(.degrees(90))
                             }
-                            .cardTilt()
+                            .cardTilt(for: card.rarity)
                         }
                     }
                     Spacer()
@@ -825,6 +825,7 @@ struct UnifiedCardDetailView: View {
             if !isFlipped {
                 AnyCardDetailsFrontView(card: card)
                     .frame(width: cardWidth, height: cardHeight)
+                    .rarityEffects(for: card.rarity)
                     .rotation3DEffect(
                         .degrees(flipDegrees),
                         axis: (x: 0, y: 1, z: 0)
@@ -834,13 +835,16 @@ struct UnifiedCardDetailView: View {
             // Back side - stats (only for vehicles)
             if isFlipped {
                 if case .vehicle(let vehicleCard) = card, let specs = cardSpecs {
-                    CardBackView(
+                    RarityCardBackView(
                         make: vehicleCard.make,
                         model: vehicleCard.model,
                         year: vehicleCard.year,
                         specs: specs,
+                        rarity: specs.rarity ?? .common,
                         customFrame: vehicleCard.customFrame,
-                        cardHeight: cardHeight
+                        cardHeight: cardHeight,
+                        capturedBy: vehicleCard.capturedBy,
+                        capturedLocation: vehicleCard.capturedLocation
                     )
                     .frame(width: cardWidth, height: cardHeight)
                     .rotation3DEffect(
