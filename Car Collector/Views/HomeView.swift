@@ -144,6 +144,7 @@ struct HomeView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: DeviceScale.h(140))
+                        .aspectRatio(1, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .glassEffect(.regular, in: .rect(cornerRadius: 16))
                         .contentShape(Rectangle())
