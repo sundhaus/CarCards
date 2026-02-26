@@ -235,8 +235,8 @@ struct ContentView: View {
                     }
                 }
                 
-                // One-time flatten migration for existing cards (v11: regenerate flat images with correct rarity borders)
-                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v11") {
+                // One-time flatten migration for existing cards (v12: write rarity to Firestore card docs)
+                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v12") {
                     let vehicles = savedCards
                     let drivers = driverCards
                     let locations = locationCards
@@ -246,7 +246,7 @@ struct ContentView: View {
                             drivers: drivers,
                             locations: locations
                         )
-                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v11")
+                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v12")
                     }
                 }
             }

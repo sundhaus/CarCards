@@ -105,7 +105,7 @@ class CardFlattener {
     // MARK: - Migration
     
     func migrateExistingCards(vehicles: [SavedCard], drivers: [DriverCard], locations: [LocationCard]) async {
-        print("🔄 Starting flatten migration (v11 - sync rarity to Firestore card docs)...")
+        print("🔄 Starting flatten migration (v12 - sync rarity to Firestore card docs)...")
         
         // Clear renderer cache so old border renders don't get re-baked
         CardRenderer.shared.clearCache()
