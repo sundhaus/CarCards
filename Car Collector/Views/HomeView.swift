@@ -29,55 +29,20 @@ struct HomeView: View {
                 // Top row - Leaderboard and Friends
                 HStack(spacing: DeviceScale.w(16)) {
                     // Leaderboard
-                    Button(action: { showLeaderboard = true }) {
-                        ZStack(alignment: .bottomLeading) {
-                            Image("LeaderboardHero")
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: DeviceScale.h(140))
-                                .clipped()
-                                .brightness(-0.35)
-                            
-                            Text("LEADERBOARD")
-                                .font(.poppins(16))
-                                .foregroundStyle(.white)
-                                .padding(.bottom, DeviceScale.h(16))
-                                .padding(.leading, 12)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: DeviceScale.h(140))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .glassEffect(.regular, in: .rect(cornerRadius: 16))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                    HomeContainer(
+                        title: "LEADERBOARD",
+                        icon: "chart.bar.fill",
+                        gradient: [Color(red: 1.0, green: 0.8, blue: 0.0), Color(red: 1.0, green: 0.6, blue: 0.0)],
+                        action: { showLeaderboard = true }
+                    )
                     
                     // Friends
-                    Button(action: { showFriends = true }) {
-                        ZStack(alignment: .bottomLeading) {
-                            Image("FriendsHero")
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: DeviceScale.h(140))
-                                .offset(y: 10)
-                                .clipped()
-                                .brightness(-0.35)
-                            
-                            Text("FRIENDS")
-                                .font(.poppins(16))
-                                .foregroundStyle(.white)
-                                .padding(.bottom, DeviceScale.h(16))
-                                .padding(.leading, 12)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: DeviceScale.h(140))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .glassEffect(.regular, in: .rect(cornerRadius: 16))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                    HomeContainer(
+                        title: "FRIENDS",
+                        icon: "person.2.fill",
+                        gradient: [Color.blue, Color.cyan],
+                        action: { showFriends = true }
+                    )
                 }
                 .padding(.horizontal)
                 
@@ -89,29 +54,12 @@ struct HomeView: View {
                 HStack(spacing: DeviceScale.w(16)) {
                     // Head to Head
                     ZStack(alignment: .topTrailing) {
-                        Button(action: { showHeadToHead = true }) {
-                            ZStack(alignment: .bottomLeading) {
-                                Image("HeadToHeadHero")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: DeviceScale.h(140))
-                                    .clipped()
-                                    .brightness(-0.35)
-                                
-                                Text("HEAD TO HEAD")
-                                    .font(.poppins(16))
-                                    .foregroundStyle(.white)
-                                    .padding(.bottom, DeviceScale.h(16))
-                                    .padding(.leading, 12)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: DeviceScale.h(140))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .glassEffect(.regular, in: .rect(cornerRadius: 16))
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
+                        HomeContainer(
+                            title: "HEAD TO HEAD",
+                            icon: "bolt.fill",
+                            gradient: [Color.orange, Color.red],
+                            action: { showHeadToHead = true }
+                        )
                         
                         // Pending challenges badge
                         if !h2hService.myPendingChallenges.isEmpty {
