@@ -274,7 +274,7 @@ struct AnimatedShimmerBorder: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
     
-    @State private var phase: CGFloat = 0
+    @State private var rotation: Double = 0
     
     private var shimmerColors: [Color] {
         [
@@ -289,22 +289,22 @@ struct AnimatedShimmerBorder: View {
     }
     
     var body: some View {
+        // Static gradient rotated via transform — GPU-composited, no seam glitch
         RoundedRectangle(cornerRadius: cornerRadius)
             .stroke(
                 AngularGradient(
                     gradient: Gradient(colors: shimmerColors),
-                    center: .center,
-                    startAngle: .degrees(phase),
-                    endAngle: .degrees(phase + 360)
+                    center: .center
                 ),
                 lineWidth: 2.5
             )
+            .rotationEffect(.degrees(rotation))
             .onAppear {
                 withAnimation(
                     .linear(duration: 3.5)
                     .repeatForever(autoreverses: false)
                 ) {
-                    phase = 360
+                    rotation = 360
                 }
             }
     }
@@ -669,7 +669,7 @@ struct ThumbnailRarityBorderOverlay: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
     
-    @State private var shimmerPhase: CGFloat = 0
+    @State private var rotation: Double = 0
     @State private var glowIntensity: CGFloat = 0.2
     
     private var borderColors: [Color] {
@@ -710,17 +710,16 @@ struct ThumbnailRarityBorderOverlay: View {
                 HolographicPatternOverlay(cornerRadius: cornerRadius, useGyro: false)
             }
             
-            // Animated shimmer border stroke
+            // Static gradient rotated via transform — GPU-composited, no seam glitch
             RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(
                     AngularGradient(
                         gradient: Gradient(colors: borderColors),
-                        center: .center,
-                        startAngle: .degrees(shimmerPhase),
-                        endAngle: .degrees(shimmerPhase + 360)
+                        center: .center
                     ),
                     lineWidth: 2.0
                 )
+                .rotationEffect(.degrees(rotation))
             
             // Legendary gets an additional glow pulse
             if rarity == .legendary {
@@ -735,7 +734,7 @@ struct ThumbnailRarityBorderOverlay: View {
                 .linear(duration: 4.0)
                 .repeatForever(autoreverses: false)
             ) {
-                shimmerPhase = 360
+                rotation = 360
             }
             
             if rarity == .legendary {
