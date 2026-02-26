@@ -217,8 +217,9 @@ struct RarityRevealView: View {
     
     private var rarityBadge: some View {
         VStack(spacing: 6) {
-            Text(rarity.emoji)
-                .font(.system(size: 36))
+            Image(systemName: rarity.iconName)
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundStyle(rarity.gradient)
             
             Text(rarity.rawValue.uppercased())
                 .font(.custom("Futura-Bold", fixedSize: 28))

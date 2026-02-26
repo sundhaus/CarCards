@@ -165,7 +165,7 @@ struct CustomizeCardView: View {
                             lastBgScale = bgScale
                         }
                 )
-                .cardTilt()
+                .cardTilt(for: card.rarity)
                 .animation(.spring(response: 0.3), value: selectedFrame)
                 
                 // Positioning hint when background is active

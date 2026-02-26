@@ -189,8 +189,9 @@ struct RarityUpgradeView: View {
     
     private func rarityPill(_ rarity: CardRarity, active: Bool) -> some View {
         HStack(spacing: 6) {
-            Text(rarity.emoji)
-                .font(.system(size: 16))
+            Image(systemName: rarity.iconName)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(rarity.color)
             Text(rarity.rawValue)
                 .font(.poppins(14))
                 .foregroundStyle(active ? .primary : .secondary)

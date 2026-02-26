@@ -43,6 +43,17 @@ enum CardRarity: String, Codable, CaseIterable, Comparable {
         }
     }
     
+    /// SF Symbol icon for rarity badges — replaces emoji in card views
+    var iconName: String {
+        switch self {
+        case .common:    return "circle"
+        case .uncommon:  return "shield"
+        case .rare:      return "diamond"
+        case .epic:      return "star.fill"
+        case .legendary: return "crown.fill"
+        }
+    }
+    
     var color: Color {
         switch self {
         case .common:    return Color(.systemGray)

@@ -145,8 +145,9 @@ struct RarityCardBackView: View {
         HStack(spacing: 6 * scale) {
             // Rarity badge (Rare+)
             if rarity >= .rare {
-                Text(rarity.emoji)
-                    .font(.system(size: 10 * scale))
+                Image(systemName: rarity.iconName)
+                    .font(.system(size: 9 * scale, weight: .semibold))
+                    .foregroundStyle(rarity.color)
             }
             
             VStack(spacing: 1 * scale) {
@@ -173,8 +174,9 @@ struct RarityCardBackView: View {
             }
             
             if rarity >= .rare {
-                Text(rarity.emoji)
-                    .font(.system(size: 10 * scale))
+                Image(systemName: rarity.iconName)
+                    .font(.system(size: 9 * scale, weight: .semibold))
+                    .foregroundStyle(rarity.color)
             }
         }
         .padding(.top, 10 * scale)

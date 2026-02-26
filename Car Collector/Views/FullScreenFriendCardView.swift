@@ -46,7 +46,7 @@ struct FullScreenFriendCardView: View {
                     Spacer()
                     cardContent(screenSize: geometry.size)
                         .rotationEffect(.degrees(90))
-                        .cardTilt()
+                        .cardTilt(for: fetchedSpecs?.rarity)
                     Spacer()
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
@@ -133,6 +133,7 @@ struct FullScreenFriendCardView: View {
     private func cardContent(screenSize: CGSize) -> some View {
         let cardWidth: CGFloat = screenSize.height * 0.8
         let cardHeight: CGFloat = cardWidth / 16 * 9
+        let displayRarity = fetchedSpecs?.rarity ?? .common
         
         return ZStack {
             // Front
@@ -149,11 +150,12 @@ struct FullScreenFriendCardView: View {
             // Back — specs
             if isFlipped {
                 if let specs = fetchedSpecs {
-                    CardBackView(
+                    RarityCardBackView(
                         make: activity.cardMake,
                         model: activity.cardModel,
                         year: activity.cardYear,
                         specs: specs,
+                        rarity: specs.rarity ?? .common,
                         customFrame: activity.customFrame,
                         cardHeight: cardHeight
                     )
