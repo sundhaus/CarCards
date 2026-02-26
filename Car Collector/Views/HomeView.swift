@@ -77,7 +77,7 @@ struct HomeView: View {
                     HomeContainer(
                         title: "TRANSFER LIST",
                         icon: "doc.text.fill",
-                        gradient: [Color.appAccent, Color(red: 139/255, green: 16/255, blue: 32/255)],
+                        gradient: [Color(red: 0.6, green: 0.2, blue: 1.0), Color(red: 0.35, green: 0.1, blue: 0.8)],
                         action: { showTransferList = true }
                     )
                 }
