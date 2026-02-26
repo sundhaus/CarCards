@@ -22,10 +22,10 @@ service cloud.firestore {
     match /cards/{cardId} {
       allow read:   if isSignedIn();
       allow create: if isSignedIn();
-      // Owner can update anything; battle system can update evolutionPoints + lastBattleUsed
+      // Owner can update anything; specific fields open for battle system + flatten migration
       allow update: if isSignedIn() && (
         resource.data.ownerId == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['evolutionPoints', 'lastBattleUsed', 'h2hWins', 'h2hRaces'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['evolutionPoints', 'lastBattleUsed', 'h2hWins', 'h2hRaces', 'flatImageURL', 'customFrame'])
       );
       allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
@@ -53,10 +53,13 @@ service cloud.firestore {
       // Only the activity owner can create
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
 
-      // Heat updates: any signed-in user can update ONLY heatedBy + heatCount
-      // This supports FieldValue.arrayUnion / arrayRemove / increment
-      allow update: if isSignedIn() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['heatedBy', 'heatCount']);
+      // Heat updates: any signed-in user can update heatedBy + heatCount
+      // Flatten migration: activity owner can update flatImageURL + customFrame
+      allow update: if isSignedIn() && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['heatedBy', 'heatCount']) ||
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['flatImageURL', 'customFrame']))
+      );
 
       // Only the activity owner can delete
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
