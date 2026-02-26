@@ -343,6 +343,9 @@ struct ContentView: View {
                         CardRenderer.shared.clearCache(for: card.id)
                         print("✅ Pre-fetched specs for \(card.make) \(card.model) — rarity: \(specs.rarity?.rawValue ?? "none")")
                         
+                        // Notify Garage to reload with updated rarity border
+                        NotificationCenter.default.post(name: NSNotification.Name("CardSaved"), object: nil)
+                        
                         // Re-flatten with rarity border and upload to Firebase
                         let updatedCard = savedCards[index]
                         Task {
