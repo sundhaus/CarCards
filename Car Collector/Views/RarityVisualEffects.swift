@@ -200,13 +200,9 @@ struct GyroRimLight: View {
 
 // MARK: - Gyro Specular Strip (Legendary)
 
-/// A Gaussian-intensity light band that sweeps across the card driven by
-/// device pitch. The band runs along the short axis (height in local coords)
-/// and slides along the long axis (width), so after the card's 90° rotation
-/// it appears as a vertical stripe sweeping left/right on screen.
-///
-/// Math: brightness(x) = boost * exp(-0.5 * ((x - center) / sigma)^2)
-/// Sigma ≈ 15% of card width. Screen blend — only brightens.
+/// A Gaussian-intensity light band oriented along the card's height
+/// (green arrow / short screen axis after rotation). Sweeps left/right
+/// across the card width driven by device pitch.
 struct GyroSpecularStrip: View {
     let cornerRadius: CGFloat
     
@@ -216,8 +212,6 @@ struct GyroSpecularStrip: View {
     private let shineBoost: CGFloat = 0.50
     private let tintColor = Color(red: 0.6, green: 0.85, blue: 1.0)
     
-    /// Map pitch [-0.15, 0.15] → band center [0, 1] along card height.
-    /// After 90° rotation this becomes the horizontal screen axis.
     private var normalizedCenter: CGFloat {
         let pitchRange: CGFloat = 0.15
         let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
@@ -228,25 +222,26 @@ struct GyroSpecularStrip: View {
         Canvas { context, size in
             let w = size.width
             let h = size.height
-            let sigma = h * sigmaFraction
-            let center = normalizedCenter * h
+            // Sigma based on the axis we're sliding along (width)
+            let sigma = w * sigmaFraction
+            let center = normalizedCenter * w
             
-            // Horizontal rows — each row spans full width (short on screen after rotation)
             let step: CGFloat = 2.0
-            var y: CGFloat = 0
+            var x: CGFloat = 0
             
-            while y < h {
-                let dist = y - center
+            while x < w {
+                let dist = x - center
                 let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
                 let intensity = shineBoost * gaussian
                 
-                guard intensity > 0.005 else { y += step; continue }
+                guard intensity > 0.005 else { x += step; continue }
                 
-                let rect = CGRect(x: 0, y: y, width: w, height: step)
+                // Each column spans full height
+                let rect = CGRect(x: x, y: 0, width: step, height: h)
                 context.opacity = intensity
                 context.fill(Path(rect), with: .color(tintColor))
                 
-                y += step
+                x += step
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
