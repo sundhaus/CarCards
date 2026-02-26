@@ -394,6 +394,8 @@ struct CardDetailsView: View {
                         .font(.poppins(12))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 
                 Spacer()
