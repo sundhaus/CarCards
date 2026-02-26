@@ -106,6 +106,10 @@ class CardFlattener {
     
     func migrateExistingCards(vehicles: [SavedCard], drivers: [DriverCard], locations: [LocationCard]) async {
         print("🔄 Starting flatten migration (v9 - full-bleed Epic+ borders)...")
+        
+        // Clear renderer cache so old border renders don't get re-baked
+        CardRenderer.shared.clearCache()
+        
         var count = 0
         
         for card in vehicles {
