@@ -51,6 +51,8 @@ struct FullBleedEdgeOverlay: View {
 // MARK: - Rarity Effect Overlay
 
 /// Main entry point. Full-size card displays only — never thumbnails.
+/// Split into inner effects (clipped to card shape) and outer effects
+/// (glow/shadow that bleeds past the card edge).
 struct RarityEffectOverlay: View {
     let rarity: CardRarity
     let cardSize: CGSize
@@ -64,19 +66,29 @@ struct RarityEffectOverlay: View {
     
     var body: some View {
         ZStack {
+            // Inner effects — clipped to card shape, rasterized for performance
+            innerEffects
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                .drawingGroup()
+            
+            // Outer effects — glow/shadow that bleeds past the edge.
+            // NOT in drawingGroup() so shadows aren't rasterized/clipped.
+            outerEffects
+        }
+        .frame(width: cardSize.width, height: cardSize.height)
+        .allowsHitTesting(false)
+    }
+    
+    @ViewBuilder
+    private var innerEffects: some View {
+        ZStack {
             if rarity.hasFullBleedArt {
                 FullBleedEdgeOverlay(rarity: rarity, cornerRadius: cornerRadius)
             }
             
-            // Legendary: gyro-driven rim light + specular strip
+            // Legendary: specular strip (clipped to card)
             if rarity == .legendary {
-                GyroRimLight(rarity: rarity, cornerRadius: cornerRadius)
                 GyroSpecularStrip(cornerRadius: cornerRadius)
-            }
-            
-            // Epic: auto-rotating shimmer border
-            if rarity == .epic {
-                AnimatedShimmerBorder(rarity: rarity, cornerRadius: cornerRadius)
             }
             
             // Particles (Epic + Legendary)
@@ -87,15 +99,22 @@ struct RarityEffectOverlay: View {
                     cornerRadius: cornerRadius
                 )
             }
-            
-            // Glow pulse (Legendary)
-            if rarity == .legendary {
-                GlowPulseOverlay(color: Color.yellow, cornerRadius: cornerRadius)
-            }
         }
-        .frame(width: cardSize.width, height: cardSize.height)
-        .drawingGroup()
-        .allowsHitTesting(false)
+    }
+    
+    @ViewBuilder
+    private var outerEffects: some View {
+        // Legendary: gyro rim light + glow pulse — these have shadows
+        // that need to bleed past the card edge for the full effect
+        if rarity == .legendary {
+            GyroRimLight(rarity: rarity, cornerRadius: cornerRadius)
+            GlowPulseOverlay(color: Color.yellow, cornerRadius: cornerRadius)
+        }
+        
+        // Epic: shimmer border (stroke sits on edge, shadow bleeds)
+        if rarity == .epic {
+            AnimatedShimmerBorder(rarity: rarity, cornerRadius: cornerRadius)
+        }
     }
 }
 
@@ -181,39 +200,23 @@ struct GyroRimLight: View {
 
 // MARK: - Gyro Specular Strip (Legendary)
 
-/// A Gaussian-intensity light band that sweeps across the card surface
-/// driven by device roll AND pitch. The band runs perpendicular to the
-/// tilt direction — tilt left and the light slides left, tilt forward
-/// and it slides up, tilt diagonally and it sweeps at an angle.
+/// A horizontal Gaussian-intensity light band that sweeps up/down the card
+/// driven by device pitch. Simulates directional light reflecting off a
+/// holographic surface as you tilt forward/back.
 ///
-/// Math: For each pixel, project its position onto the tilt direction
-/// vector, compute distance from the band center, apply Gaussian falloff.
-/// brightness(d) = boost * exp(-0.5 * (d / sigma)^2)
-///
-/// Rendered via Canvas at 2pt resolution with screen blend.
+/// Math: brightness(y) = boost * exp(-0.5 * ((y - center) / sigma)^2)
+/// Sigma ≈ 15% of card height. Screen blend — only brightens.
 struct GyroSpecularStrip: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
     
-    // Gaussian sigma as fraction of card diagonal (~15%)
     private let sigmaFraction: CGFloat = 0.15
-    
-    // Peak brightness boost (50% brighter at center)
     private let shineBoost: CGFloat = 0.50
-    
-    // Tint color — subtle cyan-white
     private let tintColor = Color(red: 0.6, green: 0.85, blue: 1.0)
     
-    /// Normalized band center along the tilt axis [0, 1].
-    /// Combines roll (horizontal) and pitch (vertical).
-    /// Zero tilt on both axes = 0.5 (dead center).
-    private var normalizedCenterX: CGFloat {
-        let rollRange: CGFloat = 0.15
-        let clamped = max(-rollRange, min(rollRange, motion.roll))
-        return 0.5 + (clamped / rollRange) * 0.5
-    }
-    
+    /// Map pitch [-0.15, 0.15] → band center [0, 1] along card height.
+    /// Zero tilt = 0.5 (center). Tilt forward = slides up, back = down.
     private var normalizedCenterY: CGFloat {
         let pitchRange: CGFloat = 0.15
         let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
@@ -224,55 +227,25 @@ struct GyroSpecularStrip: View {
         Canvas { context, size in
             let w = size.width
             let h = size.height
-            let diagonal = sqrt(w * w + h * h)
-            let sigma = diagonal * sigmaFraction
+            let sigma = h * sigmaFraction
+            let center = normalizedCenterY * h
             
-            // Band center in card coordinates
-            let cx = normalizedCenterX * w
-            let cy = normalizedCenterY * h
-            
-            // Tilt direction vector (roll, pitch) — this is the axis
-            // the band slides ALONG. The band itself runs perpendicular.
-            let rawDx = motion.roll
-            let rawDy = motion.pitch
-            let mag = sqrt(rawDx * rawDx + rawDy * rawDy)
-            
-            // When phone is flat (no tilt), default to horizontal band sliding vertically
-            let dx: CGFloat
-            let dy: CGFloat
-            if mag < 0.001 {
-                dx = 1.0
-                dy = 0.0
-            } else {
-                dx = rawDx / mag
-                dy = rawDy / mag
-            }
-            
-            // Render in 2pt grid cells
+            // Horizontal rows at 2pt steps
             let step: CGFloat = 2.0
-            var py: CGFloat = 0
+            var y: CGFloat = 0
             
-            while py < h {
-                var px: CGFloat = 0
-                while px < w {
-                    // Project pixel offset from center onto tilt direction
-                    let offsetX = px - cx
-                    let offsetY = py - cy
-                    let projDist = offsetX * dx + offsetY * dy
-                    
-                    // Gaussian intensity based on projected distance
-                    let gaussian = exp(-0.5 * (projDist * projDist) / (sigma * sigma))
-                    let intensity = shineBoost * gaussian
-                    
-                    if intensity > 0.008 {
-                        let rect = CGRect(x: px, y: py, width: step, height: step)
-                        context.opacity = intensity
-                        context.fill(Path(rect), with: .color(tintColor))
-                    }
-                    
-                    px += step
-                }
-                py += step
+            while y < h {
+                let dist = y - center
+                let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
+                let intensity = shineBoost * gaussian
+                
+                guard intensity > 0.005 else { y += step; continue }
+                
+                let rect = CGRect(x: 0, y: y, width: w, height: step)
+                context.opacity = intensity
+                context.fill(Path(rect), with: .color(tintColor))
+                
+                y += step
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
