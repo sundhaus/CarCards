@@ -210,7 +210,7 @@ struct GyroSpecularStrip: View {
     @ObservedObject private var motion = CardMotionManager.shared
     
     private let sigmaFraction: CGFloat = 0.15
-    private let shineBoost: CGFloat = 0.50
+    private let shineBoost: CGFloat = 0.25
     
     private var tintColor: Color {
         switch rarity {
