@@ -120,7 +120,7 @@ struct LevelHeader: View {
                         .trim(from: 0, to: levelSystem.progress)
                         .stroke(
                             LinearGradient(
-                                colors: levelGradient(for: levelSystem.level),
+                                colors: [.appAccent, Color(red: 1.0, green: 0.18, blue: 0.26)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -134,13 +134,7 @@ struct LevelHeader: View {
                     Text("\(levelSystem.level)")
                         .font(.poppins(DeviceScale.f(16)))
                         .fontWeight(.bold)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: levelGradient(for: levelSystem.level),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .foregroundStyle(.appAccent)
                 }
                 
                 // Username only — no level badge
@@ -194,7 +188,7 @@ struct LevelHeader: View {
                         .trim(from: 0, to: levelSystem.progress)
                         .stroke(
                             LinearGradient(
-                                colors: levelGradient(for: levelSystem.level),
+                                colors: [.appAccent, Color(red: 1.0, green: 0.18, blue: 0.26)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -208,13 +202,7 @@ struct LevelHeader: View {
                     Text("\(levelSystem.level)")
                         .font(.poppins(DeviceScale.f(16)))
                         .fontWeight(.bold)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: levelGradient(for: levelSystem.level),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .foregroundStyle(.appAccent)
                 }
                 
                 // Username only — no level badge
