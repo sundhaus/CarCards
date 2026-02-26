@@ -86,6 +86,11 @@ struct RarityEffectOverlay: View {
                 FullBleedEdgeOverlay(rarity: rarity, cornerRadius: cornerRadius)
             }
             
+            // Holographic foil pattern (Legendary only)
+            if rarity == .legendary {
+                HolographicPatternOverlay(cornerRadius: cornerRadius, useGyro: true)
+            }
+            
             // Specular strip (Epic + Legendary)
             if rarity >= .epic {
                 GyroSpecularStrip(rarity: rarity, cornerRadius: cornerRadius)
@@ -526,6 +531,135 @@ struct ThumbnailShimmerModifier: ViewModifier {
     }
 }
 
+// MARK: - Holographic Pattern Overlay (Legendary)
+
+/// Geometric pattern overlay that refracts like a holographic foil when
+/// the specular light sweeps across it. The pattern is a mostly-transparent
+/// geometric tile; where the gyro-driven (or auto-animated) light band
+/// intersects pattern pixels, they bloom into prismatic rainbow color.
+///
+/// Two modes:
+/// - Full-size cards: gyro-driven via CardMotionManager
+/// - Thumbnails: auto-animated sweep (lightweight for scroll views)
+struct HolographicPatternOverlay: View {
+    let cornerRadius: CGFloat
+    var useGyro: Bool = true  // false = auto-animate for thumbnails
+    
+    @ObservedObject private var motion = CardMotionManager.shared
+    @State private var autoPhase: CGFloat = 0
+    
+    /// Normalized 0...1 position of the specular highlight across the card width
+    private var specularCenter: CGFloat {
+        if useGyro {
+            let pitchRange: CGFloat = 0.15
+            let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
+            return 0.5 + (clamped / pitchRange) * 0.5
+        } else {
+            return autoPhase
+        }
+    }
+    
+    /// Rainbow gradient colors for the holographic refraction
+    private let rainbowColors: [Color] = [
+        Color(red: 1.0, green: 0.3, blue: 0.3),  // Red
+        Color(red: 1.0, green: 0.6, blue: 0.2),  // Orange
+        Color(red: 1.0, green: 1.0, blue: 0.3),  // Yellow
+        Color(red: 0.3, green: 1.0, blue: 0.3),  // Green
+        Color(red: 0.3, green: 0.8, blue: 1.0),  // Cyan
+        Color(red: 0.4, green: 0.4, blue: 1.0),  // Blue
+        Color(red: 0.7, green: 0.3, blue: 1.0),  // Violet
+        Color(red: 1.0, green: 0.3, blue: 0.8),  // Magenta
+        Color(red: 1.0, green: 0.3, blue: 0.3),  // Red (wrap)
+    ]
+    
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            
+            ZStack {
+                // Layer 1: Static base pattern (subtle white texture always visible)
+                Image("HoloPattern")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: w, height: h)
+                    .clipped()
+                    .blendMode(.screen)
+                
+                // Layer 2: Rainbow gradient masked to pattern — the holographic refraction
+                // The gradient shifts position based on specular center, creating
+                // the effect of light refracting through the foil pattern
+                rainbowLayer(width: w, height: h)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .allowsHitTesting(false)
+        .onAppear {
+            if useGyro {
+                motion.startIfNeeded()
+            } else {
+                // Auto-animate: sweep back and forth
+                withAnimation(
+                    .easeInOut(duration: 3.0)
+                    .repeatForever(autoreverses: true)
+                ) {
+                    autoPhase = 1.0
+                }
+            }
+        }
+        .onDisappear {
+            if useGyro {
+                motion.stopIfNeeded()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func rainbowLayer(width w: CGFloat, height h: CGFloat) -> some View {
+        // The rainbow gradient is offset based on specular position
+        // so different parts of the pattern catch different hues
+        let gradientOffset = (specularCenter - 0.5) * w * 0.6
+        
+        // Gaussian falloff: rainbow is strongest near the specular center,
+        // fading to transparent away from it
+        let sigma = w * 0.25
+        
+        Canvas { context, size in
+            // Draw rainbow bands that fade based on distance from specular center
+            let center = specularCenter * w
+            let bandCount = rainbowColors.count - 1
+            let totalRainbowWidth = w * 1.2  // Rainbow spans wider than card
+            let bandWidth = totalRainbowWidth / CGFloat(bandCount)
+            
+            for i in 0..<bandCount {
+                let bandX = gradientOffset + CGFloat(i) * bandWidth - w * 0.1
+                let bandCenterX = bandX + bandWidth * 0.5
+                
+                // Gaussian intensity based on distance from specular highlight
+                let dist = bandCenterX - center
+                let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
+                let intensity = gaussian * 0.35  // Peak opacity for rainbow
+                
+                guard intensity > 0.01 else { continue }
+                
+                let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
+                context.opacity = intensity
+                context.fill(Path(rect), with: .color(rainbowColors[i]))
+            }
+        }
+        .frame(width: w, height: h)
+        // Mask to the pattern shape: only pattern pixels get the rainbow
+        .mask {
+            Image("HoloPattern")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: w, height: h)
+                .clipped()
+        }
+        .blendMode(.screen)
+    }
+}
+
 // MARK: - Thumbnail Rarity Border Overlay
 
 /// Lightweight animated border effects for card thumbnails in feeds.
@@ -571,6 +705,11 @@ struct ThumbnailRarityBorderOverlay: View {
     
     var body: some View {
         ZStack {
+            // Holographic foil pattern for Legendary thumbnails (auto-animated)
+            if rarity == .legendary {
+                HolographicPatternOverlay(cornerRadius: cornerRadius, useGyro: false)
+            }
+            
             // Animated shimmer border stroke
             RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(
