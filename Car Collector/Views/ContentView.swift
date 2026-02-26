@@ -161,6 +161,7 @@ struct ContentView: View {
                         }
                     }
                 )
+                .id(card.id)
             }
         }
         .overlay {
@@ -211,6 +212,13 @@ struct ContentView: View {
             }
             // Reset destination tab to landing (skips preserved tabs)
             navigationController.resetToRoot(tab: newValue)
+        }
+        .onChange(of: showCardDetail) { _, newValue in
+            if !newValue {
+                // Clear selected card when detail view is dismissed
+                // so next card opens with completely fresh state
+                selectedCard = nil
+            }
         }
         .onAppear {
             OrientationManager.lockToPortrait()
