@@ -825,6 +825,7 @@ struct UnifiedCardDetailView: View {
             if !isFlipped {
                 AnyCardDetailsFrontView(card: card)
                     .frame(width: cardWidth, height: cardHeight)
+                    .holoEffect(card.holoEffect, cornerRadius: cardHeight * 0.09)
                     .rarityEffects(for: card.rarity)
                     .rotation3DEffect(
                         .degrees(flipDegrees),
@@ -1058,6 +1059,7 @@ struct UnifiedCardView: View {
             }
             .frame(width: w, height: h)
             .clipShape(RoundedRectangle(cornerRadius: h * 0.09))
+            .holoEffectThumbnail(card.holoEffect, cornerRadius: h * 0.09)
             .overlay {
                 if let rarity = card.rarity, rarity >= .epic {
                     ThumbnailRarityBorderOverlay(rarity: rarity, cornerRadius: h * 0.09)

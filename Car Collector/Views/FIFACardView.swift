@@ -106,6 +106,8 @@ struct FIFACardView: View {
         }
         .frame(width: cardWidth, height: height)
         .clipShape(RoundedRectangle(cornerRadius: height * 0.09))
+        // Holographic pattern effect (auto-animated for thumbnails)
+        .holoEffectThumbnail(card.holoEffect, cornerRadius: height * 0.09)
         // Rarity border effects (shimmer border for Epic, glow pulse for Legendary)
         .overlay {
             if showRarityEffects, let rarityStr = card.rarity, let rarity = CardRarity(rawValue: rarityStr), rarity >= .epic {

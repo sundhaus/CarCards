@@ -86,11 +86,6 @@ struct RarityEffectOverlay: View {
                 FullBleedEdgeOverlay(rarity: rarity, cornerRadius: cornerRadius)
             }
             
-            // Holographic foil pattern (Legendary only)
-            if rarity == .legendary {
-                HolographicPatternOverlay(cornerRadius: cornerRadius, useGyro: true)
-            }
-            
             // Specular strip (Epic + Legendary)
             if rarity >= .epic {
                 GyroSpecularStrip(rarity: rarity, cornerRadius: cornerRadius)
@@ -550,6 +545,7 @@ struct ThumbnailShimmerModifier: ViewModifier {
 /// - Thumbnails: auto-animated sweep (lightweight for scroll views)
 struct HolographicPatternOverlay: View {
     let cornerRadius: CGFloat
+    var patternAsset: String = "HoloPattern"  // Asset name for the pattern
     var useGyro: Bool = true  // false = auto-animate for thumbnails
     
     @ObservedObject private var motion = CardMotionManager.shared
@@ -586,7 +582,7 @@ struct HolographicPatternOverlay: View {
             
             ZStack {
                 // Layer 1: Static base pattern (subtle white texture always visible)
-                Image("HoloPattern")
+                Image(patternAsset)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: w, height: h)
@@ -657,7 +653,7 @@ struct HolographicPatternOverlay: View {
         .frame(width: w, height: h)
         // Mask to the pattern shape: only pattern pixels get the rainbow
         .mask {
-            Image("HoloPattern")
+            Image(patternAsset)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: w, height: h)
@@ -720,11 +716,6 @@ struct ThumbnailRarityBorderOverlay: View {
     
     var body: some View {
         ZStack {
-            // Holographic foil pattern for Legendary thumbnails (auto-animated)
-            if rarity == .legendary {
-                HolographicPatternOverlay(cornerRadius: cornerRadius, useGyro: false)
-            }
-            
             // Animated shimmer border — gradient travels along the border path
             RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(
@@ -759,5 +750,73 @@ struct ThumbnailRarityBorderOverlay: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Holographic Effect Configuration
+
+/// Maps holoEffect string values to pattern asset names
+enum HoloEffectType: String, CaseIterable {
+    case geometric = "geometric"
+    case waves = "waves"
+    
+    var assetName: String {
+        switch self {
+        case .geometric: return "HoloPattern"
+        case .waves:     return "HoloPatternWaves"
+        }
+    }
+    
+    var displayName: String {
+        switch self {
+        case .geometric: return "Geometric"
+        case .waves:     return "Waves"
+        }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .geometric: return "square.grid.3x3.fill"
+        case .waves:     return "water.waves"
+        }
+    }
+}
+
+// MARK: - Holographic Effect View Modifier
+
+/// Applies the holographic pattern overlay to any card view.
+/// Use on full-size cards (gyro) or thumbnails (auto-animated).
+struct HoloEffectModifier: ViewModifier {
+    let holoEffect: String?
+    var useGyro: Bool = true
+    var cornerRadius: CGFloat = 0
+    
+    func body(content: Content) -> some View {
+        if let effectStr = holoEffect, let effect = HoloEffectType(rawValue: effectStr) {
+            content
+                .overlay {
+                    GeometryReader { geo in
+                        HolographicPatternOverlay(
+                            cornerRadius: cornerRadius > 0 ? cornerRadius : geo.size.height * 0.09,
+                            patternAsset: effect.assetName,
+                            useGyro: useGyro
+                        )
+                    }
+                }
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    /// Apply holographic foil effect overlay (gyro-driven for full-size cards)
+    func holoEffect(_ effect: String?, cornerRadius: CGFloat = 0) -> some View {
+        modifier(HoloEffectModifier(holoEffect: effect, useGyro: true, cornerRadius: cornerRadius))
+    }
+    
+    /// Apply holographic foil effect overlay (auto-animated for thumbnails)
+    func holoEffectThumbnail(_ effect: String?, cornerRadius: CGFloat = 0) -> some View {
+        modifier(HoloEffectModifier(holoEffect: effect, useGyro: false, cornerRadius: cornerRadius))
     }
 }

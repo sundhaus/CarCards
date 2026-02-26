@@ -20,6 +20,7 @@ struct DriverCard: Identifiable, Codable {
     let capturedDate: Date
     var firebaseId: String?  // CloudCard ID from Firebase (for syncing)
     var customFrame: String?  // Border customization: "White", "Black", etc.
+    var holoEffect: String?   // Holographic pattern effect
     
     init(
         id: UUID = UUID(),
@@ -33,7 +34,8 @@ struct DriverCard: Identifiable, Codable {
         capturedLocation: String? = nil,
         capturedDate: Date = Date(),
         firebaseId: String? = nil,
-        customFrame: String? = nil
+        customFrame: String? = nil,
+        holoEffect: String? = nil
     ) {
         self.id = id
         self.imageData = image.jpegData(compressionQuality: 0.8) ?? Data()
@@ -47,11 +49,12 @@ struct DriverCard: Identifiable, Codable {
         self.capturedDate = capturedDate
         self.firebaseId = firebaseId
         self.customFrame = customFrame
+        self.holoEffect = holoEffect
     }
     
     enum CodingKeys: String, CodingKey {
         case id, imageData, firstName, lastName, nickname, vehicleName
-        case isDriverPlusVehicle, capturedBy, capturedLocation, capturedDate, firebaseId, customFrame
+        case isDriverPlusVehicle, capturedBy, capturedLocation, capturedDate, firebaseId, customFrame, holoEffect
     }
     
     init(from decoder: Decoder) throws {
@@ -68,6 +71,7 @@ struct DriverCard: Identifiable, Codable {
         capturedDate = try container.decodeIfPresent(Date.self, forKey: .capturedDate) ?? Date()
         firebaseId = try container.decodeIfPresent(String.self, forKey: .firebaseId)
         customFrame = try container.decodeIfPresent(String.self, forKey: .customFrame)
+        holoEffect = try container.decodeIfPresent(String.self, forKey: .holoEffect)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -86,6 +90,7 @@ struct DriverCard: Identifiable, Codable {
         try container.encode(capturedDate, forKey: .capturedDate)
         try container.encodeIfPresent(firebaseId, forKey: .firebaseId)
         try container.encodeIfPresent(customFrame, forKey: .customFrame)
+        try container.encodeIfPresent(holoEffect, forKey: .holoEffect)
     }
     
     var thumbnail: UIImage? {

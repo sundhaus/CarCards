@@ -19,6 +19,7 @@ struct SavedCard: Identifiable, Codable {
     let capturedLocation: String?  // City where captured
     let previousOwners: Int  // Number of previous owners
     var customFrame: String?  // Custom frame/border ("none", "white", "black")
+    var holoEffect: String?   // Holographic pattern effect ("geometric", "waves", or nil)
     var firebaseId: String?  // CloudCard ID from Firebase (for syncing)
     var originalImageData: Data?  // Original image before background removal
     
@@ -34,6 +35,7 @@ struct SavedCard: Identifiable, Codable {
         capturedLocation: String? = nil,
         previousOwners: Int = 0,
         customFrame: String? = nil,
+        holoEffect: String? = nil,
         firebaseId: String? = nil,
         originalImage: UIImage? = nil
     ) {
@@ -48,6 +50,7 @@ struct SavedCard: Identifiable, Codable {
         self.capturedLocation = capturedLocation
         self.previousOwners = previousOwners
         self.customFrame = customFrame
+        self.holoEffect = holoEffect
         self.firebaseId = firebaseId
         self.originalImageData = originalImage?.jpegData(compressionQuality: 0.8)
     }
@@ -56,7 +59,7 @@ struct SavedCard: Identifiable, Codable {
     
     enum CodingKeys: String, CodingKey {
         case id, imageData, make, model, color, year
-        case specs, capturedBy, capturedLocation, previousOwners, customFrame, firebaseId
+        case specs, capturedBy, capturedLocation, previousOwners, customFrame, holoEffect, firebaseId
         case originalImageData
     }
     
@@ -77,6 +80,7 @@ struct SavedCard: Identifiable, Codable {
         capturedLocation = try container.decodeIfPresent(String.self, forKey: .capturedLocation)
         previousOwners = try container.decodeIfPresent(Int.self, forKey: .previousOwners) ?? 0
         customFrame = try container.decodeIfPresent(String.self, forKey: .customFrame)
+        holoEffect = try container.decodeIfPresent(String.self, forKey: .holoEffect)
         firebaseId = try container.decodeIfPresent(String.self, forKey: .firebaseId)
         originalImageData = try container.decodeIfPresent(Data.self, forKey: .originalImageData)
     }
@@ -98,6 +102,7 @@ struct SavedCard: Identifiable, Codable {
         try container.encodeIfPresent(capturedLocation, forKey: .capturedLocation)
         try container.encode(previousOwners, forKey: .previousOwners)
         try container.encodeIfPresent(customFrame, forKey: .customFrame)
+        try container.encodeIfPresent(holoEffect, forKey: .holoEffect)
         try container.encodeIfPresent(firebaseId, forKey: .firebaseId)
         // originalImageData NOT encoded to metadata JSON - stored as separate file
     }

@@ -72,6 +72,17 @@ enum AnyCard: Identifiable {
         }
     }
     
+    var holoEffect: String? {
+        switch self {
+        case .vehicle(let card):
+            return card.holoEffect
+        case .driver(let card):
+            return card.holoEffect
+        case .location(let card):
+            return card.holoEffect
+        }
+    }
+    
     var firebaseId: String? {
         switch self {
         case .vehicle(let card): return card.firebaseId

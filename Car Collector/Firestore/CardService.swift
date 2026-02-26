@@ -207,6 +207,25 @@ class CardService: ObservableObject {
         CardRenderer.shared.clearCache()
     }
     
+    /// Update a single field on a card document and its corresponding activity
+    func updateField(cardId: String, field: String, value: Any) async throws {
+        let firestoreValue: Any = (value is NSNull || value as? String == nil) ? FieldValue.delete() : value
+        try await cardsCollection.document(cardId).updateData([
+            field: firestoreValue
+        ])
+        
+        // Also update the field in friend activities
+        do {
+            try await FriendsService.shared.updateActivityField(
+                cardId: cardId,
+                field: field,
+                value: value
+            )
+        } catch {
+            print("⚠️ Failed to update friend activity field \(field) (non-critical): \(error)")
+        }
+    }
+    
     /// Re-flatten a card after frame/border change. Call this with the updated AnyCard.
     func reflattenCard(_ card: AnyCard) async {
         do {

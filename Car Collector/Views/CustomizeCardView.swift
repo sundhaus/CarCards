@@ -26,6 +26,7 @@ struct CustomizeCardView: View {
     
     // Background positioning
     @State private var selectedBackground: String? = nil  // Asset name of selected bg
+    @State private var selectedHoloEffect: String? = nil  // Holographic pattern effect
     @State private var bgOffset: CGSize = .zero
     @State private var bgScale: CGFloat = 1.0
     @State private var lastBgOffset: CGSize = .zero
@@ -140,6 +141,16 @@ struct CustomizeCardView: View {
                     .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 180 * 0.09))
+                .overlay {
+                    // Holographic pattern preview (auto-animated in customize view)
+                    if let effect = selectedHoloEffect, let holoType = HoloEffectType(rawValue: effect) {
+                        HolographicPatternOverlay(
+                            cornerRadius: 180 * 0.09,
+                            patternAsset: holoType.assetName,
+                            useGyro: false
+                        )
+                    }
+                }
                 .contentShape(Rectangle())
                 .simultaneousGesture(
                     DragGesture()
@@ -215,6 +226,9 @@ struct CustomizeCardView: View {
             
             // Frame is always rarity-based now
             selectedFrame = .rarity
+            
+            // Load existing holo effect
+            selectedHoloEffect = card.holoEffect
             
             // If card has original image stored, background was previously removed
             if case .vehicle(let vehicleCard) = card,
@@ -309,18 +323,79 @@ struct CustomizeCardView: View {
     // MARK: - Effects Tab Content
     
     private var effectsTabContent: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "wand.and.stars")
-                .font(.poppins(40))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .foregroundStyle(.tertiary)
-            Text("Effects")
-                .font(.pHeadline)
-                .foregroundStyle(.tertiary)
-            Text("COMING SOON")
+        VStack(spacing: 16) {
+            Text("HOLOGRAPHIC")
                 .font(.pCaption)
-                .foregroundStyle(.tertiary)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    // None option
+                    holoCircleOption(effect: nil, label: "None", icon: "nosign")
+                    
+                    // Pattern options
+                    ForEach(HoloEffectType.allCases, id: \.self) { effect in
+                        holoCircleOption(effect: effect.rawValue, label: effect.displayName, icon: effect.iconName)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+            
+            if selectedHoloEffect != nil {
+                Text("Holographic pattern refracts with rainbow color when light passes over it")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.4))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30)
+            }
+            
+            Spacer(minLength: 0)
+        }
+    }
+    
+    private func holoCircleOption(effect: String?, label: String, icon: String) -> some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3)) {
+                selectedHoloEffect = effect
+            }
+        }) {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            effect != nil
+                            ? LinearGradient(
+                                colors: [Color.purple.opacity(0.3), Color.cyan.opacity(0.3)],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(
+                                colors: [Color(white: 0.25), Color(white: 0.25)],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 56, height: 56)
+                        .overlay(
+                            Image(systemName: icon)
+                                .font(.system(size: 22))
+                                .foregroundStyle(effect != nil ? .white : .white.opacity(0.5))
+                        )
+                    
+                    // Selection ring
+                    if selectedHoloEffect == effect {
+                        Circle()
+                            .stroke(Color.cyan, lineWidth: 3)
+                            .frame(width: 62, height: 62)
+                    }
+                }
+                
+                Text(label)
+                    .font(.system(size: 10))
+                    .foregroundStyle(selectedHoloEffect == effect ? .white : .white.opacity(0.6))
+            }
         }
     }
     
@@ -610,11 +685,13 @@ struct CustomizeCardView: View {
                         capturedLocation: vehicleCard.capturedLocation,
                         previousOwners: vehicleCard.previousOwners,
                         customFrame: customFrameValue,
+                        holoEffect: selectedHoloEffect,
                         firebaseId: vehicleCard.firebaseId,
                         originalImage: backgroundRemoved ? originalImage : nil
                     )
                 } else {
                     savedCards[index].customFrame = customFrameValue
+                    savedCards[index].holoEffect = selectedHoloEffect
                     if !backgroundRemoved { savedCards[index].originalImageData = nil }
                 }
                 CardStorage.saveCards(savedCards)
@@ -626,6 +703,7 @@ struct CustomizeCardView: View {
             var driverCards = CardStorage.loadDriverCards()
             if let index = driverCards.firstIndex(where: { $0.id == driverCard.id }) {
                 driverCards[index].customFrame = customFrameValue
+                driverCards[index].holoEffect = selectedHoloEffect
                 CardStorage.saveDriverCards(driverCards)
                 print("💾 Saved frame: \(customFrameValue) for driver: \(driverCard.displayName)")
             }
@@ -634,6 +712,7 @@ struct CustomizeCardView: View {
             var locationCards = CardStorage.loadLocationCards()
             if let index = locationCards.firstIndex(where: { $0.id == locationCard.id }) {
                 locationCards[index].customFrame = customFrameValue
+                locationCards[index].holoEffect = selectedHoloEffect
                 CardStorage.saveLocationCards(locationCards)
                 print("💾 Saved frame: \(customFrameValue) for location: \(locationCard.locationName)")
             }
@@ -648,6 +727,14 @@ struct CustomizeCardView: View {
                         customFrame: customFrameValue
                     )
                     print("✅ Synced custom frame to Firebase")
+                    
+                    // Sync holo effect
+                    try await CardService.shared.updateField(
+                        cardId: firebaseId,
+                        field: "holoEffect",
+                        value: selectedHoloEffect as Any
+                    )
+                    print("✅ Synced holo effect to Firebase")
                     
                     if let updatedImage = displayImage {
                         try await CardService.shared.updateCardImage(

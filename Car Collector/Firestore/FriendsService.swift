@@ -55,6 +55,7 @@ struct FriendActivity: Identifiable {
     var category: String?  // NEW: For Explore page categorization
     var cardType: String   // "vehicle", "driver", "location"
     var rarity: String?    // Card rarity tier for visual effects
+    var holoEffect: String?  // Holographic pattern effect
     
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -76,10 +77,11 @@ struct FriendActivity: Identifiable {
         self.category = data["category"] as? String
         self.cardType = data["cardType"] as? String ?? "vehicle"
         self.rarity = data["rarity"] as? String
+        self.holoEffect = data["holoEffect"] as? String
     }
     
     /// Manual init for loading from featured_cards collection
-    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, flatImageURL: String? = nil, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date, cardType: String = "vehicle", rarity: String? = nil) {
+    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, flatImageURL: String? = nil, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date, cardType: String = "vehicle", rarity: String? = nil, holoEffect: String? = nil) {
         self.id = id
         self.userId = userId
         self.username = username
@@ -97,6 +99,7 @@ struct FriendActivity: Identifiable {
         self.category = nil
         self.cardType = cardType
         self.rarity = rarity
+        self.holoEffect = holoEffect
     }
     
     var dictionary: [String: Any] {
@@ -129,6 +132,10 @@ struct FriendActivity: Identifiable {
         
         if let rarity = rarity {
             dict["rarity"] = rarity
+        }
+        
+        if let holoEffect = holoEffect {
+            dict["holoEffect"] = holoEffect
         }
         
         return dict
@@ -607,7 +614,7 @@ class FriendsService: ObservableObject {
     
     // MARK: - Post Activity (when user adds a card)
     
-    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, flatImageURL: String? = nil, customFrame: String? = nil, category: VehicleCategory? = nil, cardType: String = "vehicle", rarity: CardRarity? = nil) async throws {
+    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, flatImageURL: String? = nil, customFrame: String? = nil, category: VehicleCategory? = nil, cardType: String = "vehicle", rarity: CardRarity? = nil, holoEffect: String? = nil) async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
         }
@@ -687,6 +694,10 @@ class FriendsService: ObservableObject {
             data["rarity"] = rarity.rawValue
         }
         
+        if let holoEffect = holoEffect {
+            data["holoEffect"] = holoEffect
+        }
+        
         try await activitiesCollection.document(activityId).setData(data)
         
         print("✅ Posted card activity: \(make) \(model) by \(profile.username)")
@@ -724,6 +735,27 @@ class FriendsService: ObservableObject {
         }
         
         print("✅ Updated customFrame for \(snapshot.documents.count) activities")
+    }
+    
+    /// Update any field for all activities with a specific cardId
+    func updateActivityField(cardId: String, field: String, value: Any) async throws {
+        let snapshot = try await activitiesCollection
+            .whereField("cardId", isEqualTo: cardId)
+            .getDocuments()
+        
+        for document in snapshot.documents {
+            if let strVal = value as? String {
+                try await activitiesCollection.document(document.documentID).updateData([
+                    field: strVal
+                ])
+            } else {
+                try await activitiesCollection.document(document.documentID).updateData([
+                    field: FieldValue.delete()
+                ])
+            }
+        }
+        
+        print("✅ Updated \(field) for \(snapshot.documents.count) activities")
     }
     
     // MARK: - Update Activity Image URL
