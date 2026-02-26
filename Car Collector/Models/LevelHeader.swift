@@ -134,7 +134,7 @@ struct LevelHeader: View {
                     Text("\(levelSystem.level)")
                         .font(.poppins(DeviceScale.f(16)))
                         .fontWeight(.bold)
-                        .foregroundStyle(Color.appAccent)
+                        .foregroundStyle(.white)
                 }
                 
                 // Username only — no level badge
@@ -202,7 +202,7 @@ struct LevelHeader: View {
                     Text("\(levelSystem.level)")
                         .font(.poppins(DeviceScale.f(16)))
                         .fontWeight(.bold)
-                        .foregroundStyle(Color.appAccent)
+                        .foregroundStyle(.white)
                 }
                 
                 // Username only — no level badge
