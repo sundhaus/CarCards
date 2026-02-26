@@ -496,9 +496,21 @@ struct GarageViewContent: View {
         }
         .confirmationDialog("Card Options", isPresented: $showActionSheet, presenting: actionSheetCard) { card in
             Button("View Full Screen") {
-                selectedCard = card
-                withAnimation {
-                    showCardDetail = true
+                if showCardDetail {
+                    // Another card is already showing - dismiss it first, then open the new one
+                    showCardDetail = false
+                    selectedCard = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        selectedCard = card
+                        withAnimation {
+                            showCardDetail = true
+                        }
+                    }
+                } else {
+                    selectedCard = card
+                    withAnimation {
+                        showCardDetail = true
+                    }
                 }
             }
             
@@ -607,6 +619,16 @@ struct CardDetailView: View {
     @State private var flipDegrees: Double = 0
     @State private var isFetchingSpecs = false
     @State private var updatedCard: SavedCard?
+    @State private var viewID = UUID()
+    
+    /// Resets all flip/spec state to default
+    private func resetState() {
+        isFlipped = false
+        flipDegrees = 0
+        isFetchingSpecs = false
+        updatedCard = nil
+        viewID = UUID()
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -617,6 +639,7 @@ struct CardDetailView: View {
                 Color.black.opacity(0.7)
                     .ignoresSafeArea()
                     .onTapGesture {
+                        resetState()
                         withAnimation {
                             isShowing = false
                         }
@@ -643,6 +666,7 @@ struct CardDetailView: View {
                 VStack {
                     HStack {
                         Button(action: {
+                            resetState()
                             withAnimation {
                                 isShowing = false
                             }
@@ -663,6 +687,10 @@ struct CardDetailView: View {
                     Spacer()
                 }
             }
+        }
+        .id(viewID)
+        .onAppear {
+            resetState()
         }
         .transition(.opacity)
     }
