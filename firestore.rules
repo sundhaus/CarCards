@@ -15,6 +15,11 @@ match /users/{userId} {
   allow create: if isOwner(userId);
   allow update: if isOwner(userId) || isAdmin();
   allow delete: if isOwner(userId);
+
+  // User meta subcollection (dailyLogin, etc.)
+  match /meta/{docId} {
+    allow read, write: if isOwner(userId);
+  }
 }
 
 match /usernames/{username} {
