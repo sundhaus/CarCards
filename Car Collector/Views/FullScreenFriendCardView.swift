@@ -155,6 +155,7 @@ struct FullScreenFriendCardView: View {
                         year: activity.cardYear,
                         specs: specs,
                         customFrame: activity.customFrame,
+                        rarity: CardRarity.fromBorderName(activity.customFrame),
                         cardHeight: cardHeight
                     )
                     .frame(width: cardWidth, height: cardHeight)
