@@ -49,7 +49,7 @@ struct CloudCardThumbnail: View {
         self.flatImageURL = card.flatImageURL
         self.rawImageURL = card.imageURL
         self.rarity = card.rarity.flatMap { CardRarity(rawValue: $0) }
-        self.holoEffect = nil  // CloudCard doesn't have holoEffect yet
+        self.holoEffect = card.holoEffect  // Now available on CloudCard
         self.customFrame = card.customFrame
         self.cardType = card.cardType
         self.make = card.make

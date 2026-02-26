@@ -148,16 +148,22 @@ struct HomeView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Card image with tilt effect
+                    // Card image with tilt effect and live rarity effects
                     let cardHeight = DeviceScale.h(200)
                     let cardWidth = cardHeight * (16/9)
+                    let cornerRadius = cardHeight * 0.09
+                    let parsedRarity = card.rarity.flatMap { CardRarity(rawValue: $0) }
                     
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: cardWidth, height: cardHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-                        .thumbnailShimmer(for: card.rarity.flatMap { CardRarity(rawValue: $0) })
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        // Live holographic pattern effect (gyro-driven for full-size)
+                        .holoEffect(card.holoEffect, cornerRadius: cornerRadius)
+                        // Live rarity effects (shimmer border, glow, particles)
+                        .rarityEffects(for: parsedRarity)
+                        .thumbnailShimmer(for: parsedRarity)
                         .shadow(color: crownGlowColor(for: card).opacity(0.5), radius: 16, x: 0, y: 4)
                         .cardTilt(intensity: 1.2, perspective: 0.4)
                     

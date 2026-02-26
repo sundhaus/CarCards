@@ -41,6 +41,9 @@ struct CloudCard: Identifiable, Codable {
     // Rarity tier for economy scaling
     var rarity: String?
     
+    // Holographic pattern effect
+    var holoEffect: String?
+    
     // Evolution points for rarity upgrade system
     var evolutionPoints: Int
     var lastBattleUsed: Date?
@@ -89,6 +92,7 @@ struct CloudCard: Identifiable, Codable {
         self.customFrame = data["customFrame"] as? String
         self.flatImageURL = data["flatImageURL"] as? String
         self.rarity = data["rarity"] as? String
+        self.holoEffect = data["holoEffect"] as? String
         self.evolutionPoints = data["evolutionPoints"] as? Int ?? 0
         self.lastBattleUsed = (data["lastBattleUsed"] as? Timestamp)?.dateValue()
     }
@@ -112,7 +116,8 @@ struct CloudCard: Identifiable, Codable {
         nickname: String? = nil,
         locationName: String? = nil,
         rarity: String? = nil,
-        evolutionPoints: Int = 0
+        evolutionPoints: Int = 0,
+        holoEffect: String? = nil
     ) {
         self.id = id
         self.ownerId = ownerId
@@ -133,6 +138,7 @@ struct CloudCard: Identifiable, Codable {
         self.nickname = nickname
         self.locationName = locationName
         self.rarity = rarity
+        self.holoEffect = holoEffect
         self.evolutionPoints = evolutionPoints
         self.lastBattleUsed = nil
     }
