@@ -17,6 +17,7 @@ struct FIFACardView: View {
     @State private var usedFlatImage = false  // Track if we loaded the flat (baked) image
     @State private var showHeartAnimation = false
     @State private var hasLiked = false
+    @State private var lastLoadedURL: String?  // Track which URL we loaded to detect changes
     
     private var cardWidth: CGFloat { height * (16/9) }
     
@@ -28,6 +29,13 @@ struct FIFACardView: View {
     private var preferredImageURL: String {
         if let flat = card.flatImageURL, !flat.isEmpty { return flat }
         return card.imageURL
+    }
+    
+    /// Whether this card has a flat image URL — used to suppress old border
+    /// overlays while the flat image is still loading
+    private var hasFlatURL: Bool {
+        if let flat = card.flatImageURL, !flat.isEmpty { return true }
+        return false
     }
     
     var body: some View {
@@ -50,8 +58,9 @@ struct FIFACardView: View {
                 .frame(width: cardWidth, height: height)
                 .clipped()
             
-            // Only show overlays if we're using the raw image (no flat image available)
-            if !usedFlatImage {
+            // Only show border/text overlays if we loaded the raw image
+            // (i.e. no flat image exists at all — NOT just "flat hasn't loaded yet")
+            if !usedFlatImage && !hasFlatURL {
                 // Border PNG overlay based on customFrame
                 if let borderImageName = CardBorderConfig.forFrame(card.customFrame).borderImageName {
                     Image(borderImageName)
@@ -108,6 +117,15 @@ struct FIFACardView: View {
             loadImage()
             if let uid = currentUserId {
                 hasLiked = card.heatedBy.contains(uid)
+            }
+        }
+        .onChange(of: card.flatImageURL) { _, newURL in
+            // flatImageURL changed (migration updated Firestore) — reload
+            let currentPreferred = newURL.flatMap { $0.isEmpty ? nil : $0 } ?? card.imageURL
+            if currentPreferred != lastLoadedURL {
+                cardImage = nil
+                isLoadingImage = false
+                loadImage()
             }
         }
     }
@@ -236,14 +254,14 @@ struct FIFACardView: View {
                 .aspectRatio(contentMode: .fill)
         } else if isLoadingImage {
             Rectangle()
-                .fill(Color.white.opacity(0.3))
+                .fill(Color(red: 0.12, green: 0.12, blue: 0.14))
                 .overlay(
                     ProgressView()
                         .tint(.gray)
                 )
         } else {
             Rectangle()
-                .fill(Color.white.opacity(0.3))
+                .fill(Color(red: 0.12, green: 0.12, blue: 0.14))
                 .overlay(
                     Image(systemName: card.cardType == "driver" ? "person.fill" : card.cardType == "location" ? "mappin.circle.fill" : "car.fill")
                         .font(.system(size: height * 0.3))
@@ -262,6 +280,9 @@ struct FIFACardView: View {
         let urlString = flatURL ?? card.imageURL
         let isFlatURL = flatURL != nil
         
+        // Track which URL we're loading so onChange can detect updates
+        lastLoadedURL = urlString
+        
         guard let url = URL(string: urlString) else {
             // If flat URL failed, try raw URL as fallback
             if isFlatURL, let fallbackURL = URL(string: card.imageURL) {
@@ -276,7 +297,11 @@ struct FIFACardView: View {
     }
     
     private func loadFromURL(_ url: URL, isFlat: Bool) {
-        URLSession.shared.dataTask(with: url) { data, _, error in
+        // Use cache policy that revalidates with server to avoid stale flat images
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadRevalidatingCacheData
+        
+        URLSession.shared.dataTask(with: request) { data, _, error in
             if let data = data, let image = UIImage(data: data) {
                 DispatchQueue.main.async {
                     cardImage = image
