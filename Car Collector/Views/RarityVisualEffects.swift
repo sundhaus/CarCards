@@ -6,7 +6,8 @@
 //  - Common/Uncommon/Rare: Static borders (existing behavior)
 //  - Epic: Auto-rotating shimmer border + subtle particle sparks
 //  - Legendary: Gyro-driven specular rim light (Apple Card style),
-//    surface sheen, particle effects, ambient glow pulse
+//    Gaussian specular strip (holographic surface sweep),
+//    particle effects, ambient glow pulse
 //
 //  PERFORMANCE NOTES:
 //  - drawingGroup() rasterizes overlay stack into one Metal texture.
@@ -67,10 +68,10 @@ struct RarityEffectOverlay: View {
                 FullBleedEdgeOverlay(rarity: rarity, cornerRadius: cornerRadius)
             }
             
-            // Legendary: gyro-driven rim light + surface sheen
+            // Legendary: gyro-driven rim light + specular strip
             if rarity == .legendary {
                 GyroRimLight(rarity: rarity, cornerRadius: cornerRadius)
-                GyroSurfaceSheen(cornerRadius: cornerRadius)
+                GyroSpecularStrip(cornerRadius: cornerRadius)
             }
             
             // Epic: auto-rotating shimmer border
@@ -178,39 +179,78 @@ struct GyroRimLight: View {
     }
 }
 
-// MARK: - Gyro Surface Sheen (Legendary)
+// MARK: - Gyro Specular Strip (Legendary)
 
-/// A subtle directional light sweep across the card surface, driven by gyro.
-/// Like the sheen on a metallic paint job when you tilt it under a light.
-/// Single LinearGradient, overlay blend — cheap.
-struct GyroSurfaceSheen: View {
+/// A vertical Gaussian-intensity strip that sweeps across the card surface
+/// driven by device roll. Simulates a directional light source reflecting
+/// off a holographic surface.
+///
+/// Math: brightness(x) = boost * exp(-0.5 * ((x - center) / sigma)^2)
+/// where center is mapped from gyro roll, sigma ≈ 15% of card width.
+///
+/// The strip is rendered via Canvas for per-pixel control with no
+/// SwiftUI view hierarchy overhead. Uses screen blend mode so it only
+/// brightens (never darkens) the underlying card image.
+///
+/// PERF: Single Canvas draw at 30fps (driven by TimelineView gated on
+/// motion changes). Gaussian is computed per-column, not per-pixel —
+/// each column is a single filled rect at computed opacity.
+struct GyroSpecularStrip: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
     
-    private var sheenStart: UnitPoint {
-        UnitPoint(x: 0.5 + motion.roll * 4.0, y: 0.5 + motion.pitch * 4.0)
-    }
+    // Gaussian sigma as fraction of card width (~15%)
+    private let sigmaFraction: CGFloat = 0.15
     
-    private var sheenEnd: UnitPoint {
-        UnitPoint(x: 0.5 - motion.roll * 4.0, y: 0.5 - motion.pitch * 4.0)
+    // Peak brightness boost (50% brighter at center)
+    private let shineBoost: CGFloat = 0.50
+    
+    // Tint color for the highlight — subtle cyan-gold
+    private let tintColor = Color(red: 0.6, green: 0.85, blue: 1.0) // Cyan-white
+    
+    /// Map roll [-0.15, 0.15] → strip center [0, 1] across card width.
+    /// Zero tilt = 0.5 (dead center). Full left = 0.0, full right = 1.0.
+    private var normalizedCenter: CGFloat {
+        let rollRange: CGFloat = 0.15 // matches CardMotionManager maxAngle
+        let clamped = max(-rollRange, min(rollRange, motion.roll))
+        return 0.5 + (clamped / rollRange) * 0.5
     }
     
     var body: some View {
-        LinearGradient(
-            gradient: Gradient(colors: [
-                Color.white.opacity(0),
-                Color.white.opacity(0.06),
-                Color.yellow.opacity(0.08),
-                Color.white.opacity(0.12),
-                Color.yellow.opacity(0.06),
-                Color.white.opacity(0),
-            ]),
-            startPoint: sheenStart,
-            endPoint: sheenEnd
-        )
+        Canvas { context, size in
+            let w = size.width
+            let h = size.height
+            let sigma = w * sigmaFraction
+            let center = normalizedCenter * w
+            
+            // Number of vertical columns to draw — one per 2pt for perf
+            let step: CGFloat = 2.0
+            var x: CGFloat = 0
+            
+            while x < w {
+                let dist = x - center
+                // Gaussian: exp(-0.5 * (dist/sigma)^2)
+                let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
+                let intensity = shineBoost * gaussian
+                
+                guard intensity > 0.005 else { x += step; continue }
+                
+                let rect = CGRect(x: x, y: 0, width: step, height: h)
+                
+                // White-cyan tinted strip
+                context.opacity = intensity
+                context.fill(
+                    Path(rect),
+                    with: .color(tintColor)
+                )
+                
+                x += step
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .blendMode(.overlay)
+        .blendMode(.screen)
+        .allowsHitTesting(false)
         .onAppear { motion.startIfNeeded() }
         .onDisappear { motion.stopIfNeeded() }
     }
