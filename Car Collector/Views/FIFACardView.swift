@@ -105,6 +105,7 @@ struct FIFACardView: View {
         }
         .frame(width: cardWidth, height: height)
         .clipShape(RoundedRectangle(cornerRadius: height * 0.09))
+        .thumbnailShimmer(for: card.rarity.flatMap { CardRarity(rawValue: $0) })
         .shadow(color: Color.black.opacity(0.3), radius: 6, x: 0, y: 3)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {

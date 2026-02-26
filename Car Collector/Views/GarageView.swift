@@ -1058,6 +1058,7 @@ struct UnifiedCardView: View {
             }
             .frame(width: w, height: h)
             .clipShape(RoundedRectangle(cornerRadius: h * 0.09))
+            .thumbnailShimmer(for: card.rarity)
             .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
         }
         .aspectRatio(16/9, contentMode: .fit)

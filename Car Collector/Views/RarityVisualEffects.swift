@@ -458,4 +458,72 @@ extension View {
     func rarityEffects(for rarity: CardRarity?) -> some View {
         modifier(RarityEffectModifier(rarity: rarity))
     }
+    
+    /// One-shot shimmer sweep for Epic+ thumbnails. Plays once on appear.
+    func thumbnailShimmer(for rarity: CardRarity?) -> some View {
+        modifier(ThumbnailShimmerModifier(rarity: rarity))
+    }
+}
+
+// MARK: - Thumbnail Shimmer (One-Shot)
+
+/// A single diagonal light sweep that plays once when the view appears.
+/// Lightweight enough for scroll views and grids. Color-coded by rarity:
+/// purple for Epic, gold for Legendary.
+struct ThumbnailShimmerModifier: ViewModifier {
+    let rarity: CardRarity?
+    
+    @State private var shimmerOffset: CGFloat = -1.5  // Start off-screen left
+    @State private var hasPlayed = false
+    
+    func body(content: Content) -> some View {
+        if let rarity = rarity, rarity >= .epic {
+            content
+                .overlay {
+                    GeometryReader { geo in
+                        let w = geo.size.width
+                        let shimmerWidth = w * 0.4
+                        
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.clear,
+                                        shimmerColor(for: rarity).opacity(0.15),
+                                        Color.white.opacity(0.25),
+                                        shimmerColor(for: rarity).opacity(0.15),
+                                        Color.clear
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: shimmerWidth)
+                            .offset(x: shimmerOffset * w)
+                            .blendMode(.screen)
+                    }
+                    .clipped()
+                }
+                .onAppear {
+                    guard !hasPlayed else { return }
+                    hasPlayed = true
+                    // Small delay so the card image loads first
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        withAnimation(.easeInOut(duration: 0.8)) {
+                            shimmerOffset = 1.5
+                        }
+                    }
+                }
+        } else {
+            content
+        }
+    }
+    
+    private func shimmerColor(for rarity: CardRarity) -> Color {
+        switch rarity {
+        case .legendary: return Color(red: 1.0, green: 0.85, blue: 0.4)
+        case .epic: return Color(red: 0.7, green: 0.4, blue: 1.0)
+        default: return .white
+        }
+    }
 }
