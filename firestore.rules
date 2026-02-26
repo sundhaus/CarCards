@@ -1,116 +1,146 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
+match /databases/{database}/documents {
+function isAuthenticated() {
+return request.auth != null;
+}
+function isOwner(userId) {
+return isAuthenticated() && request.auth.uid == userId;
+}
+function isAdmin() {
+return isAuthenticated() && request.auth.uid == 'Ydnk69jI6kba4JiUYWEYBX8xDPU2';
+}
+match /users/{userId} {
+  allow read: if isAuthenticated();
+  allow create: if isOwner(userId);
+  allow update: if isOwner(userId) || isAdmin();
+  allow delete: if isOwner(userId);
+}
 
-    // ── Helpers ──────────────────────────────────────────────
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    function isOwner(uid) {
-      return isSignedIn() && request.auth.uid == uid;
-    }
+match /usernames/{username} {
+  allow read: if true;
+  allow write: if isAuthenticated();
+}
 
-    // ── Users ───────────────────────────────────────────────
-    match /users/{userId} {
-      allow read:   if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    }
+match /cards/{cardId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated();
+  allow update: if isAuthenticated() && (
+    resource.data.ownerId == request.auth.uid ||
+    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['h2hWins', 'h2hRaces']) ||
+    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['flatImageURL']) ||
+    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['flatImageURL', 'customFrame'])
+  );
+  allow delete: if isAuthenticated() && (
+    resource.data.ownerId == request.auth.uid || isAdmin()
+  );
+}
 
-    // ── Cards ───────────────────────────────────────────────
-    match /cards/{cardId} {
-      allow read:   if isSignedIn();
-      allow create: if isSignedIn();
-      // Owner can update anything; specific fields open for battle system + flatten migration
-      allow update: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['evolutionPoints', 'lastBattleUsed', 'h2hWins', 'h2hRaces', 'flatImageURL', 'customFrame'])
-      );
-      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-    }
+match /listings/{listingId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated();
+  allow update: if isAuthenticated();
+  allow delete: if isAuthenticated() && (
+    resource.data.sellerId == request.auth.uid || isAdmin()
+  );
+}
 
-    // ── Marketplace Listings ────────────────────────────────
-    match /listings/{listingId} {
-      allow read:   if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
-    }
+match /follows/{followId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated() && 
+                  request.resource.data.followerId == request.auth.uid;
+  allow delete: if isAuthenticated() && 
+                  resource.data.followerId == request.auth.uid;
+  allow update: if false;
+}
 
-    // ── Follows ─────────────────────────────────────────────
-    match /follows/{followId} {
-      allow read:   if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.followerId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.followerId == request.auth.uid;
-    }
-
-    // ── Friend Activities (feed + heat system) ──────────────
-    match /friend_activities/{activityId} {
-      // Anyone signed in can read activities
-      allow read: if isSignedIn();
-
-      // Only the activity owner can create
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-
-      // Heat updates: any signed-in user can update heatedBy + heatCount
-      // Flatten migration: activity owner can update flatImageURL + customFrame
-      allow update: if isSignedIn() && (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['heatedBy', 'heatCount']) ||
-        (resource.data.userId == request.auth.uid &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['flatImageURL', 'customFrame']))
-      );
-
-      // Only the activity owner can delete
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // ── Featured Cards ──────────────────────────────────────
-    match /featured_cards/{cardId} {
-      allow read: if isSignedIn();
-      // Only server / admin should write featured cards
-      // If HotCardsService writes from client, open create:
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-    }
-
-    // ── Vehicle Specs (shared cache) ────────────────────────
-    match /vehicleSpecs/{docId} {
-      allow read:   if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-    }
-
-    // ── Leaderboard ─────────────────────────────────────────
-    match /leaderboard/{entryId} {
-      allow read:   if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isOwner(resource.data.userId);
-    }
-
-    // ── Transfer Offers ─────────────────────────────────────
-    match /transfer_offers/{offerId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.fromUserId == request.auth.uid;
-      allow update: if isSignedIn() && (
-        resource.data.fromUserId == request.auth.uid ||
-        resource.data.toUserId == request.auth.uid
-      );
-      allow delete: if isSignedIn() && resource.data.fromUserId == request.auth.uid;
-    }
-
-    // ── Head to Head ────────────────────────────────────────
-    match /head_to_head/{matchId} {
-      allow read:   if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-    }
-
-    // ── Comments ────────────────────────────────────────────
-    match /comments/{commentId} {
-      allow read:   if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
+match /friend_activities/{activityId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated() && 
+                  request.resource.data.userId == request.auth.uid;
+  allow update: if isAuthenticated() && (
+    resource.data.userId == request.auth.uid ||
+    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['heatedBy', 'heatCount']) ||
+    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])
+  );
+  allow delete: if isAuthenticated() && (
+    resource.data.userId == request.auth.uid || isAdmin()
+  );
+  
+  // Comments subcollection
+  match /comments/{commentId} {
+    allow read: if isAuthenticated();
+    allow create: if isAuthenticated()
+      && request.resource.data.userId == request.auth.uid
+      && request.resource.data.text is string
+      && request.resource.data.text.size() > 0
+      && request.resource.data.text.size() <= 500;
+    allow delete: if isAuthenticated() && (
+      resource.data.userId == request.auth.uid || isAdmin()
+    );
+    allow update: if false;
   }
+}
+
+match /vehicleSpecs/{docId} {
+  allow read: if true;
+  allow create: if isAuthenticated();
+  allow update: if isAuthenticated();
+  allow delete: if false;
+}
+
+match /featured_cards/{cardId} {
+  allow read: if true;
+  allow create: if isAuthenticated();
+  allow update: if isAuthenticated();
+  allow delete: if false;
+}
+
+// ─── Head to Head: Races ─────────────────────────────────
+match /races/{raceId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated()
+                && request.resource.data.challengerId == request.auth.uid;
+  allow update: if isAuthenticated();
+  allow delete: if isAuthenticated() && (
+    resource.data.challengerId == request.auth.uid || isAdmin()
+  );
+}
+
+// ─── Head to Head: Race Votes ────────────────────────────
+match /raceVotes/{voteId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated()
+                && request.resource.data.voterId == request.auth.uid;
+  allow update: if false;
+  allow delete: if isAdmin();
+}
+
+// ─── Head to Head: Vote Streaks ──────────────────────────
+match /voteStreaks/{userId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated();
+  allow update: if isAuthenticated();
+}
+
+// ─── Head to Head: Card Cooldowns ────────────────────────
+match /cardCooldowns/{cardId} {
+  allow read: if isAuthenticated();
+  allow write: if isAuthenticated();
+}
+
+// ─── Head to Head: Duo Invites ───────────────────────────
+match /duoInvites/{inviteId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated()
+                && request.resource.data.inviterId == request.auth.uid;
+  allow update: if isAuthenticated();
+  allow delete: if isAuthenticated();
+}
+
+match /featured_cards/{docId} {
+  allow read: if true;
+  allow write, delete: if request.auth.uid in ['Ydnk69jI6kba4JiUYWEYBX8xDPU2'];
+}
+}
 }
