@@ -173,6 +173,11 @@ struct CardDetailsView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(maxHeight: 240)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .liquidGlassShimmer(
+                        rarity: card.specs?.rarity,
+                        cornerRadius: 12,
+                        borderWidth: 3.0
+                    )
                     .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
             } else {
                 RoundedRectangle(cornerRadius: 12)
