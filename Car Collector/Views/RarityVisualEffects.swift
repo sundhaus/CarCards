@@ -507,7 +507,7 @@ struct ThumbnailShimmerModifier: ViewModifier {
                     // Reset to start position instantly
                     shimmerOffset = -1.5
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        withAnimation(.easeInOut(duration: 0.8)) {
+                        withAnimation(.easeInOut(duration: 1.2)) {
                             shimmerOffset = 1.5
                         }
                     }
