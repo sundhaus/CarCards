@@ -88,57 +88,50 @@ struct CustomizeCardView: View {
                             .aspectRatio(contentMode: .fill)
                             .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                             .clipped()
-                    } else {
-                        // Normal card image
-                        if let image = displayImage ?? card.image {
-                            Image(uiImage: image)
+                        
+                        // Border overlay for bg-composited view
+                        if let borderName = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity).borderImageName {
+                            Image(borderName)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                                 .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
-                                .clipped()
-                        } else {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
+                                .allowsHitTesting(false)
                         }
-                    }
-                    
-                    // Border overlay based on rarity
-                    if let rarityBorder = card.rarity?.borderAssetName {
-                        Image(rarityBorder)
+                        
+                        // Text overlay for bg-composited view
+                        cardNameOverlay
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
+                    } else if let updatedImage = displayImage {
+                        // Show updated image (after bg removal etc) with border
+                        Image(uiImage: updatedImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
-                            .allowsHitTesting(false)
-                    }
-                    
-                    // Car name overlay (preview)
-                    VStack {
-                        HStack {
-                            HStack(spacing: 4) {
-                                let textColor: Color = .white
-                                let shadowColor: Color = .black.opacity(0.8)
-                                
-                                Text(card.titleLine1.uppercased())
-                                    .font(.custom("Futura-Light", fixedSize: 14))
-                                    .foregroundStyle(textColor)
-                                    .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
-                                
-                                if !card.titleLine2.isEmpty {
-                                    Text(card.titleLine2.uppercased())
-                                        .font(.custom("Futura-Bold", fixedSize: 14))
-                                        .foregroundStyle(textColor)
-                                        .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
-                                        .lineLimit(1)
-                                }
-                            }
-                            .padding(.top, 14)
-                            .padding(.leading, 14)
-                            Spacer()
+                            .clipped()
+                        
+                        if let borderName = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity).borderImageName {
+                            Image(borderName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
+                                .allowsHitTesting(false)
                         }
-                        Spacer()
+                        
+                        cardNameOverlay
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
+                    } else if let flatImage = CardRenderer.shared.landscapeCard(for: card, height: DeviceScale.h(180) * 2) {
+                        // Use the flat rendered image (border + text baked in)
+                        Image(uiImage: flatImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
+                            .clipped()
+                    } else {
+                        // Fallback
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                     }
-                    .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 180 * 0.09))
                 .overlay {
@@ -654,6 +647,34 @@ struct CustomizeCardView: View {
                 height: subDrawSize.height
             )
             subject.draw(in: subRect)
+        }
+    }
+    
+    // MARK: - Card Name Overlay (for non-flat preview states)
+    
+    private var cardNameOverlay: some View {
+        let config = CardBorderConfig.forFrame(card.customFrame, rarity: card.rarity)
+        return VStack {
+            HStack {
+                HStack(spacing: 4) {
+                    Text(card.titleLine1.uppercased())
+                        .font(.custom("Futura-Light", fixedSize: 14))
+                        .foregroundStyle(config.textColor)
+                        .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                    
+                    if !card.titleLine2.isEmpty {
+                        Text(card.titleLine2.uppercased())
+                            .font(.custom("Futura-Bold", fixedSize: 14))
+                            .foregroundStyle(config.textColor)
+                            .shadow(color: config.textShadow.color, radius: config.textShadow.radius, x: config.textShadow.x, y: config.textShadow.y)
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.top, 14)
+                .padding(.leading, 14)
+                Spacer()
+            }
+            Spacer()
         }
     }
     
