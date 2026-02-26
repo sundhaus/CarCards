@@ -126,30 +126,12 @@ struct HomeView: View {
                     }
                     
                     // Transfer List
-                    Button(action: { showTransferList = true }) {
-                        ZStack(alignment: .bottomLeading) {
-                            Image("TransferListHero")
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: DeviceScale.h(140))
-                                .clipped()
-                                .brightness(-0.35)
-                            
-                            Text("TRANSFER LIST")
-                                .font(.poppins(16))
-                                .foregroundStyle(.white)
-                                .padding(.bottom, DeviceScale.h(16))
-                                .padding(.leading, 12)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: DeviceScale.h(140))
-                        .aspectRatio(1, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .glassEffect(.regular, in: .rect(cornerRadius: 16))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                    HomeContainer(
+                        title: "TRANSFER LIST",
+                        icon: "doc.text.fill",
+                        gradient: [Color.purple, Color.indigo],
+                        action: { showTransferList = true }
+                    )
                 }
                 .padding(.horizontal)
                 
