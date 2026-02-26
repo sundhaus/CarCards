@@ -8,8 +8,14 @@
 //  - Legendary: Full holographic surface (gyro-driven prismatic),
 //    animated gold shimmer border, particle effects, glow pulse
 //
-//  These are SwiftUI overlays applied ON TOP of the card view,
-//  separate from the baked CardRenderer border (which remains for thumbnails/exports).
+//  PERFORMANCE NOTES:
+//  - All animated overlays use drawingGroup() to rasterize into a single
+//    Metal-backed texture, avoiding per-frame compositing of blend modes.
+//  - Particle system uses TimelineView at ~30fps instead of Timer + @State.
+//  - Motion-driven effects throttle updates to 30fps.
+//  - Blur effects avoided entirely; use shadow or opacity instead.
+//  - Only apply to full-size card views (detail, garage fullscreen, reveal).
+//    NEVER on thumbnails or grid cells.
 //
 
 import SwiftUI
@@ -18,6 +24,7 @@ import SwiftUI
 
 /// Live SwiftUI vignette + accent edge for Epic+ cards shown in interactive views.
 /// Complements the baked `CardRenderer.drawFullBleedOverlay` for static images.
+/// This is purely static — zero per-frame cost.
 struct FullBleedEdgeOverlay: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
@@ -68,7 +75,7 @@ struct RarityEffectOverlay: View {
     
     var body: some View {
         ZStack {
-            // Full-bleed vignette edge (Epic+ only)
+            // Full-bleed vignette edge (Epic+ only) — static, cheap
             if rarity.hasFullBleedArt {
                 FullBleedEdgeOverlay(
                     rarity: rarity,
@@ -107,6 +114,10 @@ struct RarityEffectOverlay: View {
             }
         }
         .frame(width: cardSize.width, height: cardSize.height)
+        // Rasterize the entire overlay stack into one Metal texture.
+        // This is the single biggest perf win — prevents per-frame
+        // compositing of blend modes across multiple layers.
+        .drawingGroup()
         .allowsHitTesting(false)
     }
 }
@@ -114,7 +125,10 @@ struct RarityEffectOverlay: View {
 // MARK: - Animated Shimmer Border
 
 /// A traveling light streak that moves around the card border continuously.
-/// Epic = purple/pink shimmer, Legendary = gold/white shimmer
+/// Epic = purple/pink shimmer, Legendary = gold/white shimmer.
+///
+/// PERF: Single AngularGradient stroke, no blur, no duplicate overlay.
+/// The animation is a simple rotation of the gradient angle — GPU-friendly.
 struct AnimatedShimmerBorder: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
@@ -126,21 +140,17 @@ struct AnimatedShimmerBorder: View {
         case .epic:
             return [
                 Color.purple.opacity(0),
-                Color.purple.opacity(0.4),
-                Color.pink.opacity(0.8),
-                Color.white.opacity(0.9),
-                Color.pink.opacity(0.8),
-                Color.purple.opacity(0.4),
+                Color.pink.opacity(0.6),
+                Color.white.opacity(0.8),
+                Color.pink.opacity(0.6),
                 Color.purple.opacity(0)
             ]
         case .legendary:
             return [
                 Color.yellow.opacity(0),
-                Color.yellow.opacity(0.5),
-                Color.orange.opacity(0.8),
-                Color.white.opacity(1.0),
-                Color.orange.opacity(0.8),
-                Color.yellow.opacity(0.5),
+                Color.orange.opacity(0.7),
+                Color.white.opacity(0.9),
+                Color.orange.opacity(0.7),
                 Color.yellow.opacity(0)
             ]
         default:
@@ -153,54 +163,39 @@ struct AnimatedShimmerBorder: View {
     }
     
     var body: some View {
-        GeometryReader { geo in
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(
-                    AngularGradient(
-                        gradient: Gradient(colors: shimmerColors),
-                        center: .center,
-                        startAngle: .degrees(phase),
-                        endAngle: .degrees(phase + 360)
-                    ),
-                    lineWidth: rarity == .legendary ? 3.5 : 2.5
-                )
-                .blur(radius: 1)
-                .overlay(
-                    // Sharp inner edge for definition
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: shimmerColors),
-                                center: .center,
-                                startAngle: .degrees(phase),
-                                endAngle: .degrees(phase + 360)
-                            ),
-                            lineWidth: 1.5
-                        )
-                )
-        }
-        .onAppear {
-            withAnimation(
-                .linear(duration: animationDuration)
-                .repeatForever(autoreverses: false)
-            ) {
-                phase = 360
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .stroke(
+                AngularGradient(
+                    gradient: Gradient(colors: shimmerColors),
+                    center: .center,
+                    startAngle: .degrees(phase),
+                    endAngle: .degrees(phase + 360)
+                ),
+                lineWidth: rarity == .legendary ? 3.0 : 2.0
+            )
+            .onAppear {
+                withAnimation(
+                    .linear(duration: animationDuration)
+                    .repeatForever(autoreverses: false)
+                ) {
+                    phase = 360
+                }
             }
-        }
     }
 }
 
 // MARK: - Holographic / Prismatic Surface Overlay
 
 /// Gyroscope-driven rainbow refraction effect for Legendary cards.
-/// Uses the existing CardMotionManager to read device attitude,
-/// then maps tilt to a shifting linear gradient that mimics
-/// a holographic foil surface.
+/// Uses CardMotionManager (throttled to 30fps) to shift a single
+/// linear gradient that mimics holographic foil.
+///
+/// PERF: Single LinearGradient + overlay blend. No secondary layer.
+/// Motion-driven redraws throttled by the manager itself.
 struct HolographicOverlay: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
-    @State private var idlePhase: CGFloat = 0
     
     /// Map device pitch/roll to gradient start/end for prismatic shift
     private var gradientStart: UnitPoint {
@@ -216,51 +211,24 @@ struct HolographicOverlay: View {
     }
     
     private let holoColors: [Color] = [
-        Color(red: 1.0, green: 0.3, blue: 0.3).opacity(0.15),   // Red
-        Color(red: 1.0, green: 0.6, blue: 0.1).opacity(0.12),   // Orange
+        Color(red: 1.0, green: 0.3, blue: 0.3).opacity(0.18),   // Red
         Color(red: 1.0, green: 1.0, blue: 0.2).opacity(0.15),   // Yellow
-        Color(red: 0.2, green: 1.0, blue: 0.4).opacity(0.12),   // Green
-        Color(red: 0.2, green: 0.6, blue: 1.0).opacity(0.15),   // Blue
-        Color(red: 0.6, green: 0.2, blue: 1.0).opacity(0.12),   // Violet
-        Color(red: 1.0, green: 0.3, blue: 0.8).opacity(0.15),   // Pink
-        Color(red: 1.0, green: 0.3, blue: 0.3).opacity(0.15),   // Red (wrap)
+        Color(red: 0.2, green: 1.0, blue: 0.4).opacity(0.15),   // Green
+        Color(red: 0.2, green: 0.6, blue: 1.0).opacity(0.18),   // Blue
+        Color(red: 0.6, green: 0.2, blue: 1.0).opacity(0.15),   // Violet
+        Color(red: 1.0, green: 0.3, blue: 0.3).opacity(0.18),   // Red (wrap)
     ]
     
     var body: some View {
-        ZStack {
-            // Primary prismatic gradient
-            LinearGradient(
-                gradient: Gradient(colors: holoColors),
-                startPoint: gradientStart,
-                endPoint: gradientEnd
-            )
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .blendMode(.overlay)
-            
-            // Secondary sparkle layer — subtle diagonal streaks
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.white.opacity(0),
-                    Color.white.opacity(0.08 + motion.roll * 0.15),
-                    Color.white.opacity(0),
-                    Color.white.opacity(0.06 + motion.pitch * 0.12),
-                    Color.white.opacity(0)
-                ]),
-                startPoint: UnitPoint(x: 0.0 + idlePhase * 0.01, y: 0),
-                endPoint: UnitPoint(x: 1.0 + idlePhase * 0.01, y: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .blendMode(.screen)
-        }
+        LinearGradient(
+            gradient: Gradient(colors: holoColors),
+            startPoint: gradientStart,
+            endPoint: gradientEnd
+        )
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .blendMode(.overlay)
         .onAppear {
             motion.startIfNeeded()
-            // Subtle idle animation for when device is stationary
-            withAnimation(
-                .easeInOut(duration: 4)
-                .repeatForever(autoreverses: true)
-            ) {
-                idlePhase = 10
-            }
         }
         .onDisappear {
             motion.stopIfNeeded()
@@ -271,17 +239,21 @@ struct HolographicOverlay: View {
 // MARK: - Particle Spark Overlay
 
 /// Small glowing particles that drift along the card border.
-/// Epic = purple sparks, Legendary = gold sparks (more particles, brighter)
+/// Epic = purple sparks, Legendary = gold sparks.
+///
+/// PERF: Uses TimelineView capped at ~30fps instead of Timer + @State.
+/// Particle state is mutated in-place (no new array allocations).
+/// No per-particle glow (was doubling draw calls). Single Canvas pass.
 struct ParticleSparkOverlay: View {
     let rarity: CardRarity
     let cardSize: CGSize
     let cornerRadius: CGFloat
     
-    @State private var particles: [Particle] = []
-    @State private var timer: Timer?
+    // Use a class to avoid @State copy-on-write overhead on every frame
+    @State private var engine = ParticleEngine()
     
     private var particleCount: Int {
-        rarity == .legendary ? 12 : 6
+        rarity == .legendary ? 8 : 4
     }
     
     private var particleColor: Color {
@@ -292,97 +264,101 @@ struct ParticleSparkOverlay: View {
         rarity == .legendary ? .white : .pink
     }
     
-    struct Particle: Identifiable {
-        let id = UUID()
-        var x: CGFloat
-        var y: CGFloat
-        var opacity: Double
-        var scale: CGFloat
-        var isAccent: Bool
-    }
-    
     var body: some View {
-        Canvas { context, size in
-            for particle in particles {
-                let color = particle.isAccent ? particleAccent : particleColor
-                let rect = CGRect(
-                    x: particle.x - 2 * particle.scale,
-                    y: particle.y - 2 * particle.scale,
-                    width: 4 * particle.scale,
-                    height: 4 * particle.scale
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            Canvas { context, size in
+                engine.tick(
+                    cardSize: cardSize,
+                    maxCount: particleCount,
+                    borderInset: cardSize.height * 0.042
                 )
                 
-                context.opacity = particle.opacity
-                context.fill(
-                    Circle().path(in: rect),
-                    with: .color(color)
-                )
-                
-                // Glow
-                let glowRect = rect.insetBy(dx: -3 * particle.scale, dy: -3 * particle.scale)
-                context.opacity = particle.opacity * 0.3
-                context.fill(
-                    Circle().path(in: glowRect),
-                    with: .color(color)
-                )
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .onAppear {
-            spawnInitialParticles()
-            startParticleTimer()
-        }
-        .onDisappear {
-            timer?.invalidate()
-            timer = nil
-        }
-    }
-    
-    private func spawnInitialParticles() {
-        particles = (0..<particleCount).map { _ in
-            spawnBorderParticle()
-        }
-    }
-    
-    private func startParticleTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
-            // Fade existing
-            particles = particles.compactMap { p in
-                var updated = p
-                updated.opacity -= 0.02
-                // Gentle drift upward
-                updated.y -= 0.3
-                updated.x += CGFloat.random(in: -0.5...0.5)
-                return updated.opacity > 0 ? updated : nil
-            }
-            
-            // Spawn new if under count
-            if particles.count < particleCount {
-                withAnimation(.easeIn(duration: 0.3)) {
-                    particles.append(spawnBorderParticle())
+                for i in 0..<engine.particles.count {
+                    let particle = engine.particles[i]
+                    guard particle.alive else { continue }
+                    
+                    let color = particle.isAccent ? particleAccent : particleColor
+                    let rect = CGRect(
+                        x: particle.x - 2 * particle.scale,
+                        y: particle.y - 2 * particle.scale,
+                        width: 4 * particle.scale,
+                        height: 4 * particle.scale
+                    )
+                    
+                    context.opacity = particle.opacity
+                    context.fill(
+                        Circle().path(in: rect),
+                        with: .color(color)
+                    )
                 }
             }
         }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    }
+}
+
+/// Mutable particle engine — avoids @State array diffing overhead.
+/// Particles are stored in a fixed-size pre-allocated array.
+final class ParticleEngine {
+    struct Particle {
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var opacity: Double = 0
+        var scale: CGFloat = 1
+        var isAccent: Bool = false
+        var alive: Bool = false
     }
     
-    private func spawnBorderParticle() -> Particle {
-        // Spawn along the border perimeter
+    // Pre-allocate max possible particles
+    var particles: [Particle] = Array(repeating: Particle(), count: 12)
+    private var activeCount = 0
+    private var lastTick: Date = .distantPast
+    
+    func tick(cardSize: CGSize, maxCount: Int, borderInset: CGFloat) {
+        let now = Date()
+        let dt = now.timeIntervalSince(lastTick)
+        guard dt > 0.03 else { return } // Cap at ~30fps
+        lastTick = now
+        
+        // Update existing
+        activeCount = 0
+        for i in 0..<particles.count {
+            guard particles[i].alive else { continue }
+            particles[i].opacity -= 0.025
+            particles[i].y -= 0.4
+            particles[i].x += CGFloat.random(in: -0.3...0.3)
+            
+            if particles[i].opacity <= 0 {
+                particles[i].alive = false
+            } else {
+                activeCount += 1
+            }
+        }
+        
+        // Spawn new if under count
+        if activeCount < maxCount {
+            if let slot = particles.firstIndex(where: { !$0.alive }) {
+                particles[slot] = spawnBorderParticle(cardSize: cardSize, borderInset: borderInset)
+            }
+        }
+    }
+    
+    private func spawnBorderParticle(cardSize: CGSize, borderInset: CGFloat) -> Particle {
         let edge = Int.random(in: 0...3)
         let x: CGFloat
         let y: CGFloat
-        let borderInset: CGFloat = cardSize.height * 0.042
         
         switch edge {
-        case 0: // Top
+        case 0:
             x = CGFloat.random(in: borderInset...(cardSize.width - borderInset))
             y = CGFloat.random(in: 0...borderInset)
-        case 1: // Right
+        case 1:
             x = CGFloat.random(in: (cardSize.width - borderInset)...cardSize.width)
             y = CGFloat.random(in: borderInset...(cardSize.height - borderInset))
-        case 2: // Bottom
+        case 2:
             x = CGFloat.random(in: borderInset...(cardSize.width - borderInset))
             y = CGFloat.random(in: (cardSize.height - borderInset)...cardSize.height)
-        default: // Left
+        default:
             x = CGFloat.random(in: 0...borderInset)
             y = CGFloat.random(in: borderInset...(cardSize.height - borderInset))
         }
@@ -390,32 +366,37 @@ struct ParticleSparkOverlay: View {
         return Particle(
             x: x,
             y: y,
-            opacity: Double.random(in: 0.4...0.9),
-            scale: CGFloat.random(in: 0.6...1.4),
-            isAccent: Bool.random()
+            opacity: Double.random(in: 0.5...0.9),
+            scale: CGFloat.random(in: 0.7...1.3),
+            isAccent: Bool.random(),
+            alive: true
         )
     }
 }
 
 // MARK: - Glow Pulse Overlay
 
-/// Soft pulsing glow around the entire card (Legendary only)
+/// Soft pulsing glow around the entire card (Legendary only).
+///
+/// PERF: Uses shadow on a stroked path instead of blur(radius:12) which
+/// was triggering a full offscreen render pass every frame. Shadow is
+/// GPU-composited and much cheaper. The animation only changes opacity.
 struct GlowPulseOverlay: View {
     let color: Color
     let cornerRadius: CGFloat
     
-    @State private var glowIntensity: CGFloat = 0.3
+    @State private var glowIntensity: CGFloat = 0.25
     
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius)
-            .stroke(color.opacity(Double(glowIntensity)), lineWidth: 6)
-            .blur(radius: 12)
+            .stroke(color.opacity(Double(glowIntensity)), lineWidth: 4)
+            .shadow(color: color.opacity(Double(glowIntensity) * 0.6), radius: 10)
             .onAppear {
                 withAnimation(
                     .easeInOut(duration: 2.0)
                     .repeatForever(autoreverses: true)
                 ) {
-                    glowIntensity = 0.7
+                    glowIntensity = 0.6
                 }
             }
     }
