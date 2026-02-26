@@ -372,8 +372,14 @@ struct ContentView: View {
                                 let flatURL = try await CardFlattener.shared.reflatten(updatedCard.asAnyCard)
                                 if let firebaseId = updatedCard.firebaseId {
                                     try? await FriendsService.shared.updateActivityFlatImageURL(cardId: firebaseId, flatImageURL: flatURL)
-                                    // Update customFrame in Firebase too
-                                    try? await CardService.shared.updateCustomFrame(cardId: firebaseId, customFrame: specs.rarity?.borderAssetName ?? "Border_Common")
+                                    // Update customFrame and rarity on the activity feed
+                                    let rarityBorder = specs.rarity?.borderAssetName ?? "Border_Common"
+                                    try? await FriendsService.shared.updateActivityCustomFrame(cardId: firebaseId, customFrame: rarityBorder)
+                                    if let rarity = specs.rarity {
+                                        try? await FriendsService.shared.updateActivityRarity(cardId: firebaseId, rarity: rarity.rawValue)
+                                    }
+                                    // Update customFrame in Firebase card doc too
+                                    try? await CardService.shared.updateCustomFrame(cardId: firebaseId, customFrame: rarityBorder)
                                 }
                                 print("✅ Re-flattened with rarity border: \(flatURL.prefix(60))...")
                             } catch {

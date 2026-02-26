@@ -694,10 +694,11 @@ struct UnifiedCardDetailView: View {
                     do {
                         let flatURL = try await CardFlattener.shared.reflatten(.vehicle(updatedVehicleCard))
                         print("✅ Re-flattened card with rarity border: \(flatURL)")
-                        // Update activity feed with new flat image and rarity border
+                        // Update activity feed with new flat image, rarity border, and rarity
                         if let fid = updatedVehicleCard.firebaseId, let rarity = specs.rarity {
                             try? await FriendsService.shared.updateActivityFlatImageURL(cardId: fid, flatImageURL: flatURL)
                             try? await FriendsService.shared.updateActivityCustomFrame(cardId: fid, customFrame: rarity.borderAssetName)
+                            try? await FriendsService.shared.updateActivityRarity(cardId: fid, rarity: rarity.rawValue)
                         }
                     } catch {
                         print("⚠️ Re-flatten after specs failed: \(error)")

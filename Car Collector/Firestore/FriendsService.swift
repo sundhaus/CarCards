@@ -571,7 +571,14 @@ class FriendsService: ObservableObject {
                         print("Ã°Å¸â€œÅ  Received \(documents.count) activities from last 30 days")
                         
                         Task { @MainActor in
-                            self?.friendActivities = documents.compactMap { FriendActivity(document: $0) }
+                            let activities = documents.compactMap { FriendActivity(document: $0) }
+                            self?.friendActivities = activities
+                            
+                            // Backfill rarity/flatImageURL for activities missing them
+                            // (cards captured before rarity was synced to activity feed)
+                            Task {
+                                await self?.backfillMissingActivityFields(activities)
+                            }
                         }
                     }
             }
@@ -579,6 +586,45 @@ class FriendsService: ObservableObject {
     }
     
     // MARK: - Cleanup Old Activities (30+ days)
+    
+    /// Backfill rarity, flatImageURL, and customFrame on activities that are missing them.
+    /// This handles cards that were captured before the activity feed stored these fields.
+    /// Runs once per feed load, patches Firestore docs so it won't run again for same cards.
+    private func backfillMissingActivityFields(_ activities: [FriendActivity]) async {
+        let needsBackfill = activities.filter { $0.rarity == nil || $0.flatImageURL == nil }
+        guard !needsBackfill.isEmpty else { return }
+        
+        print("🔄 Backfilling \(needsBackfill.count) activities missing rarity/flatImage...")
+        
+        for activity in needsBackfill {
+            guard !activity.cardId.isEmpty else { continue }
+            
+            do {
+                let doc = try await FirebaseManager.shared.db.collection("cards").document(activity.cardId).getDocument()
+                guard let data = doc.data() else { continue }
+                
+                var updates: [String: Any] = [:]
+                
+                if activity.rarity == nil, let rarity = data["rarity"] as? String, !rarity.isEmpty {
+                    updates["rarity"] = rarity
+                }
+                if activity.flatImageURL == nil, let flatURL = data["flatImageURL"] as? String, !flatURL.isEmpty {
+                    updates["flatImageURL"] = flatURL
+                }
+                if activity.customFrame == nil, let frame = data["customFrame"] as? String, !frame.isEmpty {
+                    updates["customFrame"] = frame
+                }
+                
+                guard !updates.isEmpty else { continue }
+                
+                try await activitiesCollection.document(activity.id).updateData(updates)
+                print("  ✅ Backfilled \(activity.cardMake) \(activity.cardModel): \(updates.keys.joined(separator: ", "))")
+            } catch {
+                // Non-critical — card may belong to another user or be deleted
+                continue
+            }
+        }
+    }
     
     private func cleanupOldActivities() async {
         do {
