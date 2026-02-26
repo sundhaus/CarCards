@@ -144,6 +144,9 @@ struct CustomizeCardView: View {
                         )
                     }
                 }
+                // Live rarity effects preview (shimmer border, glow, particles)
+                // These are always rendered live and never baked into the flat image
+                .rarityEffects(for: card.rarity)
                 .contentShape(Rectangle())
                 .simultaneousGesture(
                     DragGesture()
@@ -650,6 +653,33 @@ struct CustomizeCardView: View {
         }
     }
     
+    // MARK: - Load Updated Card for Reflattening
+    
+    /// Reload the card from storage after save so the flattener picks up
+    /// the latest image, frame, and holo changes.
+    private func loadUpdatedAnyCard() -> AnyCard {
+        switch card {
+        case .vehicle(let vc):
+            let savedCards = CardStorage.loadCards()
+            if let updated = savedCards.first(where: { $0.id == vc.id }) {
+                return .vehicle(updated)
+            }
+            return card
+        case .driver(let dc):
+            let driverCards = CardStorage.loadDriverCards()
+            if let updated = driverCards.first(where: { $0.id == dc.id }) {
+                return .driver(updated)
+            }
+            return card
+        case .location(let lc):
+            let locationCards = CardStorage.loadLocationCards()
+            if let updated = locationCards.first(where: { $0.id == lc.id }) {
+                return .location(updated)
+            }
+            return card
+        }
+    }
+    
     // MARK: - Card Name Overlay (for non-flat preview states)
     
     private var cardNameOverlay: some View {
@@ -718,6 +748,9 @@ struct CustomizeCardView: View {
                 CardStorage.saveCards(savedCards)
                 CardRenderer.shared.clearCache(for: vehicleCard.id)
                 print("💾 Saved frame: \(customFrameValue) for vehicle: \(vehicleCard.make) \(vehicleCard.model)")
+                
+                // Notify other views to reload with updated card
+                NotificationCenter.default.post(name: NSNotification.Name("CardSaved"), object: nil)
             }
             
         case .driver(let driverCard):
@@ -726,6 +759,7 @@ struct CustomizeCardView: View {
                 driverCards[index].customFrame = customFrameValue
                 driverCards[index].holoEffect = selectedHoloEffect
                 CardStorage.saveDriverCards(driverCards)
+                CardRenderer.shared.clearCache()
                 print("💾 Saved frame: \(customFrameValue) for driver: \(driverCard.displayName)")
             }
             
@@ -735,6 +769,7 @@ struct CustomizeCardView: View {
                 locationCards[index].customFrame = customFrameValue
                 locationCards[index].holoEffect = selectedHoloEffect
                 CardStorage.saveLocationCards(locationCards)
+                CardRenderer.shared.clearCache()
                 print("💾 Saved frame: \(customFrameValue) for location: \(locationCard.locationName)")
             }
         }
@@ -764,6 +799,23 @@ struct CustomizeCardView: View {
                         )
                         print("✅ Synced updated card image to Firebase")
                     }
+                    
+                    // Re-flatten the card with updated border/image and upload
+                    // This bakes static layers (photo + border + text) into the flat image.
+                    // Dynamic layers (glow, shimmer, particles, holo, gyro effects)
+                    // are applied as live SwiftUI overlays at display time.
+                    let updatedAnyCard = loadUpdatedAnyCard()
+                    let flatURL = try await CardFlattener.shared.reflatten(updatedAnyCard)
+                    print("✅ Re-flattened card after customization: \(flatURL.prefix(60))...")
+                    
+                    // Update activity feed with new flat image
+                    try? await FriendsService.shared.updateActivityFlatImageURL(
+                        cardId: firebaseId, flatImageURL: flatURL
+                    )
+                    // Update holo effect in activity feed
+                    try? await FriendsService.shared.updateActivityField(
+                        cardId: firebaseId, field: "holoEffect", value: selectedHoloEffect as Any
+                    )
                 } catch {
                     print("❌ Failed to sync customization to Firebase: \(error)")
                 }
