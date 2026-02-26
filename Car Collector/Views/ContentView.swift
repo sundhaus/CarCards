@@ -377,6 +377,8 @@ struct ContentView: View {
                                     try? await FriendsService.shared.updateActivityCustomFrame(cardId: firebaseId, customFrame: rarityBorder)
                                     if let rarity = specs.rarity {
                                         try? await FriendsService.shared.updateActivityRarity(cardId: firebaseId, rarity: rarity.rawValue)
+                                        // Write rarity to Firestore card doc so CloudCard reads it
+                                        try? await CardService.shared.updateField(cardId: firebaseId, field: "rarity", value: rarity.rawValue)
                                     }
                                     // Update customFrame in Firebase card doc too
                                     try? await CardService.shared.updateCustomFrame(cardId: firebaseId, customFrame: rarityBorder)

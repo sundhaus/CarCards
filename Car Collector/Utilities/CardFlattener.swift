@@ -105,7 +105,7 @@ class CardFlattener {
     // MARK: - Migration
     
     func migrateExistingCards(vehicles: [SavedCard], drivers: [DriverCard], locations: [LocationCard]) async {
-        print("🔄 Starting flatten migration (v9 - full-bleed Epic+ borders)...")
+        print("🔄 Starting flatten migration (v11 - sync rarity to Firestore card docs)...")
         
         // Clear renderer cache so old border renders don't get re-baked
         CardRenderer.shared.clearCache()
@@ -123,6 +123,8 @@ class CardFlattener {
                 }
                 if let rarity = card.specs?.rarity {
                     try? await FriendsService.shared.updateActivityRarity(cardId: fid, rarity: rarity.rawValue)
+                    // Write rarity to Firestore card doc so CloudCard reads it everywhere
+                    try? await CardService.shared.updateField(cardId: fid, field: "rarity", value: rarity.rawValue)
                 }
                 count += 1
             } catch { print("⚠️ Flatten vehicle failed: \(error)") }

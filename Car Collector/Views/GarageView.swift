@@ -699,6 +699,8 @@ struct UnifiedCardDetailView: View {
                             try? await FriendsService.shared.updateActivityFlatImageURL(cardId: fid, flatImageURL: flatURL)
                             try? await FriendsService.shared.updateActivityCustomFrame(cardId: fid, customFrame: rarity.borderAssetName)
                             try? await FriendsService.shared.updateActivityRarity(cardId: fid, rarity: rarity.rawValue)
+                            // Write rarity to Firestore card doc so CloudCard reads it
+                            try? await CardService.shared.updateField(cardId: fid, field: "rarity", value: rarity.rawValue)
                         }
                     } catch {
                         print("⚠️ Re-flatten after specs failed: \(error)")
