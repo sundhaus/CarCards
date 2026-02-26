@@ -54,6 +54,7 @@ struct FriendActivity: Identifiable {
     var customFrame: String?
     var category: String?  // NEW: For Explore page categorization
     var cardType: String   // "vehicle", "driver", "location"
+    var rarity: String?    // Card rarity tier for visual effects
     
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -74,10 +75,11 @@ struct FriendActivity: Identifiable {
         self.customFrame = data["customFrame"] as? String
         self.category = data["category"] as? String
         self.cardType = data["cardType"] as? String ?? "vehicle"
+        self.rarity = data["rarity"] as? String
     }
     
     /// Manual init for loading from featured_cards collection
-    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, flatImageURL: String? = nil, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date, cardType: String = "vehicle") {
+    init(id: String, userId: String, username: String, cardId: String, cardMake: String, cardModel: String, cardYear: String, imageURL: String, flatImageURL: String? = nil, heatCount: Int, heatedBy: [String], customFrame: String?, timestamp: Date, cardType: String = "vehicle", rarity: String? = nil) {
         self.id = id
         self.userId = userId
         self.username = username
@@ -94,6 +96,7 @@ struct FriendActivity: Identifiable {
         self.customFrame = customFrame
         self.category = nil
         self.cardType = cardType
+        self.rarity = rarity
     }
     
     var dictionary: [String: Any] {
@@ -122,6 +125,10 @@ struct FriendActivity: Identifiable {
         
         if let category = category {
             dict["category"] = category
+        }
+        
+        if let rarity = rarity {
+            dict["rarity"] = rarity
         }
         
         return dict
@@ -600,7 +607,7 @@ class FriendsService: ObservableObject {
     
     // MARK: - Post Activity (when user adds a card)
     
-    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, flatImageURL: String? = nil, customFrame: String? = nil, category: VehicleCategory? = nil, cardType: String = "vehicle") async throws {
+    func postCardActivity(cardId: String, make: String, model: String, year: String, imageURL: String, flatImageURL: String? = nil, customFrame: String? = nil, category: VehicleCategory? = nil, cardType: String = "vehicle", rarity: CardRarity? = nil) async throws {
         guard let uid = FirebaseManager.shared.currentUserId else {
             throw FirebaseError.notAuthenticated
         }
@@ -676,6 +683,10 @@ class FriendsService: ObservableObject {
             print("   ⚠️  No category - will not appear in Explore until specs are added")
         }
         
+        if let rarity = rarity {
+            data["rarity"] = rarity.rawValue
+        }
+        
         try await activitiesCollection.document(activityId).setData(data)
         
         print("✅ Posted card activity: \(make) \(model) by \(profile.username)")
@@ -745,6 +756,19 @@ class FriendsService: ObservableObject {
         }
         
         print("✅ Updated flatImageURL for \(snapshot.documents.count) activities")
+    }
+    
+    /// Update rarity for all activities with a specific cardId
+    func updateActivityRarity(cardId: String, rarity: String) async throws {
+        let snapshot = try await activitiesCollection
+            .whereField("cardId", isEqualTo: cardId)
+            .getDocuments()
+        
+        for document in snapshot.documents {
+            try await activitiesCollection.document(document.documentID).updateData([
+                "rarity": rarity
+            ])
+        }
     }
     
     // MARK: - Update Activity Category

@@ -235,8 +235,8 @@ struct ContentView: View {
                     }
                 }
                 
-                // One-time flatten migration for existing cards (v9: full-bleed Epic+ borders)
-                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v9") {
+                // One-time flatten migration for existing cards (v10: add rarity to activities)
+                if !UserDefaults.standard.bool(forKey: "hasCompletedFlattenMigration_v10") {
                     let vehicles = savedCards
                     let drivers = driverCards
                     let locations = locationCards
@@ -246,7 +246,7 @@ struct ContentView: View {
                             drivers: drivers,
                             locations: locations
                         )
-                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v9")
+                        UserDefaults.standard.set(true, forKey: "hasCompletedFlattenMigration_v10")
                     }
                 }
             }

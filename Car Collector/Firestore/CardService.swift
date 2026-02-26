@@ -139,7 +139,8 @@ class CardService: ObservableObject {
                 model: model,
                 year: year,
                 imageURL: imageURL,
-                customFrame: effectiveFrame  // Pass the frame with rarity fallback!
+                customFrame: effectiveFrame,
+                rarity: rarity
             )
             print("✅ Posted activity to friends feed with cardId: \(cardId)")
         } catch {

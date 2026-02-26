@@ -46,7 +46,7 @@ struct FullScreenFriendCardView: View {
                     Spacer()
                     cardContent(screenSize: geometry.size)
                         .rotationEffect(.degrees(90))
-                        .cardTilt(for: fetchedSpecs?.rarity)
+                        .cardTilt(for: activity.rarity.flatMap { CardRarity(rawValue: $0) } ?? fetchedSpecs?.rarity)
                     Spacer()
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
@@ -133,13 +133,14 @@ struct FullScreenFriendCardView: View {
     private func cardContent(screenSize: CGSize) -> some View {
         let cardWidth: CGFloat = screenSize.height * 0.8
         let cardHeight: CGFloat = cardWidth / 16 * 9
-        let displayRarity = fetchedSpecs?.rarity ?? .common
+        let displayRarity: CardRarity? = fetchedSpecs?.rarity ?? activity.rarity.flatMap { CardRarity(rawValue: $0) }
         
         return ZStack {
             // Front
             if !isFlipped {
                 FIFACardView(card: activity, height: cardHeight)
                     .frame(width: cardWidth, height: cardHeight)
+                    .rarityEffects(for: displayRarity)
                     .allowsHitTesting(false)
                     .rotation3DEffect(
                         .degrees(flipDegrees),
