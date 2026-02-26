@@ -759,11 +759,15 @@ struct ThumbnailRarityBorderOverlay: View {
 enum HoloEffectType: String, CaseIterable {
     case geometric = "geometric"
     case waves = "waves"
+    case stripes = "stripes"
+    case stars = "stars"
     
     var assetName: String {
         switch self {
         case .geometric: return "HoloPattern"
         case .waves:     return "HoloPatternWaves"
+        case .stripes:   return "HoloPatternStripes"
+        case .stars:     return "HoloPatternStars"
         }
     }
     
@@ -771,6 +775,8 @@ enum HoloEffectType: String, CaseIterable {
         switch self {
         case .geometric: return "Geometric"
         case .waves:     return "Waves"
+        case .stripes:   return "Stripes"
+        case .stars:     return "Stars"
         }
     }
     
@@ -778,6 +784,8 @@ enum HoloEffectType: String, CaseIterable {
         switch self {
         case .geometric: return "square.grid.3x3.fill"
         case .waves:     return "water.waves"
+        case .stripes:   return "line.diagonal"
+        case .stars:     return "sparkle"
         }
     }
 }
