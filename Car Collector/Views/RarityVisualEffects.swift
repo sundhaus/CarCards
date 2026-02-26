@@ -181,71 +181,98 @@ struct GyroRimLight: View {
 
 // MARK: - Gyro Specular Strip (Legendary)
 
-/// A vertical Gaussian-intensity strip that sweeps across the card surface
-/// driven by device roll. Simulates a directional light source reflecting
-/// off a holographic surface.
+/// A Gaussian-intensity light band that sweeps across the card surface
+/// driven by device roll AND pitch. The band runs perpendicular to the
+/// tilt direction — tilt left and the light slides left, tilt forward
+/// and it slides up, tilt diagonally and it sweeps at an angle.
 ///
-/// Math: brightness(x) = boost * exp(-0.5 * ((x - center) / sigma)^2)
-/// where center is mapped from gyro roll, sigma ≈ 15% of card width.
+/// Math: For each pixel, project its position onto the tilt direction
+/// vector, compute distance from the band center, apply Gaussian falloff.
+/// brightness(d) = boost * exp(-0.5 * (d / sigma)^2)
 ///
-/// The strip is rendered via Canvas for per-pixel control with no
-/// SwiftUI view hierarchy overhead. Uses screen blend mode so it only
-/// brightens (never darkens) the underlying card image.
-///
-/// PERF: Single Canvas draw at 30fps (driven by TimelineView gated on
-/// motion changes). Gaussian is computed per-column, not per-pixel —
-/// each column is a single filled rect at computed opacity.
+/// Rendered via Canvas at 2pt resolution with screen blend.
 struct GyroSpecularStrip: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
     
-    // Gaussian sigma as fraction of card width (~15%)
+    // Gaussian sigma as fraction of card diagonal (~15%)
     private let sigmaFraction: CGFloat = 0.15
     
     // Peak brightness boost (50% brighter at center)
     private let shineBoost: CGFloat = 0.50
     
-    // Tint color for the highlight — subtle cyan-gold
-    private let tintColor = Color(red: 0.6, green: 0.85, blue: 1.0) // Cyan-white
+    // Tint color — subtle cyan-white
+    private let tintColor = Color(red: 0.6, green: 0.85, blue: 1.0)
     
-    /// Map roll [-0.15, 0.15] → strip center [0, 1] across card width.
-    /// Zero tilt = 0.5 (dead center). Full left = 0.0, full right = 1.0.
-    private var normalizedCenter: CGFloat {
-        let rollRange: CGFloat = 0.15 // matches CardMotionManager maxAngle
+    /// Normalized band center along the tilt axis [0, 1].
+    /// Combines roll (horizontal) and pitch (vertical).
+    /// Zero tilt on both axes = 0.5 (dead center).
+    private var normalizedCenterX: CGFloat {
+        let rollRange: CGFloat = 0.15
         let clamped = max(-rollRange, min(rollRange, motion.roll))
         return 0.5 + (clamped / rollRange) * 0.5
+    }
+    
+    private var normalizedCenterY: CGFloat {
+        let pitchRange: CGFloat = 0.15
+        let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
+        return 0.5 + (clamped / pitchRange) * 0.5
     }
     
     var body: some View {
         Canvas { context, size in
             let w = size.width
             let h = size.height
-            let sigma = w * sigmaFraction
-            let center = normalizedCenter * w
+            let diagonal = sqrt(w * w + h * h)
+            let sigma = diagonal * sigmaFraction
             
-            // Number of vertical columns to draw — one per 2pt for perf
+            // Band center in card coordinates
+            let cx = normalizedCenterX * w
+            let cy = normalizedCenterY * h
+            
+            // Tilt direction vector (roll, pitch) — this is the axis
+            // the band slides ALONG. The band itself runs perpendicular.
+            let rawDx = motion.roll
+            let rawDy = motion.pitch
+            let mag = sqrt(rawDx * rawDx + rawDy * rawDy)
+            
+            // When phone is flat (no tilt), default to horizontal band sliding vertically
+            let dx: CGFloat
+            let dy: CGFloat
+            if mag < 0.001 {
+                dx = 1.0
+                dy = 0.0
+            } else {
+                dx = rawDx / mag
+                dy = rawDy / mag
+            }
+            
+            // Render in 2pt grid cells
             let step: CGFloat = 2.0
-            var x: CGFloat = 0
+            var py: CGFloat = 0
             
-            while x < w {
-                let dist = x - center
-                // Gaussian: exp(-0.5 * (dist/sigma)^2)
-                let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
-                let intensity = shineBoost * gaussian
-                
-                guard intensity > 0.005 else { x += step; continue }
-                
-                let rect = CGRect(x: x, y: 0, width: step, height: h)
-                
-                // White-cyan tinted strip
-                context.opacity = intensity
-                context.fill(
-                    Path(rect),
-                    with: .color(tintColor)
-                )
-                
-                x += step
+            while py < h {
+                var px: CGFloat = 0
+                while px < w {
+                    // Project pixel offset from center onto tilt direction
+                    let offsetX = px - cx
+                    let offsetY = py - cy
+                    let projDist = offsetX * dx + offsetY * dy
+                    
+                    // Gaussian intensity based on projected distance
+                    let gaussian = exp(-0.5 * (projDist * projDist) / (sigma * sigma))
+                    let intensity = shineBoost * gaussian
+                    
+                    if intensity > 0.008 {
+                        let rect = CGRect(x: px, y: py, width: step, height: step)
+                        context.opacity = intensity
+                        context.fill(Path(rect), with: .color(tintColor))
+                    }
+                    
+                    px += step
+                }
+                py += step
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
