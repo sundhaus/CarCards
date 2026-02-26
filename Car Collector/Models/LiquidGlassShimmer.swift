@@ -107,7 +107,7 @@ struct LiquidGlassShimmer: View {
                         lineWidth: borderWidth * 1.5
                     )
                     .blur(radius: 4)
-                    .opacity(0.5 + 0.3 * sin(phase * .pi * 2))
+                    .opacity(0.5 + 0.3 * sin(Double(phase) * Double.pi * 2))
                 
                 // Layer 4: Inner light refraction edge
                 RoundedRectangle(cornerRadius: cornerRadius - 1)
@@ -115,7 +115,7 @@ struct LiquidGlassShimmer: View {
                         LinearGradient(
                             colors: [
                                 .white.opacity(0.0),
-                                .white.opacity(0.3 * (0.5 + 0.5 * sin(phase * .pi * 2 + 1.5))),
+                                .white.opacity(0.3 * (0.5 + 0.5 * sin(Double(phase) * Double.pi * 2 + 1.5))),
                                 .white.opacity(0.0),
                             ],
                             startPoint: UnitPoint(
