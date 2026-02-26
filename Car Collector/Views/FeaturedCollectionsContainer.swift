@@ -26,7 +26,22 @@ struct FeaturedCollectionsContainer: View {
             carouselSection
         }
         .contentShape(Rectangle())
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(red: 20/255, green: 20/255, blue: 24/255))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+        .overlay(alignment: .top) {
+            // Red accent line at top
+            Capsule()
+                .fill(Color.appAccent.opacity(0.5))
+                .frame(width: 80, height: 2)
+                .padding(.top, 1)
+        }
     }
     
     private var headerSection: some View {

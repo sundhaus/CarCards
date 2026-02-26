@@ -127,6 +127,7 @@ struct ContentView: View {
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .tint(.appAccent)
         .environment(\.horizontalSizeClass, .compact)
         .overlay {
             // Level Header

@@ -48,7 +48,7 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: DeviceScale.h(140))
                         .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.06), lineWidth: 1))
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -74,7 +74,7 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: DeviceScale.h(140))
                         .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.06), lineWidth: 1))
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -108,7 +108,7 @@ struct HomeView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: DeviceScale.h(140))
                             .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.06), lineWidth: 1))
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -129,7 +129,7 @@ struct HomeView: View {
                     HomeContainer(
                         title: "TRANSFER LIST",
                         icon: "doc.text.fill",
-                        gradient: [Color.purple, Color.indigo],
+                        gradient: [Color.appAccent, Color(red: 139/255, green: 16/255, blue: 32/255)],
                         action: { showTransferList = true }
                     )
                 }
@@ -138,13 +138,51 @@ struct HomeView: View {
                 Spacer()
             }
             .background {
-                Image("HomeBackground")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .blur(radius: 3)
+                ZStack {
+                    // Deep dark base
+                    Color(red: 10/255, green: 10/255, blue: 12/255)
+                        .ignoresSafeArea()
+                    
+                    // Subtle red ambient glow — top right
+                    RadialGradient(
+                        colors: [Color.appAccent.opacity(0.12), .clear],
+                        center: .topTrailing,
+                        startRadius: 0,
+                        endRadius: 350
+                    )
                     .ignoresSafeArea()
-                    .overlay(Color.black.opacity(0.45))
+                    
+                    // Subtle red ambient glow — bottom left
+                    RadialGradient(
+                        colors: [Color.appAccent.opacity(0.06), .clear],
+                        center: .bottomLeading,
+                        startRadius: 0,
+                        endRadius: 300
+                    )
                     .ignoresSafeArea()
+                    
+                    // Racing stripe — left edge
+                    HStack {
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        .clear,
+                                        Color.appAccent,
+                                        Color.appAccent,
+                                        .clear
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 2.5)
+                            .opacity(0.5)
+                            .padding(.leading, 8)
+                        Spacer()
+                    }
+                    .ignoresSafeArea()
+                }
             }
             .navigationDestination(isPresented: $showTransferList) {
                 TransferListView(isLandscape: isLandscape)
