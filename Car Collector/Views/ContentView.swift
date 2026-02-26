@@ -759,11 +759,6 @@ struct CardDetailView: View {
             .frame(width: cardWidth, height: cardHeight)
         }
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .liquidGlassShimmer(
-            rarity: (updatedCard ?? card).specs?.rarity,
-            cornerRadius: cardHeight * 0.09,
-            borderWidth: 4.0
-        )
         .shadow(color: .black.opacity(0.5), radius: 20)
         .cardTilt()
     }
@@ -863,11 +858,6 @@ struct CardDetailView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .liquidGlassShimmer(
-            rarity: card.specs?.rarity,
-            cornerRadius: cardHeight * 0.09,
-            borderWidth: 4.0
-        )
         .shadow(color: .black.opacity(0.5), radius: 20)
         .cardTilt()
     }

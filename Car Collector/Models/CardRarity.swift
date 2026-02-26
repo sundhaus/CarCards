@@ -120,17 +120,4 @@ enum CardRarity: String, Codable, CaseIterable, Comparable {
     var canUpgrade: Bool {
         return self != .legendary
     }
-    
-    /// Parse rarity from a border asset name like "Border_Legendary"
-    static func fromBorderName(_ name: String?) -> CardRarity? {
-        guard let name = name else { return nil }
-        switch name {
-        case "Border_Common":    return .common
-        case "Border_Uncommon":  return .uncommon
-        case "Border_Rare":      return .rare
-        case "Border_Epic":      return .epic
-        case "Border_Legendary": return .legendary
-        default:                 return nil
-        }
-    }
 }

@@ -819,7 +819,6 @@ struct UnifiedCardDetailView: View {
                         year: vehicleCard.year,
                         specs: specs,
                         customFrame: vehicleCard.customFrame,
-                        rarity: vehicleCard.specs?.rarity,
                         cardHeight: cardHeight
                     )
                     .frame(width: cardWidth, height: cardHeight)
@@ -870,11 +869,6 @@ struct AnyCardDetailsFrontView: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: geometry.size.width, height: cardHeight)
                     .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-                    .liquidGlassShimmer(
-                        rarity: card.rarity,
-                        cornerRadius: cardHeight * 0.09,
-                        borderWidth: 4.0
-                    )
             } else {
                 RoundedRectangle(cornerRadius: cardHeight * 0.09)
                     .fill(
@@ -900,7 +894,6 @@ struct CardBackView: View {
     let year: String
     let specs: VehicleSpecs
     var customFrame: String? = nil
-    var rarity: CardRarity? = nil
     var cardHeight: CGFloat = 200
     
     // Card is 16:9 landscape
@@ -977,11 +970,6 @@ struct CardBackView: View {
         }
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .liquidGlassShimmer(
-            rarity: rarity,
-            cornerRadius: cardHeight * 0.09,
-            borderWidth: 4.0
-        )
         .shadow(radius: 10)
         .rotation3DEffect(
             .degrees(180),
@@ -1045,11 +1033,6 @@ struct UnifiedCardView: View {
             }
             .frame(width: w, height: h)
             .clipShape(RoundedRectangle(cornerRadius: h * 0.09))
-            .liquidGlassShimmer(
-                rarity: card.rarity,
-                cornerRadius: h * 0.09,
-                borderWidth: isLargeSize ? 3.0 : 2.0
-            )
             .shadow(color: Color.black.opacity(0.3), radius: isLargeSize ? 6 : 4, x: 0, y: 3)
         }
         .aspectRatio(16/9, contentMode: .fit)
