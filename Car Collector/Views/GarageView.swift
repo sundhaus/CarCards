@@ -319,7 +319,8 @@ struct GarageView: View {
         showCardOptions = false
         if case .vehicle(let vc) = card, let image = vc.image {
             Task {
-                let result = await VehicleIdentificationService.shared.identifyVehicle(from: image)
+                let vehicleService = VehicleIdentificationService()
+                let result = await vehicleService.identifyVehicle(from: image)
                 if case .success(let id) = result {
                     print("🔄 Re-identified: \(id.make) \(id.model) \(id.year)")
                 }
