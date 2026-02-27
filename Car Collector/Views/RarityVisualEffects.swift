@@ -661,7 +661,7 @@ struct HolographicPatternOverlay: View {
                 // Gaussian intensity based on distance from specular highlight
                 let dist = bandCenterX - center
                 let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
-                let intensity = gaussian * 0.35  // Peak opacity for rainbow
+                let intensity = gaussian * 0.65  // Peak opacity for rainbow
                 
                 guard intensity > 0.01 else { continue }
                 
