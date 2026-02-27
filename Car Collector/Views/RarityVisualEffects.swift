@@ -616,7 +616,7 @@ struct HolographicPatternOverlay: View {
         
         HStack(spacing: 0) {
             ForEach(0..<3, id: \.self) { _ in
-                Image("PrismaticRainbow")
+                Image("PrismaticGradient")
                     .resizable()
                     .frame(width: singleCycleWidth, height: h)
             }
