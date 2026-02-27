@@ -111,13 +111,13 @@ class HotCardsService: ObservableObject {
         }
     }
     
-    /// Pause the countdown timer when carousel is not visible
+    /// Pause the countdown timer when carousel is not visible or app is backgrounded
     func pauseTimer() {
         countdownTimer?.invalidate()
         countdownTimer = nil
     }
     
-    /// Resume the countdown timer when carousel becomes visible
+    /// Resume the countdown timer when carousel becomes visible or app foregrounds
     func resumeTimer() {
         if countdownTimer == nil && timerStarted {
             startCountdownTimer()
@@ -136,19 +136,6 @@ class HotCardsService: ObservableObject {
         listener?.remove()
         listener = nil
         print("🔥 HotCardsService reset — all in-memory data cleared")
-    }
-    
-    /// Pause the countdown timer (call when app goes to background)
-    func pauseTimer() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
-    }
-    
-    /// Resume the countdown timer (call when app returns to foreground)
-    func resumeTimer() {
-        if timerStarted {
-            startCountdownTimer()
-        }
     }
     
     // MARK: - Fetch Carousel (top 10 by heat)

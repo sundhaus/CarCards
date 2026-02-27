@@ -44,14 +44,15 @@ final class ServiceLifecycleManager: ObservableObject {
         guard !isListening else { return }
         isListening = true
         
-        // These were previously fire-and-forget — now tracked
-        // UserService and CardService are essential — always on
+        // Essential listeners — always on while authenticated
         UserService.shared.loadProfile(uid: uid)
         CardService.shared.listenToMyCards(uid: uid)
         HeadToHeadService.shared.startDuoInviteListener()
         
-        // MarketplaceService listeners start lazily when marketplace tab is visited
-        // (listenToMyListings/listenToMyBids called by MarketplaceLandingView.onAppear)
+        // Marketplace personal listeners (my listings & bids) start at login
+        // Active listings listener starts lazily when marketplace tab is visited
+        MarketplaceService.shared.listenToMyListings(uid: uid)
+        MarketplaceService.shared.listenToMyBids(uid: uid)
         
         print("🟢 ServiceLifecycleManager: All listeners started")
     }
@@ -65,8 +66,8 @@ final class ServiceLifecycleManager: ObservableObject {
         UserService.shared.stopListening()
         FriendsService.shared.stopAllListeners()
         HeadToHeadService.shared.stopListening()
-        HeadToHeadService.shared.stopDuoInviteListener()
         MarketplaceService.shared.stopAllListeners()
+        CommentService.shared.removeAllListeners()
         HotCardsService.shared.pauseTimer()
         
         // Stop gyroscope if running
@@ -84,14 +85,14 @@ final class ServiceLifecycleManager: ObservableObject {
         UserService.shared.loadProfile(uid: uid)
         CardService.shared.listenToMyCards(uid: uid)
         HeadToHeadService.shared.startDuoInviteListener()
+        MarketplaceService.shared.listenToMyListings(uid: uid)
+        MarketplaceService.shared.listenToMyBids(uid: uid)
         HotCardsService.shared.resumeTimer()
         
-        // MarketplaceService restarts lazily when marketplace tab is visited
-        
-        // FriendsService listeners will restart when user visits Friends tab
+        // Active marketplace listings and FriendsService restart lazily from their tabs
         
         isListening = true
-        print("▶️ ServiceLifecycleManager: All listeners resumed (app foregrounded)")
+        print("▶️ ServiceLifecycleManager: Essential listeners resumed (app foregrounded)")
     }
     
     // MARK: - Stop All (logout)
@@ -101,8 +102,8 @@ final class ServiceLifecycleManager: ObservableObject {
         UserService.shared.stopListening()
         FriendsService.shared.stopAllListeners()
         HeadToHeadService.shared.stopListening()
-        HeadToHeadService.shared.stopDuoInviteListener()
         MarketplaceService.shared.stopAllListeners()
+        CommentService.shared.removeAllListeners()
         HotCardsService.shared.pauseTimer()
         HotCardsService.shared.reset()
         
