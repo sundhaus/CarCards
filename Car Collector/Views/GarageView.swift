@@ -812,7 +812,7 @@ struct UnifiedCardDetailView: View {
                                 .frame(maxWidth: geometry.size.width * 0.85)
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .shadow(radius: 10)
-                                .cardTilt(for: card.rarity)
+
                         } else {
                             // Vehicle, Driver+Vehicle, Location: landscape card rotated to portrait
                             ZStack {
@@ -820,7 +820,7 @@ struct UnifiedCardDetailView: View {
                                     .rotationEffect(.degrees(90))
                             }
                             .shadow(color: rarityGlowColor(for: card.rarity).opacity(0.6), radius: 20)
-                            .cardTilt(for: card.rarity)
+
                         }
                     }
                     Spacer()

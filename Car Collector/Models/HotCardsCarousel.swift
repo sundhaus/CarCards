@@ -58,7 +58,7 @@ struct HotCardsCarousel: View {
                                     )
                                     .blur(radius: getBlurRadius(for: cardGeometry, screenWidth: geometry.size.width))
                                     .scaleEffect(getScale(for: cardGeometry, screenWidth: geometry.size.width))
-                                    .cardTilt(intensity: 0.8, perspective: 0.6)
+
                             }
                             .frame(width: DeviceScale.w(320), height: DeviceScale.h(180))
                             .id(item.id)

@@ -64,7 +64,7 @@ struct FullScreenFriendCardView: View {
                             .rotationEffect(.degrees(90))
                     }
                     .shadow(color: rarityGlowColor(for: displayRarity).opacity(0.6), radius: 20)
-                    .cardTilt(for: displayRarity)
+
                     Spacer()
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
