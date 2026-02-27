@@ -24,6 +24,21 @@ struct FullScreenFriendCardView: View {
         FirebaseManager.shared.currentUserId
     }
     
+    private var displayRarity: CardRarity? {
+        fetchedSpecs?.rarity ?? activity.rarity.flatMap { CardRarity(rawValue: $0) }
+    }
+    
+    private func rarityGlowColor(for rarity: CardRarity?) -> Color {
+        guard let r = rarity else { return .clear }
+        switch r {
+        case .common:    return .clear
+        case .uncommon:  return Color.green.opacity(0.4)
+        case .rare:      return Color.blue
+        case .epic:      return Color.purple
+        case .legendary: return Color.yellow
+        }
+    }
+    
     private func specsAreComplete(_ specs: VehicleSpecs?) -> Bool {
         guard let specs = specs else { return false }
         return specs.horsepower != "N/A" && specs.torque != "N/A"
@@ -44,9 +59,12 @@ struct FullScreenFriendCardView: View {
                 // Card container — rotated landscape in portrait mode
                 VStack {
                     Spacer()
-                    cardContent(screenSize: geometry.size)
-                        .rotationEffect(.degrees(90))
-                        .cardTilt(for: activity.rarity.flatMap { CardRarity(rawValue: $0) } ?? fetchedSpecs?.rarity)
+                    ZStack {
+                        cardContent(screenSize: geometry.size)
+                            .rotationEffect(.degrees(90))
+                    }
+                    .shadow(color: rarityGlowColor(for: displayRarity).opacity(0.6), radius: 20)
+                    .cardTilt(for: displayRarity)
                     Spacer()
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
