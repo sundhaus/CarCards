@@ -226,6 +226,7 @@ struct HotCardsCarousel: View {
 
 // MARK: - Image Cache for Carousel
 
+@MainActor
 class CarouselImageCache: ObservableObject {
     @Published var images: [String: UIImage] = [:]
     private var loadingURLs: Set<String> = []

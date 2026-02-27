@@ -21,6 +21,8 @@ struct CarCardCollectorApp: App {
         WindowGroup {
             rootView
                 .task {
+                    // Lock in accurate screen dimensions now that the window scene is connected
+                    DeviceScale.recalculateIfNeeded()
                     // Migrate card images from UserDefaults to files (one-time)
                     CardStorage.migrateIfNeeded()
                     await checkAuthState()
@@ -112,7 +114,11 @@ struct CarCardCollectorApp: App {
                 // First time or cache miss — one-time server check
                 print("🕐 Slow path: checking Firestore for profile...")
                 do {
-                    let exists = try await UserService.shared.profileExists(uid: firebaseManager.currentUserId!)
+                    guard let uid = firebaseManager.currentUserId else {
+                        showOnboarding = true
+                        return
+                    }
+                    let exists = try await UserService.shared.profileExists(uid: uid)
                     print("🕐 profileExists returned in \(Int(Date().timeIntervalSince(startTime) * 1000))ms")
                     if exists {
                         UserDefaults.standard.set(true, forKey: "profileExists")

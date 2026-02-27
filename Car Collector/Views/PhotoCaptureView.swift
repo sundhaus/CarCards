@@ -327,11 +327,7 @@ struct SimpleCameraPreview: UIViewRepresentable {
         let previewLayer = AVCaptureVideoPreviewLayer(session: camera.session)
         previewLayer.videoGravity = .resizeAspectFill
         if let connection = previewLayer.connection {
-            if #available(iOS 17.0, *) {
-                connection.videoRotationAngle = 90 // Portrait
-            } else {
-                connection.videoOrientation = .portrait
-            }
+            connection.videoRotationAngle = 90 // Portrait
         }
         view.layer.addSublayer(previewLayer)
         

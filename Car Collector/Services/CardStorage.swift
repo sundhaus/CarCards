@@ -304,8 +304,16 @@ class CardStorage {
     static func generateCSV(from cards: [SavedCard]) -> String {
         var csv = "Make,Model,Year,Color\n"
         for card in cards {
-            csv += "\(card.make),\(card.model),\(card.year),\(card.color)\n"
+            csv += "\(csvEscape(card.make)),\(csvEscape(card.model)),\(csvEscape(card.year)),\(csvEscape(card.color))\n"
         }
         return csv
+    }
+    
+    /// Escape a CSV field: wrap in quotes if it contains commas, quotes, or newlines
+    private static func csvEscape(_ field: String) -> String {
+        if field.contains(",") || field.contains("\"") || field.contains("\n") {
+            return "\"\(field.replacingOccurrences(of: "\"", with: "\"\""))\""
+        }
+        return field
     }
 }

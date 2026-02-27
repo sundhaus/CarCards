@@ -64,7 +64,7 @@ struct CarSpecs: Codable, Equatable {
     // Create from Firestore dictionary
     static func fromDictionary(_ dict: [String: Any]) -> CarSpecs {
         let categoryString = dict["category"] as? String
-        let category = categoryString != nil ? VehicleCategory(rawValue: categoryString!) : nil
+        let category = categoryString.flatMap { VehicleCategory(rawValue: $0) }
         
         return CarSpecs(
             horsepower: dict["horsepower"] as? Int,

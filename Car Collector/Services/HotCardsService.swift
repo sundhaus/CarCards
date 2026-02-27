@@ -12,6 +12,7 @@ import SwiftUI
 import Combine
 import FirebaseFirestore
 
+@MainActor
 class HotCardsService: ObservableObject {
     static let shared = HotCardsService()
     
@@ -60,18 +61,16 @@ class HotCardsService: ObservableObject {
         countdownTimer = nil
         
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            
-            let nextRefresh = self.nextRefreshTime()
-            let timeRemaining = nextRefresh.timeIntervalSince(Date())
-            
-            if timeRemaining <= 0 {
-                DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                
+                let nextRefresh = self.nextRefreshTime()
+                let timeRemaining = nextRefresh.timeIntervalSince(Date())
+                
+                if timeRemaining <= 0 {
                     self.timeUntilNextRefresh = "Refreshing..."
                     self.forceRefresh()
-                }
-            } else {
-                DispatchQueue.main.async {
+                } else {
                     self.timeUntilNextRefresh = self.formatCountdown(seconds: timeRemaining)
                 }
             }
