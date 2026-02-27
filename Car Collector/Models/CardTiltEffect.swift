@@ -153,11 +153,6 @@ struct CardTiltModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            // Rasterize the entire card into a single Metal texture BEFORE
-            // applying 3D rotation. Without this, SwiftUI recomposites every
-            // child view (photo, text, borders, overlays) in 3D space on
-            // every gyro tick — the #1 cause of high CPU on fullscreen cards.
-            .drawingGroup()
             .rotation3DEffect(
                 .degrees(motion.pitch * 45 * intensity),
                 axis: (x: -1, y: 0, z: 0),
