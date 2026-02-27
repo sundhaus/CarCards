@@ -20,9 +20,24 @@ final class CardMotionManager: ObservableObject {
     @Published var pitch: Double = 0  // Forward/back tilt (nose up/down)
     @Published var roll: Double = 0   // Left/right tilt
     
+    /// Whether the device is actively being tilted (delta-based, not absolute).
+    /// True when pitch/roll are changing between frames; false when held steady
+    /// at any angle. Smoothed with a short cooldown so it doesn't flicker.
+    @Published var isMoving: Bool = false
+    
     private let motionManager = CMMotionManager()
     private var referenceAttitude: CMAttitude?
     private var observerCount = 0
+    
+    // Delta tracking for isMoving
+    private var previousPitch: Double = 0
+    private var previousRoll: Double = 0
+    private var stillFrameCount: Int = 0
+    /// How many consecutive "still" frames before isMoving goes false.
+    /// At 15fps update rate, 8 frames ≈ 0.5 seconds of stillness.
+    private let stillThresholdFrames: Int = 8
+    /// Minimum per-frame delta to count as "moving" (in radians, after smoothing).
+    private let movementDeltaThreshold: Double = 0.0008
     
     private init() {}
     
@@ -58,8 +73,39 @@ final class CardMotionManager: ObservableObject {
             let targetRoll = max(-maxAngle, min(maxAngle, attitude.roll))
             
             Task { @MainActor in
-                self.pitch += (targetPitch - self.pitch) * smoothing
-                self.roll += (targetRoll - self.roll) * smoothing
+                let newPitch = self.pitch + (targetPitch - self.pitch) * smoothing
+                let newRoll = self.roll + (targetRoll - self.roll) * smoothing
+                
+                // Delta detection: compare against previous frame values
+                let deltaPitch = abs(newPitch - self.previousPitch)
+                let deltaRoll = abs(newRoll - self.previousRoll)
+                let totalDelta = deltaPitch + deltaRoll
+                
+                if totalDelta > self.movementDeltaThreshold {
+                    // Phone is actively moving
+                    self.stillFrameCount = 0
+                    if !self.isMoving {
+                        withAnimation(.easeIn(duration: 0.15)) {
+                            self.isMoving = true
+                        }
+                    }
+                } else {
+                    // Phone is steady at current angle
+                    self.stillFrameCount += 1
+                    if self.stillFrameCount >= self.stillThresholdFrames && self.isMoving {
+                        withAnimation(.easeOut(duration: 0.4)) {
+                            self.isMoving = false
+                        }
+                    }
+                }
+                
+                // Store for next frame's delta comparison
+                self.previousPitch = newPitch
+                self.previousRoll = newRoll
+                
+                // Update published values
+                self.pitch = newPitch
+                self.roll = newRoll
             }
         }
         
@@ -75,6 +121,10 @@ final class CardMotionManager: ObservableObject {
         referenceAttitude = nil
         pitch = 0
         roll = 0
+        previousPitch = 0
+        previousRoll = 0
+        stillFrameCount = 0
+        isMoving = false
         
         print("⏹️ CardMotionManager stopped")
     }

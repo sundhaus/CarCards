@@ -43,12 +43,8 @@ struct UnifiedCardEffectOverlay: View {
         return 0.5 + (clamped / pitchRange) * 0.5
     }
     
-    private var motionMagnitude: CGFloat {
-        sqrt(motion.pitch * motion.pitch + motion.roll * motion.roll)
-    }
-    
     private var isMoving: Bool {
-        motionMagnitude > 0.06
+        motion.isMoving
     }
     
     private var rimHighlightAngle: Double {

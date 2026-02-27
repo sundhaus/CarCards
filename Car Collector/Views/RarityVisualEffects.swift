@@ -139,7 +139,6 @@ struct GyroRimLight: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
-    @State private var isActive = false
     
     private var highlightAngle: Double {
         let r = motion.roll * 8.0
@@ -147,13 +146,9 @@ struct GyroRimLight: View {
         return atan2(p, r) * (180.0 / .pi)
     }
     
-    private var motionMagnitude: CGFloat {
-        sqrt(motion.pitch * motion.pitch + motion.roll * motion.roll)
-    }
-    
     var body: some View {
         Group {
-            if isActive {
+            if motion.isMoving {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(
                         AngularGradient(
@@ -183,17 +178,6 @@ struct GyroRimLight: View {
         }
         .onAppear { motion.startIfNeeded() }
         .onDisappear { motion.stopIfNeeded() }
-        .onChange(of: motion.pitch) { _, _ in updateActive() }
-        .onChange(of: motion.roll) { _, _ in updateActive() }
-    }
-    
-    private func updateActive() {
-        let moving = motionMagnitude > 0.06
-        if moving != isActive {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isActive = moving
-            }
-        }
     }
 }
 
@@ -207,7 +191,6 @@ struct GyroSpecularStrip: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
-    @State private var isActive = false
     
     private let sigmaFraction: CGFloat = 0.15
     private let shineBoost: CGFloat = 0.25
@@ -229,13 +212,9 @@ struct GyroSpecularStrip: View {
         return 0.5 + (clamped / pitchRange) * 0.5
     }
     
-    private var motionMagnitude: CGFloat {
-        sqrt(motion.pitch * motion.pitch + motion.roll * motion.roll)
-    }
-    
     var body: some View {
         Group {
-            if isActive {
+            if motion.isMoving {
                 Canvas { context, size in
                     let w = size.width
                     let h = size.height
@@ -267,17 +246,6 @@ struct GyroSpecularStrip: View {
         .allowsHitTesting(false)
         .onAppear { motion.startIfNeeded() }
         .onDisappear { motion.stopIfNeeded() }
-        .onChange(of: motion.pitch) { _, _ in updateActive() }
-        .onChange(of: motion.roll) { _, _ in updateActive() }
-    }
-    
-    private func updateActive() {
-        let moving = motionMagnitude > 0.06
-        if moving != isActive {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isActive = moving
-            }
-        }
     }
 }
 
