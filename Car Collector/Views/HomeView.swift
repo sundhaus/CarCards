@@ -23,6 +23,7 @@ struct HomeView: View {
     @ObservedObject private var navigationController = NavigationController.shared
     @ObservedObject private var dashboard = HomeDashboardService.shared
     @ObservedObject private var userService = UserService.shared
+    @ObservedObject private var tutorialService = TutorialQuestService.shared
     
     var body: some View {
         NavigationStack(path: $navigationController.homeNavigationPath) {
@@ -31,6 +32,26 @@ struct HomeView: View {
                     
                     // MARK: - Crown Card Showcase
                     crownCardSection
+                    
+                    // MARK: - Tutorial Quest Banner (new users only)
+                    if tutorialService.shouldShowTutorialBanner {
+                        TutorialQuestBanner(onNavigate: { tabIndex, action in
+                            if let action = action {
+                                // Navigate within Home tab to sub-views
+                                switch action {
+                                case "headToHead":
+                                    showHeadToHead = true
+                                case "friends":
+                                    showFriends = true
+                                default:
+                                    break
+                                }
+                            } else {
+                                // Switch to a different tab
+                                navigationController.selectedTab = tabIndex
+                            }
+                        })
+                    }
                     
                     // MARK: - Active Quest Strip
                     questStripSection

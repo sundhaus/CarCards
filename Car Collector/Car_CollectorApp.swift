@@ -14,6 +14,7 @@ struct CarCardCollectorApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var firebaseManager = FirebaseManager.shared
     @State private var showOnboarding = false
+    @State private var showFirstCaptureGuide = false
     @State private var isReady = false
     @Environment(\.scenePhase) private var scenePhase
     
@@ -50,6 +51,18 @@ struct CarCardCollectorApp: App {
             OnboardingView(onComplete: {
                 completeOnboarding()
             })
+        } else if showFirstCaptureGuide {
+            FirstCaptureGuideView(
+                levelSystem: LevelSystem(),
+                onCardSaved: { card in
+                    // Card saving is handled by ContentView when it loads;
+                    // we just need the card data to flow through RarityReveal
+                },
+                onComplete: {
+                    showFirstCaptureGuide = false
+                    isReady = true
+                }
+            )
         } else if isReady {
             ContentView()
         } else {
@@ -83,7 +96,9 @@ struct CarCardCollectorApp: App {
         UserDefaults.standard.set(true, forKey: "profileExists")
         startServices()
         showOnboarding = false
-        isReady = true
+        
+        // New users go to guided first capture instead of Home
+        showFirstCaptureGuide = true
     }
     
     private func checkAuthState() async {

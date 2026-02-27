@@ -28,6 +28,7 @@ struct ContentView: View {
     @ObservedObject private var navigationController = NavigationController.shared
     @ObservedObject private var h2hService = HeadToHeadService.shared
     @ObservedObject private var dailyLoginService = DailyLoginService.shared
+    @ObservedObject private var tutorialService = TutorialQuestService.shared
     @State private var showDuoInvite = false
     @State private var onAppearTask: Task<Void, Never>?
     @State private var imageSyncTask: Task<Void, Never>?
@@ -354,6 +355,9 @@ struct ContentView: View {
     private func handleCardSaved(_ card: SavedCard) {
         savedCards.append(card)
         CardStorage.saveCards(savedCards)
+        
+        // Track tutorial quest progress
+        TutorialQuestService.shared.recordCapture()
         
         if let image = card.image {
             Task {
