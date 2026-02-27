@@ -169,7 +169,7 @@ struct ContentView: View {
         mainTabView
         .overlay {
             // Level Header
-            if !showCamera && !showCardDetail {
+            if !showCamera && !showCardDetail && navigationController.selectedTab != 0 {
                 VStack {
                     LevelHeader(
                         levelSystem: levelSystem,
