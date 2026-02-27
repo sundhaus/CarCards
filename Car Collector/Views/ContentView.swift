@@ -882,7 +882,6 @@ struct CardDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .unifiedCardEffects(rarity: card.specs?.rarity, holoEffect: nil)
         .shadow(color: .black.opacity(0.5), radius: 20)
-        .cardTilt(for: card.specs?.rarity)
     }
     
     // Back view of the card
@@ -981,7 +980,6 @@ struct CardDetailView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
         .shadow(color: .black.opacity(0.5), radius: 20)
-        .cardTilt(for: card.specs?.rarity)
     }
     
     // MARK: - Stat Item View

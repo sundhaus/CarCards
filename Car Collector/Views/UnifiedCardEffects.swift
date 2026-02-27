@@ -2,15 +2,15 @@
 //  UnifiedCardEffects.swift
 //  Car Collector
 //
-//  Consolidated full-screen card effects overlay.
+//  ZERO-CPU card effects overlay.
 //
-//  PERFORMANCE ARCHITECTURE:
-//  - Static layers (vignette, pattern base) rendered once via drawingGroup()
-//  - Image-based layers (rainbow, specular) use GPU texture offset only
-//  - Particles use Timer at 5fps (not TimelineView which forces full redraws)
-//  - Gyro-driven layers are isolated into separate structs so gyro updates
-//    don't cascade redraws to static siblings
-//  - Border animations use SwiftUI's animation system (GPU-composited)
+//  All effects are either static (rendered once) or touch-driven
+//  (only costs CPU when user is actively dragging). No gyroscope,
+//  no timers, no continuous animations on the card surface.
+//
+//  Border animations (shimmer rotation, glow pulse) use SwiftUI's
+//  built-in animation system which runs on the render server thread
+//  and costs negligible CPU.
 //
 
 import SwiftUI
@@ -23,9 +23,8 @@ struct UnifiedCardEffectOverlay: View {
     let cornerRadius: CGFloat
     let holoEffect: String?
     
-    // NO @ObservedObject motion here — gyro observation is pushed
-    // down to only the child views that need it, preventing the
-    // entire ZStack from re-evaluating on every gyro tick.
+    // Touch-driven prismatic scroll
+    @Binding var prismaticOffset: CGFloat
     
     private var holoPatternAsset: String? {
         guard let effectStr = holoEffect else { return nil }
@@ -34,23 +33,14 @@ struct UnifiedCardEffectOverlay: View {
     
     var body: some View {
         ZStack {
-            // STATIC VIGNETTE: Rendered once, never redrawn.
+            // STATIC VIGNETTE: Rendered once, zero per-frame cost.
             if rarity >= .epic {
                 StaticVignette(cardSize: cardSize, cornerRadius: cornerRadius)
             }
             
-            // PARTICLES: Timer-driven at 5fps, no gyro dependency.
-            if rarity >= .epic {
-                ParticleLayer(
-                    rarity: rarity,
-                    cardSize: cardSize,
-                    cornerRadius: cornerRadius
-                )
-            }
-            
-            // HOLO EFFECTS: Pattern base + prismatic rainbow
+            // HOLO EFFECTS: Pattern base + prismatic rainbow (touch-driven)
             if let asset = holoPatternAsset {
-                // Base pattern (static, rendered once)
+                // Base pattern (static)
                 Image(asset)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -61,15 +51,16 @@ struct UnifiedCardEffectOverlay: View {
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     .allowsHitTesting(false)
                 
-                // Prismatic rainbow: observes gyro independently
-                HoloRainbowLayer(
+                // Prismatic rainbow — driven by external binding (touch or gyro)
+                PrismaticRainbowLayer(
                     cardSize: cardSize,
                     cornerRadius: cornerRadius,
-                    patternAsset: asset
+                    patternAsset: asset,
+                    scrollOffset: prismaticOffset
                 )
             }
             
-            // OUTER EFFECTS: Border glow/shimmer
+            // OUTER EFFECTS: Border glow/shimmer (SwiftUI animation = render server, not CPU)
             OuterEffectsLayer(
                 rarity: rarity,
                 cornerRadius: cornerRadius
@@ -80,7 +71,7 @@ struct UnifiedCardEffectOverlay: View {
     }
 }
 
-// MARK: - Static Vignette (rendered once, zero per-frame cost)
+// MARK: - Static Vignette
 
 private struct StaticVignette: View {
     let cardSize: CGSize
@@ -117,100 +108,21 @@ private struct StaticVignette: View {
     }
 }
 
-// MARK: - Particle Layer (timer-driven at 5fps, no gyro dependency)
+// MARK: - Prismatic Rainbow Layer (driven by external offset, no gyro)
 
-private struct ParticleLayer: View {
-    let rarity: CardRarity
-    let cardSize: CGSize
-    let cornerRadius: CGFloat
-    
-    @State private var particles = ParticleEngine()
-    @State private var tick: UInt64 = 0
-    @State private var timer: Timer?
-    
-    private var maxCount: Int { rarity == .legendary ? 4 : 2 }
-    
-    private var particleRGB: (r: Double, g: Double, b: Double) {
-        rarity == .legendary ? (1.0, 0.9, 0.2) : (0.7, 0.3, 1.0)
-    }
-    
-    private var particleAccentRGB: (r: Double, g: Double, b: Double) {
-        rarity == .legendary ? (1.0, 1.0, 1.0) : (1.0, 0.5, 0.8)
-    }
-    
-    var body: some View {
-        Canvas { context, size in
-            _ = tick  // Trigger redraw when tick changes
-            
-            particles.tick(
-                cardSize: cardSize,
-                maxCount: maxCount,
-                borderInset: cardSize.height * 0.042
-            )
-            
-            let pColor = particleRGB
-            let aColor = particleAccentRGB
-            
-            for particle in particles.particles where particle.alive {
-                let rgb = particle.isAccent ? aColor : pColor
-                let rect = CGRect(
-                    x: particle.x - 2 * particle.scale,
-                    y: particle.y - 2 * particle.scale,
-                    width: 4 * particle.scale,
-                    height: 4 * particle.scale
-                )
-                context.opacity = particle.opacity
-                context.fill(
-                    Circle().path(in: rect),
-                    with: .color(Color(red: rgb.r, green: rgb.g, blue: rgb.b))
-                )
-            }
-        }
-        .frame(width: cardSize.width, height: cardSize.height)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .allowsHitTesting(false)
-        .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 5.0, repeats: true) { _ in
-                Task { @MainActor in
-                    tick &+= 1
-                }
-            }
-        }
-        .onDisappear {
-            timer?.invalidate()
-            timer = nil
-        }
-    }
-}
-
-// MARK: - Holo Rainbow Layer (image-based, isolated gyro observer)
-
-private struct HoloRainbowLayer: View {
+private struct PrismaticRainbowLayer: View {
     let cardSize: CGSize
     let cornerRadius: CGFloat
     let patternAsset: String
-    
-    @ObservedObject private var motion = CardMotionManager.shared
-    
-    /// Raw scroll factor from gyro: roll and pitch both slide the prism equally.
-    private var rawScroll: CGFloat {
-        let rollRange: CGFloat = 0.15
-        let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange  // -1…1
-        let pitchRange: CGFloat = 0.15
-        let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange  // -1…1
-        return (rollNorm + pitchNorm) * 1.0
-    }
+    let scrollOffset: CGFloat  // Normalized -2…2, driven externally
     
     var body: some View {
         let w = cardSize.width
         let h = cardSize.height
-        // Image is ~5.7x wider than a card (2000/350≈5.7), so there's always
-        // full coverage. Offset shifts the visible window across the strip.
-        let imgWidth = w * 5.0  // Render at ~5x card width
-        let maxScroll = imgWidth - w  // Maximum safe offset range
-        let rawOffset = rawScroll * w
-        // Clamp so we never scroll past either edge
-        let clampedOffset = max(-maxScroll / 2, min(maxScroll / 2, rawOffset))
+        let imgWidth = w * 5.0
+        let maxScroll = imgWidth - w
+        let pixelOffset = scrollOffset * w
+        let clampedOffset = max(-maxScroll / 2, min(maxScroll / 2, pixelOffset))
         
         Image("PrismaticGradient")
             .resizable()
@@ -232,7 +144,7 @@ private struct HoloRainbowLayer: View {
     }
 }
 
-// MARK: - Outer Effects Layer (borders + glow)
+// MARK: - Outer Effects Layer
 
 private struct OuterEffectsLayer: View {
     let rarity: CardRarity
@@ -244,8 +156,7 @@ private struct OuterEffectsLayer: View {
     var body: some View {
         ZStack {
             if rarity == .legendary {
-                LegendaryRimLight(cornerRadius: cornerRadius)
-                
+                // Glow pulse (SwiftUI animation = render server, negligible CPU)
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(Color.yellow.opacity(Double(glowIntensity)), lineWidth: 4)
                     .shadow(color: Color.yellow.opacity(Double(glowIntensity) * 0.5), radius: 8)
@@ -302,51 +213,14 @@ private struct OuterEffectsLayer: View {
     }
 }
 
-// MARK: - Legendary Rim Light (isolated gyro observer)
-
-private struct LegendaryRimLight: View {
-    let cornerRadius: CGFloat
-    
-    @ObservedObject private var motion = CardMotionManager.shared
-    
-    private var rimHighlightAngle: Double {
-        let r = motion.roll * 8.0
-        let p = motion.pitch * 8.0
-        return atan2(p, r) * (180.0 / .pi)
-    }
-    
-    var body: some View {
-        if motion.isMoving {
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(
-                    AngularGradient(
-                        gradient: Gradient(colors: [
-                            Color.clear, Color.clear,
-                            Color.orange.opacity(0.4),
-                            Color.yellow.opacity(0.7),
-                            Color.white.opacity(0.95),
-                            Color.yellow.opacity(0.7),
-                            Color.orange.opacity(0.4),
-                            Color.clear, Color.clear,
-                            Color.clear, Color.clear, Color.clear,
-                        ]),
-                        center: .center,
-                        startAngle: .degrees(rimHighlightAngle - 180),
-                        endAngle: .degrees(rimHighlightAngle + 180)
-                    ),
-                    lineWidth: 3.5
-                )
-                .shadow(color: Color.yellow.opacity(0.4), radius: 6)
-                .transition(.opacity)
-        }
-    }
-}
-
-// MARK: - Unified View Modifier
+// MARK: - View Modifier (manages touch gesture + prismatic state)
 
 struct UnifiedCardEffectModifier: ViewModifier {
     let rarity: CardRarity?
     let holoEffect: String?
+    
+    @State private var prismaticOffset: CGFloat = 0
+    @State private var dragStart: CGFloat = 0
     
     func body(content: Content) -> some View {
         if let rarity = rarity, rarity >= .rare || holoEffect != nil {
@@ -357,10 +231,22 @@ struct UnifiedCardEffectModifier: ViewModifier {
                             rarity: rarity,
                             cardSize: geo.size,
                             cornerRadius: geo.size.height * 0.09,
-                            holoEffect: holoEffect
+                            holoEffect: holoEffect,
+                            prismaticOffset: $prismaticOffset
                         )
                     }
                 }
+                // Touch-driven prismatic scroll: drag across card to shift rainbow
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let dragDistance = value.translation.width + value.translation.height
+                            prismaticOffset = dragStart + dragDistance / 150.0
+                        }
+                        .onEnded { _ in
+                            dragStart = prismaticOffset
+                        }
+                )
         } else if holoEffect != nil {
             content
                 .overlay {
@@ -369,10 +255,21 @@ struct UnifiedCardEffectModifier: ViewModifier {
                             rarity: .common,
                             cardSize: geo.size,
                             cornerRadius: geo.size.height * 0.09,
-                            holoEffect: holoEffect
+                            holoEffect: holoEffect,
+                            prismaticOffset: $prismaticOffset
                         )
                     }
                 }
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let dragDistance = value.translation.width + value.translation.height
+                            prismaticOffset = dragStart + dragDistance / 150.0
+                        }
+                        .onEnded { _ in
+                            dragStart = prismaticOffset
+                        }
+                )
         } else {
             content
         }
