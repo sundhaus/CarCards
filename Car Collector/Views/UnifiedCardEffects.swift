@@ -59,19 +59,6 @@ struct UnifiedCardEffectOverlay: View {
         return HoloEffectType(rawValue: effectStr)?.assetName
     }
     
-    // Rainbow colors for holo refraction
-    private let rainbowColors: [(r: Double, g: Double, b: Double)] = [
-        (1.0, 0.3, 0.3),  // Red
-        (1.0, 0.6, 0.2),  // Orange
-        (1.0, 1.0, 0.3),  // Yellow
-        (0.3, 1.0, 0.3),  // Green
-        (0.3, 0.8, 1.0),  // Cyan
-        (0.4, 0.4, 1.0),  // Blue
-        (0.7, 0.3, 1.0),  // Violet
-        (1.0, 0.3, 0.8),  // Magenta
-        (1.0, 0.3, 0.3),  // Red (wrap)
-    ]
-    
     // Rarity tint colors for specular strip
     private var specularTintRGB: (r: Double, g: Double, b: Double) {
         switch rarity {
@@ -117,7 +104,7 @@ struct UnifiedCardEffectOverlay: View {
                 
                 // Rainbow refraction — masked to pattern pixels, always visible
                 // as a prismatic foil. Gyro roll scrolls the rainbow through the pattern.
-                holoRainbowCanvas
+                holoRainbowView
                     .frame(width: cardSize.width, height: cardSize.height)
                     .mask {
                         Image(asset)
@@ -239,7 +226,7 @@ struct UnifiedCardEffectOverlay: View {
         .frame(width: cardSize.width, height: cardSize.height)
     }
     
-    // MARK: - Holo Rainbow Canvas (prismatic infinite rainbow, masked to pattern externally)
+    // MARK: - Holo Rainbow (image-based prismatic strip, masked to pattern externally)
     
     /// Scroll offset for the prismatic rainbow: gyro roll drives left/right scroll,
     /// pitch adds a subtle secondary offset. The rainbow repeats infinitely so
@@ -252,32 +239,26 @@ struct UnifiedCardEffectOverlay: View {
         return rollNorm * 1.5 + pitchNorm * 0.3
     }
     
-    private var holoRainbowCanvas: some View {
-        Canvas { context, size in
-            let w = size.width
-            let h = size.height
-            let scrollOffset = rainbowScroll * w
-            let bandCount = rainbowColors.count - 1
-            let singleCycleWidth = w  // One full rainbow cycle = one card width
-            let bandWidth = singleCycleWidth / CGFloat(bandCount)
-            
-            // Draw 4 repetitions (-1 to 2) so card is always fully covered
-            for rep in -1...2 {
-                let repOffset = CGFloat(rep) * singleCycleWidth + scrollOffset
-                
-                for i in 0..<bandCount {
-                    let bandX = repOffset + CGFloat(i) * bandWidth
-                    
-                    // Skip bands completely outside visible area
-                    guard bandX + bandWidth > 0 && bandX < w else { continue }
-                    
-                    let c = rainbowColors[i]
-                    let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
-                    context.opacity = 0.7  // Consistent prismatic intensity
-                    context.fill(Path(rect), with: .color(Color(red: c.r, green: c.g, blue: c.b)))
-                }
+    @ViewBuilder
+    private var holoRainbowView: some View {
+        // Pre-rendered rainbow image tiled 3x wide, scrolled by gyro.
+        // Replaces per-frame Canvas drawing — zero CPU cost per frame.
+        let w = cardSize.width
+        let h = cardSize.height
+        let scrollOffset = rainbowScroll * w
+        
+        HStack(spacing: 0) {
+            ForEach(0..<3, id: \.self) { _ in
+                Image("PrismaticRainbow")
+                    .resizable()
+                    .frame(width: w, height: h)
             }
         }
+        .frame(width: w * 3, height: h)
+        .offset(x: scrollOffset - w)
+        .frame(width: w, height: h, alignment: .leading)
+        .clipped()
+        .opacity(0.7)
     }
     
     // MARK: - Outer Effects (Border + Glow)

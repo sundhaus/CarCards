@@ -565,19 +565,6 @@ struct HolographicPatternOverlay: View {
         }
     }
     
-    /// Rainbow gradient colors — full spectrum, repeats seamlessly
-    private let rainbowColors: [Color] = [
-        Color(red: 1.0, green: 0.2, blue: 0.3),  // Red
-        Color(red: 1.0, green: 0.5, blue: 0.1),  // Orange
-        Color(red: 1.0, green: 0.95, blue: 0.2),  // Yellow
-        Color(red: 0.2, green: 1.0, blue: 0.3),  // Green
-        Color(red: 0.2, green: 0.85, blue: 1.0),  // Cyan
-        Color(red: 0.3, green: 0.3, blue: 1.0),  // Blue
-        Color(red: 0.6, green: 0.2, blue: 1.0),  // Violet
-        Color(red: 1.0, green: 0.2, blue: 0.7),  // Magenta
-        Color(red: 1.0, green: 0.2, blue: 0.3),  // Red (wrap — seamless repeat)
-    ]
-    
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
@@ -620,35 +607,25 @@ struct HolographicPatternOverlay: View {
     
     @ViewBuilder
     private func prismaticRainbowLayer(width w: CGFloat, height h: CGFloat) -> some View {
-        // The rainbow is 3x the card width and repeats, so there's always
-        // color visible regardless of scroll position. The scroll offset
-        // slides the whole rainbow left/right based on gyro roll.
-        let repeatWidth = w * 3.0  // 3 full rainbow cycles across the strip
+        // Pre-rendered rainbow image tiled 3x wide, scrolled by gyro roll.
+        // Replaces per-frame Canvas drawing — zero CPU cost per frame,
+        // just a GPU texture offset.
+        let singleCycleWidth = w  // One rainbow image = one card width
+        let totalWidth = singleCycleWidth * 3.0  // 3 tiles
         let scrollOffset = rainbowScroll * w  // Pixel offset from gyro
         
-        Canvas { context, size in
-            let bandCount = rainbowColors.count - 1
-            let singleCycleWidth = repeatWidth / 3.0  // One full rainbow = 1 card width
-            let bandWidth = singleCycleWidth / CGFloat(bandCount)
-            
-            // Draw 3 repetitions of the rainbow, offset by scroll
-            // This ensures the card is always fully covered
-            for rep in -1...2 {
-                let repOffset = CGFloat(rep) * singleCycleWidth + scrollOffset
-                
-                for i in 0..<bandCount {
-                    let bandX = repOffset + CGFloat(i) * bandWidth
-                    
-                    // Skip bands completely outside the visible area
-                    guard bandX + bandWidth > 0 && bandX < w else { continue }
-                    
-                    let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
-                    context.opacity = 0.7  // Consistent prismatic intensity
-                    context.fill(Path(rect), with: .color(rainbowColors[i]))
-                }
+        HStack(spacing: 0) {
+            ForEach(0..<3, id: \.self) { _ in
+                Image("PrismaticRainbow")
+                    .resizable()
+                    .frame(width: singleCycleWidth, height: h)
             }
         }
-        .frame(width: w, height: h)
+        .frame(width: totalWidth, height: h)
+        .offset(x: scrollOffset - singleCycleWidth)  // Center the middle tile, scroll from there
+        .frame(width: w, height: h, alignment: .leading)
+        .clipped()
+        .opacity(0.7)
         // Mask to pattern: only pattern pixels get the rainbow
         .mask {
             Image(patternAsset)
