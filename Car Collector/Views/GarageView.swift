@@ -28,268 +28,302 @@ struct GarageView: View {
     var body: some View {
         NavigationStack(path: $navigationController.garageNavigationPath) {
             GeometryReader { screenGeo in
-            ZStack {
-                VStack(spacing: 0) {
-                    // Custom header with title and toggle on same line
-                    HStack {
-                        Text("GARAGE")
-                            .font(.pTitle2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.primary)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            cardsPerRow = cardsPerRow == 1 ? 2 : 1
-                        }) {
-                            Image(systemName: cardsPerRow == 1 ? "rectangle.grid.1x2" : "square.grid.2x2")
-                                .font(.pTitle3)
-                                .foregroundStyle(.blue)
-                        }
-                        
-                        // Clear orphaned local data (visible when cards exist locally but Firebase is empty)
-                        Menu {
-                            Button(role: .destructive, action: {
-                                showClearLocalConfirm = true
-                            }) {
-                                Label("Clear Local Cache", systemImage: "trash")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .font(.pTitle3)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 10)
-                    .solidGlass(cornerRadius: 0)
-                    
-                    // Content
-                    if allCards.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "car.fill")
-                                .font(.poppins(60))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.6)
-                                .foregroundStyle(.secondary)
-                            Text("Your collection will appear here")
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxHeight: .infinity)
-                    } else {
-                        // Portrait: Paged vertical scroll
-                        portraitPagedView
-                    }
-                }
-                .opacity((showCardDetail || showContextMenu) ? 0 : 1)
-                
-                // Context menu overlay
-                if showContextMenu, let card = contextMenuCard {
-                    CardContextMenuOverlay(
-                        card: card,
-                        cardFrame: contextMenuCardFrame,
-                        screenWidth: screenGeo.size.width,
-                        isShowing: $showContextMenu,
-                        isCrowned: {
-                            let cardId = card.firebaseId ?? card.id.uuidString
-                            return cardId == UserService.shared.crownCardId
-                        }(),
-                        onCustomize: {
-                            showContextMenu = false
-                            selectedCard = card
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                showCustomize = true
-                            }
-                        },
-                        onOptions: {
-                            showContextMenu = false
-                            selectedCard = card
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                showCardOptions = true
-                            }
-                        },
-                        onCrownToggle: {
-                            // If unstarring, just clear
-                            let currentId = card.firebaseId ?? card.id.uuidString
-                            let isCurrentlyCrowned = currentId == UserService.shared.crownCardId
-                            if isCurrentlyCrowned {
-                                UserService.shared.setCrownCard(nil)
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    showContextMenu = false
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                                    loadAllCards()
-                                    currentPage = 0
-                                }
-                                return
-                            }
-                            
-                            // Starring: need firebaseId
-                            if let fbId = card.firebaseId {
-                                print("⭐ Star toggle: using firebaseId \(fbId)")
-                                UserService.shared.setCrownCard(fbId)
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    showContextMenu = false
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                                    loadAllCards()
-                                    currentPage = 0
-                                }
-                            } else {
-                                // Card not synced — upload to Firebase quietly (no activity post)
-                                print("⭐ Star toggle: no firebaseId, syncing to Firebase...")
-                                if case .vehicle(let savedCard) = card {
-                                    Task {
-                                        do {
-                                            let image = savedCard.image ?? UIImage()
-                                            let cloudCard = try await CardService.shared.syncCardQuietly(
-                                                image: image,
-                                                savedCard: savedCard
-                                            )
-                                            
-                                            // Update local card with firebaseId
-                                            var allSaved = CardStorage.loadCards()
-                                            if let idx = allSaved.firstIndex(where: { $0.id == savedCard.id }) {
-                                                allSaved[idx].firebaseId = cloudCard.id
-                                                CardStorage.saveCards(allSaved)
-                                            }
-                                            
-                                            print("⭐ Synced: \(cloudCard.id), setting as star")
-                                            UserService.shared.setCrownCard(cloudCard.id)
-                                            
-                                            await MainActor.run {
-                                                loadAllCards()
-                                                currentPage = 0
-                                            }
-                                        } catch {
-                                            print("❌ Failed to sync card for starring: \(error)")
-                                        }
-                                    }
-                                }
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    showContextMenu = false
-                                }
-                            }
-                        }
-                    )
-                }
-                
-                // Full screen card detail overlay
-                if showCardDetail, let card = selectedCard {
-                    UnifiedCardDetailView(
-                        card: card,
-                        isShowing: $showCardDetail,
-                        onCardUpdated: { updatedCard in
-                            // Refresh cards after update
-                            loadAllCards()
-                        }
-                    )
-                    .id(cardDetailID)
-                }
-            }
-            .coordinateSpace(name: "garageStack")
-            .background {
-                Image("GarageBackground")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .overlay(Color.black.opacity(0.45))
-                    .drawingGroup()
-                    .ignoresSafeArea()
-            }
-            .onAppear {
-                OrientationManager.lockOrientation(.portrait)
-                loadAllCards()
-            }
-            .onDisappear {
-                OrientationManager.unlockOrientation()
-            }
-            .onChange(of: showCardDetail) { _, newValue in
-                if !newValue {
-                    selectedCard = nil
-                    cardDetailID = UUID()
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CardSaved"))) { _ in
-                print("📬 Garage received card saved notification")
-                loadAllCards()
-            }
-            .fullScreenCover(isPresented: $showCamera) {
-                CameraView(
-                    isPresented: $showCamera,
-                    onCardSaved: { card in
-                        showCamera = false
+                garageZStack(screenWidth: screenGeo.size.width)
+                    .coordinateSpace(name: "garageStack")
+                    .background { garageBackground }
+                    .onAppear {
+                        OrientationManager.lockOrientation(.portrait)
                         loadAllCards()
                     }
-                )
-            }
-            .fullScreenCover(isPresented: $showCustomize) {
-                if let card = selectedCard {
-                    CustomizeCardView(card: card)
-                        .onDisappear {
-                            loadAllCards()
+                    .onDisappear {
+                        OrientationManager.unlockOrientation()
+                    }
+                    .onChange(of: showCardDetail) { _, newValue in
+                        if !newValue {
+                            selectedCard = nil
+                            cardDetailID = UUID()
                         }
-                }
-            }
-            .fullScreenCover(isPresented: $showCardOptions) {
-                if let card = selectedCard {
-                    CardOptionsView(
-                        card: card,
-                        onQuickSell: {
-                            showCardOptions = false
-                            quickSellCard(card)
-                        },
-                        onListOnMarket: {
-                            showCardOptions = false
-                            // TODO: Navigate to listing form
-                        },
-                        onComparePrice: {
-                            showCardOptions = false
-                            let make: String
-                            let model: String
-                            let year: String
-                            switch card {
-                            case .vehicle(let vc):
-                                make = vc.make; model = vc.model; year = vc.year
-                            case .driver(let dc):
-                                make = dc.firstName; model = dc.lastName; year = ""
-                            case .location(let lc):
-                                make = lc.locationName; model = ""; year = "Location"
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                NavigationController.shared.comparePriceCard = (make: make, model: model, year: year)
-                                NavigationController.shared.selectedTab = 3
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    NotificationCenter.default.post(name: NSNotification.Name("ComparePrice"), object: nil)
-                                }
-                            }
-                        },
-                        onReIdentify: {
-                            showCardOptions = false
-                            // Re-identify triggers a re-capture flow for this card
-                            // Coins already spent by CardOptionsView
-                            if case .vehicle(let vc) = card, let image = vc.image {
-                                Task {
-                                    let result = await VehicleIdentificationService.shared.identifyVehicle(from: image)
-                                    if case .success(let id) = result {
-                                        // Update the card locally with new identification
-                                        print("🔄 Re-identified: \(id.make) \(id.model) \(id.year)")
-                                    }
-                                }
-                            }
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CardSaved"))) { _ in
+                        print("📬 Garage received card saved notification")
+                        loadAllCards()
+                    }
+                    .fullScreenCover(isPresented: $showCamera) { cameraSheet }
+                    .fullScreenCover(isPresented: $showCustomize) { customizeSheet }
+                    .fullScreenCover(isPresented: $showCardOptions) { cardOptionsSheet }
+                    .alert("Clear Local Cache?", isPresented: $showClearLocalConfirm) {
+                        Button("Cancel", role: .cancel) {}
+                        Button("Clear", role: .destructive) {
+                            AdminService.nukeLocalStorage()
+                            allCards = []
                         }
-                    )
-                }
-            }
-            .alert("Clear Local Cache?", isPresented: $showClearLocalConfirm) {
-                Button("Cancel", role: .cancel) {}
-                Button("Clear", role: .destructive) {
-                    AdminService.nukeLocalStorage()
-                    allCards = []
-                }
-            } message: {
-                Text("This removes all locally cached card images and metadata. Cards saved in the cloud will re-sync on next launch.")
-            }
+                    } message: {
+                        Text("This removes all locally cached card images and metadata. Cards saved in the cloud will re-sync on next launch.")
+                    }
             } // GeometryReader
+        }
+    }
+    
+    // MARK: - Body Sub-Views
+    
+    private func garageZStack(screenWidth: CGFloat) -> some View {
+        ZStack {
+            garageMainContent
+            contextMenuOverlay(screenWidth: screenWidth)
+            cardDetailOverlay
+        }
+    }
+    
+    private var garageMainContent: some View {
+        VStack(spacing: 0) {
+            garageHeader
+            
+            if allCards.isEmpty {
+                garageEmptyState
+            } else {
+                portraitPagedView
+            }
+        }
+        .opacity((showCardDetail || showContextMenu) ? 0 : 1)
+    }
+    
+    private var garageHeader: some View {
+        HStack {
+            Text("GARAGE")
+                .font(.pTitle2)
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
+            
+            Spacer()
+            
+            Button(action: {
+                cardsPerRow = cardsPerRow == 1 ? 2 : 1
+            }) {
+                Image(systemName: cardsPerRow == 1 ? "rectangle.grid.1x2" : "square.grid.2x2")
+                    .font(.pTitle3)
+                    .foregroundStyle(.blue)
+            }
+            
+            Menu {
+                Button(role: .destructive, action: {
+                    showClearLocalConfirm = true
+                }) {
+                    Label("Clear Local Cache", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.pTitle3)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .solidGlass(cornerRadius: 0)
+    }
+    
+    private var garageEmptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "car.fill")
+                .font(.poppins(60))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .foregroundStyle(.secondary)
+            Text("Your collection will appear here")
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxHeight: .infinity)
+    }
+    
+    @ViewBuilder
+    private func contextMenuOverlay(screenWidth: CGFloat) -> some View {
+        if showContextMenu, let card = contextMenuCard {
+            CardContextMenuOverlay(
+                card: card,
+                cardFrame: contextMenuCardFrame,
+                screenWidth: screenWidth,
+                isShowing: $showContextMenu,
+                isCrowned: {
+                    let cardId = card.firebaseId ?? card.id.uuidString
+                    return cardId == UserService.shared.crownCardId
+                }(),
+                onCustomize: {
+                    showContextMenu = false
+                    selectedCard = card
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showCustomize = true
+                    }
+                },
+                onOptions: {
+                    showContextMenu = false
+                    selectedCard = card
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showCardOptions = true
+                    }
+                },
+                onCrownToggle: {
+                    handleCrownToggle(for: card)
+                }
+            )
+        }
+    }
+    
+    @ViewBuilder
+    private var cardDetailOverlay: some View {
+        if showCardDetail, let card = selectedCard {
+            UnifiedCardDetailView(
+                card: card,
+                isShowing: $showCardDetail,
+                onCardUpdated: { _ in loadAllCards() }
+            )
+            .id(cardDetailID)
+        }
+    }
+    
+    private var garageBackground: some View {
+        Image("GarageBackground")
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .overlay(Color.black.opacity(0.45))
+            .drawingGroup()
+            .ignoresSafeArea()
+    }
+    
+    // MARK: - Sheet Content
+    
+    @ViewBuilder
+    private var cameraSheet: some View {
+        CameraView(
+            isPresented: $showCamera,
+            onCardSaved: { card in
+                showCamera = false
+                loadAllCards()
+            }
+        )
+    }
+    
+    @ViewBuilder
+    private var customizeSheet: some View {
+        if let card = selectedCard {
+            CustomizeCardView(card: card)
+                .onDisappear { loadAllCards() }
+        }
+    }
+    
+    @ViewBuilder
+    private var cardOptionsSheet: some View {
+        if let card = selectedCard {
+            CardOptionsView(
+                card: card,
+                onQuickSell: {
+                    showCardOptions = false
+                    quickSellCard(card)
+                },
+                onListOnMarket: {
+                    showCardOptions = false
+                },
+                onComparePrice: {
+                    handleComparePrice(for: card)
+                },
+                onReIdentify: {
+                    handleReIdentify(for: card)
+                }
+            )
+        }
+    }
+    
+    // MARK: - Action Handlers
+    
+    private func handleCrownToggle(for card: AnyCard) {
+        let currentId = card.firebaseId ?? card.id.uuidString
+        let isCurrentlyCrowned = currentId == UserService.shared.crownCardId
+        if isCurrentlyCrowned {
+            UserService.shared.setCrownCard(nil)
+            withAnimation(.easeOut(duration: 0.2)) {
+                showContextMenu = false
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                loadAllCards()
+                currentPage = 0
+            }
+            return
+        }
+        
+        if let fbId = card.firebaseId {
+            print("⭐ Star toggle: using firebaseId \(fbId)")
+            UserService.shared.setCrownCard(fbId)
+            withAnimation(.easeOut(duration: 0.2)) {
+                showContextMenu = false
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                loadAllCards()
+                currentPage = 0
+            }
+        } else {
+            print("⭐ Star toggle: no firebaseId, syncing to Firebase...")
+            if case .vehicle(let savedCard) = card {
+                Task {
+                    do {
+                        let image = savedCard.image ?? UIImage()
+                        let cloudCard = try await CardService.shared.syncCardQuietly(
+                            image: image,
+                            savedCard: savedCard
+                        )
+                        
+                        var allSaved = CardStorage.loadCards()
+                        if let idx = allSaved.firstIndex(where: { $0.id == savedCard.id }) {
+                            allSaved[idx].firebaseId = cloudCard.id
+                            CardStorage.saveCards(allSaved)
+                        }
+                        
+                        print("⭐ Synced: \(cloudCard.id), setting as star")
+                        UserService.shared.setCrownCard(cloudCard.id)
+                        
+                        await MainActor.run {
+                            loadAllCards()
+                            currentPage = 0
+                        }
+                    } catch {
+                        print("❌ Failed to sync card for starring: \(error)")
+                    }
+                }
+            }
+            withAnimation(.easeOut(duration: 0.2)) {
+                showContextMenu = false
+            }
+        }
+    }
+    
+    private func handleComparePrice(for card: AnyCard) {
+        showCardOptions = false
+        let make: String
+        let model: String
+        let year: String
+        switch card {
+        case .vehicle(let vc):
+            make = vc.make; model = vc.model; year = vc.year
+        case .driver(let dc):
+            make = dc.firstName; model = dc.lastName; year = ""
+        case .location(let lc):
+            make = lc.locationName; model = ""; year = "Location"
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            NavigationController.shared.comparePriceCard = (make: make, model: model, year: year)
+            NavigationController.shared.selectedTab = 3
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                NotificationCenter.default.post(name: NSNotification.Name("ComparePrice"), object: nil)
+            }
+        }
+    }
+    
+    private func handleReIdentify(for card: AnyCard) {
+        showCardOptions = false
+        if case .vehicle(let vc) = card, let image = vc.image {
+            Task {
+                let result = await VehicleIdentificationService.shared.identifyVehicle(from: image)
+                if case .success(let id) = result {
+                    print("🔄 Re-identified: \(id.make) \(id.model) \(id.year)")
+                }
+            }
         }
     }
     
