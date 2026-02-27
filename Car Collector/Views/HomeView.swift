@@ -18,12 +18,14 @@ struct HomeView: View {
     @State private var showLeaderboard = false
     @State private var showExplore = false
     @State private var showHeadToHead = false
+    @State private var showDailyChallenges = false
     @ObservedObject private var friendsService = FriendsService.shared
     @ObservedObject private var h2hService = HeadToHeadService.shared
     @ObservedObject private var navigationController = NavigationController.shared
     @ObservedObject private var dashboard = HomeDashboardService.shared
     @ObservedObject private var userService = UserService.shared
     @ObservedObject private var tutorialService = TutorialQuestService.shared
+    @ObservedObject private var challengeService = DailyChallengeService.shared
     
     var body: some View {
         NavigationStack(path: $navigationController.homeNavigationPath) {
@@ -95,6 +97,9 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showHeadToHead) {
                 HeadToHeadView(isLandscape: isLandscape)
             }
+            .navigationDestination(isPresented: $showDailyChallenges) {
+                DailyChallengeView()
+            }
             .fullScreenCover(isPresented: $showLeaderboard) {
                 LeaderboardView(isLandscape: isLandscape)
             }
@@ -105,6 +110,7 @@ struct HomeView: View {
                     showLeaderboard = false
                     showExplore = false
                     showHeadToHead = false
+                    showDailyChallenges = false
                 }
             }
             .onChange(of: showFriends) { _, isFriendsOpen in
@@ -121,6 +127,7 @@ struct HomeView: View {
                 showLeaderboard = false
                 showExplore = false
                 showHeadToHead = false
+                showDailyChallenges = false
                 navigationController.unpreserveTab(1)
                 print("🏠 HomeView: Reset all navigation booleans from trigger")
             }
@@ -232,22 +239,48 @@ struct HomeView: View {
         }
     }
     
-    // MARK: - Quest Strip
+    // MARK: - Quest Strip (Daily Challenges)
     
     @ViewBuilder
     private var questStripSection: some View {
-        if !dashboard.quests.isEmpty {
-            VStack(alignment: .leading, spacing: DeviceScale.h(8)) {
-                HStack {
-                    Image(systemName: "target")
+        VStack(alignment: .leading, spacing: DeviceScale.h(8)) {
+            HStack {
+                Image(systemName: "target")
+                    .foregroundStyle(.orange)
+                Text("DAILY CHALLENGES")
+                    .font(.poppins(14))
+                    .foregroundStyle(.white.opacity(0.8))
+                Spacer()
+                Button {
+                    showDailyChallenges = true
+                } label: {
+                    Text("See All")
+                        .font(.poppins(12))
                         .foregroundStyle(.orange)
-                    Text("ACTIVE QUESTS")
-                        .font(.poppins(14))
-                        .foregroundStyle(.white.opacity(0.8))
+                }
+            }
+            .padding(.horizontal)
+            
+            if dashboard.quests.isEmpty {
+                // Loading or empty — show placeholder
+                HStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.orange.opacity(0.5))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Challenges loading...")
+                            .font(.poppins(13))
+                            .foregroundStyle(.white.opacity(0.6))
+                        Text("Capture cards, win battles, earn rewards")
+                            .font(.poppins(11))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
                     Spacer()
                 }
+                .padding(14)
+                .solidGlass(cornerRadius: 12)
                 .padding(.horizontal)
-                
+            } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DeviceScale.w(12)) {
                         ForEach(dashboard.quests) { quest in

@@ -220,6 +220,25 @@ struct DailyLoginPopup: View {
                             .foregroundStyle(.white.opacity(0.35))
                             .padding(.top, 1)
                             .opacity(animateIn ? 1 : 0)
+                        
+                        // Next streak cosmetic milestone preview
+                        if let milestone = DailyChallengeService.shared.nextStreakMilestone(currentStreak: loginService.currentStreak) {
+                            HStack(spacing: 6) {
+                                Image(systemName: milestone.icon)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.yellow)
+                                
+                                Text("Day \(milestone.streakDay): \(milestone.name)")
+                                    .font(.poppins(9))
+                                    .foregroundStyle(.yellow.opacity(0.8))
+                                    .lineLimit(1)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.yellow.opacity(0.1))
+                            .clipShape(Capsule())
+                            .opacity(animateIn ? 1 : 0)
+                        }
                     }
                     .padding(12)
                 }
@@ -575,6 +594,9 @@ struct DailyLoginPopup: View {
             }
             
             let reward = await loginService.checkIn(uid: uid)
+            
+            // Check for streak cosmetic unlocks
+            let _ = await loginService.checkStreakCosmetics(uid: uid)
             
             await MainActor.run {
                 if reward != nil {

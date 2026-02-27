@@ -91,6 +91,11 @@ final class ServiceLifecycleManager: ObservableObject {
         
         // Active marketplace listings and FriendsService restart lazily from their tabs
         
+        // Refresh daily challenges on resume
+        Task {
+            await DailyChallengeService.shared.load(uid: uid)
+        }
+        
         isListening = true
         print("▶️ ServiceLifecycleManager: Essential listeners resumed (app foregrounded)")
     }

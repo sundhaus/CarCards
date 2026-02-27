@@ -1173,6 +1173,11 @@ class HeadToHeadService: ObservableObject {
         try await setCardCooldown(cardId: race.defenderCardId)
         
         print("🏆 Race finished! Winner: \(winnerId)")
+        
+        // Track daily challenge progress for H2H wins
+        if winnerId == FirebaseManager.shared.currentUserId {
+            DailyChallengeService.shared.onH2HWin(uid: winnerId)
+        }
     }
     
     // MARK: - Rewards
@@ -1199,6 +1204,9 @@ class HeadToHeadService: ObservableObject {
         if winnerId == FirebaseManager.shared.currentUserId {
             if pot > 0 { UserService.shared.addCoins(pot) }
             UserService.shared.addXP(HeadToHeadService.winnerXP)
+            
+            // Track daily challenge H2H win
+            DailyChallengeService.shared.onH2HWin(uid: winnerId)
         } else {
             var updates: [String: Any] = [
                 "totalXP": FieldValue.increment(Int64(HeadToHeadService.winnerXP))

@@ -388,6 +388,15 @@ struct ContentView: View {
         levelSystem.addXP(RewardConfig.captureXP(for: rarity))
         levelSystem.addCoins(RewardConfig.captureCoins(for: rarity))
         
+        // Track daily challenge progress for card captures
+        if let uid = FirebaseManager.shared.currentUserId {
+            DailyChallengeService.shared.onCardCaptured(
+                color: card.color,
+                category: card.specs?.category?.rawValue,
+                uid: uid
+            )
+        }
+        
         fetchSpecsForNewCard(card)
     }
     
@@ -425,6 +434,15 @@ struct ContentView: View {
                         CardStorage.saveCards(savedCards)
                         CardRenderer.shared.clearCache(for: card.id)
                         print("✅ Pre-fetched specs for \(card.make) \(card.model) — rarity: \(specs.rarity?.rawValue ?? "none")")
+                        
+                        // Track category-based daily/weekly challenge progress now that we have specs
+                        if let category = specs.category, let uid = FirebaseManager.shared.currentUserId {
+                            DailyChallengeService.shared.onCardCaptured(
+                                color: nil, // Color already tracked at capture time
+                                category: category.rawValue,
+                                uid: uid
+                            )
+                        }
                         
                         // Notify Garage to reload with updated rarity border
                         NotificationCenter.default.post(name: NSNotification.Name("CardSaved"), object: nil)

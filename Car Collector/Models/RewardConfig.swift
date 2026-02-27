@@ -133,6 +133,27 @@ struct RewardConfig {
     /// Bonus coins at 30-day streak
     static let streak30BonusCoins = 75
     
+    // MARK: - Daily Challenge Rewards
+    
+    /// Standard daily challenge (capture color / capture category)
+    static let dailyChallengeCoins = 50
+    static let dailyChallengeXP = 30
+    static let dailyChallengeEvoPoints = 5
+    
+    /// H2H daily challenge (win N battles)
+    static let dailyChallengeH2HCoins = 75
+    static let dailyChallengeH2HXP = 40
+    static let dailyChallengeH2HEvoPoints = 10
+    
+    /// Social daily challenge (give N heats)
+    static let dailyChallengeSocialCoins = 40
+    static let dailyChallengeSocialXP = 25
+    
+    // MARK: - Weekly Challenge Rewards
+    
+    static let weeklyChallengeCoins = 200
+    static let weeklyChallengeXP = 100
+    
     // MARK: - Level-Up Coin Bonus
     
     /// Coins awarded on level-up = newLevel × this multiplier

@@ -460,16 +460,17 @@ struct DailyLoginView: View {
                 .tracking(1.5)
             
             VStack(spacing: 8) {
-                milestoneRow(days: 3, bonusXP: RewardConfig.streak3BonusXP, bonusCoins: 0)
-                milestoneRow(days: 7, bonusXP: RewardConfig.streak7BonusXP, bonusCoins: RewardConfig.streak7BonusCoins)
-                milestoneRow(days: 30, bonusXP: RewardConfig.streak30BonusXP, bonusCoins: RewardConfig.streak30BonusCoins)
+                milestoneRow(days: 3, bonusXP: RewardConfig.streak3BonusXP, bonusCoins: 0, cosmetic: nil)
+                milestoneRow(days: 7, bonusXP: RewardConfig.streak7BonusXP, bonusCoins: RewardConfig.streak7BonusCoins, cosmetic: "Streak Flame Border")
+                milestoneRow(days: 14, bonusXP: 0, bonusCoins: 0, cosmetic: "Hot Streak Badge")
+                milestoneRow(days: 30, bonusXP: RewardConfig.streak30BonusXP, bonusCoins: RewardConfig.streak30BonusCoins, cosmetic: "Inferno Effect")
             }
         }
         .padding(16)
         .solidGlass(cornerRadius: 16)
     }
     
-    private func milestoneRow(days: Int, bonusXP: Int, bonusCoins: Int) -> some View {
+    private func milestoneRow(days: Int, bonusXP: Int, bonusCoins: Int, cosmetic: String?) -> some View {
         let reached = loginService.currentStreak >= days
         
         return HStack(spacing: 12) {
@@ -498,14 +499,22 @@ struct DailyLoginView: View {
                     .foregroundStyle(reached ? .primary : .secondary)
                 
                 HStack(spacing: 8) {
-                    Text("+\(bonusXP) XP")
-                        .font(.poppins(12))
-                        .foregroundStyle(.cyan)
+                    if bonusXP > 0 {
+                        Text("+\(bonusXP) XP")
+                            .font(.poppins(12))
+                            .foregroundStyle(.cyan)
+                    }
                     
                     if bonusCoins > 0 {
                         Text("+\(bonusCoins) Coins")
                             .font(.poppins(12))
                             .foregroundStyle(.yellow)
+                    }
+                    
+                    if let cosmeticName = cosmetic {
+                        Text(cosmeticName)
+                            .font(.poppins(12))
+                            .foregroundStyle(.purple)
                     }
                 }
             }

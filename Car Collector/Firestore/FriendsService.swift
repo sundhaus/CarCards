@@ -952,6 +952,9 @@ class FriendsService: ObservableObject {
         ])
         
         print("âœ… Heat added to activity \(activityId)")
+        
+        // Track daily challenge heat-giving progress
+        DailyChallengeService.shared.onHeatGiven(uid: userId)
     }
     
     /// Remove heat from an activity

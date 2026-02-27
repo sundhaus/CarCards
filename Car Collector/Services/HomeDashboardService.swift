@@ -183,55 +183,45 @@ class HomeDashboardService: ObservableObject {
         weeklyStats = stats
     }
     
-    // MARK: - Active Quests (locally computed from user state)
+    // MARK: - Active Quests (from DailyChallengeService)
     
     private func loadQuests() async {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
         
-        let calendar = Calendar.current
-        let now = Date()
-        let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+        // Load daily challenges if not yet loaded
+        if !DailyChallengeService.shared.isLoaded {
+            await DailyChallengeService.shared.load(uid: uid)
+        }
         
+        // Convert daily challenges to ActiveQuest for display on home
         var questList: [ActiveQuest] = []
         
-        // Quest 1: Capture cards this week
-        let capturedThisWeek = weeklyStats.cardsThisWeek
-        questList.append(ActiveQuest(
-            id: "weekly_capture",
-            title: "Weekly Collector",
-            description: "Capture 5 cards this week",
-            icon: "camera.fill",
-            progress: min(capturedThisWeek, 5),
-            target: 5,
-            rewardCoins: 500,
-            rewardXP: 100
-        ))
+        for challenge in DailyChallengeService.shared.dailyChallenges {
+            questList.append(ActiveQuest(
+                id: challenge.id,
+                title: challenge.title,
+                description: challenge.description,
+                icon: challenge.icon,
+                progress: challenge.progress,
+                target: challenge.target,
+                rewardCoins: challenge.rewardCoins,
+                rewardXP: challenge.rewardXP
+            ))
+        }
         
-        // Quest 2: Win H2H battles
-        let h2hWins = weeklyStats.h2hWins
-        questList.append(ActiveQuest(
-            id: "weekly_h2h",
-            title: "Race Champion",
-            description: "Win 3 Head-to-Head battles",
-            icon: "bolt.fill",
-            progress: min(h2hWins, 3),
-            target: 3,
-            rewardCoins: 750,
-            rewardXP: 150
-        ))
-        
-        // Quest 3: Get heats on your cards
-        let heatsReceived = weeklyStats.heatsReceived
-        questList.append(ActiveQuest(
-            id: "weekly_heat",
-            title: "Hot Ride",
-            description: "Earn 10 heats on your cards",
-            icon: "flame.fill",
-            progress: min(heatsReceived, 10),
-            target: 10,
-            rewardCoins: 300,
-            rewardXP: 75
-        ))
+        // Add weekly featured as a quest too
+        if let weekly = DailyChallengeService.shared.weeklyChallenge, !weekly.isClaimed {
+            questList.append(ActiveQuest(
+                id: weekly.id,
+                title: weekly.title,
+                description: weekly.description,
+                icon: weekly.icon,
+                progress: weekly.progress,
+                target: weekly.target,
+                rewardCoins: weekly.rewardCoins,
+                rewardXP: weekly.rewardXP
+            ))
+        }
         
         quests = questList
     }
