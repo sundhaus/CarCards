@@ -85,37 +85,25 @@ struct RarityEffectOverlay: View {
             if rarity.hasFullBleedArt {
                 FullBleedEdgeOverlay(rarity: rarity, cornerRadius: cornerRadius)
             }
-            
-            // Particles (Epic + Legendary)
-            if rarity >= .epic {
-                ParticleSparkOverlay(
-                    rarity: rarity,
-                    cardSize: cardSize,
-                    cornerRadius: cornerRadius
-                )
-            }
         }
     }
     
     @ViewBuilder
     private var outerEffects: some View {
-        // Legendary: gyro rim light + glow pulse — these have shadows
-        // that need to bleed past the card edge for the full effect
+        // Static rarity borders only — no gyro, no timers, no forever-animations
         if rarity == .legendary {
-            GyroRimLight(rarity: rarity, cornerRadius: cornerRadius)
-            GlowPulseOverlay(color: Color.yellow, cornerRadius: cornerRadius)
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color.yellow.opacity(0.5), lineWidth: 3)
         }
         
-        // Epic: shimmer border (stroke sits on edge, shadow bleeds)
         if rarity == .epic {
-            AnimatedShimmerBorder(rarity: rarity, cornerRadius: cornerRadius)
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(rarity.gradient, lineWidth: 2.5)
         }
         
-        // Rare: static blue glow border
         if rarity == .rare {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(Color.cyan.opacity(0.5), lineWidth: 2)
-                .shadow(color: Color.cyan.opacity(0.4), radius: 8)
         }
     }
 }
@@ -481,180 +469,49 @@ struct ThumbnailShimmerModifier: ViewModifier {
 /// angle reveals different colors sliding through the pattern shapes.
 struct HolographicPatternOverlay: View {
     let cornerRadius: CGFloat
-    var patternAsset: String = "HoloPattern"  // Asset name for the pattern
-    var useGyro: Bool = true  // false = auto-animate for thumbnails
-    
-    @ObservedObject private var motion = CardMotionManager.shared
-    @State private var autoPhase: CGFloat = 0
-    
-    /// Rainbow scroll offset: how far the infinite rainbow has shifted.
-    /// Driven by gyro roll (left/right tilt) for full-size,
-    /// or auto-animated phase for thumbnails.
-    /// Range: normalized 0…1, but maps to multiple card-widths of travel.
-    private var rainbowScroll: CGFloat {
-        if useGyro {
-            let rollRange: CGFloat = 0.15
-            let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange
-            let pitchRange: CGFloat = 0.15
-            let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange
-            return (rollNorm + pitchNorm) * 1.0
-        } else {
-            return (autoPhase - 0.5) * 2.0
-        }
-    }
+    var patternAsset: String = "HoloPattern"
+    var useGyro: Bool = true  // Ignored now — gyro removed. Kept for API compat.
     
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
             let h = geo.size.height
             
-            ZStack {
-                // Layer 1: Static base pattern (subtle white texture always visible)
-                Image(patternAsset)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: w, height: h)
-                    .clipped()
-                    .blendMode(.screen)
-                    .opacity(0.15)
-                
-                // Layer 2: Infinite prismatic rainbow masked to pattern
-                prismaticRainbowLayer(width: w, height: h)
-            }
+            // Static pattern overlay only — no animation, no prismatic image.
+            // The full prismatic effect is handled by UnifiedCardEffects on
+            // fullscreen cards via touch-driven drag.
+            Image(patternAsset)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: w, height: h)
+                .clipped()
+                .blendMode(.screen)
+                .opacity(0.15)
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .allowsHitTesting(false)
-        .onAppear {
-            if useGyro {
-                motion.startIfNeeded()
-            } else {
-                withAnimation(
-                    .easeInOut(duration: 3.0)
-                    .repeatForever(autoreverses: true)
-                ) {
-                    autoPhase = 1.0
-                }
-            }
-        }
-        .onDisappear {
-            if useGyro {
-                motion.stopIfNeeded()
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func prismaticRainbowLayer(width w: CGFloat, height h: CGFloat) -> some View {
-        let imgWidth = w * 5.0
-        let maxScroll = imgWidth - w
-        let rawOffset = rainbowScroll * w
-        let clampedOffset = max(-maxScroll / 2, min(maxScroll / 2, rawOffset))
-        
-        Image("PrismaticGradient")
-            .resizable()
-            .frame(width: imgWidth, height: h)
-            .offset(x: clampedOffset)
-            .frame(width: w, height: h)
-            .clipped()
-            .opacity(0.7)
-            .mask {
-                Image(patternAsset)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: w, height: h)
-                    .clipped()
-            }
-            .blendMode(.screen)
     }
 }
 
 // MARK: - Thumbnail Rarity Border Overlay
 
-/// Lightweight animated border effects for card thumbnails in feeds.
-/// Epic: rotating shimmer border. Legendary: glow pulse + shimmer border.
-/// Designed to be performant in scroll views.
+/// Static rarity border for thumbnails. No animation — just a colored stroke.
+/// Animated borders on 10+ thumbnails in a scroll view was causing 100% CPU.
 struct ThumbnailRarityBorderOverlay: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
     
-    @State private var phase: CGFloat = 0
-    @State private var glowIntensity: CGFloat = 0.2
-    
-    // Smooth-wrapping gradients: highlight fades to clear on both sides
-    // with enough clear padding to eliminate the seam at 0°/360°.
-    private var borderColors: [Color] {
-        switch rarity {
-        case .legendary:
-            return [
-                Color.clear,
-                Color.clear,
-                Color.yellow.opacity(0.15),
-                Color.orange.opacity(0.6),
-                Color.white.opacity(0.85),
-                Color.orange.opacity(0.6),
-                Color.yellow.opacity(0.15),
-                Color.clear,
-                Color.clear,
-                Color.clear,
-                Color.clear,
-                Color.clear,
-            ]
-        case .epic:
-            return [
-                Color.clear,
-                Color.clear,
-                Color.purple.opacity(0.15),
-                Color.pink.opacity(0.5),
-                Color.white.opacity(0.75),
-                Color.pink.opacity(0.5),
-                Color.purple.opacity(0.15),
-                Color.clear,
-                Color.clear,
-                Color.clear,
-                Color.clear,
-                Color.clear,
-            ]
-        default:
-            return [Color.clear]
-        }
-    }
-    
     var body: some View {
         ZStack {
-            // Animated shimmer border — gradient travels along the border path
             RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(
-                    AngularGradient(
-                        gradient: Gradient(colors: borderColors),
-                        center: .center,
-                        startAngle: .degrees(phase),
-                        endAngle: .degrees(phase + 360)
-                    ),
-                    lineWidth: 2.0
-                )
+                .stroke(rarity.gradient, lineWidth: 2.0)
             
-            // Legendary gets an additional glow pulse
             if rarity == .legendary {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.yellow.opacity(Double(glowIntensity)), lineWidth: 3)
-                    .shadow(color: Color.yellow.opacity(Double(glowIntensity) * 0.5), radius: 6)
+                    .stroke(Color.yellow.opacity(0.3), lineWidth: 3)
             }
         }
         .allowsHitTesting(false)
-        .onAppear {
-            withAnimation(
-                .linear(duration: 4.0)
-                .repeatForever(autoreverses: false)
-            ) {
-                phase = 360
-            }
-            
-            if rarity == .legendary {
-                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-                    glowIntensity = 0.5
-                }
-            }
-        }
     }
 }
 
