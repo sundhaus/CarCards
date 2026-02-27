@@ -162,7 +162,7 @@ class VehicleIdentificationService: ObservableObject {
     
     init() {
         ai = FirebaseAI.firebaseAI(backend: .googleAI())
-        model = ai.generativeModel(modelName: "gemini-3-flash-preview")
+        model = ai.generativeModel(modelName: "gemini-2.5-flash")
         
         #if DEBUG
         print("🤖 VehicleIdentificationService initialized (OPTIMIZED)")
@@ -202,15 +202,15 @@ class VehicleIdentificationService: ObservableObject {
             
             Return your TOP 3 alternative identifications as JSON, most likely first:
             {"options":[
-                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 GT3","generation":"992","confidence":"high"},
-                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 Carrera S","generation":"992","confidence":"medium"},
-                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 GT3","generation":"991.2","confidence":"low"}
+                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 GT3","generation":"8th Gen","confidence":"high"},
+                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 Carrera S","generation":"8th Gen","confidence":"medium"},
+                {"isVehicle":true,"isAppropriate":true,"rejectionReason":null,"make":"Porsche","model":"911 GT3","generation":"7th Gen","confidence":"low"}
             ]}
             
             RULES:
             - make: manufacturer (e.g. "Mercedes-Benz", "Land Rover")
             - model: full name with sub-model (e.g. "911 GT3 RS", "M3 Competition", "Civic Type R")
-            - generation: chassis code preferred (e.g. "992", "G80", "FL5"). Use "Nth Gen" only if no code exists.
+            - generation: simple generation name ONLY (e.g. "11th Gen", "3rd Gen", "2015-2020"). Do NOT include chassis codes, platform codes, or internal designations.
             - Each option should be a MEANINGFULLY different identification, not just trim variations.
             - Do NOT return "Unknown". Always give your best identification.
             
@@ -287,7 +287,7 @@ class VehicleIdentificationService: ObservableObject {
               "rejectionReason": null,
               "make": "Porsche",
               "model": "911 GT3",
-              "generation": "992"
+              "generation": "8th Gen"
             }
             
             REJECTION (if not a real vehicle or inappropriate):
@@ -296,7 +296,7 @@ class VehicleIdentificationService: ObservableObject {
             RULES:
             - make: manufacturer (e.g. "Lamborghini", "Mercedes-Benz", "Land Rover")
             - model: full model name including sub-model (e.g. "911 GT3 RS", "M3 Competition", "Civic Type R")
-            - generation: chassis code or gen name preferred (e.g. "992", "G80", "FL5", "W206"). Use "Nth Gen" only if no code exists.
+            - generation: simple generation name ONLY (e.g. "11th Gen", "3rd Gen", "2015-2020"). Do NOT include chassis codes, platform codes, or internal designations like "GMT K2XX" or "W206".
             - Do NOT guess "Unknown". If uncertain, give your best identification with the visual evidence available.
             - Reject screenshots, drawings, toy cars, memes.
             
