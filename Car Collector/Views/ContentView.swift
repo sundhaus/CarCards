@@ -139,7 +139,9 @@ struct ContentView: View {
         }
     }
     
-    var body: some View {
+    // TabView extracted to reduce type-checker load on body
+    @ViewBuilder
+    private var mainTabView: some View {
         TabView(selection: $navigationController.selectedTab) {
             Tab("Shop", systemImage: "bag", value: 0) {
                 shopTabContent
@@ -160,6 +162,10 @@ struct ContentView: View {
         .tabBarMinimizeBehavior(.onScrollDown)
         .tint(.white)
         .environment(\.horizontalSizeClass, .compact)
+    }
+    
+    var body: some View {
+        mainTabView
         .overlay {
             // Level Header
             if !showCamera && !showCardDetail {
