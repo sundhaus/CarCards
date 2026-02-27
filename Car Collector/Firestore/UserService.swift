@@ -279,22 +279,6 @@ class UserService: ObservableObject {
         currentProfile?.coins ?? 0
     }
     
-    // MARK: - XP Management
-    
-    func addXP(_ amount: Int) {
-        guard let uid = currentProfile?.id else { return }
-        
-        // Update local state
-        currentProfile?.totalXP = (currentProfile?.totalXP ?? 0) + amount
-        
-        // Sync to Firestore
-        Task {
-            try? await usersCollection.document(uid).updateData([
-                "totalXP": FieldValue.increment(Int64(amount))
-            ])
-        }
-    }
-    
     // MARK: - Gem Management
     
     func addGems(_ amount: Int) {
