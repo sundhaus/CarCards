@@ -213,22 +213,30 @@ private struct OuterEffectsLayer: View {
     }
 }
 
-// MARK: - View Modifier (manages touch gesture + prismatic state)
+// MARK: - View Modifier (single drag drives tilt + prismatic)
 
 struct UnifiedCardEffectModifier: ViewModifier {
     let rarity: CardRarity?
     let holoEffect: String?
     
+    // Prismatic rainbow scroll (persists between drags)
     @State private var prismaticOffset: CGFloat = 0
-    @State private var dragStart: CGFloat = 0
+    @State private var prismaticDragStart: CGFloat = 0
+    
+    // Card tilt (springs back to zero on release)
+    @State private var tiltX: Double = 0  // Pitch (forward/back)
+    @State private var tiltY: Double = 0  // Roll (left/right)
     
     func body(content: Content) -> some View {
-        if let rarity = rarity, rarity >= .rare || holoEffect != nil {
+        let hasEffects = (rarity ?? .common) >= .rare || holoEffect != nil
+        let effectRarity = rarity ?? .common
+        
+        if hasEffects {
             content
                 .overlay {
                     GeometryReader { geo in
                         UnifiedCardEffectOverlay(
-                            rarity: rarity,
+                            rarity: effectRarity,
                             cardSize: geo.size,
                             cornerRadius: geo.size.height * 0.09,
                             holoEffect: holoEffect,
@@ -236,38 +244,43 @@ struct UnifiedCardEffectModifier: ViewModifier {
                         )
                     }
                 }
-                // Touch-driven prismatic scroll: drag across card to shift rainbow
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let dragDistance = value.translation.width + value.translation.height
-                            prismaticOffset = dragStart + dragDistance / 150.0
-                        }
-                        .onEnded { _ in
-                            dragStart = prismaticOffset
-                        }
+                // 3D tilt from drag
+                .rotation3DEffect(
+                    .degrees(tiltX),
+                    axis: (x: -1, y: 0, z: 0),
+                    perspective: 0.5
                 )
-        } else if holoEffect != nil {
-            content
-                .overlay {
-                    GeometryReader { geo in
-                        UnifiedCardEffectOverlay(
-                            rarity: .common,
-                            cardSize: geo.size,
-                            cornerRadius: geo.size.height * 0.09,
-                            holoEffect: holoEffect,
-                            prismaticOffset: $prismaticOffset
-                        )
-                    }
-                }
+                .rotation3DEffect(
+                    .degrees(tiltY),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.5
+                )
+                // Single drag gesture drives everything
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
-                            let dragDistance = value.translation.width + value.translation.height
-                            prismaticOffset = dragStart + dragDistance / 150.0
+                            let dx = value.translation.width
+                            let dy = value.translation.height
+                            
+                            // Prismatic scroll: both axes contribute
+                            prismaticOffset = prismaticDragStart + (dx + dy) / 150.0
+                            
+                            // Card tilt: map drag to rotation degrees
+                            // Clamp to ±8° for subtle, premium feel
+                            let maxTilt: Double = 8.0
+                            withAnimation(.interactiveSpring(response: 0.1)) {
+                                tiltY = max(-maxTilt, min(maxTilt, Double(dx) / 25.0))
+                                tiltX = max(-maxTilt, min(maxTilt, Double(dy) / 25.0))
+                            }
                         }
                         .onEnded { _ in
-                            dragStart = prismaticOffset
+                            prismaticDragStart = prismaticOffset
+                            
+                            // Spring back to flat
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                                tiltX = 0
+                                tiltY = 0
+                            }
                         }
                 )
         } else {
