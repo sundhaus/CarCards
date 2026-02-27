@@ -296,17 +296,27 @@ class VehicleIdentificationService: ObservableObject {
             RULES:
             - make: manufacturer (e.g. "Lamborghini", "Mercedes-Benz", "Land Rover")
             - model: full model name including sub-model (e.g. "911 GT3 RS", "M3 Competition", "Civic Type R")
-            - generation: simple generation name ONLY (e.g. "11th Gen", "3rd Gen", "2015-2020"). Do NOT include chassis codes, platform codes, or internal designations like "GMT K2XX" or "W206".
+            - generation: ONLY a simple label like "11th Gen", "3rd Gen", or "2015-2020". NEVER include chassis codes, platform codes, or internal designations. BAD examples: "11th Gen (GMT K2XX)", "992.1", "W206", "F80". GOOD examples: "11th Gen", "8th Gen", "2015-2020".
             - Do NOT guess "Unknown". If uncertain, give your best identification with the visual evidence available.
             - Reject screenshots, drawings, toy cars, memes.
             
             Return ONLY JSON, no markdown.
             """
             
-            let response = try await self.model.generateContent(
-                prompt,
-                InlineDataPart(data: imageData, mimeType: "image/jpeg")
-            )
+            let response: GenerateContentResponse
+            do {
+                response = try await self.model.generateContent(
+                    prompt,
+                    InlineDataPart(data: imageData, mimeType: "image/jpeg")
+                )
+            } catch {
+                print("⚠️ First attempt failed: \(error.localizedDescription). Retrying...")
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                response = try await self.model.generateContent(
+                    prompt,
+                    InlineDataPart(data: imageData, mimeType: "image/jpeg")
+                )
+            }
             
             guard let text = response.text else {
                 return .failure(VehicleIDError.apiError("No response"))
@@ -660,8 +670,14 @@ class VehicleIdentificationService: ObservableObject {
                 let rejectionReason = dict["rejectionReason"] as? String
                 let make = dict["make"] as? String ?? "Unknown"
                 let model = dict["model"] as? String ?? "Unknown"
-                let generation = dict["generation"] as? String ?? ""
+                let rawGeneration = dict["generation"] as? String ?? ""
                 let confidence = dict["confidence"] as? String
+                
+                // Strip chassis/platform codes that Gemini sometimes includes
+                // e.g. "11th Gen (GMT K2XX)" → "11th Gen"
+                let generation = rawGeneration
+                    .replacingOccurrences(of: #"\s*\(.*?\)"#, with: "", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespaces)
                 
                 let identification = VehicleIdentification(
                     make: make,
