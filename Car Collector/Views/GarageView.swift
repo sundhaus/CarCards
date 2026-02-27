@@ -322,7 +322,7 @@ struct GarageView: View {
                 let vehicleService = VehicleIdentificationService()
                 let result = await vehicleService.identifyVehicle(from: image)
                 if case .success(let id) = result {
-                    print("🔄 Re-identified: \(id.make) \(id.model) \(id.year)")
+                    print("🔄 Re-identified: \(id.make) \(id.model) \(id.generation)")
                 }
             }
         }
