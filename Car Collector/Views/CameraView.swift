@@ -184,6 +184,7 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     var preview: AVCaptureVideoPreviewLayer?
     private var currentDevice: AVCaptureDevice?
     private let context = CIContext()
+    private let sessionQueue = DispatchQueue(label: "com.carcollector.cameraSessionQueue")
     var previewLayer: CALayer?
     
     enum AspectRatio: String, CaseIterable {
