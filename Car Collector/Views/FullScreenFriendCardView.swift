@@ -140,8 +140,7 @@ struct FullScreenFriendCardView: View {
             if !isFlipped {
                 FIFACardView(card: activity, height: cardHeight, showRarityEffects: false)
                     .frame(width: cardWidth, height: cardHeight)
-                    .holoEffect(activity.holoEffect, cornerRadius: cardHeight * 0.09)
-                    .rarityEffects(for: displayRarity)
+                    .unifiedCardEffects(rarity: displayRarity, holoEffect: activity.holoEffect)
                     .allowsHitTesting(false)
                     .rotation3DEffect(
                         .degrees(flipDegrees),

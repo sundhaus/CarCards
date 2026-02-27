@@ -852,8 +852,7 @@ struct UnifiedCardDetailView: View {
             if !isFlipped {
                 AnyCardDetailsFrontView(card: card)
                     .frame(width: cardWidth, height: cardHeight)
-                    .holoEffect(card.holoEffect, cornerRadius: cardHeight * 0.09)
-                    .rarityEffects(for: card.rarity)
+                    .unifiedCardEffects(rarity: card.rarity, holoEffect: card.holoEffect)
                     .rotation3DEffect(
                         .degrees(flipDegrees),
                         axis: (x: 0, y: 1, z: 0)

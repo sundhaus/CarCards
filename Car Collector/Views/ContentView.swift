@@ -804,7 +804,7 @@ struct CardDetailView: View {
             .frame(width: cardWidth, height: cardHeight)
         }
         .clipShape(RoundedRectangle(cornerRadius: cardHeight * 0.09))
-        .rarityEffects(for: card.specs?.rarity)
+        .unifiedCardEffects(rarity: card.specs?.rarity, holoEffect: nil)
         .shadow(color: .black.opacity(0.5), radius: 20)
         .cardTilt(for: card.specs?.rarity)
     }

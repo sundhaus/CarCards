@@ -158,18 +158,8 @@ struct HomeView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: cardWidth, height: cardHeight)
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        // Holographic foil pattern (gyro-driven for showcase)
-                        .holoEffect(card.holoEffect, cornerRadius: cornerRadius)
-                        // Rarity border + shimmer/glow effects
-                        .overlay {
-                            if let rarity = parsedRarity, rarity >= .rare {
-                                RarityEffectOverlay(
-                                    rarity: rarity,
-                                    cardSize: CGSize(width: cardWidth, height: cardHeight),
-                                    cornerRadius: cornerRadius
-                                )
-                            }
-                        }
+                        // Unified holo + rarity effects (consolidated draw calls)
+                        .unifiedCardEffects(rarity: parsedRarity, holoEffect: card.holoEffect)
                         .shadow(color: crownGlowColor(for: card).opacity(0.5), radius: 16, x: 0, y: 4)
                     
                     // Card name
