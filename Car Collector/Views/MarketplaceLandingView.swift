@@ -117,6 +117,7 @@ struct MarketplaceLandingView: View {
         }
         .onDisappear {
             OrientationManager.unlockOrientation()
+            marketplaceService.stopAllListeners()
         }
         .onChange(of: navigationController.marketplaceNavigationPath) { oldValue, newValue in
             // When navigation path is cleared, reset all boolean states

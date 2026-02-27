@@ -271,6 +271,14 @@ class HeadToHeadService: ObservableObject {
     private var pendingListener: ListenerRegistration?
     private var streakListener: ListenerRegistration?
     
+    deinit {
+        racesListener?.remove()
+        openListener?.remove()
+        pendingListener?.remove()
+        streakListener?.remove()
+        duoInviteListener?.remove()
+    }
+    
     private var racesCollection: CollectionReference {
         db.collection("races")
     }

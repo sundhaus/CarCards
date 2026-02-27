@@ -166,6 +166,9 @@ struct TransferTargetsView: View {
                 marketplaceService.listenToMyBids(uid: uid)
             }
         }
+        .onDisappear {
+            marketplaceService.stopAllListeners()
+        }
     }
 }
 

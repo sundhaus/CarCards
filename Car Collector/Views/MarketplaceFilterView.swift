@@ -215,6 +215,9 @@ struct MarketplaceFilterView: View {
         .onAppear {
             marketplaceService.listenToActiveListings()
         }
+        .onDisappear {
+            marketplaceService.stopAllListeners()
+        }
         .onChange(of: marketplaceService.activeListings) { _, listings in
             Task { await loadCategories(for: listings) }
         }

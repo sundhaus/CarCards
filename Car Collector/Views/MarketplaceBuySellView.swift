@@ -232,6 +232,9 @@ struct MarketplaceBuySellView: View {
             marketplaceService.listenToActiveListings()
             print("📊 Listening to Firebase marketplace listings")
         }
+        .onDisappear {
+            marketplaceService.stopAllListeners()
+        }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .fullScreenCover(item: $selectedCard) { card in

@@ -117,6 +117,7 @@ struct HeadToHeadView: View {
         }
         .onDisappear {
             raceTimer.upstream.connect().cancel()
+            h2hService.stopListening()
         }
         .onReceive(raceTimer) { _ in
             updateTimer()

@@ -16,6 +16,7 @@ class ExploreService: ObservableObject {
     @Published var isLoading = false
     
     private let db = Firestore.firestore()
+    private var fetchTask: Task<Void, Never>?
     
     // How many cards to show per category in explore preview
     private let cardsPerCategory = 10
@@ -27,52 +28,64 @@ class ExploreService: ObservableObject {
     
     // Fetch top cards for all categories
     func fetchAllCategories() {
-        isLoading = true
-        print("\n🔍 EXPLORE: Starting to fetch all categories")
+        fetchTask?.cancel()
         
-        var tempCardsByCategory: [VehicleCategory: [FriendActivity]] = [:]
-        let group = DispatchGroup()
-        
-        // Fetch featured cards
-        group.enter()
-        fetchFeaturedCards { cards in
-            print("🌟 FEATURED: Got \(cards.count) cards")
-            if cards.isEmpty {
-                print("   ⚠️ Featured is empty!")
-            } else {
-                cards.prefix(3).forEach { card in
-                    print("   - \(card.cardMake) \(card.cardModel) (heat: \(card.heatCount))")
-                }
-            }
-            self.featuredCards = cards
-            group.leave()
-        }
-        
-        // Fetch for each category
-        for category in VehicleCategory.allCases {
-            group.enter()
+        fetchTask = Task { @MainActor in
+            isLoading = true
+            print("\n🔍 EXPLORE: Starting to fetch all categories")
             
-            fetchCategoryCards(category: category, limit: cardsPerCategory) { cards in
-                if !cards.isEmpty {
-                    tempCardsByCategory[category] = cards
-                    print("🎯 \(category.rawValue): Got \(cards.count) cards")
-                    cards.prefix(2).forEach { card in
-                        print("   - \(card.cardMake) \(card.cardModel)")
+            var tempCardsByCategory: [VehicleCategory: [FriendActivity]] = [:]
+            
+            // Fetch featured cards
+            let featured = await fetchFeaturedCardsAsync()
+            guard !Task.isCancelled else { return }
+            
+            print("🌟 FEATURED: Got \(featured.count) cards")
+            self.featuredCards = featured
+            
+            // Fetch for each category concurrently
+            await withTaskGroup(of: (VehicleCategory, [FriendActivity]).self) { group in
+                for category in VehicleCategory.allCases {
+                    group.addTask { [cardsPerCategory] in
+                        let cards = await self.fetchCategoryCardsAsync(category: category, limit: cardsPerCategory)
+                        return (category, cards)
                     }
-                } else {
-                    print("❌ \(category.rawValue): EMPTY")
                 }
-                group.leave()
+                
+                for await (category, cards) in group {
+                    guard !Task.isCancelled else { return }
+                    if !cards.isEmpty {
+                        tempCardsByCategory[category] = cards
+                        print("🎯 \(category.rawValue): Got \(cards.count) cards")
+                    }
+                }
             }
-        }
-        
-        group.notify(queue: .main) {
+            
+            guard !Task.isCancelled else { return }
             self.cardsByCategory = tempCardsByCategory
             self.isLoading = false
             print("\n✅ EXPLORE: Finished loading")
             print("   📊 Featured: \(self.featuredCards.count) cards")
             print("   📊 Categories with cards: \(tempCardsByCategory.count)")
             print("   📊 Total cards: \(tempCardsByCategory.values.reduce(0) { $0 + $1.count })")
+        }
+    }
+    
+    // Async wrapper for category fetch
+    private func fetchCategoryCardsAsync(category: VehicleCategory, limit: Int) async -> [FriendActivity] {
+        await withCheckedContinuation { continuation in
+            fetchCategoryCards(category: category, limit: limit) { cards in
+                continuation.resume(returning: cards)
+            }
+        }
+    }
+    
+    // Async wrapper for featured fetch
+    private func fetchFeaturedCardsAsync() async -> [FriendActivity] {
+        await withCheckedContinuation { continuation in
+            fetchFeaturedCards { cards in
+                continuation.resume(returning: cards)
+            }
         }
     }
     

@@ -241,6 +241,10 @@ struct FriendsView: View {
                 startListeners()
                 Task { await activityService.checkForUnread() }
             }
+            .onDisappear {
+                friendsService.stopAllListeners()
+                CommentService.shared.removeAllListeners()
+            }
     }
     
     private func startListeners() {

@@ -49,6 +49,11 @@ class CommentService: ObservableObject {
     
     private init() {}
     
+    deinit {
+        listeners.values.forEach { $0.remove() }
+        listeners.removeAll()
+    }
+    
     // MARK: - Post Comment
     
     func postComment(activityId: String, text: String) async throws {
