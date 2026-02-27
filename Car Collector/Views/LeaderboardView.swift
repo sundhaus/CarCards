@@ -46,7 +46,7 @@ struct LeaderboardView: View {
                     }
                     .padding(4)
                     .background(.clear)
-                    .glassEffect(.regular, in: .capsule)
+                    .solidGlassCapsule()
                     .padding(.horizontal)
                     .padding(.top, 12)
                     .padding(.bottom, 8)
@@ -310,7 +310,7 @@ struct LeaderboardRow: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
     }
     
     private var rankColor: Color {

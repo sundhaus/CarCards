@@ -132,7 +132,7 @@ struct CardDetailsView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
-                    .glassEffect(.regular, in: .circle)
+                    .solidGlassCircle()
             }
             
             Spacer()
@@ -160,7 +160,7 @@ struct CardDetailsView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .glassEffect(.regular, in: .capsule)
+        .solidGlassCapsule()
     }
     
     // MARK: - Card Preview
@@ -235,7 +235,7 @@ struct CardDetailsView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(16)
-                .glassEffect(.regular, in: .rect(cornerRadius: 14))
+                .solidGlass(cornerRadius: 14)
             }
             
             // Expanded listing form
@@ -263,7 +263,7 @@ struct CardDetailsView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity)
-        .glassEffect(.regular, in: .rect(cornerRadius: 14))
+        .solidGlass(cornerRadius: 14)
         .padding(.top, -4)
     }
     
@@ -283,7 +283,7 @@ struct CardDetailsView: View {
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.primary)
                         .frame(width: 40, height: 40)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                        .solidGlass(cornerRadius: 8)
                 }
                 
                 TextField("0", text: value)
@@ -292,7 +292,7 @@ struct CardDetailsView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 10))
+                    .solidGlass(cornerRadius: 10)
                     .keyboardType(.numberPad)
                 
                 HeatCheckCoin(size: 20)
@@ -308,7 +308,7 @@ struct CardDetailsView: View {
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.primary)
                         .frame(width: 40, height: 40)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                        .solidGlass(cornerRadius: 8)
                 }
             }
         }
@@ -329,7 +329,7 @@ struct CardDetailsView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.regular, in: .rect(cornerRadius: 10))
+            .solidGlass(cornerRadius: 10)
             .tint(.primary)
         }
     }
@@ -408,7 +408,7 @@ struct CardDetailsView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(16)
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            .solidGlass(cornerRadius: 14)
         }
         .disabled(disabled)
         .opacity(disabled ? 0.5 : 1)

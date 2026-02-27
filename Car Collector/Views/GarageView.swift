@@ -62,7 +62,7 @@ struct GarageView: View {
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 10)
-                    .glassEffect(.regular, in: .rect)
+                    .solidGlass(cornerRadius: 0)
                     
                     // Content
                     if allCards.isEmpty {
@@ -407,7 +407,7 @@ struct GarageView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 6)
-                            .glassEffect(.regular, in: .capsule)
+                            .solidGlassCapsule()
                             .padding(.bottom, 12)
                         }
                     }

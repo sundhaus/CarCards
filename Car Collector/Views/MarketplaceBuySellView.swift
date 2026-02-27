@@ -165,7 +165,7 @@ struct MarketplaceBuySellView: View {
                 .padding(.horizontal)
                 .padding(.top, 18)
                 .padding(.bottom, 10)
-                .glassEffect(.regular, in: .rect)
+                .solidGlass(cornerRadius: 0)
                 
                 // Glass segmented tabs
                 HStack(spacing: 6) {
@@ -192,7 +192,7 @@ struct MarketplaceBuySellView: View {
                     }
                 }
                 .padding(4)
-                .glassEffect(.regular, in: .capsule)
+                .solidGlassCapsule()
                 .padding(.horizontal)
                 .padding(.top, 8)
                 .padding(.bottom, 8)
@@ -330,7 +330,7 @@ struct MarketplaceBuySellView: View {
         }
         .padding()
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
         .padding(.horizontal)
     }
     
@@ -401,7 +401,7 @@ struct MarketplaceBuySellView: View {
         }
         .padding()
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
         .padding(.horizontal)
     }
     
@@ -436,7 +436,7 @@ struct MarketplaceBuySellView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(.clear)
-                .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                .solidGlass(cornerRadius: 8)
             }
             .disabled(disabled)
         }
@@ -612,7 +612,7 @@ struct ListingCardRow: View {
         }
         .frame(width: cardWidth)
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: cardHeight * 0.09))
+        .solidGlass(cornerRadius: cardHeight * 0.09)
     }
 }
 
@@ -647,7 +647,7 @@ struct GarageCardRow: View {
         }
         .frame(width: cardWidth)
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: cardHeight * 0.09))
+        .solidGlass(cornerRadius: cardHeight * 0.09)
     }
 }
 
@@ -779,7 +779,7 @@ struct CompactListingCard: View {
             .padding(.vertical, 6)
         }
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
     }
 }
 
@@ -828,7 +828,7 @@ struct CompactGarageCard: View {
             .padding(.vertical, 8)
         }
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
     }
 }
 

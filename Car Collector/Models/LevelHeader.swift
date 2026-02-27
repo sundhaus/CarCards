@@ -96,7 +96,7 @@ struct LevelHeader: View {
                     .frame(height: 200)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, -40)
-                    .glassEffect(.regular, in: .rect)
+                    .solidGlass(cornerRadius: 0)
                     .ignoresSafeArea()
             }
             .frame(maxWidth: .infinity)
@@ -212,7 +212,7 @@ struct LevelHeader: View {
                     .lineLimit(1)
             }
             .padding(8)
-            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .solidGlass(cornerRadius: 12)
         }
         .buttonStyle(.plain)
         .task {
@@ -359,7 +359,7 @@ struct LevelHeader: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .glassEffect(.regular, in: .capsule)
+        .solidGlassCapsule()
     }
     
     // Load profile picture

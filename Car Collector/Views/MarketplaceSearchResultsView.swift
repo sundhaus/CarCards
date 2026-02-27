@@ -56,7 +56,7 @@ struct MarketplaceSearchResultsView: View {
                 .padding(.horizontal)
                 .padding(.top, 18)
                 .padding(.bottom, 10)
-                .glassEffect(.regular, in: .rect)
+                .solidGlass(cornerRadius: 0)
                 
                 // Results
                 BuyView(

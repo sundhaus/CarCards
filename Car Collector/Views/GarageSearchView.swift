@@ -136,7 +136,7 @@ struct GarageSearchView: View {
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .frame(width: 36, height: 36)
-                                .glassEffect(.regular, in: .circle)
+                                .solidGlassCircle()
                         }
                         
                         Spacer()
@@ -237,7 +237,7 @@ struct GarageSearchView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(.clear)
-                .glassEffect(.regular, in: .rect(cornerRadius: 10))
+                .solidGlass(cornerRadius: 10)
             }
         }
     }
@@ -281,7 +281,7 @@ struct GarageSearchView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .background(.clear)
-            .glassEffect(.regular, in: .rect(cornerRadius: 10))
+            .solidGlass(cornerRadius: 10)
         }
         .disabled(isDisabled)
     }
@@ -296,7 +296,7 @@ struct GarageSearchView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
+                    .solidGlass(cornerRadius: 24)
             }
             .foregroundStyle(.primary)
             

@@ -29,7 +29,7 @@ struct CardOptionsView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.secondary)
                             .frame(width: 36, height: 36)
-                            .glassEffect(.regular, in: .circle)
+                            .solidGlassCircle()
                     }
                     
                     Spacer()
@@ -167,7 +167,7 @@ struct CardOptionsView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(16)
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            .solidGlass(cornerRadius: 14)
         }
         .disabled(disabled)
         .opacity(disabled ? 0.5 : 1)

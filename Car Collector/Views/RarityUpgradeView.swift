@@ -134,7 +134,7 @@ struct RarityUpgradeView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
-                    .glassEffect(.regular, in: .circle)
+                    .solidGlassCircle()
             }
             
             Spacer()
@@ -156,7 +156,7 @@ struct RarityUpgradeView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .glassEffect(.regular, in: .capsule)
+            .solidGlassCapsule()
         }
         .padding(.horizontal)
         .padding(.top, 18)
@@ -255,7 +255,7 @@ struct RarityUpgradeView: View {
             }
         }
         .padding(16)
-        .glassEffect(.regular, in: .rect(cornerRadius: 14))
+        .solidGlass(cornerRadius: 14)
         .padding(.horizontal, 20)
     }
     
@@ -309,7 +309,7 @@ struct RarityUpgradeView: View {
             }
         }
         .padding(16)
-        .glassEffect(.regular, in: .rect(cornerRadius: 14))
+        .solidGlass(cornerRadius: 14)
         .padding(.horizontal, 20)
     }
     
@@ -374,7 +374,7 @@ struct RarityUpgradeView: View {
                     }
                 }
                 .padding(16)
-                .glassEffect(.regular, in: .rect(cornerRadius: 14))
+                .solidGlass(cornerRadius: 14)
             }
             .disabled(!canUpgradeFree)
             .opacity(canUpgradeFree ? 1 : 0.6)
@@ -418,7 +418,7 @@ struct RarityUpgradeView: View {
                     }
                 }
                 .padding(16)
-                .glassEffect(.regular, in: .rect(cornerRadius: 14))
+                .solidGlass(cornerRadius: 14)
             }
             .disabled(!canUpgradeGems)
             .opacity(canUpgradeGems ? 1 : 0.6)
@@ -702,10 +702,10 @@ struct GemStoreView: View {
                     .foregroundStyle(.cyan)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .glassEffect(.regular, in: .capsule)
+                    .solidGlassCapsule()
             }
             .padding(14)
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            .solidGlass(cornerRadius: 14)
         }
         .disabled(gemStore.isPurchasing)
     }

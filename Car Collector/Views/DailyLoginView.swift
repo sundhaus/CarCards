@@ -118,7 +118,7 @@ struct DailyLoginView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .frame(width: 36, height: 36)
-                        .glassEffect(.regular, in: .circle)
+                        .solidGlassCircle()
                 }
             } else {
                 Color.clear.frame(width: 36, height: 36)
@@ -141,7 +141,7 @@ struct DailyLoginView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .glassEffect(.regular, in: .capsule)
+            .solidGlassCapsule()
         }
         .padding(.horizontal)
         .padding(.top, 18)
@@ -219,7 +219,7 @@ struct DailyLoginView: View {
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 8)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .solidGlass(cornerRadius: 16)
     }
     
     private func dayCell(_ day: DaySlot, index: Int) -> some View {
@@ -410,7 +410,7 @@ struct DailyLoginView: View {
             }
         }
         .padding(16)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .solidGlass(cornerRadius: 16)
     }
     
     private func rewardBubble(icon: String, value: String, label: String, colors: [Color]) -> some View {
@@ -466,7 +466,7 @@ struct DailyLoginView: View {
             }
         }
         .padding(16)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .solidGlass(cornerRadius: 16)
     }
     
     private func milestoneRow(days: Int, bonusXP: Int, bonusCoins: Int) -> some View {
@@ -530,7 +530,7 @@ struct DailyLoginView: View {
             statItem(label: "Longest", value: "\(loginService.longestStreak)", icon: "trophy.fill")
         }
         .padding(16)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .solidGlass(cornerRadius: 16)
     }
     
     private func statItem(label: String, value: String, icon: String) -> some View {

@@ -103,7 +103,7 @@ struct CategoryDetailView: View {
         .padding(.horizontal)
         .padding(.top, 18)
         .padding(.bottom, 10)
-        .glassEffect(.regular, in: .rect)
+        .solidGlass(cornerRadius: 0)
     }
     
     // MARK: - Card Grid View (continuous scroll with load-more)

@@ -195,7 +195,7 @@ struct HomeView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: DeviceScale.h(180))
-                    .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                    .solidGlass(cornerRadius: 16)
                     .padding(.horizontal)
                 }
                 .buttonStyle(.plain)
@@ -289,7 +289,7 @@ struct HomeView: View {
         }
         .padding(12)
         .frame(width: DeviceScale.w(200))
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
     }
     
     // MARK: - H2H Status Banner
@@ -362,7 +362,7 @@ struct HomeView: View {
                 }
             }
             .padding(DeviceScale.w(14))
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            .solidGlass(cornerRadius: 14)
         }
         .buttonStyle(.plain)
         .padding(.horizontal)
@@ -411,7 +411,7 @@ struct HomeView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: DeviceScale.h(100))
-                .glassEffect(.regular, in: .rect(cornerRadius: 12))
+                .solidGlass(cornerRadius: 12)
                 .padding(.horizontal)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -519,7 +519,7 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, DeviceScale.h(12))
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
     }
     
     // MARK: - Quick Actions Row (secondary nav)
@@ -593,7 +593,7 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, DeviceScale.h(12))
-            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .solidGlass(cornerRadius: 12)
         }
         .buttonStyle(.plain)
     }

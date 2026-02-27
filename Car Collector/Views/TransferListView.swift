@@ -59,7 +59,7 @@ struct TransferListView: View {
                 .padding(.horizontal)
                 .padding(.top, 18)
                 .padding(.bottom, 10)
-                .glassEffect(.regular, in: .rect)
+                .solidGlass(cornerRadius: 0)
                 
                 // Sell button
                 Button(action: {
@@ -83,7 +83,7 @@ struct TransferListView: View {
                         )
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .glassEffect(.regular, in: .rect(cornerRadius: 10))
+                    .solidGlass(cornerRadius: 10)
                 }
                 .padding(.horizontal)
                 .padding(.top, 10)
@@ -298,7 +298,7 @@ struct TransferListingCard: View {
             .padding(.vertical, 10)
         }
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
     }
 }
 
@@ -378,7 +378,7 @@ struct CompactTransferListingCard: View {
             .padding(.vertical, 6)
         }
         .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
     }
 }
 

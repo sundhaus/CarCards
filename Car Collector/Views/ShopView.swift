@@ -99,7 +99,7 @@ struct ShopView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .glassEffect(.regular, in: .capsule)
+            .solidGlassCapsule()
         }
         .padding(.horizontal, 20)
         .padding(.top, 18)
@@ -122,7 +122,7 @@ struct ShopView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            .solidGlass(cornerRadius: 14)
             
             // Gems
             VStack(spacing: 8) {
@@ -144,7 +144,7 @@ struct ShopView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            .solidGlass(cornerRadius: 14)
         }
     }
     
@@ -176,7 +176,7 @@ struct ShopView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
-                .glassEffect(.regular, in: .rect(cornerRadius: 14))
+                .solidGlass(cornerRadius: 14)
             } else {
                 ForEach(gemStore.products, id: \.id) { product in
                     gemPackCard(product: product)
@@ -273,7 +273,7 @@ struct ShopView: View {
                     .clipShape(Capsule())
             }
             .padding(14)
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            .solidGlass(cornerRadius: 14)
             .overlay {
                 if isBestValue {
                     RoundedRectangle(cornerRadius: 14)
@@ -351,7 +351,7 @@ struct ShopView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(32)
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        .solidGlass(cornerRadius: 20)
         .transition(.scale.combined(with: .opacity))
     }
     

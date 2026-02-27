@@ -121,7 +121,7 @@ struct MarketplaceFilterView: View {
                 .padding(.horizontal)
                 .padding(.top, 18)
                 .padding(.bottom, 10)
-                .glassEffect(.regular, in: .rect)
+                .solidGlass(cornerRadius: 0)
                 
                 // Filter content
                 ScrollView {
@@ -268,7 +268,7 @@ struct MarketplaceFilterView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 14)
             .background(.clear)
-            .glassEffect(.regular, in: .rect(cornerRadius: 10))
+            .solidGlass(cornerRadius: 10)
         }
         .disabled(isDisabled)
     }
@@ -319,7 +319,7 @@ struct MarketplaceFilterView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(.clear)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                        .solidGlass(cornerRadius: 8)
                     
                     Button(action: {
                         let current = Int(minBinding.wrappedValue) ?? 0
@@ -358,7 +358,7 @@ struct MarketplaceFilterView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(.clear)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                        .solidGlass(cornerRadius: 8)
                     
                     Button(action: {
                         let current = Int(maxBinding.wrappedValue) ?? 0
@@ -386,7 +386,7 @@ struct MarketplaceFilterView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(.clear)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 12))
+                    .solidGlass(cornerRadius: 12)
             }
             .foregroundStyle(.primary)
             
@@ -407,7 +407,7 @@ struct MarketplaceFilterView: View {
                         )
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .glassEffect(.regular, in: .rect(cornerRadius: 12))
+                    .solidGlass(cornerRadius: 12)
             }
             .foregroundStyle(.white)
         }

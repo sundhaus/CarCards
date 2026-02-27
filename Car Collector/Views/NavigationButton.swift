@@ -61,7 +61,7 @@ struct NavigationButton: View {
             .padding(.vertical, DeviceScale.h(16))
             .frame(height: DeviceScale.h(92))
             .contentShape(Rectangle())
-            .glassEffect(.regular, in: .rect(cornerRadius: 16))
+            .solidGlass(cornerRadius: 16)
         }
         .buttonStyle(.plain)
     }

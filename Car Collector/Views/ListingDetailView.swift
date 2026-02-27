@@ -211,7 +211,7 @@ struct ListingDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 16)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .solidGlass(cornerRadius: 12)
     }
     
     // MARK: - Action Section (Bid / Buy)
@@ -231,7 +231,7 @@ struct ListingDetailView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(.clear)
-                .glassEffect(.regular, in: .rect(cornerRadius: 10))
+                .solidGlass(cornerRadius: 10)
                 
                 Button(action: {
                     Task { await performBid() }
@@ -249,7 +249,7 @@ struct ListingDetailView: View {
                 .padding(.vertical, 10)
                 .background(Color.orange)
                 .foregroundStyle(.white)
-                .glassEffect(.regular, in: .rect(cornerRadius: 10))
+                .solidGlass(cornerRadius: 10)
                 .disabled(isPlacingBid || isBuyingNow)
             }
             
@@ -272,7 +272,7 @@ struct ListingDetailView: View {
             .padding(.vertical, 14)
             .background(Color.green)
             .foregroundStyle(.white)
-            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .solidGlass(cornerRadius: 12)
             .disabled(isPlacingBid || isBuyingNow)
         }
     }
@@ -291,7 +291,7 @@ struct ListingDetailView: View {
                 .padding(.vertical, 10)
                 .background(Color.red.opacity(0.12))
                 .clipShape(Capsule())
-                .glassEffect(.regular, in: .capsule)
+                .solidGlassCapsule()
         }
     }
     
@@ -321,7 +321,7 @@ struct ListingDetailView: View {
         .padding(.top, 12)
         .padding(.bottom, 34)
         .background(.clear)
-        .glassEffect(.regular, in: .rect)
+        .solidGlass(cornerRadius: 0)
     }
     
     // MARK: - Actions

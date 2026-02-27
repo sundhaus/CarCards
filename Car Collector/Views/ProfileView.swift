@@ -102,7 +102,7 @@ struct ProfileView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 10)
-                .glassEffect(.regular, in: .rect)
+                .solidGlass(cornerRadius: 0)
                 
                 // Profile content
                 VStack(spacing: 24) {
