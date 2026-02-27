@@ -612,6 +612,17 @@ struct UnifiedCardDetailView: View {
         return specs.horsepower != "N/A" && specs.torque != "N/A"
     }
     
+    private func rarityGlowColor(for rarity: CardRarity?) -> Color {
+        guard let r = rarity else { return .clear }
+        switch r {
+        case .common:    return .clear
+        case .uncommon:  return Color.green.opacity(0.4)
+        case .rare:      return Color.blue
+        case .epic:      return Color.purple
+        case .legendary: return Color.yellow
+        }
+    }
+    
     // Fetch specs if vehicle card doesn't have them, then auto-flip
     private func fetchSpecsIfNeeded() async {
         // Only fetch for vehicle cards
@@ -760,6 +771,7 @@ struct UnifiedCardDetailView: View {
                                 cardContent(screenSize: geometry.size)
                                     .rotationEffect(.degrees(90))
                             }
+                            .shadow(color: rarityGlowColor(for: card.rarity).opacity(0.6), radius: 20)
                             .cardTilt(for: card.rarity)
                         }
                     }
