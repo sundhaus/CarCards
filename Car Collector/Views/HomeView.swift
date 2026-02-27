@@ -159,13 +159,15 @@ struct HomeView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: cardWidth, height: cardHeight)
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        // Live holographic pattern effect (gyro-driven for full-size)
-                        .holoEffect(card.holoEffect, cornerRadius: cornerRadius)
-                        // Live rarity effects (shimmer border, glow, particles)
-                        .rarityEffects(for: parsedRarity)
+                        // Lightweight effects only — save full effects for fullscreen
+                        .holoEffectThumbnail(card.holoEffect, cornerRadius: cornerRadius)
+                        .overlay {
+                            if let rarity = parsedRarity, rarity >= .epic {
+                                ThumbnailRarityBorderOverlay(rarity: rarity, cornerRadius: cornerRadius)
+                            }
+                        }
                         .thumbnailShimmer(for: parsedRarity)
                         .shadow(color: crownGlowColor(for: card).opacity(0.5), radius: 16, x: 0, y: 4)
-                        .cardTilt(intensity: 1.2, perspective: 0.4)
                     
                     // Card name
                     Text("\(card.make.uppercased()) \(card.model.uppercased())")
