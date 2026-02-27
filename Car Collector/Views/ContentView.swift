@@ -157,7 +157,6 @@ struct ContentView: View {
                 garageTabContent
             }
         }
-        }
         .tabBarMinimizeBehavior(.onScrollDown)
         .tint(.white)
         .environment(\.horizontalSizeClass, .compact)
