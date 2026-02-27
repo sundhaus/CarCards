@@ -9,7 +9,6 @@ import SwiftUI
 import AuthenticationServices
 import CryptoKit
 import FirebaseFirestore
-import FirebaseFirestore
 
 struct ProfileView: View {
     @Binding var isShowing: Bool
@@ -111,6 +110,20 @@ struct ProfileView: View {
                         showImageSourceSheet = true
                     }) {
                         ZStack {
+                            // Equipped profile frame glow (behind everything)
+                            if let frameItem = CoinShopService.shared.equippedItem(for: .profileFrame) {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: frameItem.rarity.gradient,
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: DeviceScale.w(92), height: DeviceScale.w(92))
+                                    .blur(radius: 4)
+                            }
+                            
                             Circle()
                                 .fill(
                                     LinearGradient(
@@ -240,6 +253,9 @@ struct ProfileView: View {
                     
                     // Next Unlock / Feature Roadmap
                     nextUnlockSection
+                    
+                    // Equipped Cosmetics
+                    equippedCosmeticsSection
                     
                     // Account creation date
                     VStack(spacing: 4) {
@@ -422,6 +438,56 @@ struct ProfileView: View {
                 print("❌ Failed to load profile picture: \(error)")
             }
         }
+    }
+    
+    // MARK: - Equipped Cosmetics Section
+    
+    @ViewBuilder
+    private var equippedCosmeticsSection: some View {
+        let shop = CoinShopService.shared
+        let hasAny = shop.equippedBackground != nil || shop.equippedFrame != nil || shop.equippedEffect != nil
+        
+        if hasAny {
+            VStack(spacing: 8) {
+                HStack {
+                    Text("EQUIPPED")
+                        .font(.pCaption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                
+                HStack(spacing: 10) {
+                    if let item = shop.equippedItem(for: .cardBackground) {
+                        equippedBadge(item: item)
+                    }
+                    if let item = shop.equippedItem(for: .profileFrame) {
+                        equippedBadge(item: item)
+                    }
+                    if let item = shop.equippedItem(for: .captureEffect) {
+                        equippedBadge(item: item)
+                    }
+                    Spacer()
+                }
+            }
+            .padding(.horizontal, 24)
+        }
+    }
+    
+    private func equippedBadge(item: CosmeticItem) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: item.icon)
+                .font(.system(size: 11))
+                .foregroundStyle(item.rarity.color)
+            Text(item.name)
+                .font(.pCaption2)
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(item.rarity.color.opacity(0.15))
+        )
     }
     
     // MARK: - Apple Sign-In

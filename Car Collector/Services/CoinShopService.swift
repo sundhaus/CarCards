@@ -104,10 +104,22 @@ class CoinShopService: ObservableObject {
     @Published var isLoaded = false
     @Published var lastPackResults: [CosmeticItem]? = nil  // Results from last pack opening
     
+    // Equipped cosmetics — one active per type
+    @Published var equippedBackground: String? = nil
+    @Published var equippedFrame: String? = nil
+    @Published var equippedEffect: String? = nil
+    @Published var equippedSticker: String? = nil
+    
     private let db = FirebaseManager.shared.db
     private let calendar = Calendar.current
     
-    private init() {}
+    private init() {
+        // Load local cache of equipped items
+        equippedBackground = UserDefaults.standard.string(forKey: "equipped_background")
+        equippedFrame = UserDefaults.standard.string(forKey: "equipped_frame")
+        equippedEffect = UserDefaults.standard.string(forKey: "equipped_effect")
+        equippedSticker = UserDefaults.standard.string(forKey: "equipped_sticker")
+    }
     
     // MARK: - Full Cosmetic Catalog
     
@@ -235,6 +247,11 @@ class CoinShopService: ObservableObject {
             let snapshot = try await docRef.getDocument()
             if let data = snapshot.data() {
                 ownedCosmetics = Set(data["ownedCosmetics"] as? [String] ?? [])
+                equippedBackground = data["equippedBackground"] as? String
+                equippedFrame = data["equippedFrame"] as? String
+                equippedEffect = data["equippedEffect"] as? String
+                equippedSticker = data["equippedSticker"] as? String
+                saveEquippedLocally()
             }
         } catch {
             print("⚠️ CoinShopService: Failed to load: \(error)")
@@ -328,10 +345,87 @@ class CoinShopService: ObservableObject {
     
     private func saveOwned(uid: String) async {
         let docRef = db.collection("users").document(uid).collection("meta").document("coinShop")
-        try? await docRef.setData([
+        var data: [String: Any] = [
             "ownedCosmetics": Array(ownedCosmetics),
             "lastUpdated": Timestamp(date: Date())
-        ], merge: true)
+        ]
+        // Persist equipped state
+        if let bg = equippedBackground { data["equippedBackground"] = bg }
+        if let fr = equippedFrame { data["equippedFrame"] = fr }
+        if let fx = equippedEffect { data["equippedEffect"] = fx }
+        if let st = equippedSticker { data["equippedSticker"] = st }
+        try? await docRef.setData(data, merge: true)
+    }
+    
+    private func saveEquipped(uid: String) async {
+        let docRef = db.collection("users").document(uid).collection("meta").document("coinShop")
+        var data: [String: Any] = ["lastUpdated": Timestamp(date: Date())]
+        data["equippedBackground"] = equippedBackground as Any
+        data["equippedFrame"] = equippedFrame as Any
+        data["equippedEffect"] = equippedEffect as Any
+        data["equippedSticker"] = equippedSticker as Any
+        try? await docRef.setData(data, merge: true)
+        saveEquippedLocally()
+    }
+    
+    private func saveEquippedLocally() {
+        UserDefaults.standard.set(equippedBackground, forKey: "equipped_background")
+        UserDefaults.standard.set(equippedFrame, forKey: "equipped_frame")
+        UserDefaults.standard.set(equippedEffect, forKey: "equipped_effect")
+        UserDefaults.standard.set(equippedSticker, forKey: "equipped_sticker")
+    }
+    
+    // MARK: - Equip / Unequip
+    
+    func equipItem(_ item: CosmeticItem) {
+        guard ownedCosmetics.contains(item.id) else { return }
+        
+        switch item.type {
+        case .cardBackground: equippedBackground = item.id
+        case .profileFrame:   equippedFrame = item.id
+        case .captureEffect:  equippedEffect = item.id
+        case .cardSticker:    equippedSticker = item.id
+        }
+        
+        saveEquippedLocally()
+        if let uid = FirebaseManager.shared.currentUserId {
+            Task { await saveEquipped(uid: uid) }
+        }
+        print("✨ Equipped \(item.name)")
+    }
+    
+    func unequipType(_ type: CosmeticItem.CosmeticType) {
+        switch type {
+        case .cardBackground: equippedBackground = nil
+        case .profileFrame:   equippedFrame = nil
+        case .captureEffect:  equippedEffect = nil
+        case .cardSticker:    equippedSticker = nil
+        }
+        
+        saveEquippedLocally()
+        if let uid = FirebaseManager.shared.currentUserId {
+            Task { await saveEquipped(uid: uid) }
+        }
+    }
+    
+    func isEquipped(_ itemId: String) -> Bool {
+        equippedBackground == itemId ||
+        equippedFrame == itemId ||
+        equippedEffect == itemId ||
+        equippedSticker == itemId
+    }
+    
+    /// Get the CosmeticItem for an equipped type, if any
+    func equippedItem(for type: CosmeticItem.CosmeticType) -> CosmeticItem? {
+        let id: String?
+        switch type {
+        case .cardBackground: id = equippedBackground
+        case .profileFrame:   id = equippedFrame
+        case .captureEffect:  id = equippedEffect
+        case .cardSticker:    id = equippedSticker
+        }
+        guard let itemId = id else { return nil }
+        return Self.allCosmetics.first { $0.id == itemId }
     }
     
     private func rarityOrdinal(_ rarity: CosmeticItem.CosmeticRarity) -> Int {

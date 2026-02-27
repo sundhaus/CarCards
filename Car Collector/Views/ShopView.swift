@@ -535,9 +535,28 @@ struct ShopView: View {
             Spacer()
             
             if owned {
-                Text("Owned")
-                    .font(.poppins(12))
-                    .foregroundStyle(.green)
+                if coinShop.isEquipped(deal.item.id) {
+                    Button {
+                        coinShop.unequipType(deal.item.type)
+                    } label: {
+                        Text("Equipped ✓")
+                            .font(.poppins(11))
+                            .foregroundStyle(.orange)
+                    }
+                } else if deal.item.type != .cardSticker {
+                    Button {
+                        coinShop.equipItem(deal.item)
+                    } label: {
+                        Text("Equip")
+                            .font(.poppins(11))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.green)
+                    }
+                } else {
+                    Text("Owned")
+                        .font(.poppins(12))
+                        .foregroundStyle(.green)
+                }
             } else {
                 VStack(alignment: .trailing, spacing: 2) {
                     // Sale badge
@@ -809,8 +828,35 @@ struct ShopView: View {
             Spacer()
             
             if owned {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                if coinShop.isEquipped(item.id) {
+                    Button {
+                        coinShop.unequipType(item.type)
+                    } label: {
+                        Text("Unequip")
+                            .font(.poppins(11))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .overlay(Capsule().stroke(Color.orange, lineWidth: 1))
+                    }
+                } else if item.type != .cardSticker {
+                    Button {
+                        coinShop.equipItem(item)
+                    } label: {
+                        Text("Equip")
+                            .font(.poppins(11))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(LinearGradient(colors: [.green, .teal], startPoint: .leading, endPoint: .trailing))
+                            .clipShape(Capsule())
+                    }
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                }
             } else {
                 Button {
                     purchaseCatalogItem(item)

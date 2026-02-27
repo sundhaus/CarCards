@@ -262,6 +262,20 @@ struct GarageView: View {
                                     NotificationCenter.default.post(name: NSNotification.Name("ComparePrice"), object: nil)
                                 }
                             }
+                        },
+                        onReIdentify: {
+                            showCardOptions = false
+                            // Re-identify triggers a re-capture flow for this card
+                            // Coins already spent by CardOptionsView
+                            if case .vehicle(let vc) = card, let image = vc.image {
+                                Task {
+                                    let result = await VehicleIdentificationService.shared.identifyVehicle(from: image)
+                                    if case .success(let id) = result {
+                                        // Update the card locally with new identification
+                                        print("🔄 Re-identified: \(id.make) \(id.model) \(id.year)")
+                                    }
+                                }
+                            }
                         }
                     )
                 }

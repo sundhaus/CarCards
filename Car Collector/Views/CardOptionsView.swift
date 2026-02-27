@@ -12,9 +12,12 @@ struct CardOptionsView: View {
     let onQuickSell: () -> Void
     let onListOnMarket: () -> Void
     let onComparePrice: () -> Void
+    var onReIdentify: (() -> Void)? = nil
     
     @Environment(\.dismiss) private var dismiss
     @State private var showQuickSellConfirm = false
+    @ObservedObject private var coinShop = CoinShopService.shared
+    @ObservedObject private var userService = UserService.shared
     
     var body: some View {
         ZStack {
@@ -71,6 +74,20 @@ struct CardOptionsView: View {
                                 colors: [Color.teal, Color.cyan]
                             ) {
                                 onComparePrice()
+                            }
+                            
+                            // Re-Identify with AI (coin sink)
+                            optionButton(
+                                icon: "arrow.triangle.2.circlepath",
+                                label: "Re-Identify Card",
+                                subtitle: "Re-run AI — \(CoinShopService.rerollPrice) coins",
+                                colors: [Color.cyan, Color.blue],
+                                disabled: !coinShop.canAffordReroll()
+                            ) {
+                                if coinShop.spendRerollCoins() {
+                                    onReIdentify?()
+                                    dismiss()
+                                }
                             }
                             
                             optionButton(
