@@ -159,14 +159,13 @@ struct HomeView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: cardWidth, height: cardHeight)
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        // Lightweight effects only — save full effects for fullscreen
-                        .holoEffectThumbnail(card.holoEffect, cornerRadius: cornerRadius)
+                        // Static rarity border — no animations on home page
                         .overlay {
-                            if let rarity = parsedRarity, rarity >= .epic {
-                                ThumbnailRarityBorderOverlay(rarity: rarity, cornerRadius: cornerRadius)
+                            if let rarity = parsedRarity, rarity >= .rare {
+                                RoundedRectangle(cornerRadius: cornerRadius)
+                                    .stroke(rarity.gradient, lineWidth: 2)
                             }
                         }
-                        .thumbnailShimmer(for: parsedRarity)
                         .shadow(color: crownGlowColor(for: card).opacity(0.5), radius: 16, x: 0, y: 4)
                     
                     // Card name
