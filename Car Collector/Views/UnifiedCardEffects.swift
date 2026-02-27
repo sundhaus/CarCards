@@ -224,7 +224,7 @@ struct UnifiedCardEffectModifier: ViewModifier {
                             prismaticOffset = prismaticDragStart + (dx + dy) / 150.0
                             
                             // Card tilt: map drag to rotation degrees
-                            let maxTilt: Double = 18.0
+                            let maxTilt: Double = 12.0
                             withAnimation(.interactiveSpring(response: 0.1)) {
                                 tiltY = max(-maxTilt, min(maxTilt, Double(dx) / 12.0))
                                 tiltX = max(-maxTilt, min(maxTilt, Double(dy) / 12.0))
