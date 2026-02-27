@@ -596,7 +596,10 @@ struct DailyLoginPopup: View {
             let reward = await loginService.checkIn(uid: uid)
             
             // Check for streak cosmetic unlocks
-            let _ = await loginService.checkStreakCosmetics(uid: uid)
+            let _ = await DailyChallengeService.shared.checkStreakUnlocks(
+                currentStreak: loginService.currentStreak,
+                uid: uid
+            )
             
             await MainActor.run {
                 if reward != nil {

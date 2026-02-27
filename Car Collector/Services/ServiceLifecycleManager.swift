@@ -54,6 +54,11 @@ final class ServiceLifecycleManager: ObservableObject {
         MarketplaceService.shared.listenToMyListings(uid: uid)
         MarketplaceService.shared.listenToMyBids(uid: uid)
         
+        // Daily challenges — load today's challenges + progress
+        Task {
+            await DailyChallengeService.shared.load(uid: uid)
+        }
+        
         print("🟢 ServiceLifecycleManager: All listeners started")
     }
     

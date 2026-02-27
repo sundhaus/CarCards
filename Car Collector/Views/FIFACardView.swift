@@ -266,6 +266,9 @@ struct FIFACardView: View {
                 do {
                     try await FriendsService.shared.addHeat(activityId: card.id, userId: uid)
                     print("🔥 Added heat to \(card.cardMake) \(card.cardModel)")
+                    
+                    // Track daily challenge progress for giving heats
+                    DailyChallengeService.shared.onHeatGiven(uid: uid)
                 } catch {
                     print("❌ Failed to add heat: \(error)")
                     await MainActor.run { hasLiked = false }

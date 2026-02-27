@@ -273,6 +273,9 @@ struct FullScreenFriendCardView: View {
                 do {
                     try await FriendsService.shared.addHeat(activityId: activity.id, userId: uid)
                     print("🔥 Added heat to \(activity.cardMake) \(activity.cardModel)")
+                    
+                    // Track daily challenge progress for giving heats
+                    DailyChallengeService.shared.onHeatGiven(uid: uid)
                 } catch {
                     print("❌ Failed to add heat: \(error)")
                     await MainActor.run { hasLiked = false }
