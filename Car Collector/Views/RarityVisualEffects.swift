@@ -139,15 +139,12 @@ struct GyroRimLight: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
+    @State private var visibleOpacity: CGFloat = 0
     
     /// Convert device tilt into an angle (degrees) around the card perimeter.
-    /// roll = left/right tilt, pitch = forward/back tilt.
-    /// atan2 gives us a natural circular mapping.
     private var highlightAngle: Double {
-        // Scale motion values for more responsive feel
         let r = motion.roll * 8.0
         let p = motion.pitch * 8.0
-        // atan2 maps (pitch, roll) to angle in radians → convert to degrees
         let angle = atan2(p, r) * (180.0 / .pi)
         return angle
     }
@@ -155,21 +152,8 @@ struct GyroRimLight: View {
     /// How focused the highlight is — larger spread = softer, more diffuse
     private let spreadDegrees: Double = 50
     
-    /// Rim light colors: concentrated bright spot with soft falloff
-    private var rimColors: [Gradient.Stop] {
-        let baseAngle = highlightAngle / 360.0
-        // Normalize to 0...1 range
-        let center = baseAngle - floor(baseAngle)
-        
-        return [
-            .init(color: Color.yellow.opacity(0), location: 0),
-            .init(color: Color.yellow.opacity(0), location: max(0, center - 0.15)),
-            .init(color: Color.orange.opacity(0.5), location: max(0, center - 0.06)),
-            .init(color: Color.white.opacity(0.95), location: center),
-            .init(color: Color.orange.opacity(0.5), location: min(1, center + 0.06)),
-            .init(color: Color.yellow.opacity(0), location: min(1, center + 0.15)),
-            .init(color: Color.yellow.opacity(0), location: 1)
-        ]
+    private var motionMagnitude: CGFloat {
+        sqrt(motion.pitch * motion.pitch + motion.roll * motion.roll)
     }
     
     var body: some View {
@@ -200,8 +184,19 @@ struct GyroRimLight: View {
                 color: Color.yellow.opacity(0.4),
                 radius: 6
             )
+            .opacity(visibleOpacity)
             .onAppear { motion.startIfNeeded() }
             .onDisappear { motion.stopIfNeeded() }
+            .onChange(of: motion.pitch) { _, _ in updateOpacity() }
+            .onChange(of: motion.roll) { _, _ in updateOpacity() }
+    }
+    
+    private func updateOpacity() {
+        let magnitude = motionMagnitude
+        let target: CGFloat = min(1.0, magnitude / 0.05)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            visibleOpacity = target
+        }
     }
 }
 
@@ -215,6 +210,7 @@ struct GyroSpecularStrip: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
+    @State private var visibleOpacity: CGFloat = 0
     
     private let sigmaFraction: CGFloat = 0.15
     private let shineBoost: CGFloat = 0.25
@@ -234,6 +230,11 @@ struct GyroSpecularStrip: View {
         let pitchRange: CGFloat = 0.15
         let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
         return 0.5 + (clamped / pitchRange) * 0.5
+    }
+    
+    /// How much the device is moving — magnitude of pitch + roll
+    private var motionMagnitude: CGFloat {
+        sqrt(motion.pitch * motion.pitch + motion.roll * motion.roll)
     }
     
     var body: some View {
@@ -262,9 +263,23 @@ struct GyroSpecularStrip: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .blendMode(.screen)
+        .opacity(visibleOpacity)
         .allowsHitTesting(false)
         .onAppear { motion.startIfNeeded() }
         .onDisappear { motion.stopIfNeeded() }
+        .onChange(of: motion.pitch) { _, _ in updateOpacity() }
+        .onChange(of: motion.roll) { _, _ in updateOpacity() }
+    }
+    
+    private func updateOpacity() {
+        // Fade in when moving, fade out when still
+        // Threshold: ~0.02 is basically still, ~0.06+ is clearly moving
+        let magnitude = motionMagnitude
+        let target: CGFloat = min(1.0, magnitude / 0.05)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            visibleOpacity = target
+        }
+    }
     }
 }
 
