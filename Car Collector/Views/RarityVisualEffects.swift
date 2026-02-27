@@ -604,25 +604,22 @@ struct HolographicPatternOverlay: View {
     @ViewBuilder
     private func prismaticRainbowLayer(width w: CGFloat, height h: CGFloat) -> some View {
         // Pre-rendered rainbow image tiled 3x wide, scrolled by gyro roll.
-        // Replaces per-frame Canvas drawing — zero CPU cost per frame,
-        // just a GPU texture offset.
-        let singleCycleWidth = w  // One rainbow image = one card width
-        let totalWidth = singleCycleWidth * 3.0  // 3 tiles
-        let scrollOffset = rainbowScroll * w  // Pixel offset from gyro
+        // Uses modular wrapping so offset never exceeds tile bounds.
+        let rawOffset = rainbowScroll * w
+        let wrappedOffset = rawOffset.truncatingRemainder(dividingBy: w)
         
         HStack(spacing: 0) {
             ForEach(0..<3, id: \.self) { _ in
                 Image("PrismaticGradient")
                     .resizable()
-                    .frame(width: singleCycleWidth, height: h)
+                    .frame(width: w, height: h)
             }
         }
-        .frame(width: totalWidth, height: h)
-        .offset(x: scrollOffset - singleCycleWidth)  // Center the middle tile, scroll from there
+        .frame(width: w * 3, height: h)
+        .offset(x: wrappedOffset - w)  // Center tile at rest, wrapped scroll
         .frame(width: w, height: h, alignment: .leading)
         .clipped()
         .opacity(0.7)
-        // Mask to pattern: only pattern pixels get the rainbow
         .mask {
             Image(patternAsset)
                 .resizable()

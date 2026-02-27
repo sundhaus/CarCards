@@ -244,18 +244,26 @@ private struct HoloRainbowLayer: View {
     
     @ObservedObject private var motion = CardMotionManager.shared
     
-    private var rainbowScroll: CGFloat {
+    /// Raw scroll factor from gyro: roll drives primary scroll, pitch adds offset.
+    private var rawScroll: CGFloat {
         let rollRange: CGFloat = 0.15
-        let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange
+        let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange  // -1…1
         let pitchRange: CGFloat = 0.15
-        let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange
+        let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange  // -1…1
         return rollNorm * 1.5 + pitchNorm * 0.3
     }
     
     var body: some View {
         let w = cardSize.width
         let h = cardSize.height
-        let scrollOffset = rainbowScroll * w
+        
+        // Wrap the scroll offset so it always stays within one tile width.
+        // This way the 3-tile strip always has the visible card window
+        // fully covered regardless of how far the user tilts.
+        let rawOffset = rawScroll * w
+        let tileW = w  // One tile = one card width
+        // fmod + re-add to handle negative values cleanly
+        let wrappedOffset = rawOffset.truncatingRemainder(dividingBy: tileW)
         
         HStack(spacing: 0) {
             ForEach(0..<3, id: \.self) { _ in
@@ -265,7 +273,7 @@ private struct HoloRainbowLayer: View {
             }
         }
         .frame(width: w * 3, height: h)
-        .offset(x: scrollOffset - w)
+        .offset(x: wrappedOffset - w)  // Center tile at rest, wrapped scroll
         .frame(width: w, height: h, alignment: .leading)
         .clipped()
         .opacity(0.7)
