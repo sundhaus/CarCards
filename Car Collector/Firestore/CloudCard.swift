@@ -51,6 +51,9 @@ struct CloudCard: Identifiable, Codable {
     var evolutionPoints: Int
     var lastBattleUsed: Date?
     
+    // Level of the user who captured this card (for prestige badge display)
+    var capturedByLevel: Int?
+    
     // From Firestore document
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -99,6 +102,7 @@ struct CloudCard: Identifiable, Codable {
         self.mintNumber = data["mintNumber"] as? Int
         self.evolutionPoints = data["evolutionPoints"] as? Int ?? 0
         self.lastBattleUsed = (data["lastBattleUsed"] as? Timestamp)?.dateValue()
+        self.capturedByLevel = data["capturedByLevel"] as? Int
     }
     
     // New card
@@ -122,7 +126,8 @@ struct CloudCard: Identifiable, Codable {
         rarity: String? = nil,
         evolutionPoints: Int = 0,
         holoEffect: String? = nil,
-        mintNumber: Int? = nil
+        mintNumber: Int? = nil,
+        capturedByLevel: Int? = nil
     ) {
         self.id = id
         self.ownerId = ownerId
@@ -147,6 +152,7 @@ struct CloudCard: Identifiable, Codable {
         self.mintNumber = mintNumber
         self.evolutionPoints = evolutionPoints
         self.lastBattleUsed = nil
+        self.capturedByLevel = capturedByLevel
     }
     
     var dictionary: [String: Any] {
@@ -195,6 +201,11 @@ struct CloudCard: Identifiable, Codable {
         // Include mint number if present (Legendary cards)
         if let mintNumber = mintNumber {
             dict["mintNumber"] = mintNumber
+        }
+        
+        // Include capturedByLevel for prestige badge
+        if let capturedByLevel = capturedByLevel {
+            dict["capturedByLevel"] = capturedByLevel
         }
         
         return dict

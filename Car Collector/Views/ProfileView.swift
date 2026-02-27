@@ -238,6 +238,9 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal, 24)
                     
+                    // Next Unlock / Feature Roadmap
+                    nextUnlockSection
+                    
                     // Account creation date
                     VStack(spacing: 4) {
                         Text("MEMBER SINCE")
@@ -422,6 +425,85 @@ struct ProfileView: View {
     }
     
     // MARK: - Apple Sign-In
+    
+    // MARK: - Next Unlock Section
+    
+    private var nextUnlockSection: some View {
+        VStack(spacing: 12) {
+            // Next feature unlock
+            if let next = LevelGating.nextUnlock(at: levelSystem.level) {
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("NEXT UNLOCK")
+                            .font(.pCaption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    
+                    HStack(spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: next.themeColors,
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 32, height: 32)
+                            
+                            Image(systemName: next.iconName)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(next.displayName)
+                                .font(.pSubheadline)
+                                .fontWeight(.semibold)
+                            
+                            let levelsToGo = next.requiredLevel - levelSystem.level
+                            Text("Level \(next.requiredLevel) — \(levelsToGo) level\(levelsToGo == 1 ? "" : "s") away")
+                                .font(.pCaption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.gray)
+                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.systemGray6))
+                    )
+                }
+            }
+            
+            // Next milestone
+            let nextMs = LevelGating.nextMilestoneLevel(at: levelSystem.level)
+            let msLevelsToGo = nextMs - levelSystem.level
+            HStack(spacing: 10) {
+                Image(systemName: "gift.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.yellow)
+                
+                Text("Milestone Crate in \(msLevelsToGo) level\(msLevelsToGo == 1 ? "" : "s")")
+                    .font(.pCaption)
+                    .foregroundStyle(.secondary)
+                
+                Spacer()
+                
+                Text("Lv.\(nextMs)")
+                    .font(.pCaption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.yellow)
+            }
+        }
+        .padding(.horizontal, 24)
+    }
     
     private func handleAppleSignIn(_ authorization: ASAuthorization) {
         guard let appleCredential = authorization.credential as? ASAuthorizationAppleIDCredential,

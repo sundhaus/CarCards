@@ -104,22 +104,29 @@ struct ContentView: View {
                 }
             }
             
-            // Marketplace Tab - lazy
+            // Marketplace Tab - lazy, level-gated (Level 3)
             Tab("Market", systemImage: "chart.line.uptrend.xyaxis", value: 3) {
-                if visitedTabs.contains(3) {
-                    MarketplaceLandingView(
-                        isLandscape: false,
-                        savedCards: allSellableCards,
-                        onCardListed: { card in
-                            if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                savedCards.remove(at: index)
-                                CardStorage.saveCards(savedCards)
+                if LevelGating.isUnlocked(.marketplace, at: levelSystem.level) {
+                    if visitedTabs.contains(3) {
+                        MarketplaceLandingView(
+                            isLandscape: false,
+                            savedCards: allSellableCards,
+                            onCardListed: { card in
+                                if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                                    savedCards.remove(at: index)
+                                    CardStorage.saveCards(savedCards)
+                                }
                             }
-                        }
-                    )
-                    .padding(.top, DeviceScale.h(58))
+                        )
+                        .padding(.top, DeviceScale.h(58))
+                    } else {
+                        Color.clear
+                    }
                 } else {
-                    Color.clear
+                    LockedFeatureOverlay(
+                        feature: .marketplace,
+                        currentLevel: levelSystem.level
+                    )
                 }
             }
             
@@ -181,6 +188,21 @@ struct ContentView: View {
             // Daily login popup - appears automatically on first login
             if showDailyLoginPopup {
                 DailyLoginPopup(isPresented: $showDailyLoginPopup)
+            }
+        }
+        .overlay {
+            // Level-up unlock celebration overlay
+            if levelSystem.showLevelUpUnlock {
+                LevelUpUnlockView(
+                    newLevel: levelSystem.levelUpLevel,
+                    unlockedFeatures: levelSystem.pendingUnlocks,
+                    milestone: levelSystem.pendingMilestone,
+                    onDismiss: {
+                        levelSystem.consumePendingUnlocks()
+                    }
+                )
+                .transition(.opacity)
+                .zIndex(100)
             }
         }
         .fullScreenCover(isPresented: $showCamera) {

@@ -18,6 +18,12 @@ class LevelSystem: ObservableObject {
     @Published var coins: Int
     @Published var gems: Int
     
+    // Level-up unlock events (consumed by ContentView overlay)
+    @Published var pendingUnlocks: [GatedFeature] = []
+    @Published var pendingMilestone: LevelMilestone? = nil
+    @Published var showLevelUpUnlock = false
+    @Published var levelUpLevel: Int = 0  // The level that was just reached
+    
     private let baseXP = 100
     private var cancellables = Set<AnyCancellable>()
     private var isSyncing = false  // Guard against sync loops
@@ -141,15 +147,50 @@ class LevelSystem: ObservableObject {
         let bonus = RewardConfig.levelUpCoins(for: level)
         coins += bonus
         
+        // Check for newly unlocked features
+        let newUnlocks = LevelGating.newlyUnlocked(at: level)
+        if !newUnlocks.isEmpty {
+            pendingUnlocks.append(contentsOf: newUnlocks)
+        }
+        
+        // Check for milestone rewards (every 10 levels)
+        if let milestone = LevelMilestone.milestone(for: level),
+           !LevelGating.isMilestoneClaimed(level) {
+            // Award milestone rewards
+            coins += milestone.rewardCoins
+            gems += milestone.rewardGems
+            LevelGating.claimMilestone(level)
+            pendingMilestone = milestone
+        }
+        
+        // Queue the level-up overlay if there are unlocks or milestones
+        if !pendingUnlocks.isEmpty || pendingMilestone != nil {
+            levelUpLevel = level
+            // Small delay so the XP bar animation finishes first
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                self?.showLevelUpUnlock = true
+            }
+        }
+        
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
         
         print("🎉 Level up! Now level \(level) — awarded \(bonus) coins")
+        if !newUnlocks.isEmpty {
+            print("🔓 Unlocked: \(newUnlocks.map { $0.displayName }.joined(separator: ", "))")
+        }
     }
     
     var progress: Double {
         guard xpForNextLevel > 0 else { return 0 }
         return Double(currentXP) / Double(xpForNextLevel)
+    }
+    
+    /// Consume and clear the pending unlock state after the overlay is dismissed.
+    func consumePendingUnlocks() {
+        pendingUnlocks = []
+        pendingMilestone = nil
+        showLevelUpUnlock = false
     }
     
     func addCoins(_ amount: Int) {

@@ -34,6 +34,7 @@ struct CloudCardThumbnail: View {
     let lastName: String?
     let locationName: String?
     let height: CGFloat
+    let capturedByLevel: Int?
     
     @State private var cardImage: UIImage?
     @State private var isLoading = true
@@ -58,6 +59,7 @@ struct CloudCardThumbnail: View {
         self.lastName = card.lastName
         self.locationName = card.locationName
         self.height = height
+        self.capturedByLevel = card.capturedByLevel
     }
     
     /// Initialize from a CloudListing
@@ -74,6 +76,7 @@ struct CloudCardThumbnail: View {
         self.lastName = nil
         self.locationName = nil
         self.height = height
+        self.capturedByLevel = nil
     }
     
     /// Initialize from a FriendActivity (for contexts not using FIFACardView)
@@ -90,6 +93,7 @@ struct CloudCardThumbnail: View {
         self.lastName = nil
         self.locationName = nil
         self.height = height
+        self.capturedByLevel = nil
     }
     
     // MARK: - Body
@@ -143,6 +147,13 @@ struct CloudCardThumbnail: View {
         }
         // One-shot shimmer sweep
         .thumbnailShimmer(for: rarity)
+        // Prestige level badge (Level 25+ creators)
+        .overlay(alignment: .bottomLeading) {
+            if let level = capturedByLevel {
+                LevelBadgeOverlay(level: level)
+                    .padding(6)
+            }
+        }
         // Rarity-colored glow shadow
         .shadow(
             color: rarityGlowColor.opacity(0.5),

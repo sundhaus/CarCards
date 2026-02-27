@@ -304,76 +304,112 @@ struct HomeView: View {
     
     @ViewBuilder
     private var h2hStatusSection: some View {
-        let pendingCount = h2hService.myPendingChallenges.count
-        let activeCount = h2hService.activeRaces.count
-        
-        Button {
-            showHeadToHead = true
-        } label: {
+        if LevelGating.isUnlocked(.headToHead, at: levelSystem.level) {
+            // Unlocked — show full H2H banner
+            let pendingCount = h2hService.myPendingChallenges.count
+            let activeCount = h2hService.activeRaces.count
+            
+            Button {
+                showHeadToHead = true
+            } label: {
+                HStack(spacing: DeviceScale.w(12)) {
+                    // Icon
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.orange, .red],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: DeviceScale.w(44), height: DeviceScale.w(44))
+                        
+                        Image(systemName: "bolt.fill")
+                            .font(.poppins(20))
+                            .foregroundStyle(.white)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        if pendingCount > 0 {
+                            Text("YOU HAVE \(pendingCount) PENDING \(pendingCount == 1 ? "BATTLE" : "BATTLES")")
+                                .font(.poppins(13))
+                                .foregroundStyle(.white)
+                        } else if activeCount > 0 {
+                            Text("\(activeCount) LIVE \(activeCount == 1 ? "RACE" : "RACES") IN PROGRESS")
+                                .font(.poppins(13))
+                                .foregroundStyle(.white)
+                        } else {
+                            Text("HEAD TO HEAD")
+                                .font(.poppins(13))
+                                .foregroundStyle(.white)
+                        }
+                        
+                        if pendingCount > 0 {
+                            Text("Tap to respond")
+                                .font(.poppins(11))
+                                .foregroundStyle(.white.opacity(0.6))
+                        } else {
+                            Text("Challenge someone to a drag race!")
+                                .font(.poppins(11))
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    if pendingCount > 0 {
+                        Text("\(pendingCount)")
+                            .font(.poppins(14))
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .background(Color.red)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(.poppins(14))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                .padding(DeviceScale.w(14))
+                .solidGlass(cornerRadius: 14)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+        } else {
+            // Locked — show teaser with level requirement
             HStack(spacing: DeviceScale.w(12)) {
-                // Icon
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [.orange, .red],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(Color(.systemGray4))
                         .frame(width: DeviceScale.w(44), height: DeviceScale.w(44))
                     
-                    Image(systemName: "bolt.fill")
-                        .font(.poppins(20))
-                        .foregroundStyle(.white)
+                    Image(systemName: "lock.fill")
+                        .font(.poppins(18))
+                        .foregroundStyle(.gray)
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    if pendingCount > 0 {
-                        Text("YOU HAVE \(pendingCount) PENDING \(pendingCount == 1 ? "BATTLE" : "BATTLES")")
-                            .font(.poppins(13))
-                            .foregroundStyle(.white)
-                    } else if activeCount > 0 {
-                        Text("\(activeCount) LIVE \(activeCount == 1 ? "RACE" : "RACES") IN PROGRESS")
-                            .font(.poppins(13))
-                            .foregroundStyle(.white)
-                    } else {
+                    HStack(spacing: 6) {
                         Text("HEAD TO HEAD")
                             .font(.poppins(13))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.white.opacity(0.5))
+                        
+                        LockedBadge(requiredLevel: GatedFeature.headToHead.requiredLevel)
                     }
                     
-                    if pendingCount > 0 {
-                        Text("Tap to respond")
-                            .font(.poppins(11))
-                            .foregroundStyle(.white.opacity(0.6))
-                    } else {
-                        Text("Challenge someone to a drag race!")
-                            .font(.poppins(11))
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
+                    Text("Reach Level \(GatedFeature.headToHead.requiredLevel) to battle other collectors")
+                        .font(.poppins(11))
+                        .foregroundStyle(.white.opacity(0.35))
                 }
                 
                 Spacer()
-                
-                if pendingCount > 0 {
-                    Text("\(pendingCount)")
-                        .font(.poppins(14))
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(Color.red)
-                        .clipShape(Circle())
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.poppins(14))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
             }
             .padding(DeviceScale.w(14))
             .solidGlass(cornerRadius: 14)
+            .opacity(0.6)
+            .padding(.horizontal)
         }
-        .buttonStyle(.plain)
-        .padding(.horizontal)
     }
     
     // MARK: - Recent Friend Activity

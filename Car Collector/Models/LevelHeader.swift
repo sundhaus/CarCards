@@ -137,11 +137,24 @@ struct LevelHeader: View {
                         .foregroundStyle(.white)
                 }
                 
-                // Username only — no level badge
-                Text(username)
-                    .font(.poppins(17))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                // Username and next unlock hint
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(username)
+                        .font(.poppins(17))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    
+                    // Next unlock teaser
+                    if let next = LevelGating.nextUnlock(at: levelSystem.level) {
+                        HStack(spacing: 3) {
+                            Image(systemName: next.iconName)
+                                .font(.system(size: 8))
+                            Text("Lv.\(next.requiredLevel)")
+                                .font(.poppins(9))
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                }
             }
             .padding(.bottom, 4)
         }
@@ -205,11 +218,23 @@ struct LevelHeader: View {
                         .foregroundStyle(.white)
                 }
                 
-                // Username only — no level badge
-                Text(username)
-                    .font(.poppins(16))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                // Username and next unlock hint
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(username)
+                        .font(.poppins(16))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    
+                    if let next = LevelGating.nextUnlock(at: levelSystem.level) {
+                        HStack(spacing: 3) {
+                            Image(systemName: next.iconName)
+                                .font(.system(size: 8))
+                            Text("Lv.\(next.requiredLevel)")
+                                .font(.poppins(9))
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                }
             }
             .padding(8)
             .solidGlass(cornerRadius: 12)

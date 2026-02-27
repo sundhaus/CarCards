@@ -143,6 +143,13 @@ struct RewardConfig {
         return newLevel * levelUpCoinMultiplier
     }
     
+    // MARK: - Level Milestone Rewards
+    // Milestone crates are awarded every 10 levels (see LevelGating.swift / LevelMilestone).
+    // Base rewards: tier × 500 coins + tier × 5 gems + guaranteed Rare+ cosmetic.
+    // Example: Level 10 → 500 coins + 5 gems + Rare crate
+    //          Level 50 → 2500 coins + 25 gems + Epic crate
+    //          Level 100 → 5000 coins + 50 gems + Legendary crate
+    
     // MARK: - Starter Grant
     
     /// Coins given to brand-new users on account creation
