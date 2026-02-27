@@ -204,37 +204,31 @@ private struct HoloRainbowLayer: View {
     var body: some View {
         let w = cardSize.width
         let h = cardSize.height
-        
-        // Wrap the scroll offset so it always stays within one tile width.
-        // This way the 3-tile strip always has the visible card window
-        // fully covered regardless of how far the user tilts.
+        // Image is ~5.7x wider than a card (2000/350≈5.7), so there's always
+        // full coverage. Offset shifts the visible window across the strip.
+        let imgWidth = w * 5.0  // Render at ~5x card width
+        let maxScroll = imgWidth - w  // Maximum safe offset range
         let rawOffset = rawScroll * w
-        let tileW = w  // One tile = one card width
-        // fmod + re-add to handle negative values cleanly
-        let wrappedOffset = rawOffset.truncatingRemainder(dividingBy: tileW)
+        // Clamp so we never scroll past either edge
+        let clampedOffset = max(-maxScroll / 2, min(maxScroll / 2, rawOffset))
         
-        HStack(spacing: 0) {
-            ForEach(0..<3, id: \.self) { _ in
-                Image("PrismaticGradient")
+        Image("PrismaticGradient")
+            .resizable()
+            .frame(width: imgWidth, height: h)
+            .offset(x: clampedOffset)
+            .frame(width: w, height: h)
+            .clipped()
+            .opacity(0.7)
+            .mask {
+                Image(patternAsset)
                     .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: w, height: h)
+                    .clipped()
             }
-        }
-        .frame(width: w * 3, height: h)
-        .offset(x: wrappedOffset - w)  // Center tile at rest, wrapped scroll
-        .frame(width: w, height: h, alignment: .leading)
-        .clipped()
-        .opacity(0.7)
-        .mask {
-            Image(patternAsset)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: w, height: h)
-                .clipped()
-        }
-        .blendMode(.screen)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .allowsHitTesting(false)
+            .blendMode(.screen)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .allowsHitTesting(false)
     }
 }
 

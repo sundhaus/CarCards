@@ -549,31 +549,26 @@ struct HolographicPatternOverlay: View {
     
     @ViewBuilder
     private func prismaticRainbowLayer(width w: CGFloat, height h: CGFloat) -> some View {
-        // Pre-rendered rainbow image tiled 3x wide, scrolled by gyro roll.
-        // Uses modular wrapping so offset never exceeds tile bounds.
+        let imgWidth = w * 5.0
+        let maxScroll = imgWidth - w
         let rawOffset = rainbowScroll * w
-        let wrappedOffset = rawOffset.truncatingRemainder(dividingBy: w)
+        let clampedOffset = max(-maxScroll / 2, min(maxScroll / 2, rawOffset))
         
-        HStack(spacing: 0) {
-            ForEach(0..<3, id: \.self) { _ in
-                Image("PrismaticGradient")
+        Image("PrismaticGradient")
+            .resizable()
+            .frame(width: imgWidth, height: h)
+            .offset(x: clampedOffset)
+            .frame(width: w, height: h)
+            .clipped()
+            .opacity(0.7)
+            .mask {
+                Image(patternAsset)
                     .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: w, height: h)
+                    .clipped()
             }
-        }
-        .frame(width: w * 3, height: h)
-        .offset(x: wrappedOffset - w)  // Center tile at rest, wrapped scroll
-        .frame(width: w, height: h, alignment: .leading)
-        .clipped()
-        .opacity(0.7)
-        .mask {
-            Image(patternAsset)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: w, height: h)
-                .clipped()
-        }
-        .blendMode(.screen)
+            .blendMode(.screen)
     }
 }
 
