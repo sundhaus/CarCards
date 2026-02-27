@@ -100,6 +100,7 @@ final class ServiceLifecycleManager: ObservableObject {
         // Refresh daily challenges on resume
         Task {
             await DailyChallengeService.shared.load(uid: uid)
+            await CoinShopService.shared.load(uid: uid)
         }
         
         isListening = true
