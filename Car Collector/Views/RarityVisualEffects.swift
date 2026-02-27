@@ -291,6 +291,8 @@ struct ParticleSparkOverlay: View {
     let cornerRadius: CGFloat
     
     @State private var engine = ParticleEngine()
+    @State private var tick: UInt64 = 0
+    @State private var timer: Timer?
     
     private var particleCount: Int {
         rarity == .legendary ? 4 : 2
@@ -305,32 +307,43 @@ struct ParticleSparkOverlay: View {
     }
     
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
-            Canvas { context, size in
-                engine.tick(
-                    cardSize: cardSize,
-                    maxCount: particleCount,
-                    borderInset: cardSize.height * 0.042
+        Canvas { context, size in
+            _ = tick  // Trigger redraw when tick changes
+            
+            engine.tick(
+                cardSize: cardSize,
+                maxCount: particleCount,
+                borderInset: cardSize.height * 0.042
+            )
+            
+            for i in 0..<engine.particles.count {
+                let particle = engine.particles[i]
+                guard particle.alive else { continue }
+                
+                let color = particle.isAccent ? particleAccent : particleColor
+                let rect = CGRect(
+                    x: particle.x - 2 * particle.scale,
+                    y: particle.y - 2 * particle.scale,
+                    width: 4 * particle.scale,
+                    height: 4 * particle.scale
                 )
                 
-                for i in 0..<engine.particles.count {
-                    let particle = engine.particles[i]
-                    guard particle.alive else { continue }
-                    
-                    let color = particle.isAccent ? particleAccent : particleColor
-                    let rect = CGRect(
-                        x: particle.x - 2 * particle.scale,
-                        y: particle.y - 2 * particle.scale,
-                        width: 4 * particle.scale,
-                        height: 4 * particle.scale
-                    )
-                    
-                    context.opacity = particle.opacity
-                    context.fill(Circle().path(in: rect), with: .color(color))
-                }
+                context.opacity = particle.opacity
+                context.fill(Circle().path(in: rect), with: .color(color))
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .onAppear {
+            timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 5.0, repeats: true) { _ in
+                Task { @MainActor in
+                    tick &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            timer?.invalidate()
+            timer = nil
+        }
     }
 }
 

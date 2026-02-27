@@ -50,7 +50,7 @@ final class CardMotionManager: ObservableObject {
             return
         }
         
-        motionManager.deviceMotionUpdateInterval = 1.0 / 15.0
+        motionManager.deviceMotionUpdateInterval = 1.0 / 10.0
         motionManager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) { [weak self] motion, error in
             guard let self = self, let motion = motion else { return }
             
