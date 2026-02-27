@@ -24,7 +24,6 @@ struct ShopView: View {
             Image("ShopBackground")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .blur(radius: 3)
                 .overlay(Color.black.opacity(0.45))
                 .drawingGroup()
                 .ignoresSafeArea()

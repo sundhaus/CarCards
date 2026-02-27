@@ -30,7 +30,6 @@ struct AppBackground: View {
                     // Floating shapes layer - always visible
                     FloatingShapesView(size: geo.size, animate: animateShapes)
                 }
-                .blur(radius: 3)
                 .drawingGroup()
             }
         }
