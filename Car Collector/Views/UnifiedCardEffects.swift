@@ -192,13 +192,13 @@ private struct HoloRainbowLayer: View {
     
     @ObservedObject private var motion = CardMotionManager.shared
     
-    /// Raw scroll factor from gyro: roll drives primary scroll, pitch adds offset.
+    /// Raw scroll factor from gyro: roll and pitch both slide the prism equally.
     private var rawScroll: CGFloat {
         let rollRange: CGFloat = 0.15
         let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange  // -1…1
         let pitchRange: CGFloat = 0.15
         let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange  // -1…1
-        return rollNorm * 1.5 + pitchNorm * 0.3
+        return (rollNorm + pitchNorm) * 1.0
     }
     
     var body: some View {

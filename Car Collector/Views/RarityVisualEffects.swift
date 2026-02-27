@@ -493,17 +493,13 @@ struct HolographicPatternOverlay: View {
     /// Range: normalized 0…1, but maps to multiple card-widths of travel.
     private var rainbowScroll: CGFloat {
         if useGyro {
-            // Combine roll (primary: left/right scroll) + pitch (secondary: slight vertical shift)
-            // Roll range is ±0.15 rad, map to ±1.5 card-widths of rainbow travel
             let rollRange: CGFloat = 0.15
-            let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange  // -1…1
+            let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange
             let pitchRange: CGFloat = 0.15
-            let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange  // -1…1
-            // Roll drives most of the scroll, pitch adds a subtle offset
-            return rollNorm * 1.5 + pitchNorm * 0.3
+            let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange
+            return (rollNorm + pitchNorm) * 1.0
         } else {
-            // Auto-animate: smooth back-and-forth sweep
-            return (autoPhase - 0.5) * 2.0  // -1…1
+            return (autoPhase - 0.5) * 2.0
         }
     }
     

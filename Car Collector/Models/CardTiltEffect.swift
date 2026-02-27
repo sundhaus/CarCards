@@ -153,13 +153,16 @@ struct CardTiltModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            // Tilt on X axis (pitch: phone tilts forward/back → card tips top/bottom)
+            // Rasterize the entire card into a single Metal texture BEFORE
+            // applying 3D rotation. Without this, SwiftUI recomposites every
+            // child view (photo, text, borders, overlays) in 3D space on
+            // every gyro tick — the #1 cause of high CPU on fullscreen cards.
+            .drawingGroup()
             .rotation3DEffect(
                 .degrees(motion.pitch * 45 * intensity),
                 axis: (x: -1, y: 0, z: 0),
                 perspective: perspective
             )
-            // Tilt on Y axis (roll: phone tilts left/right → card tips left/right)
             .rotation3DEffect(
                 .degrees(motion.roll * 45 * intensity),
                 axis: (x: 0, y: 1, z: 0),
