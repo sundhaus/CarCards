@@ -537,9 +537,9 @@ class FriendsService: ObservableObject {
             await cleanupOldActivities()
             
             // Get people I'm following
-            let snapshot = try await followsCollection
+            guard let snapshot = try? await followsCollection
                 .whereField("followerId", isEqualTo: uid)
-                .getDocuments()
+                .getDocuments() else { return }
             
             let followingIds = snapshot.documents
                 .compactMap { Follow(document: $0) }
