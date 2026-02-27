@@ -186,26 +186,22 @@ struct GyroRimLight: View {
 /// A Gaussian-intensity light band oriented along the card's height.
 /// Sweeps left/right across the card width driven by device pitch.
 /// Purple tint for Epic, gold tint for Legendary.
+/// Now image-based: pre-rendered transparent specular PNG, just offset by gyro.
 struct GyroSpecularStrip: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
     
-    private let sigmaFraction: CGFloat = 0.15
-    private let shineBoost: CGFloat = 0.25
-    
-    private var tintColor: Color {
+    private var specularAsset: String {
         switch rarity {
-        case .legendary:
-            return Color(red: 1.0, green: 0.85, blue: 0.4)
-        case .epic:
-            return Color(red: 0.7, green: 0.4, blue: 1.0)
-        default:
-            return .white
+        case .legendary: return "SpecularGold"
+        case .epic:      return "SpecularPurple"
+        default:         return "SpecularHighlight"
         }
     }
     
+    /// Normalized position 0…1 across card width, driven by pitch
     private var normalizedCenter: CGFloat {
         let pitchRange: CGFloat = 0.15
         let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
@@ -213,36 +209,23 @@ struct GyroSpecularStrip: View {
     }
     
     var body: some View {
-        Group {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            // Image is 1024x1024, we want the bright band to sweep across card width
+            let stripWidth = w * 0.6  // Specular strip covers ~60% of card width
+            let offsetX = (normalizedCenter - 0.5) * w  // Sweep range
+            
             if motion.isMoving {
-                Canvas { context, size in
-                    let w = size.width
-                    let h = size.height
-                    let sigma = w * sigmaFraction
-                    let center = normalizedCenter * w
-                    
-                    let step: CGFloat = 4.0 // Coarser step for less GPU work
-                    var x: CGFloat = 0
-                    
-                    while x < w {
-                        let dist = x - center
-                        let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
-                        let intensity = shineBoost * gaussian
-                        
-                        guard intensity > 0.01 else { x += step; continue }
-                        
-                        let rect = CGRect(x: x, y: 0, width: step, height: h)
-                        context.opacity = intensity
-                        context.fill(Path(rect), with: .color(tintColor))
-                        
-                        x += step
-                    }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                .blendMode(.screen)
-                .transition(.opacity)
+                Image(specularAsset)
+                    .resizable()
+                    .frame(width: stripWidth, height: h)
+                    .position(x: w / 2 + offsetX, y: h / 2)
+                    .blendMode(.screen)
+                    .transition(.opacity)
             }
         }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .allowsHitTesting(false)
         .onAppear { motion.startIfNeeded() }
         .onDisappear { motion.stopIfNeeded() }

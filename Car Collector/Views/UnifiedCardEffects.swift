@@ -59,15 +59,6 @@ struct UnifiedCardEffectOverlay: View {
         return HoloEffectType(rawValue: effectStr)?.assetName
     }
     
-    // Rarity tint colors for specular strip
-    private var specularTintRGB: (r: Double, g: Double, b: Double) {
-        switch rarity {
-        case .legendary: return (1.0, 0.85, 0.4)
-        case .epic:      return (0.7, 0.4, 1.0)
-        default:         return (1.0, 1.0, 1.0)
-        }
-    }
-    
     // Particle colors
     private var particleRGB: (r: Double, g: Double, b: Double) {
         rarity == .legendary ? (1.0, 0.9, 0.2) : (0.7, 0.3, 1.0)
@@ -79,12 +70,20 @@ struct UnifiedCardEffectOverlay: View {
     
     var body: some View {
         ZStack {
-            // INNER EFFECTS: Single Canvas for vignette + specular + particles
+            // INNER EFFECTS: Canvas for vignette + particles
             // Driven by TimelineView at 15fps for particle ticks
             if rarity >= .epic {
                 innerCanvas
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     .drawingGroup()
+            }
+            
+            // SPECULAR STRIP: Image-based, just offset by gyro pitch.
+            // Replaces Canvas-drawn Gaussian — zero CPU per frame.
+            if rarity >= .epic && isMoving {
+                specularImageLayer
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    .allowsHitTesting(false)
             }
             
             // HOLO EFFECTS: Pattern base + rainbow masked to pattern
@@ -167,31 +166,7 @@ struct UnifiedCardEffectOverlay: View {
                     context.opacity = 1.0
                 }
                 
-                // === Specular strip (Epic+) ===
-                if rarity >= .epic && isMoving {
-                    let sigma = w * 0.15
-                    let center = specularCenter * w
-                    let tint = specularTintRGB
-                    let step: CGFloat = 4.0
-                    var x: CGFloat = 0
-                    
-                    while x < w {
-                        let dist = x - center
-                        let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
-                        let intensity = 0.25 * gaussian
-                        
-                        if intensity > 0.01 {
-                            let rect = CGRect(x: x, y: 0, width: step, height: h)
-                            context.opacity = intensity
-                            context.fill(
-                                Path(rect),
-                                with: .color(Color(red: tint.r, green: tint.g, blue: tint.b))
-                            )
-                        }
-                        x += step
-                    }
-                    context.opacity = 1.0
-                }
+                // === Specular strip moved to image-based layer (specularImageLayer) ===
                 
                 // === Particles (Epic+) ===
                 if rarity >= .epic {
@@ -259,6 +234,31 @@ struct UnifiedCardEffectOverlay: View {
         .frame(width: w, height: h, alignment: .leading)
         .clipped()
         .opacity(0.7)
+    }
+    
+    // MARK: - Specular Image Layer (replaces Canvas-drawn Gaussian strip)
+    
+    private var specularAsset: String {
+        switch rarity {
+        case .legendary: return "SpecularGold"
+        case .epic:      return "SpecularPurple"
+        default:         return "SpecularHighlight"
+        }
+    }
+    
+    private var specularImageLayer: some View {
+        let w = cardSize.width
+        let h = cardSize.height
+        let stripWidth = w * 0.6
+        let offsetX = (specularCenter - 0.5) * w
+        
+        return Image(specularAsset)
+            .resizable()
+            .frame(width: stripWidth, height: h)
+            .position(x: w / 2 + offsetX, y: h / 2)
+            .frame(width: w, height: h)
+            .blendMode(.screen)
+            .transition(.opacity)
     }
     
     // MARK: - Outer Effects (Border + Glow)
