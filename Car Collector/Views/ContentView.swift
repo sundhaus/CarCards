@@ -67,6 +67,43 @@ struct ContentView: View {
     
     // Extracted to reduce type-checker complexity in TabView body
     @ViewBuilder
+    private var shopTabContent: some View {
+        if visitedTabs.contains(0) {
+            ShopView(isLandscape: false)
+        } else {
+            Color.clear
+        }
+    }
+    
+    @ViewBuilder
+    private var homeTabContent: some View {
+        HomeView(
+            isLandscape: false,
+            showProfile: $showProfile,
+            levelSystem: levelSystem,
+            totalCards: savedCards.count
+        )
+        .padding(.top, DeviceScale.h(58))
+    }
+    
+    @ViewBuilder
+    private var captureTabContent: some View {
+        if visitedTabs.contains(2) {
+            CaptureLandingView(
+                isLandscape: false,
+                levelSystem: levelSystem,
+                selectedTab: $navigationController.selectedTab,
+                onCardSaved: { card in
+                    handleCardSaved(card)
+                }
+            )
+            .padding(.top, DeviceScale.h(58))
+        } else {
+            Color.clear
+        }
+    }
+    
+    @ViewBuilder
     private var marketplaceTabContent: some View {
         if LevelGating.isUnlocked(.marketplace, at: levelSystem.level) {
             if visitedTabs.contains(3) {
@@ -92,59 +129,34 @@ struct ContentView: View {
         }
     }
     
+    @ViewBuilder
+    private var garageTabContent: some View {
+        if visitedTabs.contains(4) {
+            GarageView()
+                .padding(.top, DeviceScale.h(58))
+        } else {
+            Color.clear
+        }
+    }
+    
     var body: some View {
         TabView(selection: $navigationController.selectedTab) {
-            // Shop Tab - lazy
             Tab("Shop", systemImage: "bag", value: 0) {
-                if visitedTabs.contains(0) {
-                    ShopView(isLandscape: false)
-                } else {
-                    Color.clear
-                }
+                shopTabContent
             }
-            
-            // Home Tab - always loaded (start tab)
             Tab("Home", systemImage: "house", value: 1) {
-                HomeView(
-                    isLandscape: false,
-                    showProfile: $showProfile,
-                    levelSystem: levelSystem,
-                    totalCards: savedCards.count
-                )
-                .padding(.top, DeviceScale.h(58))
+                homeTabContent
             }
-            
-            // Capture Tab - pre-loaded for fast access
             Tab("Capture", systemImage: "camera.fill", value: 2) {
-                if visitedTabs.contains(2) {
-                    CaptureLandingView(
-                        isLandscape: false,
-                        levelSystem: levelSystem,
-                        selectedTab: $navigationController.selectedTab,
-                        onCardSaved: { card in
-                            handleCardSaved(card)
-                        }
-                    )
-                    .padding(.top, DeviceScale.h(58))
-                } else {
-                    Color.clear
-                }
+                captureTabContent
             }
-            
-            // Marketplace Tab - lazy, level-gated (Level 3)
             Tab("Market", systemImage: "chart.line.uptrend.xyaxis", value: 3) {
                 marketplaceTabContent
             }
-            
-            // Garage Tab - lazy
             Tab("Garage", systemImage: "wrench.and.screwdriver", value: 4) {
-                if visitedTabs.contains(4) {
-                    GarageView()
-                        .padding(.top, DeviceScale.h(58))
-                } else {
-                    Color.clear
-                }
+                garageTabContent
             }
+        }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .tint(.white)
