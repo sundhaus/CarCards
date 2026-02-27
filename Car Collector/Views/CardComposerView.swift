@@ -102,13 +102,10 @@ struct CardComposerView: View {
                                 }
                         )
                     
-                    // White border overlay to show border thickness during composition
-                    Image("Border_Def_Wht")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 360, height: 202.5)
+                    // Thin white border overlay — full bleed, no dead zones
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(Color.white, lineWidth: 3)
                         .allowsHitTesting(false)
-                        .opacity(0.85)
                     
                     // Processing overlay
                     if isProcessing {
