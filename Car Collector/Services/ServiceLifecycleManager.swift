@@ -57,6 +57,7 @@ final class ServiceLifecycleManager: ObservableObject {
         // Daily challenges — load today's challenges + progress
         Task {
             await DailyChallengeService.shared.load(uid: uid)
+            await CoinShopService.shared.load(uid: uid)
         }
         
         print("🟢 ServiceLifecycleManager: All listeners started")
