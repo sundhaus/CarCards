@@ -563,6 +563,12 @@ struct ThumbnailShimmerModifier: ViewModifier {
 /// Two modes:
 /// - Full-size cards: gyro-driven via CardMotionManager
 /// - Thumbnails: auto-animated sweep (lightweight for scroll views)
+///
+/// PRISMATIC RAINBOW: Instead of a Gaussian spotlight, the rainbow is
+/// an infinitely-repeating spectrum that extends well past the card
+/// boundaries. Gyro roll scrolls the rainbow laterally through the
+/// pattern, creating a real holographic foil look where every tilt
+/// angle reveals different colors sliding through the pattern shapes.
 struct HolographicPatternOverlay: View {
     let cornerRadius: CGFloat
     var patternAsset: String = "HoloPattern"  // Asset name for the pattern
@@ -571,28 +577,37 @@ struct HolographicPatternOverlay: View {
     @ObservedObject private var motion = CardMotionManager.shared
     @State private var autoPhase: CGFloat = 0
     
-    /// Normalized 0...1 position of the specular highlight across the card width
-    private var specularCenter: CGFloat {
+    /// Rainbow scroll offset: how far the infinite rainbow has shifted.
+    /// Driven by gyro roll (left/right tilt) for full-size,
+    /// or auto-animated phase for thumbnails.
+    /// Range: normalized 0…1, but maps to multiple card-widths of travel.
+    private var rainbowScroll: CGFloat {
         if useGyro {
+            // Combine roll (primary: left/right scroll) + pitch (secondary: slight vertical shift)
+            // Roll range is ±0.15 rad, map to ±1.5 card-widths of rainbow travel
+            let rollRange: CGFloat = 0.15
+            let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange  // -1…1
             let pitchRange: CGFloat = 0.15
-            let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
-            return 0.5 + (clamped / pitchRange) * 0.5
+            let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange  // -1…1
+            // Roll drives most of the scroll, pitch adds a subtle offset
+            return rollNorm * 1.5 + pitchNorm * 0.3
         } else {
-            return autoPhase
+            // Auto-animate: smooth back-and-forth sweep
+            return (autoPhase - 0.5) * 2.0  // -1…1
         }
     }
     
-    /// Rainbow gradient colors for the holographic refraction
+    /// Rainbow gradient colors — full spectrum, repeats seamlessly
     private let rainbowColors: [Color] = [
-        Color(red: 1.0, green: 0.3, blue: 0.3),  // Red
-        Color(red: 1.0, green: 0.6, blue: 0.2),  // Orange
-        Color(red: 1.0, green: 1.0, blue: 0.3),  // Yellow
-        Color(red: 0.3, green: 1.0, blue: 0.3),  // Green
-        Color(red: 0.3, green: 0.8, blue: 1.0),  // Cyan
-        Color(red: 0.4, green: 0.4, blue: 1.0),  // Blue
-        Color(red: 0.7, green: 0.3, blue: 1.0),  // Violet
-        Color(red: 1.0, green: 0.3, blue: 0.8),  // Magenta
-        Color(red: 1.0, green: 0.3, blue: 0.3),  // Red (wrap)
+        Color(red: 1.0, green: 0.2, blue: 0.3),  // Red
+        Color(red: 1.0, green: 0.5, blue: 0.1),  // Orange
+        Color(red: 1.0, green: 0.95, blue: 0.2),  // Yellow
+        Color(red: 0.2, green: 1.0, blue: 0.3),  // Green
+        Color(red: 0.2, green: 0.85, blue: 1.0),  // Cyan
+        Color(red: 0.3, green: 0.3, blue: 1.0),  // Blue
+        Color(red: 0.6, green: 0.2, blue: 1.0),  // Violet
+        Color(red: 1.0, green: 0.2, blue: 0.7),  // Magenta
+        Color(red: 1.0, green: 0.2, blue: 0.3),  // Red (wrap — seamless repeat)
     ]
     
     var body: some View {
@@ -608,11 +623,10 @@ struct HolographicPatternOverlay: View {
                     .frame(width: w, height: h)
                     .clipped()
                     .blendMode(.screen)
+                    .opacity(0.15)
                 
-                // Layer 2: Rainbow gradient masked to pattern — the holographic refraction
-                // The gradient shifts position based on specular center, creating
-                // the effect of light refracting through the foil pattern
-                rainbowLayer(width: w, height: h)
+                // Layer 2: Infinite prismatic rainbow masked to pattern
+                prismaticRainbowLayer(width: w, height: h)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
@@ -621,7 +635,6 @@ struct HolographicPatternOverlay: View {
             if useGyro {
                 motion.startIfNeeded()
             } else {
-                // Auto-animate: sweep back and forth
                 withAnimation(
                     .easeInOut(duration: 3.0)
                     .repeatForever(autoreverses: true)
@@ -638,40 +651,37 @@ struct HolographicPatternOverlay: View {
     }
     
     @ViewBuilder
-    private func rainbowLayer(width w: CGFloat, height h: CGFloat) -> some View {
-        // The rainbow gradient is offset based on specular position
-        // so different parts of the pattern catch different hues
-        let gradientOffset = (specularCenter - 0.5) * w * 0.6
-        
-        // Gaussian falloff: rainbow is strongest near the specular center,
-        // fading to transparent away from it
-        let sigma = w * 0.25
+    private func prismaticRainbowLayer(width w: CGFloat, height h: CGFloat) -> some View {
+        // The rainbow is 3x the card width and repeats, so there's always
+        // color visible regardless of scroll position. The scroll offset
+        // slides the whole rainbow left/right based on gyro roll.
+        let repeatWidth = w * 3.0  // 3 full rainbow cycles across the strip
+        let scrollOffset = rainbowScroll * w  // Pixel offset from gyro
         
         Canvas { context, size in
-            // Draw rainbow bands that fade based on distance from specular center
-            let center = specularCenter * w
             let bandCount = rainbowColors.count - 1
-            let totalRainbowWidth = w * 1.2  // Rainbow spans wider than card
-            let bandWidth = totalRainbowWidth / CGFloat(bandCount)
+            let singleCycleWidth = repeatWidth / 3.0  // One full rainbow = 1 card width
+            let bandWidth = singleCycleWidth / CGFloat(bandCount)
             
-            for i in 0..<bandCount {
-                let bandX = gradientOffset + CGFloat(i) * bandWidth - w * 0.1
-                let bandCenterX = bandX + bandWidth * 0.5
+            // Draw 3 repetitions of the rainbow, offset by scroll
+            // This ensures the card is always fully covered
+            for rep in -1...2 {
+                let repOffset = CGFloat(rep) * singleCycleWidth + scrollOffset
                 
-                // Gaussian intensity based on distance from specular highlight
-                let dist = bandCenterX - center
-                let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
-                let intensity = gaussian * 0.65  // Peak opacity for rainbow
-                
-                guard intensity > 0.01 else { continue }
-                
-                let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
-                context.opacity = intensity
-                context.fill(Path(rect), with: .color(rainbowColors[i]))
+                for i in 0..<bandCount {
+                    let bandX = repOffset + CGFloat(i) * bandWidth
+                    
+                    // Skip bands completely outside the visible area
+                    guard bandX + bandWidth > 0 && bandX < w else { continue }
+                    
+                    let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
+                    context.opacity = 0.7  // Consistent prismatic intensity
+                    context.fill(Path(rect), with: .color(rainbowColors[i]))
+                }
             }
         }
         .frame(width: w, height: h)
-        // Mask to the pattern shape: only pattern pixels get the rainbow
+        // Mask to pattern: only pattern pixels get the rainbow
         .mask {
             Image(patternAsset)
                 .resizable()

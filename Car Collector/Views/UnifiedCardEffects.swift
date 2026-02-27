@@ -115,24 +115,24 @@ struct UnifiedCardEffectOverlay: View {
                     .frame(width: cardSize.width, height: cardSize.height)
                     .clipped()
                     .blendMode(.screen)
+                    .opacity(0.15)
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     .allowsHitTesting(false)
                 
-                // Rainbow refraction — masked to pattern pixels, only when moving
-                if isMoving {
-                    holoRainbowCanvas
-                        .frame(width: cardSize.width, height: cardSize.height)
-                        .mask {
-                            Image(asset)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: cardSize.width, height: cardSize.height)
-                                .clipped()
-                        }
-                        .blendMode(.screen)
-                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        .allowsHitTesting(false)
-                }
+                // Rainbow refraction — masked to pattern pixels, always visible
+                // as a prismatic foil. Gyro roll scrolls the rainbow through the pattern.
+                holoRainbowCanvas
+                    .frame(width: cardSize.width, height: cardSize.height)
+                    .mask {
+                        Image(asset)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: cardSize.width, height: cardSize.height)
+                            .clipped()
+                    }
+                    .blendMode(.screen)
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    .allowsHitTesting(false)
             }
             
             // OUTER EFFECTS: Border glow/shimmer (needs shadow bleed, not clipped)
@@ -243,32 +243,43 @@ struct UnifiedCardEffectOverlay: View {
         .frame(width: cardSize.width, height: cardSize.height)
     }
     
-    // MARK: - Holo Rainbow Canvas (gyro-driven, masked to pattern externally)
+    // MARK: - Holo Rainbow Canvas (prismatic infinite rainbow, masked to pattern externally)
+    
+    /// Scroll offset for the prismatic rainbow: gyro roll drives left/right scroll,
+    /// pitch adds a subtle secondary offset. The rainbow repeats infinitely so
+    /// every tilt angle shows full-saturation color flowing through the pattern.
+    private var rainbowScroll: CGFloat {
+        let rollRange: CGFloat = 0.15
+        let rollNorm = max(-rollRange, min(rollRange, motion.roll)) / rollRange  // -1…1
+        let pitchRange: CGFloat = 0.15
+        let pitchNorm = max(-pitchRange, min(pitchRange, motion.pitch)) / pitchRange  // -1…1
+        return rollNorm * 1.5 + pitchNorm * 0.3
+    }
     
     private var holoRainbowCanvas: some View {
         Canvas { context, size in
             let w = size.width
             let h = size.height
-            let center = specularCenter * w
-            let gradientOffset = (specularCenter - 0.5) * w * 0.6
-            let sigma = w * 0.25
+            let scrollOffset = rainbowScroll * w
             let bandCount = rainbowColors.count - 1
-            let totalWidth = w * 1.2
-            let bandWidth = totalWidth / CGFloat(bandCount)
+            let singleCycleWidth = w  // One full rainbow cycle = one card width
+            let bandWidth = singleCycleWidth / CGFloat(bandCount)
             
-            for i in 0..<bandCount {
-                let bandX = gradientOffset + CGFloat(i) * bandWidth - w * 0.1
-                let bandCenterX = bandX + bandWidth * 0.5
-                let dist = bandCenterX - center
-                let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
-                let intensity = gaussian * 0.65
+            // Draw 4 repetitions (-1 to 2) so card is always fully covered
+            for rep in -1...2 {
+                let repOffset = CGFloat(rep) * singleCycleWidth + scrollOffset
                 
-                guard intensity > 0.01 else { continue }
-                
-                let c = rainbowColors[i]
-                let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
-                context.opacity = intensity
-                context.fill(Path(rect), with: .color(Color(red: c.r, green: c.g, blue: c.b)))
+                for i in 0..<bandCount {
+                    let bandX = repOffset + CGFloat(i) * bandWidth
+                    
+                    // Skip bands completely outside visible area
+                    guard bandX + bandWidth > 0 && bandX < w else { continue }
+                    
+                    let c = rainbowColors[i]
+                    let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
+                    context.opacity = 0.7  // Consistent prismatic intensity
+                    context.fill(Path(rect), with: .color(Color(red: c.r, green: c.g, blue: c.b)))
+                }
             }
         }
     }
