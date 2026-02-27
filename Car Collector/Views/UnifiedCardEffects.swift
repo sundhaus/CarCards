@@ -150,66 +150,24 @@ private struct OuterEffectsLayer: View {
     let rarity: CardRarity
     let cornerRadius: CGFloat
     
-    @State private var borderPhase: CGFloat = 0
-    @State private var glowIntensity: CGFloat = 0.2
-    
     var body: some View {
         ZStack {
             if rarity == .legendary {
-                // Glow pulse (SwiftUI animation = render server, negligible CPU)
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.yellow.opacity(Double(glowIntensity)), lineWidth: 4)
-                    .shadow(color: Color.yellow.opacity(Double(glowIntensity) * 0.5), radius: 8)
-            } else if rarity == .epic {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(
-                        AngularGradient(
-                            gradient: Gradient(colors: [
-                                Color.clear, Color.clear,
-                                Color.purple.opacity(0.15),
-                                Color.pink.opacity(0.5),
-                                Color.white.opacity(0.75),
-                                Color.pink.opacity(0.5),
-                                Color.purple.opacity(0.15),
-                                Color.clear, Color.clear,
-                                Color.clear, Color.clear, Color.clear,
-                            ]),
-                            center: .center,
-                            startAngle: .degrees(borderPhase),
-                            endAngle: .degrees(borderPhase + 360)
-                        ),
-                        lineWidth: 2.5
-                    )
-            } else if rarity == .rare {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.cyan.opacity(0.5), lineWidth: 2)
-                    .shadow(color: Color.cyan.opacity(0.4), radius: 8)
-            }
-            
-            if rarity >= .epic {
+                    .stroke(Color.yellow.opacity(0.4), lineWidth: 4)
+                
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(rarity.gradient, lineWidth: 1.5)
                     .padding(1)
+            } else if rarity == .epic {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(rarity.gradient, lineWidth: 2.5)
+            } else if rarity == .rare {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(Color.cyan.opacity(0.5), lineWidth: 2)
             }
         }
         .allowsHitTesting(false)
-        .onAppear { startBorderAnimations() }
-    }
-    
-    private func startBorderAnimations() {
-        if rarity == .epic {
-            withAnimation(.linear(duration: 3.5).repeatForever(autoreverses: false)) {
-                borderPhase = 360
-            }
-        }
-        if rarity == .legendary {
-            withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
-                borderPhase = 360
-            }
-            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-                glowIntensity = 0.6
-            }
-        }
     }
 }
 
