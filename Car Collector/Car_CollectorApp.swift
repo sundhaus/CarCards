@@ -29,13 +29,10 @@ struct CarCardCollectorApp: App {
                     switch newPhase {
                     case .active:
                         OrientationManager.forcePortrait()
-                        // Resume services when returning to foreground
-                        if isReady {
-                            resumeServices()
-                        }
+                        // ServiceLifecycleManager handles resume via UIApplication.didBecomeActiveNotification
                     case .background:
-                        // Pause non-essential listeners and timers to free threads
-                        pauseServices()
+                        // ServiceLifecycleManager handles pause via UIApplication.willResignActiveNotification
+                        break
                     case .inactive:
                         break
                     @unknown default:
