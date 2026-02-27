@@ -96,11 +96,15 @@ struct UnifiedCardEffectOverlay: View {
     
     var body: some View {
         ZStack {
-            // INNER EFFECTS: Single Canvas for holo + specular + particles
-            // Driven by TimelineView at 15fps for particle ticks
+            // INNER EFFECTS: Single Canvas for specular + particles + holo rainbow
+            // Driven by TimelineView at 15fps for particle ticks.
+            // Holo rainbow is drawn directly here (unmasked) instead of in a
+            // separate Canvas+mask layer — trades subtle pattern masking for
+            // eliminating an entire compositing pass.
             if rarity >= .epic || holoPatternAsset != nil {
                 innerCanvas
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    .blendMode(.screen)
                     .drawingGroup()
             }
             
@@ -111,23 +115,9 @@ struct UnifiedCardEffectOverlay: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: cardSize.width, height: cardSize.height)
                     .clipped()
+                    .opacity(0.12)
                     .blendMode(.screen)
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                    .allowsHitTesting(false)
-            }
-            
-            // Holo rainbow masked to pattern (needs Image mask, separate from Canvas)
-            if let asset = holoPatternAsset {
-                holoRainbowLayer
-                    .mask {
-                        Image(asset)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: cardSize.width, height: cardSize.height)
-                            .clipped()
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                    .blendMode(.screen)
                     .allowsHitTesting(false)
             }
             
@@ -177,6 +167,32 @@ struct UnifiedCardEffectOverlay: View {
                             endPoint: CGPoint(x: w/2, y: h)
                         )
                     )
+                    context.opacity = 1.0
+                }
+                
+                // === Holo rainbow bands (drawn directly, no mask pass) ===
+                if holoPatternAsset != nil {
+                    let center = specularCenter * w
+                    let gradientOffset = (specularCenter - 0.5) * w * 0.6
+                    let sigma = w * 0.25
+                    let bandCount = rainbowColors.count - 1
+                    let totalWidth = w * 1.2
+                    let bandWidth = totalWidth / CGFloat(bandCount)
+                    
+                    for i in 0..<bandCount {
+                        let bandX = gradientOffset + CGFloat(i) * bandWidth - w * 0.1
+                        let bandCenterX = bandX + bandWidth * 0.5
+                        let dist = bandCenterX - center
+                        let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
+                        let intensity = gaussian * 0.65
+                        
+                        guard intensity > 0.01 else { continue }
+                        
+                        let c = rainbowColors[i]
+                        let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
+                        context.opacity = intensity
+                        context.fill(Path(rect), with: .color(Color(red: c.r, green: c.g, blue: c.b)))
+                    }
                     context.opacity = 1.0
                 }
                 
@@ -234,37 +250,6 @@ struct UnifiedCardEffectOverlay: View {
                     }
                     context.opacity = 1.0
                 }
-            }
-        }
-        .frame(width: cardSize.width, height: cardSize.height)
-    }
-    
-    // MARK: - Holo Rainbow Layer (Canvas, gyro-driven)
-    
-    private var holoRainbowLayer: some View {
-        Canvas { context, size in
-            let w = size.width
-            let h = size.height
-            let center = specularCenter * w
-            let gradientOffset = (specularCenter - 0.5) * w * 0.6
-            let sigma = w * 0.25
-            let bandCount = rainbowColors.count - 1
-            let totalWidth = w * 1.2
-            let bandWidth = totalWidth / CGFloat(bandCount)
-            
-            for i in 0..<bandCount {
-                let bandX = gradientOffset + CGFloat(i) * bandWidth - w * 0.1
-                let bandCenterX = bandX + bandWidth * 0.5
-                let dist = bandCenterX - center
-                let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
-                let intensity = gaussian * 0.65
-                
-                guard intensity > 0.01 else { continue }
-                
-                let c = rainbowColors[i]
-                let rect = CGRect(x: bandX, y: 0, width: bandWidth + 1, height: h)
-                context.opacity = intensity
-                context.fill(Path(rect), with: .color(Color(red: c.r, green: c.g, blue: c.b)))
             }
         }
         .frame(width: cardSize.width, height: cardSize.height)
