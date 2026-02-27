@@ -86,11 +86,6 @@ struct RarityEffectOverlay: View {
                 FullBleedEdgeOverlay(rarity: rarity, cornerRadius: cornerRadius)
             }
             
-            // Specular strip (Epic + Legendary)
-            if rarity >= .epic {
-                GyroSpecularStrip(rarity: rarity, cornerRadius: cornerRadius)
-            }
-            
             // Particles (Epic + Legendary)
             if rarity >= .epic {
                 ParticleSparkOverlay(
@@ -182,55 +177,6 @@ struct GyroRimLight: View {
 }
 
 // MARK: - Gyro Specular Strip (Legendary)
-
-/// A Gaussian-intensity light band oriented along the card's height.
-/// Sweeps left/right across the card width driven by device pitch.
-/// Purple tint for Epic, gold tint for Legendary.
-/// Now image-based: pre-rendered transparent specular PNG, just offset by gyro.
-struct GyroSpecularStrip: View {
-    let rarity: CardRarity
-    let cornerRadius: CGFloat
-    
-    @ObservedObject private var motion = CardMotionManager.shared
-    
-    private var specularAsset: String {
-        switch rarity {
-        case .legendary: return "SpecularGold"
-        case .epic:      return "SpecularPurple"
-        default:         return "SpecularHighlight"
-        }
-    }
-    
-    /// Normalized position 0…1 across card width, driven by pitch
-    private var normalizedCenter: CGFloat {
-        let pitchRange: CGFloat = 0.15
-        let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
-        return 0.5 + (clamped / pitchRange) * 0.5
-    }
-    
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            // Image is 1024x1024, we want the bright band to sweep across card width
-            let stripWidth = w * 0.6  // Specular strip covers ~60% of card width
-            let offsetX = (normalizedCenter - 0.5) * w  // Sweep range
-            
-            if motion.isMoving {
-                Image(specularAsset)
-                    .resizable()
-                    .frame(width: stripWidth, height: h)
-                    .position(x: w / 2 + offsetX, y: h / 2)
-                    .blendMode(.screen)
-                    .transition(.opacity)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .allowsHitTesting(false)
-        .onAppear { motion.startIfNeeded() }
-        .onDisappear { motion.stopIfNeeded() }
-    }
-}
 
 // MARK: - Animated Shimmer Border (Epic)
 

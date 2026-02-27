@@ -48,15 +48,6 @@ struct UnifiedCardEffectOverlay: View {
                 )
             }
             
-            // SPECULAR STRIP: Image-based, observes gyro independently.
-            if rarity >= .epic {
-                SpecularLayer(
-                    rarity: rarity,
-                    cardSize: cardSize,
-                    cornerRadius: cornerRadius
-                )
-            }
-            
             // HOLO EFFECTS: Pattern base + prismatic rainbow
             if let asset = holoPatternAsset {
                 // Base pattern (static, rendered once)
@@ -188,49 +179,6 @@ private struct ParticleLayer: View {
         .onDisappear {
             timer?.invalidate()
             timer = nil
-        }
-    }
-}
-
-// MARK: - Specular Layer (image-based, isolated gyro observer)
-
-private struct SpecularLayer: View {
-    let rarity: CardRarity
-    let cardSize: CGSize
-    let cornerRadius: CGFloat
-    
-    @ObservedObject private var motion = CardMotionManager.shared
-    
-    private var specularAsset: String {
-        switch rarity {
-        case .legendary: return "SpecularGold"
-        case .epic:      return "SpecularPurple"
-        default:         return "SpecularHighlight"
-        }
-    }
-    
-    private var normalizedCenter: CGFloat {
-        let pitchRange: CGFloat = 0.15
-        let clamped = max(-pitchRange, min(pitchRange, motion.pitch))
-        return 0.5 + (clamped / pitchRange) * 0.5
-    }
-    
-    var body: some View {
-        if motion.isMoving {
-            let w = cardSize.width
-            let h = cardSize.height
-            let stripWidth = w * 0.6
-            let offsetX = (normalizedCenter - 0.5) * w
-            
-            Image(specularAsset)
-                .resizable()
-                .frame(width: stripWidth, height: h)
-                .position(x: w / 2 + offsetX, y: h / 2)
-                .frame(width: w, height: h)
-                .blendMode(.screen)
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                .allowsHitTesting(false)
-                .transition(.opacity)
         }
     }
 }
