@@ -280,7 +280,6 @@ struct GyroSpecularStrip: View {
             visibleOpacity = target
         }
     }
-    }
 }
 
 // MARK: - Animated Shimmer Border (Epic)
