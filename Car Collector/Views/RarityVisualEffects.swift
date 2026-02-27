@@ -115,6 +115,13 @@ struct RarityEffectOverlay: View {
         if rarity == .epic {
             AnimatedShimmerBorder(rarity: rarity, cornerRadius: cornerRadius)
         }
+        
+        // Rare: static blue glow border
+        if rarity == .rare {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color.cyan.opacity(0.5), lineWidth: 2)
+                .shadow(color: Color.cyan.opacity(0.4), radius: 8)
+        }
     }
 }
 
@@ -452,7 +459,7 @@ struct RarityEffectModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .overlay {
-                if let rarity = rarity, rarity >= .epic {
+                if let rarity = rarity, rarity >= .rare {
                     GeometryReader { geo in
                         RarityEffectOverlay(rarity: rarity, cardSize: geo.size)
                     }

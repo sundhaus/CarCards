@@ -865,6 +865,7 @@ struct UnifiedCardDetailView: View {
                         mintNumber: vehicleCard.mintNumber
                     )
                     .frame(width: cardWidth, height: cardHeight)
+                    .rarityEffects(for: specs.rarity)
                     .rotation3DEffect(
                         .degrees(flipDegrees),
                         axis: (x: 0, y: 1, z: 0)
