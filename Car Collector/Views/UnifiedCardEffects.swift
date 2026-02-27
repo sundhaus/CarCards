@@ -48,7 +48,7 @@ struct UnifiedCardEffectOverlay: View {
     }
     
     private var isMoving: Bool {
-        motionMagnitude > 0.02
+        motionMagnitude > 0.06
     }
     
     private var rimHighlightAngle: Double {
@@ -118,19 +118,21 @@ struct UnifiedCardEffectOverlay: View {
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     .allowsHitTesting(false)
                 
-                // Rainbow refraction — masked to pattern pixels only
-                holoRainbowCanvas
-                    .frame(width: cardSize.width, height: cardSize.height)
-                    .mask {
-                        Image(asset)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: cardSize.width, height: cardSize.height)
-                            .clipped()
-                    }
-                    .blendMode(.screen)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                    .allowsHitTesting(false)
+                // Rainbow refraction — masked to pattern pixels, only when moving
+                if isMoving {
+                    holoRainbowCanvas
+                        .frame(width: cardSize.width, height: cardSize.height)
+                        .mask {
+                            Image(asset)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: cardSize.width, height: cardSize.height)
+                                .clipped()
+                        }
+                        .blendMode(.screen)
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        .allowsHitTesting(false)
+                }
             }
             
             // OUTER EFFECTS: Border glow/shimmer (needs shadow bleed, not clipped)

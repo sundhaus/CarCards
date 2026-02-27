@@ -188,7 +188,7 @@ struct GyroRimLight: View {
     }
     
     private func updateActive() {
-        let moving = motionMagnitude > 0.02
+        let moving = motionMagnitude > 0.06
         if moving != isActive {
             withAnimation(.easeInOut(duration: 0.3)) {
                 isActive = moving
@@ -272,7 +272,7 @@ struct GyroSpecularStrip: View {
     }
     
     private func updateActive() {
-        let moving = motionMagnitude > 0.02
+        let moving = motionMagnitude > 0.06
         if moving != isActive {
             withAnimation(.easeInOut(duration: 0.3)) {
                 isActive = moving
