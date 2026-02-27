@@ -81,7 +81,7 @@ struct GarageView: View {
                         portraitPagedView
                     }
                 }
-                .blur(radius: (showCardDetail || showContextMenu) ? 10 : 0)
+                .opacity((showCardDetail || showContextMenu) ? 0 : 1)
                 
                 // Context menu overlay
                 if showContextMenu, let card = contextMenuCard {

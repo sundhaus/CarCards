@@ -474,7 +474,7 @@ struct GarageViewContent: View {
                         }
                     }
                 }
-                .blur(radius: showCardDetail ? 10 : 0)
+                .opacity(showCardDetail ? 0 : 1)
                 
                 // Landscape blur gradient on right side
                 if isLandscape {
