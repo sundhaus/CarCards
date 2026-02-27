@@ -87,8 +87,8 @@ struct MarketplaceLandingView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .blur(radius: 3)
-                    .ignoresSafeArea()
                     .overlay(Color.black.opacity(0.45))
+                    .drawingGroup()
                     .ignoresSafeArea()
             }
             .navigationDestination(isPresented: $showBuySell) {

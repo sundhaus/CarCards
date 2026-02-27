@@ -31,6 +31,7 @@ struct AppBackground: View {
                     FloatingShapesView(size: geo.size, animate: animateShapes)
                 }
                 .blur(radius: 3)
+                .drawingGroup()
             }
         }
         .ignoresSafeArea()
