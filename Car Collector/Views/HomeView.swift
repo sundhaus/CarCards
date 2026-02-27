@@ -158,11 +158,16 @@ struct HomeView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: cardWidth, height: cardHeight)
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        // Static rarity border — no animations on home page
+                        // Holographic foil pattern (gyro-driven for showcase)
+                        .holoEffect(card.holoEffect, cornerRadius: cornerRadius)
+                        // Rarity border + shimmer/glow effects
                         .overlay {
                             if let rarity = parsedRarity, rarity >= .rare {
-                                RoundedRectangle(cornerRadius: cornerRadius)
-                                    .stroke(rarity.gradient, lineWidth: 2)
+                                RarityEffectOverlay(
+                                    rarity: rarity,
+                                    cardSize: CGSize(width: cardWidth, height: cardHeight),
+                                    cornerRadius: cornerRadius
+                                )
                             }
                         }
                         .shadow(color: crownGlowColor(for: card).opacity(0.5), radius: 16, x: 0, y: 4)
