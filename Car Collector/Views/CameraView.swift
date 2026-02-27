@@ -19,6 +19,7 @@ class LiDARDepthScanner: NSObject, AVCaptureDepthDataOutputDelegate {
     var hasDepthData: Bool { latestDepthMap != nil }
     private var currentDepthOutput: AVCaptureDepthDataOutput?
     private let depthQueue = DispatchQueue(label: "depthQueue")
+    private let sessionQueue = DispatchQueue(label: "com.carcollector.sessionQueue")
     
     override init() {
         let discovery = AVCaptureDevice.DiscoverySession(
@@ -369,7 +370,7 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     
     func startSession() {
         if !session.isRunning {
-            DispatchQueue.global(qos: .userInitiated).async {
+            sessionQueue.async {
                 self.session.startRunning()
             }
         }
@@ -377,7 +378,7 @@ class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate, 
     
     func stopSession() {
         if session.isRunning {
-            DispatchQueue.global(qos: .userInitiated).async {
+            sessionQueue.async {
                 self.session.stopRunning()
             }
         }

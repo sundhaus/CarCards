@@ -210,6 +210,8 @@ class FriendsService: ObservableObject {
     private let db = FirebaseManager.shared.db
     private var followsListener: ListenerRegistration?
     private var activitiesListener: ListenerRegistration?
+    private var activitiesSetupTask: Task<Void, Never>?
+    private var backfillTask: Task<Void, Never>?
     
     private var followsCollection: CollectionReference {
         db.collection("follows")
@@ -224,6 +226,8 @@ class FriendsService: ObservableObject {
     deinit {
         followsListener?.remove()
         activitiesListener?.remove()
+        activitiesSetupTask?.cancel()
+        backfillTask?.cancel()
     }
     
     // MARK: - Follow User
@@ -526,8 +530,9 @@ class FriendsService: ObservableObject {
     
     func listenToFriendActivities(uid: String) {
         activitiesListener?.remove()
+        activitiesSetupTask?.cancel()
         
-        Task {
+        activitiesSetupTask = Task {
             // Clean up old activities (30+ days old)
             await cleanupOldActivities()
             
@@ -576,7 +581,8 @@ class FriendsService: ObservableObject {
                             
                             // Backfill rarity/flatImageURL for activities missing them
                             // (cards captured before rarity was synced to activity feed)
-                            Task {
+                            self?.backfillTask?.cancel()
+                            self?.backfillTask = Task {
                                 await self?.backfillMissingActivityFields(activities)
                             }
                         }
@@ -980,7 +986,13 @@ class FriendsService: ObservableObject {
     
     func stopAllListeners() {
         followsListener?.remove()
+        followsListener = nil
         activitiesListener?.remove()
+        activitiesListener = nil
+        activitiesSetupTask?.cancel()
+        activitiesSetupTask = nil
+        backfillTask?.cancel()
+        backfillTask = nil
     }
 }
 

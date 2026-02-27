@@ -57,6 +57,7 @@ class HotCardsService: ObservableObject {
     
     private func startCountdownTimer() {
         countdownTimer?.invalidate()
+        countdownTimer = nil
         
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
@@ -65,11 +66,19 @@ class HotCardsService: ObservableObject {
             let timeRemaining = nextRefresh.timeIntervalSince(Date())
             
             if timeRemaining <= 0 {
-                self.timeUntilNextRefresh = "Refreshing..."
-                self.forceRefresh()
+                DispatchQueue.main.async {
+                    self.timeUntilNextRefresh = "Refreshing..."
+                    self.forceRefresh()
+                }
             } else {
-                self.timeUntilNextRefresh = self.formatCountdown(seconds: timeRemaining)
+                DispatchQueue.main.async {
+                    self.timeUntilNextRefresh = self.formatCountdown(seconds: timeRemaining)
+                }
             }
+        }
+        // Ensure timer fires on common RunLoop modes (survives scrolling)
+        if let timer = countdownTimer {
+            RunLoop.main.add(timer, forMode: .common)
         }
         countdownTimer?.fire()
     }
@@ -102,6 +111,19 @@ class HotCardsService: ObservableObject {
         }
     }
     
+    /// Pause the countdown timer when carousel is not visible
+    func pauseTimer() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+    }
+    
+    /// Resume the countdown timer when carousel becomes visible
+    func resumeTimer() {
+        if countdownTimer == nil && timerStarted {
+            startCountdownTimer()
+        }
+    }
+    
     func forceRefresh() {
         print("🔄 Force refreshing hot cards")
         fetchHotCards()
@@ -114,6 +136,19 @@ class HotCardsService: ObservableObject {
         listener?.remove()
         listener = nil
         print("🔥 HotCardsService reset — all in-memory data cleared")
+    }
+    
+    /// Pause the countdown timer (call when app goes to background)
+    func pauseTimer() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+    }
+    
+    /// Resume the countdown timer (call when app returns to foreground)
+    func resumeTimer() {
+        if timerStarted {
+            startCountdownTimer()
+        }
     }
     
     // MARK: - Fetch Carousel (top 10 by heat)

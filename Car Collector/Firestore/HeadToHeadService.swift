@@ -368,9 +368,15 @@ class HeadToHeadService: ObservableObject {
     
     func stopListening() {
         racesListener?.remove()
+        racesListener = nil
         openListener?.remove()
+        openListener = nil
         pendingListener?.remove()
+        pendingListener = nil
         streakListener?.remove()
+        streakListener = nil
+        duoInviteListener?.remove()
+        duoInviteListener = nil
     }
     
     private func loadStreak(uid: String) {
@@ -1588,6 +1594,8 @@ class HeadToHeadService: ObservableObject {
     /// Listen for incoming duo invites (teammate side)
     func startDuoInviteListener() {
         guard let uid = FirebaseManager.shared.currentUserId else { return }
+        
+        duoInviteListener?.remove()
         
         duoInviteListener = duoInvitesCollection
             .whereField("teammateId", isEqualTo: uid)

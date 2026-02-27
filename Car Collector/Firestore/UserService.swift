@@ -408,6 +408,7 @@ class UserService: ObservableObject {
     
     func stopListening() {
         profileListener?.remove()
+        profileListener = nil
     }
     
     // MARK: - Upload Profile Picture

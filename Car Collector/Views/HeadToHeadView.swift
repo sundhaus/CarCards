@@ -2472,6 +2472,9 @@ struct DuoInvitePopupView: View {
         .task {
             await loadBlockedCards()
         }
+        .onDisappear {
+            stopListeners()
+        }
     }
     
     // MARK: - Matchmaking State Views

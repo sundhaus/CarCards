@@ -488,7 +488,10 @@ class MarketplaceService: ObservableObject {
     
     func stopAllListeners() {
         activeListingsListener?.remove()
+        activeListingsListener = nil
         myListingsListener?.remove()
+        myListingsListener = nil
         myBidsListener?.remove()
+        myBidsListener = nil
     }
 }

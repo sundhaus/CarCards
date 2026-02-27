@@ -448,6 +448,7 @@ class CardService: ObservableObject {
     
     func stopListening() {
         cardsListener?.remove()
+        cardsListener = nil
     }
     
     // MARK: - Migrate Local Cards to Cloud (UPDATED with metadata)

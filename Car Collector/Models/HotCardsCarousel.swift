@@ -27,7 +27,11 @@ struct HotCardsCarousel: View {
         .frame(maxWidth: .infinity)
         .onAppear {
             hotCardsService.fetchHotCardsIfNeeded()
+            hotCardsService.resumeTimer()
             imageCache.preloadImages(from: hotCardsService.hotCards)
+        }
+        .onDisappear {
+            hotCardsService.pauseTimer()
         }
         .onChange(of: hotCardsService.hotCards.count) { _, _ in
             imageCache.preloadImages(from: hotCardsService.hotCards)
@@ -236,16 +240,21 @@ class CarouselImageCache: ObservableObject {
             
             loadingURLs.insert(urlString)
             
-            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-                guard let data = data, let image = UIImage(data: data) else {
-                    DispatchQueue.main.async { self?.loadingURLs.remove(urlString) }
-                    return
+            Task {
+                do {
+                    let (data, _) = try await URLSession.shared.data(from: url)
+                    if let image = UIImage(data: data) {
+                        await MainActor.run {
+                            self.images[urlString] = image
+                            self.loadingURLs.remove(urlString)
+                        }
+                    } else {
+                        await MainActor.run { self.loadingURLs.remove(urlString) }
+                    }
+                } catch {
+                    await MainActor.run { self.loadingURLs.remove(urlString) }
                 }
-                DispatchQueue.main.async {
-                    self?.images[urlString] = image
-                    self?.loadingURLs.remove(urlString)
-                }
-            }.resume()
+            }
         }
     }
     

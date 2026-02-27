@@ -26,8 +26,20 @@ struct CarCardCollectorApp: App {
                     await checkAuthState()
                 }
                 .onChange(of: scenePhase) { _, newPhase in
-                    if newPhase == .active {
+                    switch newPhase {
+                    case .active:
                         OrientationManager.forcePortrait()
+                        // Resume services when returning to foreground
+                        if isReady {
+                            resumeServices()
+                        }
+                    case .background:
+                        // Pause non-essential listeners and timers to free threads
+                        pauseServices()
+                    case .inactive:
+                        break
+                    @unknown default:
+                        break
                     }
                 }
         }
@@ -145,16 +157,9 @@ struct CarCardCollectorApp: App {
     
     private func startServices() {
         let start = Date()
-        guard let uid = firebaseManager.currentUserId else { return }
+        guard firebaseManager.currentUserId != nil else { return }
         
-        UserService.shared.loadProfile(uid: uid)
-        print("🕐 loadProfile started: \(Int(Date().timeIntervalSince(start) * 1000))ms")
-        
-        CardService.shared.listenToMyCards(uid: uid)
-        print("🕐 listenToMyCards started: \(Int(Date().timeIntervalSince(start) * 1000))ms")
-        
-        MarketplaceService.shared.listenToMyListings(uid: uid)
-        MarketplaceService.shared.listenToMyBids(uid: uid)
-        print("🕐 marketplace listeners started: \(Int(Date().timeIntervalSince(start) * 1000))ms")
+        ServiceLifecycleManager.shared.startAll()
+        print("🕐 ServiceLifecycleManager.startAll: \(Int(Date().timeIntervalSince(start) * 1000))ms")
     }
 }

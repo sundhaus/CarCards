@@ -325,40 +325,37 @@ struct FIFACardView: View {
         guard let url = URL(string: urlString) else {
             // If flat URL failed, try raw URL as fallback
             if isFlatURL, let fallbackURL = URL(string: card.imageURL) {
-                loadFromURL(fallbackURL, isFlat: false)
+                Task { await loadFromURL(fallbackURL, isFlat: false) }
             } else {
                 isLoadingImage = false
             }
             return
         }
         
-        loadFromURL(url, isFlat: isFlatURL)
+        Task { await loadFromURL(url, isFlat: isFlatURL) }
     }
     
-    private func loadFromURL(_ url: URL, isFlat: Bool) {
-        URLSession.shared.dataTask(with: url) { data, _, error in
-            if let data = data, let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    cardImage = image
-                    usedFlatImage = isFlat
-                    isLoadingImage = false
-                }
-            } else if isFlat, let fallbackURL = URL(string: card.imageURL) {
-                // Flat image failed to load — try raw image as fallback
-                URLSession.shared.dataTask(with: fallbackURL) { data2, _, _ in
-                    DispatchQueue.main.async {
-                        if let data2 = data2, let image2 = UIImage(data: data2) {
-                            cardImage = image2
-                            usedFlatImage = false
-                        }
-                        isLoadingImage = false
-                    }
-                }.resume()
-            } else {
-                DispatchQueue.main.async {
-                    isLoadingImage = false
-                }
+    private func loadFromURL(_ url: URL, isFlat: Bool) async {
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let image = UIImage(data: data) {
+                cardImage = image
+                usedFlatImage = isFlat
+                isLoadingImage = false
+                return
             }
-        }.resume()
+        } catch {}
+        
+        // Flat image failed — try raw image as fallback
+        if isFlat, let fallbackURL = URL(string: card.imageURL) {
+            do {
+                let (data2, _) = try await URLSession.shared.data(from: fallbackURL)
+                if let image2 = UIImage(data: data2) {
+                    cardImage = image2
+                    usedFlatImage = false
+                }
+            } catch {}
+        }
+        isLoadingImage = false
     }
 }

@@ -117,6 +117,14 @@ class FirebaseManager: ObservableObject {
     // MARK: - Sign Out
     
     func signOut() throws {
+        // Stop all service listeners before signing out
+        CardService.shared.stopListening()
+        FriendsService.shared.stopAllListeners()
+        MarketplaceService.shared.stopAllListeners()
+        HeadToHeadService.shared.stopListening()
+        HeadToHeadService.shared.stopDuoInviteListener()
+        UserService.shared.stopListening()
+        
         try auth.signOut()
         self.currentUserId = nil
         self.isAuthenticated = false

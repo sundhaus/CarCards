@@ -29,6 +29,9 @@ struct ContentView: View {
     @ObservedObject private var h2hService = HeadToHeadService.shared
     @ObservedObject private var dailyLoginService = DailyLoginService.shared
     @State private var showDuoInvite = false
+    @State private var onAppearTask: Task<Void, Never>?
+    @State private var imageSyncTask: Task<Void, Never>?
+    @State private var flattenMigrationTask: Task<Void, Never>?
     
     // Merge all card types for marketplace
     private var allSellableCards: [SavedCard] {
@@ -231,7 +234,7 @@ struct ContentView: View {
                 if !UserDefaults.standard.bool(forKey: "hasCompletedImageSync_v1") {
                     let cardsToSync = savedCards
                     if !cardsToSync.isEmpty {
-                        Task {
+                        imageSyncTask = Task {
                             await CardService.shared.syncModifiedImages(localCards: cardsToSync)
                             UserDefaults.standard.set(true, forKey: "hasCompletedImageSync_v1")
                         }
@@ -246,7 +249,7 @@ struct ContentView: View {
                     let vehicles = savedCards
                     let drivers = driverCards
                     let locations = locationCards
-                    Task {
+                    flattenMigrationTask = Task {
                         await CardFlattener.shared.migrateExistingCards(
                             vehicles: vehicles,
                             drivers: drivers,
@@ -260,11 +263,9 @@ struct ContentView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 visitedTabs.insert(2)
             }
-            // Start listening for duo invites globally
-            h2hService.startDuoInviteListener()
             
             // Load and check daily login (automatic popup)
-            Task {
+            onAppearTask = Task {
                 guard let uid = FirebaseManager.shared.currentUserId else { return }
                 
                 // Load daily login data
@@ -272,6 +273,8 @@ struct ContentView: View {
                 
                 // Wait for data to load
                 try? await Task.sleep(nanoseconds: 600_000_000) // 600ms
+                
+                guard !Task.isCancelled else { return }
                 
                 await MainActor.run {
                     // Show popup if reward hasn't been claimed today
@@ -283,6 +286,12 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+        .onDisappear {
+            onAppearTask?.cancel()
+            imageSyncTask?.cancel()
+            flattenMigrationTask?.cancel()
+            h2hService.stopDuoInviteListener()
         }
         .onChange(of: h2hService.pendingDuoInvite?.id) { _, newId in
             showDuoInvite = newId != nil
