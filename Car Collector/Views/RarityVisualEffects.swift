@@ -139,63 +139,60 @@ struct GyroRimLight: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
-    @State private var visibleOpacity: CGFloat = 0
+    @State private var isActive = false
     
-    /// Convert device tilt into an angle (degrees) around the card perimeter.
     private var highlightAngle: Double {
         let r = motion.roll * 8.0
         let p = motion.pitch * 8.0
-        let angle = atan2(p, r) * (180.0 / .pi)
-        return angle
+        return atan2(p, r) * (180.0 / .pi)
     }
-    
-    /// How focused the highlight is — larger spread = softer, more diffuse
-    private let spreadDegrees: Double = 50
     
     private var motionMagnitude: CGFloat {
         sqrt(motion.pitch * motion.pitch + motion.roll * motion.roll)
     }
     
     var body: some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
-            .stroke(
-                AngularGradient(
-                    gradient: Gradient(colors: [
-                        Color.clear,
-                        Color.clear,
-                        Color.orange.opacity(0.4),
-                        Color.yellow.opacity(0.7),
-                        Color.white.opacity(0.95),
-                        Color.yellow.opacity(0.7),
-                        Color.orange.opacity(0.4),
-                        Color.clear,
-                        Color.clear,
-                        Color.clear,
-                        Color.clear,
-                        Color.clear,
-                    ]),
-                    center: .center,
-                    startAngle: .degrees(highlightAngle - 180),
-                    endAngle: .degrees(highlightAngle + 180)
-                ),
-                lineWidth: 3.5
-            )
-            .shadow(
-                color: Color.yellow.opacity(0.4),
-                radius: 6
-            )
-            .opacity(visibleOpacity)
-            .onAppear { motion.startIfNeeded() }
-            .onDisappear { motion.stopIfNeeded() }
-            .onChange(of: motion.pitch) { _, _ in updateOpacity() }
-            .onChange(of: motion.roll) { _, _ in updateOpacity() }
+        Group {
+            if isActive {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: [
+                                Color.clear,
+                                Color.clear,
+                                Color.orange.opacity(0.4),
+                                Color.yellow.opacity(0.7),
+                                Color.white.opacity(0.95),
+                                Color.yellow.opacity(0.7),
+                                Color.orange.opacity(0.4),
+                                Color.clear,
+                                Color.clear,
+                                Color.clear,
+                                Color.clear,
+                                Color.clear,
+                            ]),
+                            center: .center,
+                            startAngle: .degrees(highlightAngle - 180),
+                            endAngle: .degrees(highlightAngle + 180)
+                        ),
+                        lineWidth: 3.5
+                    )
+                    .shadow(color: Color.yellow.opacity(0.4), radius: 6)
+                    .transition(.opacity)
+            }
+        }
+        .onAppear { motion.startIfNeeded() }
+        .onDisappear { motion.stopIfNeeded() }
+        .onChange(of: motion.pitch) { _, _ in updateActive() }
+        .onChange(of: motion.roll) { _, _ in updateActive() }
     }
     
-    private func updateOpacity() {
-        let magnitude = motionMagnitude
-        let target: CGFloat = min(1.0, magnitude / 0.05)
-        withAnimation(.easeInOut(duration: 0.3)) {
-            visibleOpacity = target
+    private func updateActive() {
+        let moving = motionMagnitude > 0.02
+        if moving != isActive {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isActive = moving
+            }
         }
     }
 }
@@ -210,7 +207,7 @@ struct GyroSpecularStrip: View {
     let cornerRadius: CGFloat
     
     @ObservedObject private var motion = CardMotionManager.shared
-    @State private var visibleOpacity: CGFloat = 0
+    @State private var isActive = false
     
     private let sigmaFraction: CGFloat = 0.15
     private let shineBoost: CGFloat = 0.25
@@ -218,9 +215,9 @@ struct GyroSpecularStrip: View {
     private var tintColor: Color {
         switch rarity {
         case .legendary:
-            return Color(red: 1.0, green: 0.85, blue: 0.4)  // Gold
+            return Color(red: 1.0, green: 0.85, blue: 0.4)
         case .epic:
-            return Color(red: 0.7, green: 0.4, blue: 1.0)   // Purple
+            return Color(red: 0.7, green: 0.4, blue: 1.0)
         default:
             return .white
         }
@@ -232,52 +229,54 @@ struct GyroSpecularStrip: View {
         return 0.5 + (clamped / pitchRange) * 0.5
     }
     
-    /// How much the device is moving — magnitude of pitch + roll
     private var motionMagnitude: CGFloat {
         sqrt(motion.pitch * motion.pitch + motion.roll * motion.roll)
     }
     
     var body: some View {
-        Canvas { context, size in
-            let w = size.width
-            let h = size.height
-            let sigma = w * sigmaFraction
-            let center = normalizedCenter * w
-            
-            let step: CGFloat = 2.0
-            var x: CGFloat = 0
-            
-            while x < w {
-                let dist = x - center
-                let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
-                let intensity = shineBoost * gaussian
-                
-                guard intensity > 0.005 else { x += step; continue }
-                
-                let rect = CGRect(x: x, y: 0, width: step, height: h)
-                context.opacity = intensity
-                context.fill(Path(rect), with: .color(tintColor))
-                
-                x += step
+        Group {
+            if isActive {
+                Canvas { context, size in
+                    let w = size.width
+                    let h = size.height
+                    let sigma = w * sigmaFraction
+                    let center = normalizedCenter * w
+                    
+                    let step: CGFloat = 4.0 // Coarser step for less GPU work
+                    var x: CGFloat = 0
+                    
+                    while x < w {
+                        let dist = x - center
+                        let gaussian = exp(-0.5 * (dist * dist) / (sigma * sigma))
+                        let intensity = shineBoost * gaussian
+                        
+                        guard intensity > 0.01 else { x += step; continue }
+                        
+                        let rect = CGRect(x: x, y: 0, width: step, height: h)
+                        context.opacity = intensity
+                        context.fill(Path(rect), with: .color(tintColor))
+                        
+                        x += step
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                .blendMode(.screen)
+                .transition(.opacity)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .blendMode(.screen)
-        .opacity(visibleOpacity)
         .allowsHitTesting(false)
         .onAppear { motion.startIfNeeded() }
         .onDisappear { motion.stopIfNeeded() }
-        .onChange(of: motion.pitch) { _, _ in updateOpacity() }
-        .onChange(of: motion.roll) { _, _ in updateOpacity() }
+        .onChange(of: motion.pitch) { _, _ in updateActive() }
+        .onChange(of: motion.roll) { _, _ in updateActive() }
     }
     
-    private func updateOpacity() {
-        // Fade in when moving, fade out when still
-        // Threshold: ~0.02 is basically still, ~0.06+ is clearly moving
-        let magnitude = motionMagnitude
-        let target: CGFloat = min(1.0, magnitude / 0.05)
-        withAnimation(.easeInOut(duration: 0.3)) {
-            visibleOpacity = target
+    private func updateActive() {
+        let moving = motionMagnitude > 0.02
+        if moving != isActive {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isActive = moving
+            }
         }
     }
 }
@@ -343,7 +342,7 @@ struct ParticleSparkOverlay: View {
     @State private var engine = ParticleEngine()
     
     private var particleCount: Int {
-        rarity == .legendary ? 8 : 4
+        rarity == .legendary ? 4 : 2
     }
     
     private var particleColor: Color {
@@ -355,7 +354,7 @@ struct ParticleSparkOverlay: View {
     }
     
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
             Canvas { context, size in
                 engine.tick(
                     cardSize: cardSize,
