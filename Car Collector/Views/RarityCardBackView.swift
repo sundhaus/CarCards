@@ -278,19 +278,19 @@ struct RarityCardBackView: View {
     @ViewBuilder
     private var borderLayer: some View {
         let cornerRadius = cardHeight * 0.09
+        let strokeWidth: CGFloat = rarity >= .epic ? 2.5 * scale : 1.5 * scale
         
-        // Rarity accent border
+        // Rarity accent border — inset by half stroke width so it stays within bounds
         RoundedRectangle(cornerRadius: cornerRadius)
-            .stroke(
+            .strokeBorder(
                 rarity.gradient,
-                lineWidth: rarity >= .epic ? 2.5 * scale : 1.5 * scale
+                lineWidth: strokeWidth
             )
-            .padding(1)
         
         // Inner accent line (Uncommon+)
         if rarity >= .uncommon {
             RoundedRectangle(cornerRadius: cornerRadius - 3 * scale)
-                .stroke(
+                .strokeBorder(
                     rarity.color.opacity(0.3),
                     lineWidth: 0.5 * scale
                 )
@@ -303,11 +303,8 @@ struct RarityCardBackView: View {
     @ViewBuilder
     private var epicEffectsLayer: some View {
         let cornerRadius = cardHeight * 0.09
-        // Use the diagonal so the strip covers the card in any rotation
-        let diagonal = sqrt(cardWidth * cardWidth + cardHeight * cardHeight)
         
-        // Shimmer sweep — travels along the card's X axis (left→right in landscape,
-        // top→bottom when viewed in portrait rotation)
+        // Shimmer sweep — contained within card bounds
         LinearGradient(
             gradient: Gradient(colors: [
                 Color.clear,
@@ -319,8 +316,10 @@ struct RarityCardBackView: View {
             startPoint: .leading,
             endPoint: .trailing
         )
-        .frame(width: cardWidth * 0.4, height: diagonal)
+        .frame(width: cardWidth * 0.4, height: cardHeight)
         .offset(x: shimmerPhase)
+        .frame(width: cardWidth, height: cardHeight)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .blendMode(.overlay)
         .onAppear {
