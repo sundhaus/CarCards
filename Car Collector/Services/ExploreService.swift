@@ -10,6 +10,7 @@ import SwiftUI
 import Combine
 import FirebaseFirestore
 
+@MainActor
 class ExploreService: ObservableObject {
     @Published var cardsByCategory: [VehicleCategory: [FriendActivity]] = [:]
     @Published var featuredCards: [FriendActivity] = []
