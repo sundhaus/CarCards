@@ -65,6 +65,33 @@ struct ContentView: View {
         return all
     }
     
+    // Extracted to reduce type-checker complexity in TabView body
+    @ViewBuilder
+    private var marketplaceTabContent: some View {
+        if LevelGating.isUnlocked(.marketplace, at: levelSystem.level) {
+            if visitedTabs.contains(3) {
+                MarketplaceLandingView(
+                    isLandscape: false,
+                    savedCards: allSellableCards,
+                    onCardListed: { card in
+                        if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
+                            savedCards.remove(at: index)
+                            CardStorage.saveCards(savedCards)
+                        }
+                    }
+                )
+                .padding(.top, DeviceScale.h(58))
+            } else {
+                Color.clear
+            }
+        } else {
+            LockedFeatureOverlay(
+                feature: .marketplace,
+                currentLevel: levelSystem.level
+            )
+        }
+    }
+    
     var body: some View {
         TabView(selection: $navigationController.selectedTab) {
             // Shop Tab - lazy
@@ -106,28 +133,7 @@ struct ContentView: View {
             
             // Marketplace Tab - lazy, level-gated (Level 3)
             Tab("Market", systemImage: "chart.line.uptrend.xyaxis", value: 3) {
-                if LevelGating.isUnlocked(.marketplace, at: levelSystem.level) {
-                    if visitedTabs.contains(3) {
-                        MarketplaceLandingView(
-                            isLandscape: false,
-                            savedCards: allSellableCards,
-                            onCardListed: { card in
-                                if let index = savedCards.firstIndex(where: { $0.id == card.id }) {
-                                    savedCards.remove(at: index)
-                                    CardStorage.saveCards(savedCards)
-                                }
-                            }
-                        )
-                        .padding(.top, DeviceScale.h(58))
-                    } else {
-                        Color.clear
-                    }
-                } else {
-                    LockedFeatureOverlay(
-                        feature: .marketplace,
-                        currentLevel: levelSystem.level
-                    )
-                }
+                marketplaceTabContent
             }
             
             // Garage Tab - lazy
