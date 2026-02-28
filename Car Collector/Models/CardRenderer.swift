@@ -206,6 +206,11 @@ final class CardRenderer {
             
             // Text
             drawCardText(card: card, config: config, in: rect, height: height)
+            
+            // Power Rating badge (vehicles only, bottom-right)
+            if let power = card.powerRating, power > 0 {
+                drawPowerBadge(context: context, rect: rect, height: height, power: power, cornerRadius: cornerRadius)
+            }
         }
     }
     
@@ -521,6 +526,83 @@ final class CardRenderer {
             let name = lc.locationName.uppercased() as NSString
             name.draw(at: CGPoint(x: inset, y: inset), withAttributes: boldAttrs)
         }
+    }
+    
+    // MARK: - Power Rating Badge
+    
+    /// Draws the power rating number in the bottom-right corner of the card.
+    /// Styled like a FIFA overall rating — large bold number with colored
+    /// circular background that changes color based on power tier.
+    private func drawPowerBadge(context: CGContext, rect: CGRect, height: CGFloat, power: Int, cornerRadius: CGFloat) {
+        let tier = PowerTier.from(rating: power)
+        let badgeSize = height * 0.22
+        let margin = height * 0.06
+        
+        let borderWidth = height * 0.042
+        let effectiveMargin = margin + borderWidth
+        
+        // Badge position: bottom-right, inside border
+        let badgeCenterX = rect.maxX - effectiveMargin - badgeSize / 2
+        let badgeCenterY = rect.maxY - effectiveMargin - badgeSize / 2
+        let badgeRect = CGRect(
+            x: badgeCenterX - badgeSize / 2,
+            y: badgeCenterY - badgeSize / 2,
+            width: badgeSize,
+            height: badgeSize
+        )
+        
+        // Glow (elite+ tiers)
+        if let glow = tier.glowRGB {
+            context.saveGState()
+            let glowColor = UIColor(red: glow.r, green: glow.g, blue: glow.b, alpha: 0.5)
+            context.setShadow(offset: .zero, blur: badgeSize * 0.3, color: glowColor.cgColor)
+            let glowPath = UIBezierPath(ovalIn: badgeRect.insetBy(dx: 2, dy: 2))
+            context.setFillColor(UIColor.clear.cgColor)
+            context.addPath(glowPath.cgPath)
+            context.fillPath()
+            context.restoreGState()
+        }
+        
+        // Dark background circle with slight transparency
+        context.saveGState()
+        let bgPath = UIBezierPath(ovalIn: badgeRect)
+        context.setFillColor(UIColor.black.withAlphaComponent(0.7).cgColor)
+        context.addPath(bgPath.cgPath)
+        context.fillPath()
+        context.restoreGState()
+        
+        // Colored ring
+        context.saveGState()
+        let rgb = tier.rgb
+        let ringColor = UIColor(red: rgb.r, green: rgb.g, blue: rgb.b, alpha: 0.9)
+        let ringPath = UIBezierPath(ovalIn: badgeRect.insetBy(dx: 1.5, dy: 1.5))
+        context.setStrokeColor(ringColor.cgColor)
+        context.setLineWidth(2.0)
+        context.addPath(ringPath.cgPath)
+        context.strokePath()
+        context.restoreGState()
+        
+        // Power number
+        let fontSize = badgeSize * 0.48
+        let numberStr = "\(power)" as NSString
+        
+        let shadow = NSShadow()
+        shadow.shadowColor = UIColor.black.withAlphaComponent(0.6)
+        shadow.shadowBlurRadius = 2
+        shadow.shadowOffset = CGSize(width: 0, height: 1)
+        
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont(name: "Futura-Bold", size: fontSize) ?? UIFont.boldSystemFont(ofSize: fontSize),
+            .foregroundColor: UIColor.white,
+            .shadow: shadow
+        ]
+        
+        let textSize = numberStr.size(withAttributes: attrs)
+        let textOrigin = CGPoint(
+            x: badgeCenterX - textSize.width / 2,
+            y: badgeCenterY - textSize.height / 2
+        )
+        numberStr.draw(at: textOrigin, withAttributes: attrs)
     }
     
     // MARK: - Helpers

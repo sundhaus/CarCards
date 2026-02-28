@@ -119,6 +119,19 @@ enum AnyCard: Identifiable {
         }
     }
     
+    /// Power rating (0-99) for display on card front — vehicles only
+    var powerRating: Int? {
+        switch self {
+        case .vehicle(let card):
+            // Calculate from specs if available
+            let specs = card.carSpecs
+            let rarity = self.rarity ?? .common
+            return PowerRating.quickCalc(specs: specs, rarity: rarity)
+        case .driver, .location:
+            return nil
+        }
+    }
+    
     /// Light-weight text for top-left of card (e.g. make / first name / location name)
     var titleLine1: String {
         switch self {

@@ -184,4 +184,18 @@ struct SavedCard: Identifiable, Codable {
     var asAnyCard: AnyCard {
         return .vehicle(self)
     }
+    
+    /// Convert VehicleSpecs → CarSpecs for battle stat calculations
+    var carSpecs: CarSpecs {
+        CarSpecs(
+            horsepower: parseHP(),
+            torque: parseTorque(),
+            zeroToSixty: parseZeroToSixty(),
+            topSpeed: parseTopSpeed(),
+            engineType: getEngine(),
+            displacement: nil,
+            transmission: specs?.transmission != "N/A" ? specs?.transmission : nil,
+            drivetrain: getDrivetrain()
+        )
+    }
 }

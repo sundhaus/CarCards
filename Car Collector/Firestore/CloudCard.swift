@@ -54,6 +54,12 @@ struct CloudCard: Identifiable, Codable {
     // Level of the user who captured this card (for prestige badge display)
     var capturedByLevel: Int?
     
+    // Power rating (0-99) — calculated from battle stats + mods, shown on card front
+    var storedPowerRating: Int?
+    
+    // Applied performance mods (intake, exhaust, turbo, etc.)
+    var appliedMods: [AppliedMod]
+    
     // From Firestore document
     init?(document: DocumentSnapshot) {
         guard let data = document.data() else { return nil }
@@ -103,6 +109,14 @@ struct CloudCard: Identifiable, Codable {
         self.evolutionPoints = data["evolutionPoints"] as? Int ?? 0
         self.lastBattleUsed = (data["lastBattleUsed"] as? Timestamp)?.dateValue()
         self.capturedByLevel = data["capturedByLevel"] as? Int
+        self.storedPowerRating = data["powerRating"] as? Int
+        
+        // Parse applied mods
+        if let modsData = data["appliedMods"] as? [[String: Any]] {
+            self.appliedMods = modsData.compactMap { AppliedMod.fromDictionary($0) }
+        } else {
+            self.appliedMods = []
+        }
     }
     
     // New card
@@ -153,6 +167,8 @@ struct CloudCard: Identifiable, Codable {
         self.evolutionPoints = evolutionPoints
         self.lastBattleUsed = nil
         self.capturedByLevel = capturedByLevel
+        self.storedPowerRating = nil
+        self.appliedMods = []
     }
     
     var dictionary: [String: Any] {
@@ -206,6 +222,16 @@ struct CloudCard: Identifiable, Codable {
         // Include capturedByLevel for prestige badge
         if let capturedByLevel = capturedByLevel {
             dict["capturedByLevel"] = capturedByLevel
+        }
+        
+        // Include power rating if calculated
+        if let power = storedPowerRating {
+            dict["powerRating"] = power
+        }
+        
+        // Include applied mods if any
+        if !appliedMods.isEmpty {
+            dict["appliedMods"] = appliedMods.map { $0.toDictionary }
         }
         
         return dict
