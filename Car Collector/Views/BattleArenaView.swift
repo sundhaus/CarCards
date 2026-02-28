@@ -73,6 +73,7 @@ struct BattleArenaView: View {
             }
         }
         .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             Task {
                 await battleService.syncRankFromCloud()
