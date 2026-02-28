@@ -20,6 +20,14 @@ match /users/{userId} {
   match /meta/{docId} {
     allow read, write: if isOwner(userId);
   }
+
+  // Battle results subcollection (match history)
+  match /battleResults/{resultId} {
+    allow read: if isOwner(userId);
+    allow create: if isOwner(userId);
+    allow update: if false;
+    allow delete: if isOwner(userId) || isAdmin();
+  }
 }
 
 match /usernames/{username} {
@@ -99,6 +107,22 @@ match /featured_cards/{cardId} {
   allow create: if isAuthenticated();
   allow update: if isAuthenticated();
   allow delete: if false;
+}
+
+// ─── Battle Arena: Battles ───────────────────────────────
+match /battles/{battleId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated();
+  allow update: if isAuthenticated();
+  allow delete: if isAuthenticated() && isAdmin();
+}
+
+// ─── Battle Arena: Battle Queue ──────────────────────────
+match /battleQueue/{queueId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated();
+  allow update: if isAuthenticated();
+  allow delete: if isAuthenticated();
 }
 
 // ─── Head to Head: Races ─────────────────────────────────
