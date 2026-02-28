@@ -786,6 +786,14 @@ struct UnifiedCardDetailView: View {
             print("❌ Failed to fetch specs: \(error)")
             await MainActor.run {
                 isFetchingSpecs = false
+                
+                // Still flip to show whatever we have — concept/rare cars may lack API data
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    flipDegrees += 180
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isFlipped.toggle()
+                    }
+                }
             }
         }
     }
@@ -946,8 +954,16 @@ struct UnifiedCardDetailView: View {
                         isFlipped.toggle()
                     }
                 }
+            } else if isFlipped {
+                // Already flipped (showing back) — just flip back to front
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    flipDegrees += 180
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isFlipped.toggle()
+                    }
+                }
             } else {
-                // No specs yet - fetch them (will auto-flip when done)
+                // No specs yet - fetch them (will auto-flip when done, or flip on failure)
                 Task {
                     await fetchSpecsIfNeeded()
                 }
