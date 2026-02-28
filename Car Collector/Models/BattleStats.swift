@@ -212,50 +212,66 @@ struct BattleStatsEngine {
     // MARK: - Individual Stat Calculators
     
     /// Acceleration score: 0-60 in seconds → 0-99 rating
-    /// Sub-2.0s = 99, 3.0s = ~85, 5.0s = ~65, 8.0s = ~40, 12s+ = ~15
+    /// Uses exponential curve for better spread at the top end.
+    /// Sub-2.0s = 99, 2.3s = ~94, 2.6s = ~89, 3.0s = ~83, 4.0s = ~65, 6.0s = ~40, 10s+ = ~15
     private static func calculateAccelScore(zeroToSixty: Double?) -> Double {
         guard let zts = zeroToSixty, zts > 0 else { return 30.0 }
         
-        // Inverse relationship: faster 0-60 = higher score
-        // Formula: score = 110 - (zts * 10), clamped
-        let score = 110.0 - (zts * 10.0)
-        return max(5.0, min(99.0, score))
+        // Exponential decay: faster 0-60 = exponentially higher score
+        // This creates meaningful gaps between 2.0s, 2.5s, 3.0s, 3.5s cars
+        if zts <= 1.8 { return 99.0 }
+        if zts <= 4.0 {
+            // Top tier: 1.8s–4.0s → 99–60 with steep curve
+            let normalized = (zts - 1.8) / (4.0 - 1.8)  // 0.0 to 1.0
+            let curved = pow(normalized, 0.7)              // Steeper at the start
+            return 99.0 - (curved * 39.0)
+        }
+        if zts <= 8.0 {
+            // Mid tier: 4.0s–8.0s → 60–25
+            let normalized = (zts - 4.0) / (8.0 - 4.0)
+            return 60.0 - (normalized * 35.0)
+        }
+        // Slow: 8s+ → 25–5
+        let normalized = min(1.0, (zts - 8.0) / 8.0)
+        return max(5.0, 25.0 - (normalized * 20.0))
     }
     
     /// Top speed score: mph → 0-99 rating
-    /// 260+ mph = 99, 200 mph = ~85, 155 mph = ~70, 120 mph = ~50, 90 mph = ~30
+    /// Logarithmic curve for better spread across entire range.
+    /// 280+ mph = 99, 260 = ~96, 217 = ~87, 155 = ~68, 120 = ~52, 90 = ~35
     private static func calculateTopSpeedScore(topSpeed: Int?) -> Double {
         guard let ts = topSpeed, ts > 0 else { return 30.0 }
         
-        // Linear-ish mapping with diminishing returns above 200
-        if ts >= 260 { return 99.0 }
-        if ts >= 200 {
-            return 85.0 + Double(ts - 200) * (14.0 / 60.0)
-        }
-        // 60 mph → ~15, 200 mph → 85
-        let score = 15.0 + Double(ts - 60) * (70.0 / 140.0)
-        return max(5.0, min(99.0, score))
+        if ts >= 280 { return 99.0 }
+        if ts <= 60 { return 8.0 }
+        
+        // Logarithmic mapping: big spread at top, still meaningful at bottom
+        // Maps 60–280 mph to 8–99
+        let normalized = Double(ts - 60) / Double(280 - 60)  // 0.0 to 1.0
+        let curved = pow(normalized, 0.75)  // Slight compression at very top, spread in mid
+        return 8.0 + (curved * 91.0)
     }
     
     /// Power score from HP + torque → 0-99
-    /// 1000+ HP = 99, 500 HP = ~75, 300 HP = ~55, 150 HP = ~35
+    /// Continuous curve through entire range — no hard caps.
+    /// 1500 HP = ~97, 1000 HP = ~90, 700 HP = ~82, 500 HP = ~73, 300 HP = ~55, 150 HP = ~35
     private static func calculatePowerScore(hp: Int?, torque: Int?) -> Double {
         let hpScore: Double
         if let hp = hp, hp > 0 {
-            if hp >= 1000 { hpScore = 99.0 }
-            else if hp >= 500 { hpScore = 75.0 + Double(hp - 500) * (24.0 / 500.0) }
-            else if hp >= 200 { hpScore = 35.0 + Double(hp - 200) * (40.0 / 300.0) }
-            else { hpScore = max(10.0, Double(hp) / 200.0 * 35.0) }
+            // Logarithmic curve: huge spread from 100-800hp, meaningful gaps above 1000hp
+            // ln(hp/50) / ln(2000/50) maps 50-2000hp to 0-1, then scale to 10-99
+            let normalized = log(Double(hp) / 50.0) / log(2000.0 / 50.0)
+            hpScore = min(99.0, max(5.0, 5.0 + normalized * 94.0))
         } else {
             hpScore = 25.0
         }
         
         let tqScore: Double
         if let tq = torque, tq > 0 {
-            if tq >= 800 { tqScore = 99.0 }
-            else if tq >= 400 { tqScore = 70.0 + Double(tq - 400) * (29.0 / 400.0) }
-            else if tq >= 200 { tqScore = 35.0 + Double(tq - 200) * (35.0 / 200.0) }
-            else { tqScore = max(10.0, Double(tq) / 200.0 * 35.0) }
+            // Same logarithmic approach for torque
+            // Maps 50-1500 lb-ft to full range
+            let normalized = log(Double(tq) / 30.0) / log(1500.0 / 30.0)
+            tqScore = min(99.0, max(5.0, 5.0 + normalized * 94.0))
         } else {
             tqScore = 25.0
         }
@@ -265,8 +281,8 @@ struct BattleStatsEngine {
     }
     
     /// Handling score based on drivetrain, category, weight estimate → 0-99
-    /// Lightweight sports cars + AWD/RWD = high handling
-    /// Heavy trucks/SUVs = lower handling
+    /// Uses power-to-displacement as a proxy for power-to-weight ratio.
+    /// Lighter, more focused cars score higher.
     private static func calculateHandlingScore(
         drivetrain: String?,
         category: VehicleCategory?,
@@ -289,35 +305,60 @@ struct BattleStatsEngine {
         
         // Category adjustment — the big differentiator
         switch category {
-        case .hypercar:      score += 25.0   // Active aero, carbon brakes
+        case .hypercar:      score += 25.0
         case .supercar:      score += 22.0
-        case .sportsCar:     score += 20.0   // Purpose-built for corners
-        case .track:         score += 28.0   // Track-focused = best handling
-        case .rally:         score += 18.0   // Great at sliding
+        case .sportsCar:     score += 20.0
+        case .track:         score += 28.0
+        case .rally:         score += 18.0
         case .coupe:         score += 12.0
-        case .hatchback:     score += 10.0   // Hot hatches are nimble
+        case .hatchback:     score += 10.0
         case .convertible:   score += 8.0
         case .sedan:         score += 3.0
-        case .electric:      score += 8.0    // Low center of gravity
+        case .electric:      score += 8.0
         case .hybrid:        score += 3.0
         case .wagon:         score -= 2.0
-        case .luxury:        score -= 5.0    // Heavy, comfort-tuned
-        case .muscle:        score -= 5.0    // Straight line, not corners
-        case .suv:           score -= 12.0   // Top-heavy
-        case .truck:         score -= 18.0   // Long wheelbase, heavy
+        case .luxury:        score -= 5.0
+        case .muscle:        score -= 5.0
+        case .suv:           score -= 12.0
+        case .truck:         score -= 18.0
         case .van:           score -= 20.0
-        case .offRoad:       score -= 8.0    // Good on dirt, not pavement
-        case .classic:       score += 0.0    // Varies wildly
-        case .concept:       score += 15.0   // Usually cutting-edge
+        case .offRoad:       score -= 8.0
+        case .classic:       score += 0.0
+        case .concept:       score += 15.0
         case .none:          break
         }
         
-        // Lightweight estimate: lower displacement + decent HP = likely lighter
-        if let disp = displacement, let hp = hp {
-            let powerToWeight = Double(hp) / max(disp, 0.5)
-            if powerToWeight > 200 { score += 8.0 }      // Very light relative to power
-            else if powerToWeight > 120 { score += 4.0 }
-            else if powerToWeight < 60 { score -= 5.0 }   // Heavy/underpowered
+        // Power-to-displacement ratio as weight proxy
+        // Higher ratio = more power per liter = likely lighter and more focused
+        // P1 (903hp / 3.8L = 238) vs Chiron (1500hp / 8.0L = 188)
+        if let disp = displacement, let hp = hp, disp > 0 {
+            let powerToDisp = Double(hp) / disp
+            if powerToDisp > 250 {
+                score += 10.0     // Ultra efficient (turbo 4-cyl monsters, like AMG A45)
+            } else if powerToDisp > 200 {
+                score += 7.0      // Very focused (P1, 911 Turbo)
+            } else if powerToDisp > 150 {
+                score += 4.0      // Good (most turbo sports cars)
+            } else if powerToDisp > 100 {
+                score += 1.0      // Average
+            } else if powerToDisp < 70 {
+                score -= 6.0      // Heavy/underpowered (big lazy V8 trucks)
+            } else if powerToDisp < 90 {
+                score -= 3.0      // Below average
+            }
+            
+            // Displacement as raw weight proxy (smaller engine = usually lighter car)
+            if disp <= 2.0 {
+                score += 5.0      // Light and nimble (Miata, BRZ)
+            } else if disp <= 3.0 {
+                score += 3.0      // Sporty (Cayman, Supra)
+            } else if disp <= 4.5 {
+                score += 0.0      // Neutral (most V6/V8 sports cars)
+            } else if disp >= 6.0 {
+                score -= 5.0      // Heavy (big V8/V10/W16)
+            } else if disp >= 5.0 {
+                score -= 2.0      // Somewhat heavy
+            }
         }
         
         return max(5.0, min(99.0, score))
