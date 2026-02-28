@@ -72,6 +72,7 @@ struct BattleArenaView: View {
                 matchmakingOverlay
             }
         }
+        .navigationBarHidden(true)
         .onAppear {
             Task {
                 await battleService.syncRankFromCloud()
@@ -89,6 +90,17 @@ struct BattleArenaView: View {
     
     private var topBar: some View {
         HStack {
+            Button(action: { dismiss() }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(12)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+            }
+            
+            Spacer()
+            
             Text("Battle Arena")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(.white)
