@@ -394,7 +394,7 @@ extension CloudCard {
 extension SavedCard {
     /// Compute battle stats from this card's embedded specs.
     func battleStats(rarity: CardRarity = .common) -> BattleStats {
-        return BattleStatsEngine.calculate(specs: specs, rarity: rarity, category: specs.category)
+        return BattleStatsEngine.calculate(specs: carSpecs, rarity: rarity, category: carSpecs.category)
     }
 }
 

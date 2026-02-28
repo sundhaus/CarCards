@@ -399,10 +399,54 @@ class PerformanceModService: ObservableObject {
     // MARK: - Helpers
     
     private func loadSpecs(cardData: [String: Any]) async -> CarSpecs {
+        // Build CarSpecs from the vehicleSpecs subcollection or card data
         let make = cardData["make"] as? String ?? ""
         let model = cardData["model"] as? String ?? ""
         let year = cardData["year"] as? String ?? ""
-        return await CarSpecsService.shared.getSpecs(make: make, model: model, year: year)
+        
+        // Try fetching from shared Firestore vehicleSpecs cache
+        let docId = "\(make)_\(model)_\(year)"
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "-", with: "_")
+        
+        do {
+            let doc = try await db.collection("vehicleSpecs").document(docId).getDocument()
+            if let data = doc.data() {
+                return CarSpecs(
+                    horsepower: parseIntFrom(data["horsepower"]),
+                    torque: parseIntFrom(data["torque"]),
+                    zeroToSixty: parseDoubleFrom(data["zeroToSixty"]),
+                    topSpeed: parseIntFrom(data["topSpeed"]),
+                    engineType: data["engine"] as? String,
+                    displacement: nil,
+                    transmission: data["transmission"] as? String,
+                    drivetrain: data["drivetrain"] as? String
+                )
+            }
+        } catch {
+            print("⚠️ Failed to load specs for mod: \(error)")
+        }
+        
+        return .empty
+    }
+    
+    private func parseIntFrom(_ value: Any?) -> Int? {
+        if let i = value as? Int { return i }
+        if let s = value as? String {
+            let cleaned = s.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+            return Int(cleaned)
+        }
+        return nil
+    }
+    
+    private func parseDoubleFrom(_ value: Any?) -> Double? {
+        if let d = value as? Double { return d }
+        if let s = value as? String {
+            let cleaned = s.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+            return Double(cleaned)
+        }
+        return nil
     }
 }
 
