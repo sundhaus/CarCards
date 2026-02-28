@@ -87,24 +87,25 @@ enum PowerTier: String, CaseIterable {
 
 struct PowerRating {
     
-    // Category weights for the overall power calculation.
-    // Speed and Power weigh slightly more because they "feel" more impactful
-    // to car enthusiasts, but Handling and Efficiency still matter for strategy.
-    private static let weights: [BattleCategory: Double] = [
-        .speed:      0.25,
-        .power:      0.25,
-        .handling:   0.22,
-        .efficiency: 0.13,
-        .rarity:     0.15
-    ]
-    
     /// Calculate the power rating for a card.
-    /// - Parameters:
-    ///   - specs: The card's base vehicle specs
-    ///   - rarity: Card rarity tier
-    ///   - mods: Applied performance mods (can be empty)
-    ///   - category: Vehicle category (optional, inferred from specs if nil)
-    /// - Returns: PowerRatingResult with total, base, mod bonus, and breakdown
+    ///
+    /// Uses a **peak-weighted** system: your best stats contribute more than your
+    /// worst stats. This means a Chiron (99 Speed, 97 Power, but low Efficiency)
+    /// rates higher than a P1 (high across the board but lower peaks).
+    ///
+    /// Formula:
+    ///   1. Sort all 5 stats highest → lowest
+    ///   2. Apply descending weights: best stat counts most, worst counts least
+    ///   3. Rarity gets a flat bonus on top (not competing with performance stats)
+    ///
+    /// This ensures:
+    ///   - Hypercars with extreme specs rate 90+ (Icon tier)
+    ///   - Well-rounded sports cars rate 70–85 (Master/Elite)
+    ///   - Average cars rate 40–60 (Gold/Silver)
+    ///   - Economy cars rate 20–40 (Bronze/Silver)
+    ///   - A Chiron always beats a P1 in raw power rating
+    ///   - But a P1 can still win battles by picking Handling or Efficiency
+    ///
     static func calculate(
         specs: CarSpecs,
         rarity: CardRarity,
@@ -123,25 +124,51 @@ struct PowerRating {
         
         // 3. Combine base + mods per category (clamped 0–99)
         var breakdown: [BattleCategory: Int] = [:]
+        let performanceCategories: [BattleCategory] = [.speed, .power, .handling, .efficiency]
+        
         for cat in BattleCategory.allCases {
             let base = baseStats.value(for: cat)
             let modBonus = modBoosts[cat] ?? 0
             breakdown[cat] = max(0, min(99, base + modBonus))
         }
         
-        // 4. Weighted average for total
-        var weightedSum = 0.0
-        for (cat, weight) in weights {
-            weightedSum += Double(breakdown[cat] ?? 0) * weight
-        }
-        let total = max(0, min(99, Int(weightedSum.rounded())))
+        // 4. Peak-weighted calculation (performance stats only — rarity handled separately)
+        //    Sort performance stats highest to lowest, then apply descending weights.
+        //    Best stat = 35%, 2nd = 28%, 3rd = 22%, Worst = 15%
+        let perfValues = performanceCategories
+            .map { breakdown[$0] ?? 0 }
+            .sorted(by: >)
         
-        // 5. Calculate base (without mods) for display
-        var baseWeightedSum = 0.0
-        for (cat, weight) in weights {
-            baseWeightedSum += Double(baseStats.value(for: cat)) * weight
+        let peakWeights: [Double] = [0.35, 0.28, 0.22, 0.15]
+        
+        var perfScore = 0.0
+        for (i, value) in perfValues.enumerated() {
+            perfScore += Double(value) * peakWeights[i]
         }
-        let baseRating = max(0, min(99, Int(baseWeightedSum.rounded())))
+        
+        // 5. Rarity bonus: flat addition scaled 0–8 points
+        //    This means rarity can bump you up a tier but can't carry a bad car
+        let rarityBonus: Double
+        switch rarity {
+        case .common:    rarityBonus = 0.0
+        case .uncommon:  rarityBonus = 1.5
+        case .rare:      rarityBonus = 3.0
+        case .epic:      rarityBonus = 5.0
+        case .legendary: rarityBonus = 8.0
+        }
+        
+        let total = max(0, min(99, Int((perfScore + rarityBonus).rounded())))
+        
+        // 6. Calculate base (without mods) for display
+        let basePerfValues = performanceCategories
+            .map { baseStats.value(for: $0) }
+            .sorted(by: >)
+        
+        var basePerfScore = 0.0
+        for (i, value) in basePerfValues.enumerated() {
+            basePerfScore += Double(value) * peakWeights[i]
+        }
+        let baseRating = max(0, min(99, Int((basePerfScore + rarityBonus).rounded())))
         
         return PowerRatingResult(
             total: total,

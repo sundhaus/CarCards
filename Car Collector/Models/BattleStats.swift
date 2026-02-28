@@ -403,11 +403,20 @@ struct BattleStatsEngine {
             else { score -= 8.0 }                        // Low output per liter
         }
         
-        // Penalize massive displacement (8.0L V10 = not efficient)
+        // Penalize displacement, but soften if hp/L is high (engineering marvel, not laziness)
+        // A 6.2L NA V8 at 80 hp/L is lazy; an 8.0L quad-turbo W16 at 188 hp/L is not
         if let disp = displacement {
-            if disp > 6.0 { score -= 15.0 }
-            else if disp > 4.0 { score -= 5.0 }
-            else if disp < 2.0 { score += 8.0 }
+            let hpPerLiter = (hp != nil && disp > 0) ? Double(hp!) / disp : 80.0
+            
+            if disp > 6.0 {
+                // Big engine penalty, reduced if hp/L is high
+                let penalty = hpPerLiter > 150 ? -6.0 : (hpPerLiter > 100 ? -10.0 : -15.0)
+                score += penalty
+            } else if disp > 4.0 {
+                score -= 4.0
+            } else if disp < 2.0 {
+                score += 8.0
+            }
         }
         
         return max(5.0, min(99.0, score))
