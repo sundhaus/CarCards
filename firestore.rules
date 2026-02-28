@@ -125,6 +125,14 @@ match /battleQueue/{queueId} {
   allow delete: if isAuthenticated();
 }
 
+// ─── Head to Head: Legacy Collection ─────────────────────
+match /head_to_head/{docId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated();
+  allow update: if isAuthenticated();
+  allow delete: if isAdmin();
+}
+
 // ─── Head to Head: Races ─────────────────────────────────
 match /races/{raceId} {
   allow read: if isAuthenticated();
