@@ -81,6 +81,17 @@ struct BattleLiveView: View {
     private var isMyTurn: Bool { battleService.currentBattle?.currentAttackerId == myUserId }
     private var currentMatch: BattleMatch? { battleService.currentBattle }
     
+    /// Whether the current player should see the card picker
+    /// True for attacker picking, AND for defender responding to waitingForMove
+    private var shouldShowCardPicker: Bool {
+        if isMyTurn { return true }
+        // Defender responds when status is waitingForMove
+        if let match = currentMatch, match.status == .waitingForMove && !isMyTurn {
+            return true
+        }
+        return false
+    }
+    
     private var vehicleCards: [CloudCard] {
         cardService.myCards.filter { $0.cardType == "vehicle" }
     }
@@ -412,20 +423,22 @@ struct BattleLiveView: View {
     private var cardPickView: some View {
         VStack(spacing: 16) {
             VStack(spacing: 4) {
-                Text(isMyTurn ? "CHOOSE YOUR CARD" : "OPPONENT IS PICKING...")
+                Text(shouldShowCardPicker
+                     ? (isMyTurn ? "CHOOSE YOUR CARD" : "CHOOSE YOUR RESPONSE")
+                     : "OPPONENT IS PICKING...")
                     .font(.system(size: 18, weight: .black))
                     .tracking(1.5)
                     .foregroundStyle(.white)
                 
-                if isMyTurn {
-                    Text("Select a card to play this round")
+                if shouldShowCardPicker {
+                    Text(isMyTurn ? "Select a card to play this round" : "Pick a card to defend with")
                         .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.5))
                 }
             }
             .padding(.top, 16)
             
-            if isMyTurn {
+            if shouldShowCardPicker {
                 // Show available cards
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
@@ -450,15 +463,22 @@ struct BattleLiveView: View {
                 
                 Spacer()
                 
-                // Confirm button — for Top Trumps goes straight to category,
-                // for Draft goes to category pick if attacker
+                // Confirm button — attacker goes to category pick,
+                // defender in Top Trumps responds directly
                 Button(action: {
                     withAnimation(.spring(response: 0.3)) {
                         myPlayedCardId = selectedCardId
-                        phase = .pickCategory
+                        
+                        // If defender in Top Trumps (status is waitingForMove and not my turn),
+                        // skip category pick and respond immediately
+                        if battle.mode == .topTrumps && !isMyTurn {
+                            confirmDefenderResponse()
+                        } else {
+                            phase = .pickCategory
+                        }
                     }
                 }) {
-                    Text("PLAY THIS CARD")
+                    Text(isMyTurn || battle.mode != .topTrumps ? "PLAY THIS CARD" : "RESPOND")
                         .font(.system(size: 16, weight: .bold))
                         .tracking(1)
                         .foregroundStyle(.white)
@@ -1140,30 +1160,42 @@ struct BattleLiveView: View {
         
         Task {
             do {
-                if battle.mode == .topTrumps {
-                    // Top Trumps: resolve immediately if we have opponent's card
-                    // For now, submit our turn and wait
-                    try await battleService.playTurn(
-                        battleId: battle.id,
-                        cardId: cardId,
-                        category: category,
-                        cardSpecs: specs,
-                        cardRarity: rarity
-                    )
-                    withAnimation { phase = .waitingForDefender }
-                } else {
-                    // Draft/other modes: submit turn
-                    try await battleService.playTurn(
-                        battleId: battle.id,
-                        cardId: cardId,
-                        category: category,
-                        cardSpecs: specs,
-                        cardRarity: rarity
-                    )
-                    withAnimation { phase = .waitingForDefender }
-                }
+                try await battleService.playTurn(
+                    battleId: battle.id,
+                    cardId: cardId,
+                    category: category,
+                    cardSpecs: specs,
+                    cardRarity: rarity
+                )
+                withAnimation { phase = .waitingForDefender }
             } catch {
                 print("❌ Failed to play turn: \(error)")
+            }
+        }
+    }
+    
+    /// Defender responds in Top Trumps — no category pick needed
+    private func confirmDefenderResponse() {
+        guard let cardId = myPlayedCardId,
+              let card = vehicleCards.first(where: { $0.id == cardId }) else { return }
+        
+        let specs = battleService.specsCache[card.id] ?? .empty
+        let rarity = CardRarity(rawValue: card.rarity ?? "Common") ?? .common
+        
+        usedCardIds.insert(cardId)
+        
+        Task {
+            do {
+                try await battleService.respondToTurn(
+                    battleId: battle.id,
+                    cardId: cardId,
+                    cardSpecs: specs,
+                    cardRarity: rarity
+                )
+                // respondToTurn resolves the round — handleRoundChange will fire
+                withAnimation { phase = .waitingForDefender }
+            } catch {
+                print("❌ Failed to respond to turn: \(error)")
             }
         }
     }
@@ -1234,6 +1266,18 @@ struct BattleLiveView: View {
             if phase == .waitingForOpponent {
                 withAnimation {
                     phase = isMyTurn ? .pickCard : .waitingForDefender
+                }
+            }
+        case .waitingForMove:
+            // Attacker has played — opponent needs to pick their card
+            if !isMyTurn && (phase == .waitingForDefender || phase == .pickCard || phase == .handSelection) {
+                withAnimation {
+                    phase = .pickCard
+                }
+            } else if isMyTurn {
+                // I'm the attacker who just played — wait for defender
+                withAnimation {
+                    phase = .waitingForDefender
                 }
             }
         case .finished:

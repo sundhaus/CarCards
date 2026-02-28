@@ -356,8 +356,12 @@ class BattleService: ObservableObject {
             roundData["player2StatValue"] = myValue
         }
         
+        // Write the partial round data so the opponent knows the chosen category
+        // and update status so their listener fires
         try await battlesCollection.document(battleId).updateData([
             "\(playerField).currentCardId": cardId,
+            "pendingRound": roundData,
+            "status": BattleStatus.waitingForMove.rawValue,
             "turnDeadline": Timestamp(date: Date().addingTimeInterval(AsyncTurnConfig.turnTimeoutSeconds))
         ])
         
@@ -385,19 +389,22 @@ class BattleService: ObservableObject {
         }
         
         let isPlayer1 = battle.player1.userId == uid
-        let category = battle.rounds.last.flatMap { BattleCategory(rawValue: $0.categoryChosen) }
+        
+        // Read attacker's move from pendingRound (written by playTurn)
+        let pending = battle.pendingRound
+        let category = pending.flatMap { BattleCategory(rawValue: $0["categoryChosen"] as? String ?? "") }
             ?? .power  // Fallback
         
         let myStats = BattleStatsEngine.calculate(specs: cardSpecs, rarity: cardRarity)
         let myValue = myStats.value(for: category)
         
-        // Get attacker's value from the partial round
+        // Get attacker's stat value from pendingRound
         let attackerValue: Int
         if isPlayer1 {
             // I'm player1, attacker is player2
-            attackerValue = battle.rounds.last?.player2StatValue ?? 0
+            attackerValue = pending?["player2StatValue"] as? Int ?? 0
         } else {
-            attackerValue = battle.rounds.last?.player1StatValue ?? 0
+            attackerValue = pending?["player1StatValue"] as? Int ?? 0
         }
         
         // Determine round winner
@@ -410,14 +417,23 @@ class BattleService: ObservableObject {
             winnerId = nil  // Tie
         }
         
-        // Build completed round
+        // Build completed round — use pendingRound for attacker's card
+        let attackerCardId: String
+        if isPlayer1 {
+            // I'm player1 (defender), attacker is player2
+            attackerCardId = pending?["player2CardId"] as? String ?? battle.player2?.currentCardId ?? ""
+        } else {
+            // I'm player2 (defender), attacker is player1
+            attackerCardId = pending?["player1CardId"] as? String ?? battle.player1.currentCardId ?? ""
+        }
+        
         let completedRound: [String: Any] = [
             "id": battle.currentRound,
             "attackerId": battle.currentAttackerId,
             "categoryChosen": category.rawValue,
-            "player1CardId": isPlayer1 ? cardId : (battle.player1.currentCardId ?? ""),
+            "player1CardId": isPlayer1 ? cardId : attackerCardId,
             "player1StatValue": isPlayer1 ? myValue : attackerValue,
-            "player2CardId": isPlayer1 ? (battle.player2?.currentCardId ?? "") : cardId,
+            "player2CardId": isPlayer1 ? attackerCardId : cardId,
             "player2StatValue": isPlayer1 ? attackerValue : myValue,
             "winnerId": winnerId ?? NSNull(),
             "completedAt": Timestamp(date: Date())
@@ -438,7 +454,8 @@ class BattleService: ObservableObject {
             "player1.score": p1Score,
             "player2.score": p2Score,
             "player1.currentCardId": FieldValue.delete(),
-            "player2.currentCardId": FieldValue.delete()
+            "player2.currentCardId": FieldValue.delete(),
+            "pendingRound": FieldValue.delete()
         ]
         
         if battleOver {
@@ -458,6 +475,7 @@ class BattleService: ObservableObject {
             
             updates["currentRound"] = battle.currentRound + 1
             updates["currentAttackerId"] = nextAttacker
+            updates["status"] = BattleStatus.inProgress.rawValue
             updates["turnDeadline"] = Timestamp(date: Date().addingTimeInterval(AsyncTurnConfig.turnTimeoutSeconds))
         }
         

@@ -196,6 +196,9 @@ struct BattleMatch: Identifiable {
     var player1Synergies: [String]? // SynergyType rawValues
     var player2Synergies: [String]?
     
+    // Pending round data (attacker's move before defender responds)
+    var pendingRound: [String: Any]?
+    
     // MARK: - Firestore Init
     
     init?(document: DocumentSnapshot) {
@@ -244,6 +247,7 @@ struct BattleMatch: Identifiable {
         self.budgetLimit = data["budgetLimit"] as? Int
         self.player1Synergies = data["player1Synergies"] as? [String]
         self.player2Synergies = data["player2Synergies"] as? [String]
+        self.pendingRound = data["pendingRound"] as? [String: Any]
     }
     
     // MARK: - Programmatic Init (for creating new battles)
@@ -274,6 +278,7 @@ struct BattleMatch: Identifiable {
         self.budgetLimit = budgetLimit
         self.player1Synergies = nil
         self.player2Synergies = nil
+        self.pendingRound = nil
     }
     
     // MARK: - Computed Properties
