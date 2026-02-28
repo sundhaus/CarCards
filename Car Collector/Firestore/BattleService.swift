@@ -134,7 +134,7 @@ class BattleService: ObservableObject {
         
         // Step 2: No match found — create a new one and wait
         let matchId = UUID().uuidString
-        var newMatch = BattleMatch(
+        let newMatch = BattleMatch(
             id: matchId,
             mode: mode,
             queueType: queueType,
@@ -189,7 +189,7 @@ class BattleService: ObservableObject {
     
     /// Search for an existing battle that needs a player 2
     private func findWaitingMatch(mode: BattleMode, queueType: BattleQueueType, player: BattlePlayer) async throws -> BattleMatch? {
-        var query: Query = battlesCollection
+        let query: Query = battlesCollection
             .whereField("mode", isEqualTo: mode.rawValue)
             .whereField("queueType", isEqualTo: queueType.rawValue)
             .whereField("status", isEqualTo: BattleStatus.searching.rawValue)
@@ -375,7 +375,7 @@ class BattleService: ObservableObject {
             throw BattleError.notAuthenticated
         }
         
-        guard var battle = currentBattle, battle.id == battleId else {
+        guard let battle = currentBattle, battle.id == battleId else {
             throw BattleError.battleNotFound
         }
         
@@ -653,14 +653,28 @@ class BattleService: ObservableObject {
     func loadSpecs(for cards: [CloudCard]) async {
         for card in cards where card.cardType == "vehicle" {
             if specsCache[card.id] == nil {
-                let specs = await CarSpecsService.shared.getSpecs(
-                    make: card.make,
-                    model: card.model,
-                    year: card.year
-                )
+                let specs = await fetchSpecsFromFirestore(make: card.make, model: card.model, year: card.year)
                 specsCache[card.id] = specs
             }
         }
+    }
+    
+    /// Fetch CarSpecs from the shared vehicleSpecs Firestore collection
+    private func fetchSpecsFromFirestore(make: String, model: String, year: String) async -> CarSpecs {
+        let docId = "\(make)_\(model)_\(year)"
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "-", with: "_")
+        
+        do {
+            let doc = try await db.collection("vehicleSpecs").document(docId).getDocument()
+            if let data = doc.data() {
+                return CarSpecs.fromDictionary(data)
+            }
+        } catch {
+            print("⚠️ Failed to load specs for \(make) \(model): \(error)")
+        }
+        return .empty
     }
     
     /// Get battle stats for a card (using cached specs)
