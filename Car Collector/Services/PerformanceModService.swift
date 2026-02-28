@@ -253,31 +253,9 @@ struct ModPricing {
     }
 }
 
-// MARK: - Performance Mod Service
+// MARK: - Mod Stat Calculator (nonisolated — usable from any context)
 
-@MainActor
-class PerformanceModService: ObservableObject {
-    static let shared = PerformanceModService()
-    
-    private let db = FirebaseManager.shared.db
-    
-    @Published var isApplyingMod = false
-    
-    private init() {}
-    
-    // MARK: - Get Applied Mods for Card
-    
-    /// Fetch all mods applied to a card from Firestore
-    func getAppliedMods(cardId: String) async throws -> [AppliedMod] {
-        let doc = try await db.collection("cards").document(cardId).getDocument()
-        guard let data = doc.data(),
-              let modsData = data["appliedMods"] as? [[String: Any]] else {
-            return []
-        }
-        return modsData.compactMap { AppliedMod.fromDictionary($0) }
-    }
-    
-    // MARK: - Calculate Total Stat Boosts from Mods
+struct ModStatCalculator {
     
     /// Sum all stat boosts from applied mods on a card.
     /// Returns a dictionary of BattleCategory → total bonus points.
@@ -306,6 +284,38 @@ class PerformanceModService: ObservableObject {
         }
         
         return boosts
+    }
+}
+
+// MARK: - Performance Mod Service
+
+@MainActor
+class PerformanceModService: ObservableObject {
+    static let shared = PerformanceModService()
+    
+    private let db = FirebaseManager.shared.db
+    
+    @Published var isApplyingMod = false
+    
+    private init() {}
+    
+    // MARK: - Get Applied Mods for Card
+    
+    /// Fetch all mods applied to a card from Firestore
+    func getAppliedMods(cardId: String) async throws -> [AppliedMod] {
+        let doc = try await db.collection("cards").document(cardId).getDocument()
+        guard let data = doc.data(),
+              let modsData = data["appliedMods"] as? [[String: Any]] else {
+            return []
+        }
+        return modsData.compactMap { AppliedMod.fromDictionary($0) }
+    }
+    
+    // MARK: - Calculate Total Stat Boosts from Mods
+    
+    /// Convenience wrapper — delegates to nonisolated ModStatCalculator
+    static func totalBoosts(from mods: [AppliedMod]) -> [BattleCategory: Int] {
+        ModStatCalculator.totalBoosts(from: mods)
     }
     
     // MARK: - Check Available Mods for Card

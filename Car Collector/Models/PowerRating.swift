@@ -119,7 +119,7 @@ struct PowerRating {
         )
         
         // 2. Get mod bonuses
-        let modBoosts = PerformanceModService.totalBoosts(from: mods)
+        let modBoosts = ModStatCalculator.totalBoosts(from: mods)
         
         // 3. Combine base + mods per category (clamped 0–99)
         var breakdown: [BattleCategory: Int] = [:]
@@ -177,6 +177,6 @@ extension CloudCard {
 extension SavedCard {
     /// Calculate power rating from embedded specs
     func calculatePowerRating(rarity: CardRarity = .common) -> Int {
-        return PowerRating.quickCalc(specs: specs, rarity: rarity)
+        return PowerRating.quickCalc(specs: carSpecs, rarity: rarity)
     }
 }
