@@ -18,6 +18,7 @@ struct HomeView: View {
     @State private var showLeaderboard = false
     @State private var showExplore = false
     @State private var showHeadToHead = false
+    @State private var showBattleArena = false
     @State private var showDailyChallenges = false
     @ObservedObject private var friendsService = FriendsService.shared
     @ObservedObject private var h2hService = HeadToHeadService.shared
@@ -58,6 +59,9 @@ struct HomeView: View {
                     // MARK: - Active Quest Strip
                     questStripSection
                     
+                    // MARK: - Battle Arena Banner
+                    battleArenaSection
+                    
                     // MARK: - H2H Status Banner
                     h2hStatusSection
                     
@@ -97,6 +101,9 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showHeadToHead) {
                 HeadToHeadView(isLandscape: isLandscape)
             }
+            .navigationDestination(isPresented: $showBattleArena) {
+                BattleArenaView(isLandscape: isLandscape)
+            }
             .navigationDestination(isPresented: $showDailyChallenges) {
                 DailyChallengeView()
             }
@@ -110,6 +117,7 @@ struct HomeView: View {
                     showLeaderboard = false
                     showExplore = false
                     showHeadToHead = false
+                    showBattleArena = false
                     showDailyChallenges = false
                 }
             }
@@ -127,6 +135,7 @@ struct HomeView: View {
                 showLeaderboard = false
                 showExplore = false
                 showHeadToHead = false
+                showBattleArena = false
                 showDailyChallenges = false
                 navigationController.unpreserveTab(1)
                 print("🏠 HomeView: Reset all navigation booleans from trigger")
@@ -352,6 +361,90 @@ struct HomeView: View {
         .padding(12)
         .frame(width: DeviceScale.w(200))
         .solidGlass(cornerRadius: 12)
+    }
+    
+    // MARK: - Battle Arena Banner
+    
+    @ViewBuilder
+    private var battleArenaSection: some View {
+        if LevelGating.isUnlocked(.battleArena, at: levelSystem.level) {
+            // Unlocked — show Battle Arena banner
+            Button {
+                showBattleArena = true
+            } label: {
+                HStack(spacing: DeviceScale.w(12)) {
+                    // Icon
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: DeviceScale.w(44), height: DeviceScale.w(44))
+                        
+                        Image(systemName: "shield.lefthalf.filled")
+                            .font(.poppins(20))
+                            .foregroundStyle(.white)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("BATTLE MODE")
+                            .font(.poppins(13))
+                            .foregroundStyle(.white)
+                        
+                        Text("Battle using your cards' stats!")
+                            .font(.poppins(11))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.poppins(14))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .padding(DeviceScale.w(14))
+                .solidGlass(cornerRadius: 14)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+        } else {
+            // Locked — show teaser with level requirement
+            HStack(spacing: DeviceScale.w(12)) {
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray4))
+                        .frame(width: DeviceScale.w(44), height: DeviceScale.w(44))
+                    
+                    Image(systemName: "lock.fill")
+                        .font(.poppins(18))
+                        .foregroundStyle(.gray)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text("BATTLE MODE")
+                            .font(.poppins(13))
+                            .foregroundStyle(.white.opacity(0.5))
+                        
+                        LockedBadge(requiredLevel: GatedFeature.battleArena.requiredLevel)
+                    }
+                    
+                    Text("Reach Level \(GatedFeature.battleArena.requiredLevel) to battle with card stats")
+                        .font(.poppins(11))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+                
+                Spacer()
+            }
+            .padding(DeviceScale.w(14))
+            .solidGlass(cornerRadius: 14)
+            .opacity(0.6)
+            .padding(.horizontal)
+        }
     }
     
     // MARK: - H2H Status Banner

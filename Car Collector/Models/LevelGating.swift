@@ -14,6 +14,7 @@ import SwiftUI
 /// Every feature that becomes available at a specific level.
 enum GatedFeature: String, CaseIterable, Identifiable {
     case marketplace       // Tab 3
+    case battleArena       // Stat-based card battles from Home
     case headToHead        // H2H from Home
     case customBackgrounds // Card customize → backgrounds tab
     case animatedEffects   // Card customize → animated holo / shimmer effects
@@ -26,6 +27,7 @@ enum GatedFeature: String, CaseIterable, Identifiable {
     var requiredLevel: Int {
         switch self {
         case .marketplace:       return 3
+        case .battleArena:       return 4
         case .headToHead:        return 5
         case .customBackgrounds: return 10
         case .animatedEffects:   return 15
@@ -38,6 +40,7 @@ enum GatedFeature: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .marketplace:       return "Marketplace"
+        case .battleArena:       return "Battle Arena"
         case .headToHead:        return "Head-to-Head"
         case .customBackgrounds: return "Custom Backgrounds"
         case .animatedEffects:   return "Animated Effects"
@@ -50,6 +53,7 @@ enum GatedFeature: String, CaseIterable, Identifiable {
     var unlockDescription: String {
         switch self {
         case .marketplace:       return "Buy, sell, and trade cards with other collectors"
+        case .battleArena:       return "Battle other collectors using your cards' stats"
         case .headToHead:        return "Challenge friends to head-to-head voting battles"
         case .customBackgrounds: return "Add custom backgrounds to your cards"
         case .animatedEffects:   return "Unlock holographic and shimmer effects for cards"
@@ -62,6 +66,7 @@ enum GatedFeature: String, CaseIterable, Identifiable {
     var iconName: String {
         switch self {
         case .marketplace:       return "cart.fill"
+        case .battleArena:       return "shield.lefthalf.filled"
         case .headToHead:        return "bolt.fill"
         case .customBackgrounds: return "photo.artframe"
         case .animatedEffects:   return "sparkles"
@@ -74,6 +79,7 @@ enum GatedFeature: String, CaseIterable, Identifiable {
     var themeColors: [Color] {
         switch self {
         case .marketplace:       return [.green, .mint]
+        case .battleArena:       return [.blue, .purple]
         case .headToHead:        return [.orange, .red]
         case .customBackgrounds: return [.purple, .indigo]
         case .animatedEffects:   return [.cyan, .blue]
