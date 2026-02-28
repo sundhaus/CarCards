@@ -703,10 +703,14 @@ struct CardDetailView: View {
                         cardContent(geometry: geometry, rotated: false)
                     } else {
                         // Device is portrait - rotate card to landscape
+                        let cardW = geometry.size.height * 0.8
+                        let cardH = cardW / 16 * 9
+                        
                         VStack {
                             Spacer()
                             cardContent(geometry: geometry, rotated: true)
                                 .rotationEffect(.degrees(90))
+                                .frame(width: cardH, height: cardW)
                             Spacer()
                         }
                         .frame(width: geometry.size.width, height: geometry.size.height)
@@ -758,6 +762,8 @@ struct CardDetailView: View {
                     .rotation3DEffect(.degrees(flipDegrees + 180), axis: (x: 0, y: 1, z: 0))
             }
         }
+        .frame(width: cardWidth, height: cardHeight)
+        .contentShape(Rectangle())
         .onTapGesture {
             // If flipping to back for the first time and no specs, fetch them
             if !isFlipped && (updatedCard ?? card).specs == nil {
