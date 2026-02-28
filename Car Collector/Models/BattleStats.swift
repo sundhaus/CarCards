@@ -167,12 +167,13 @@ struct BattleStatsEngine {
         let rawPower = calculatePowerScore(hp: specs.horsepower, torque: specs.torque)
         
         // --- HANDLING (0-99) ---
-        // Based on drivetrain, weight class estimate, and vehicle category
+        // Based on 0-60 grip proxy, drivetrain, category, and weight estimate
         let rawHandling = calculateHandlingScore(
             drivetrain: specs.drivetrain,
             category: category ?? specs.category,
             hp: specs.horsepower,
-            displacement: specs.displacement
+            displacement: specs.displacement,
+            zeroToSixty: specs.zeroToSixty
         )
         
         // --- EFFICIENCY (0-99) ---
@@ -280,84 +281,107 @@ struct BattleStatsEngine {
         return hpScore * 0.6 + tqScore * 0.4
     }
     
-    /// Handling score based on drivetrain, category, weight estimate → 0-99
-    /// Uses power-to-displacement as a proxy for power-to-weight ratio.
-    /// Lighter, more focused cars score higher.
+    /// Handling score based on drivetrain, category, weight estimate, and grip → 0-99
+    ///
+    /// Key insight: 0-60 time is a strong grip proxy. A 3.9s Mustang GT puts power
+    /// down effectively. A 6.4s TT does not. Category labels should nudge, not dominate.
+    ///
+    /// The handling formula now has 4 components:
+    ///   1. Grip from acceleration (0-60 implies traction) — up to ±15
+    ///   2. Drivetrain type — up to ±8
+    ///   3. Vehicle category — up to ±12 (compressed from old ±28)
+    ///   4. Power-to-displacement / weight proxy — up to ±8
     private static func calculateHandlingScore(
         drivetrain: String?,
         category: VehicleCategory?,
         hp: Int?,
-        displacement: Double?
+        displacement: Double?,
+        zeroToSixty: Double? = nil
     ) -> Double {
-        var score = 50.0  // Start neutral
+        var score = 45.0  // Start slightly below center
         
-        // Drivetrain bonus
+        // 1. Grip from acceleration — a fast 0-60 means the car puts power down
+        //    This is the great equalizer: Mustang GT at 3.9s has real grip
+        if let zts = zeroToSixty, zts > 0 {
+            if zts <= 2.5 {
+                score += 15.0     // Hypercar grip (P1, 918, LaFerrari)
+            } else if zts <= 3.5 {
+                score += 12.0     // Supercar grip (GT-R, 911 Turbo)
+            } else if zts <= 4.5 {
+                score += 8.0      // Sports car grip (Mustang GT, M3, Supra)
+            } else if zts <= 6.0 {
+                score += 3.0      // Decent (hot hatches, sporty sedans)
+            } else if zts <= 8.0 {
+                score -= 2.0      // Slow (economy cars)
+            } else {
+                score -= 6.0      // Very slow (vans, old trucks)
+            }
+        }
+        
+        // 2. Drivetrain bonus (compressed from old values)
         switch drivetrain?.uppercased() {
         case "AWD", "4WD":
-            score += 10.0   // AWD = good handling
+            score += 8.0    // AWD = good handling (was 10)
         case "RWD":
-            score += 5.0    // RWD = balanced
+            score += 4.0    // RWD = balanced (was 5)
         case "FWD":
-            score -= 3.0    // FWD = slight penalty
+            score -= 2.0    // FWD = slight understeer penalty
         default:
             break
         }
         
-        // Category adjustment — the big differentiator
+        // 3. Category adjustment — nudges, not dominators
+        //    Range compressed to ±12 (was ±28)
         switch category {
-        case .hypercar:      score += 25.0
-        case .supercar:      score += 22.0
-        case .sportsCar:     score += 20.0
-        case .track:         score += 28.0
-        case .rally:         score += 18.0
-        case .coupe:         score += 12.0
-        case .hatchback:     score += 10.0
-        case .convertible:   score += 8.0
-        case .sedan:         score += 3.0
-        case .electric:      score += 8.0
-        case .hybrid:        score += 3.0
+        case .hypercar:      score += 12.0
+        case .supercar:      score += 10.0
+        case .track:         score += 12.0
+        case .sportsCar:     score += 8.0
+        case .rally:         score += 6.0
+        case .coupe:         score += 5.0
+        case .muscle:        score += 2.0    // Muscle cars handle fine (was -5!)
+        case .hatchback:     score += 3.0
+        case .convertible:   score += 2.0
+        case .sedan:         score += 0.0
+        case .electric:      score += 4.0    // Low center of gravity
+        case .hybrid:        score += 1.0
         case .wagon:         score -= 2.0
-        case .luxury:        score -= 5.0
-        case .muscle:        score -= 5.0
-        case .suv:           score -= 12.0
-        case .truck:         score -= 18.0
-        case .van:           score -= 20.0
-        case .offRoad:       score -= 8.0
-        case .classic:       score += 0.0
-        case .concept:       score += 15.0
+        case .luxury:        score -= 3.0
+        case .classic:       score -= 2.0
+        case .concept:       score += 6.0
+        case .suv:           score -= 6.0
+        case .offRoad:       score -= 5.0
+        case .truck:         score -= 10.0
+        case .van:           score -= 12.0
         case .none:          break
         }
         
-        // Power-to-displacement ratio as weight proxy
-        // Higher ratio = more power per liter = likely lighter and more focused
-        // P1 (903hp / 3.8L = 238) vs Chiron (1500hp / 8.0L = 188)
+        // 4. Power-to-displacement as weight/focus proxy (compressed)
         if let disp = displacement, let hp = hp, disp > 0 {
             let powerToDisp = Double(hp) / disp
             if powerToDisp > 250 {
-                score += 10.0     // Ultra efficient (turbo 4-cyl monsters, like AMG A45)
+                score += 6.0      // Ultra focused (AMG A45, tuned 4-cyls)
             } else if powerToDisp > 200 {
-                score += 7.0      // Very focused (P1, 911 Turbo)
+                score += 4.0      // Very focused (P1, 911 Turbo)
             } else if powerToDisp > 150 {
-                score += 4.0      // Good (most turbo sports cars)
+                score += 2.0      // Good (most turbo sports cars)
             } else if powerToDisp > 100 {
-                score += 1.0      // Average
+                score += 0.0      // Average — no bonus or penalty
             } else if powerToDisp < 70 {
-                score -= 6.0      // Heavy/underpowered (big lazy V8 trucks)
+                score -= 4.0      // Heavy/underpowered
             } else if powerToDisp < 90 {
-                score -= 3.0      // Below average
+                score -= 2.0      // Below average
             }
             
-            // Displacement as raw weight proxy (smaller engine = usually lighter car)
+            // Displacement as raw weight proxy (smaller range than before)
             if disp <= 2.0 {
-                score += 5.0      // Light and nimble (Miata, BRZ)
+                score += 3.0      // Light (was 5)
             } else if disp <= 3.0 {
-                score += 3.0      // Sporty (Cayman, Supra)
-            } else if disp <= 4.5 {
-                score += 0.0      // Neutral (most V6/V8 sports cars)
+                score += 1.0      // Sporty (was 3)
             } else if disp >= 6.0 {
-                score -= 5.0      // Heavy (big V8/V10/W16)
+                score -= 3.0      // Heavy (was -5)
             } else if disp >= 5.0 {
-                score -= 2.0      // Somewhat heavy
+                score -= 1.0      // Somewhat heavy (was -2)
             }
         }
         
