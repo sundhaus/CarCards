@@ -193,9 +193,39 @@ struct SavedCard: Identifiable, Codable {
             zeroToSixty: parseZeroToSixty(),
             topSpeed: parseTopSpeed(),
             engineType: getEngine(),
-            displacement: nil,
+            displacement: parseDisplacement(),
             transmission: specs?.transmission != "N/A" ? specs?.transmission : nil,
-            drivetrain: getDrivetrain()
+            drivetrain: getDrivetrain(),
+            category: specs?.category
         )
+    }
+    
+    /// Parse displacement in liters from engine string
+    /// e.g. "8.0L Quad-Turbo W16" → 8.0, "3.8L Twin-Turbo V8" → 3.8,
+    ///      "6.2L Supercharged V8" → 6.2, "Electric Motor" → nil
+    func parseDisplacement() -> Double? {
+        guard let engine = specs?.engine, engine != "N/A" else { return nil }
+        // Match patterns like "8.0L", "3.8-liter", "6200cc"
+        // Pattern 1: X.XL or X.X L
+        if let range = engine.range(of: #"(\d+\.?\d*)\s*[Ll]"#, options: .regularExpression) {
+            let match = String(engine[range])
+            let cleaned = match.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+            return Double(cleaned)
+        }
+        // Pattern 2: X.X-liter or X.X liter
+        if let range = engine.range(of: #"(\d+\.?\d*)\s*-?\s*[Ll]iter"#, options: .regularExpression) {
+            let match = String(engine[range])
+            let cleaned = match.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+            return Double(cleaned)
+        }
+        // Pattern 3: XXXXcc → convert to liters
+        if let range = engine.range(of: #"(\d{3,5})\s*cc"#, options: .regularExpression) {
+            let match = String(engine[range])
+            let cleaned = match.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+            if let cc = Double(cleaned) {
+                return cc / 1000.0
+            }
+        }
+        return nil
     }
 }
