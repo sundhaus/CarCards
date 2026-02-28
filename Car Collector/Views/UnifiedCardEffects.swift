@@ -213,9 +213,10 @@ struct UnifiedCardEffectModifier: ViewModifier {
                     axis: (x: 0, y: 1, z: 0),
                     perspective: 0.5
                 )
-                // Single drag gesture drives everything
-                .gesture(
-                    DragGesture(minimumDistance: 0)
+                // Single drag gesture drives tilt + prismatic
+                // Uses minimumDistance: 5 so taps pass through to parent onTapGesture (flip)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 5)
                         .onChanged { value in
                             let dx = value.translation.width
                             let dy = value.translation.height
