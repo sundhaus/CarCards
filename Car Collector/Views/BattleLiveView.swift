@@ -90,7 +90,9 @@ struct BattleLiveView: View {
     }
     
     private var availableCardsForRound: [CloudCard] {
-        handCards.filter { !usedCardIds.contains($0.id) }
+        // Top Trumps skips hand selection — use all vehicle cards
+        let pool = (battle.mode == .topTrumps) ? vehicleCards : handCards
+        return pool.filter { !usedCardIds.contains($0.id) }
     }
     
     var body: some View {
