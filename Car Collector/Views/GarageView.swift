@@ -787,6 +787,21 @@ struct UnifiedCardDetailView: View {
             await MainActor.run {
                 isFetchingSpecs = false
                 
+                // Set fallback specs so the card back actually renders
+                if cardSpecs == nil {
+                    cardSpecs = VehicleSpecs(
+                        engine: "N/A",
+                        horsepower: "N/A",
+                        torque: "N/A",
+                        zeroToSixty: "N/A",
+                        topSpeed: "N/A",
+                        transmission: "N/A",
+                        drivetrain: "N/A",
+                        description: "Specs unavailable for this vehicle.",
+                        category: .concept
+                    )
+                }
+                
                 // Still flip to show whatever we have — concept/rare cars may lack API data
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     flipDegrees += 180
@@ -946,8 +961,8 @@ struct UnifiedCardDetailView: View {
             // Only handle taps for vehicle cards
             guard case .vehicle = card else { return }
             
-            // If specs already loaded - flip immediately
-            if specsAreComplete(cardSpecs) {
+            // If specs loaded (complete or fallback) - flip immediately
+            if cardSpecs != nil {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     flipDegrees += 180
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
