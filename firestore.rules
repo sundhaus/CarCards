@@ -106,7 +106,7 @@ match /featured_cards/{cardId} {
   allow read: if true;
   allow create: if isAuthenticated();
   allow update: if isAuthenticated();
-  allow delete: if false;
+  allow delete: if isAdmin();
 }
 
 // ─── Battle Arena: Battles ───────────────────────────────
@@ -165,11 +165,6 @@ match /duoInvites/{inviteId} {
                 && request.resource.data.inviterId == request.auth.uid;
   allow update: if isAuthenticated();
   allow delete: if isAuthenticated();
-}
-
-match /featured_cards/{docId} {
-  allow read: if true;
-  allow write, delete: if request.auth.uid in ['Ydnk69jI6kba4JiUYWEYBX8xDPU2'];
 }
 
 match /counters/{counterId} {
