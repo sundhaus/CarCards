@@ -245,7 +245,16 @@ class BattleService: ObservableObject {
         battleListener?.remove()
         
         battleListener = battlesCollection.document(battleId).addSnapshotListener { [weak self] snapshot, error in
-            guard let snapshot = snapshot, let match = BattleMatch(document: snapshot) else { return }
+            if let error = error {
+                print("⚠️ Battle listener error: \(error.localizedDescription)")
+                // Firestore listeners auto-reconnect, but log for debugging
+                return
+            }
+            
+            guard let snapshot = snapshot, let match = BattleMatch(document: snapshot) else {
+                print("⚠️ Battle listener: nil snapshot or parse failure")
+                return
+            }
             
             Task { @MainActor in
                 self?.currentBattle = match
@@ -255,6 +264,23 @@ class BattleService: ObservableObject {
                     await self?.processMatchResult(match)
                 }
             }
+        }
+    }
+    
+    /// Force-refresh battle state (call if listener seems stale)
+    func refreshBattle(_ battleId: String) async {
+        do {
+            let doc = try await battlesCollection.document(battleId).getDocument()
+            if let match = BattleMatch(document: doc) {
+                currentBattle = match
+                print("🔄 Force-refreshed battle state: \(match.status.rawValue)")
+                
+                if match.status == .finished && match.winnerId != nil {
+                    await processMatchResult(match)
+                }
+            }
+        } catch {
+            print("❌ Failed to refresh battle: \(error)")
         }
     }
     

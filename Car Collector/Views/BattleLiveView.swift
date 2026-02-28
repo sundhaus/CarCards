@@ -61,6 +61,7 @@ struct BattleLiveView: View {
     // Synergies
     @State private var activeSynergies: SynergyResult = .none
     @State private var showSynergyBanner = false
+    @State private var refreshTimer: Timer?
     
     // Battle result
     @State private var showResults = false
@@ -142,6 +143,11 @@ struct BattleLiveView: View {
         .onAppear {
             setupPhase()
             battleService.listenToBattle(battle.id)
+            startRefreshTimer()
+        }
+        .onDisappear {
+            refreshTimer?.invalidate()
+            refreshTimer = nil
         }
         .onChange(of: battleService.currentBattle?.status) { _, newStatus in
             handleStatusChange(newStatus)
@@ -1075,6 +1081,19 @@ struct BattleLiveView: View {
     }
     
     // MARK: - Actions
+    
+    /// Periodic safety-net refresh in case the snapshot listener misses an update
+    private func startRefreshTimer() {
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            Task { @MainActor in
+                // Only refresh when we're waiting — don't interrupt active play
+                if phase == .waitingForDefender || phase == .waitingForOpponent {
+                    await battleService.refreshBattle(battle.id)
+                }
+            }
+        }
+    }
     
     private func setupPhase() {
         guard let match = battleService.currentBattle ?? Optional(battle) else { return }
