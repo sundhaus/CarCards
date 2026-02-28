@@ -27,7 +27,7 @@ enum GatedFeature: String, CaseIterable, Identifiable {
     var requiredLevel: Int {
         switch self {
         case .marketplace:       return 3
-        case .battleArena:       return 4
+        case .battleArena:       return 1
         case .headToHead:        return 5
         case .customBackgrounds: return 10
         case .animatedEffects:   return 15
