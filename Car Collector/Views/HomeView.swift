@@ -195,16 +195,8 @@ struct HomeView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: cardWidth, height: cardHeight)
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        // Lightweight effects for home page — no gyroscope
-                        .holoEffectThumbnail(card.holoEffect, cornerRadius: cornerRadius)
-                        .overlay {
-                            if let rarity = parsedRarity, rarity >= .epic {
-                                ThumbnailRarityBorderOverlay(rarity: rarity, cornerRadius: cornerRadius)
-                            } else if let rarity = parsedRarity, rarity >= .rare {
-                                RoundedRectangle(cornerRadius: cornerRadius)
-                                    .stroke(rarity.gradient, lineWidth: 2)
-                            }
-                        }
+                        // Drag-to-tilt + prismatic rainbow + holo overlay
+                        .unifiedCardEffects(rarity: parsedRarity, holoEffect: card.holoEffect)
                         .shadow(color: crownGlowColor(for: card).opacity(0.5), radius: 16, x: 0, y: 4)
                     
                     // Card name
