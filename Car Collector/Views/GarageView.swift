@@ -1166,7 +1166,7 @@ struct UnifiedCardView: View {
             }
             .frame(width: w, height: h)
             .clipShape(RoundedRectangle(cornerRadius: h * 0.09))
-            .holoEffectThumbnail(card.holoEffect, cornerRadius: h * 0.09)
+            .staticHoloThumbnail(holoEffect: card.holoEffect, cornerRadius: h * 0.09)
             .overlay {
                 if let rarity = card.rarity, rarity >= .epic {
                     ThumbnailRarityBorderOverlay(rarity: rarity, cornerRadius: h * 0.09)

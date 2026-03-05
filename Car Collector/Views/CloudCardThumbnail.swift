@@ -137,8 +137,8 @@ struct CloudCardThumbnail: View {
         }
         .frame(width: width, height: height)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        // Live holographic pattern effect (auto-animated for thumbnails)
-        .holoEffectThumbnail(holoEffect, cornerRadius: cornerRadius)
+        // Static holo pattern + frozen prismatic rainbow (visible, zero CPU)
+        .staticHoloThumbnail(holoEffect: holoEffect, cornerRadius: cornerRadius)
         // Live rarity border effects (shimmer for Epic, glow for Legendary)
         .overlay {
             if let rarity = rarity, rarity >= .epic {

@@ -251,4 +251,140 @@ extension View {
     func unifiedCardEffects(rarity: CardRarity?, holoEffect: String?) -> some View {
         modifier(UnifiedCardEffectModifier(rarity: rarity, holoEffect: holoEffect))
     }
+    
+    /// Showcase variant — horizontal-only drag so it works inside ScrollView.
+    /// Vertical swipes still scroll the page; horizontal swipes tilt + prismatic.
+    func showcaseCardEffects(rarity: CardRarity?, holoEffect: String?) -> some View {
+        modifier(ShowcaseCardEffectModifier(rarity: rarity, holoEffect: holoEffect))
+    }
+    
+    /// Static holo for thumbnails — frozen prismatic + boosted pattern, zero CPU.
+    func staticHoloThumbnail(holoEffect: String?, cornerRadius: CGFloat) -> some View {
+        self.overlay {
+            GeometryReader { geo in
+                StaticHoloThumbnailOverlay(
+                    cardSize: geo.size,
+                    cornerRadius: cornerRadius,
+                    holoEffect: holoEffect
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Static Holo Overlay (thumbnails — visible frozen prismatic)
+
+/// Shows a static holo pattern + frozen prismatic rainbow at a fixed offset.
+/// Much more visible than the old 15% pattern-only overlay.
+/// No animation, no drag, no gyro — zero CPU cost.
+struct StaticHoloThumbnailOverlay: View {
+    let cardSize: CGSize
+    let cornerRadius: CGFloat
+    let holoEffect: String?
+    
+    private var holoPatternAsset: String? {
+        guard let effectStr = holoEffect else { return nil }
+        return HoloEffectType(rawValue: effectStr)?.assetName
+    }
+    
+    var body: some View {
+        if let asset = holoPatternAsset {
+            ZStack {
+                // Base pattern — boosted opacity so it's actually visible
+                Image(asset)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: cardSize.width, height: cardSize.height)
+                    .clipped()
+                    .blendMode(.screen)
+                    .opacity(0.3)
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                
+                // Frozen prismatic rainbow at a fixed offset
+                PrismaticRainbowLayer(
+                    cardSize: cardSize,
+                    cornerRadius: cornerRadius,
+                    patternAsset: asset,
+                    scrollOffset: 0.3
+                )
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+// MARK: - Showcase Card Effect Modifier (horizontal drag only — works inside ScrollView)
+
+/// Like UnifiedCardEffectModifier but uses horizontal-only drag recognition
+/// so it doesn't fight with the parent ScrollView's vertical scroll gesture.
+/// Vertical swipes scroll the page, horizontal swipes tilt + scroll prismatic.
+struct ShowcaseCardEffectModifier: ViewModifier {
+    let rarity: CardRarity?
+    let holoEffect: String?
+    
+    @State private var prismaticOffset: CGFloat = 0
+    @State private var prismaticDragStart: CGFloat = 0
+    @State private var tiltX: Double = 0
+    @State private var tiltY: Double = 0
+    
+    func body(content: Content) -> some View {
+        let hasEffects = (rarity ?? .common) >= .rare || holoEffect != nil
+        let effectRarity = rarity ?? .common
+        
+        if hasEffects {
+            content
+                .overlay {
+                    GeometryReader { geo in
+                        UnifiedCardEffectOverlay(
+                            rarity: effectRarity,
+                            cardSize: geo.size,
+                            cornerRadius: geo.size.height * 0.09,
+                            holoEffect: holoEffect,
+                            prismaticOffset: $prismaticOffset
+                        )
+                    }
+                }
+                .rotation3DEffect(
+                    .degrees(tiltX),
+                    axis: (x: -1, y: 0, z: 0),
+                    perspective: 0.5
+                )
+                .rotation3DEffect(
+                    .degrees(tiltY),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.5
+                )
+                // Horizontal-only drag — won't conflict with vertical ScrollView
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 8)
+                        .onChanged { value in
+                            let dx = value.translation.width
+                            let dy = value.translation.height
+                            
+                            // Only engage if drag is more horizontal than vertical
+                            guard abs(dx) > abs(dy) * 0.8 else { return }
+                            
+                            // Prismatic scroll from horizontal movement
+                            prismaticOffset = prismaticDragStart + dx / 150.0
+                            
+                            // Tilt — primarily horizontal axis, slight vertical
+                            let maxTilt: Double = 12.0
+                            withAnimation(.interactiveSpring(response: 0.1)) {
+                                tiltY = max(-maxTilt, min(maxTilt, Double(dx) / 12.0))
+                                tiltX = max(-maxTilt, min(maxTilt, Double(dy) / 20.0))
+                            }
+                        }
+                        .onEnded { _ in
+                            prismaticDragStart = prismaticOffset
+                            
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                                tiltX = 0
+                                tiltY = 0
+                            }
+                        }
+                )
+        } else {
+            content
+        }
+    }
 }

@@ -195,8 +195,8 @@ struct HomeView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: cardWidth, height: cardHeight)
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        // Drag-to-tilt + prismatic rainbow + holo overlay
-                        .unifiedCardEffects(rarity: parsedRarity, holoEffect: card.holoEffect)
+                        // Drag-to-tilt + prismatic rainbow + holo (horizontal drag — works inside ScrollView)
+                        .showcaseCardEffects(rarity: parsedRarity, holoEffect: card.holoEffect)
                         .shadow(color: crownGlowColor(for: card).opacity(0.5), radius: 16, x: 0, y: 4)
                     
                     // Card name
