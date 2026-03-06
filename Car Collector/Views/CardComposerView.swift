@@ -343,20 +343,19 @@ struct CardComposerView: View {
             
             RoundedRectangle(cornerRadius: 15)
                 .stroke(Color.white, lineWidth: 3)
+                .frame(width: 360, height: 202.5)
                 .allowsHitTesting(false)
             
             if isProcessing {
                 Color.black.opacity(0.5)
+                    .frame(width: 360, height: 202.5)
                 ProgressView()
                     .scaleEffect(1.5)
                     .tint(.white)
             }
         }
-        .cornerRadius(15)
-        .overlay(
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(.white.opacity(0.3), lineWidth: 2)
-        )
+        .frame(width: 360, height: 202.5)
+        .clipShape(RoundedRectangle(cornerRadius: 15))
     }
     
     // MARK: - Transform Controls

@@ -217,10 +217,20 @@ class VehicleIdentificationService: ObservableObject {
             Return ONLY JSON, no markdown.
             """
             
-            let response = try await self.model.generateContent(
-                prompt,
-                InlineDataPart(data: imageData, mimeType: "image/jpeg")
-            )
+            let response: GenerateContentResponse
+            do {
+                response = try await self.model.generateContent(
+                    prompt,
+                    InlineDataPart(data: imageData, mimeType: "image/jpeg")
+                )
+            } catch {
+                print("⚠️ First attempt failed: \(error.localizedDescription). Retrying...")
+                try await Task.sleep(nanoseconds: 1_500_000_000)
+                response = try await self.model.generateContent(
+                    prompt,
+                    InlineDataPart(data: imageData, mimeType: "image/jpeg")
+                )
+            }
             
             guard let text = response.text else {
                 return .failure(VehicleIDError.apiError("No response"))
