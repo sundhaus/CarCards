@@ -157,16 +157,18 @@ class VehicleIdentificationService: ObservableObject {
     
     private let ai: FirebaseAI
     private let model: GenerativeModel
+    private let fallbackModel: GenerativeModel
     private var cache: [Int: VehicleIdentification] = [:]
     private let db = Firestore.firestore()
     
     init() {
         ai = FirebaseAI.firebaseAI(backend: .googleAI())
         model = ai.generativeModel(modelName: "gemini-3-flash-preview")
+        fallbackModel = ai.generativeModel(modelName: "gemini-2.5-flash")
         
         #if DEBUG
-        print("🤖 VehicleIdentificationService initialized (OPTIMIZED)")
-        print("⚡ Fast mode: minimal prompt, auto-save")
+        print("🤖 VehicleIdentificationService initialized")
+        print("⚡ Primary: gemini-3-flash-preview, Fallback: gemini-2.5-flash")
         #endif
     }
     
@@ -224,14 +226,13 @@ class VehicleIdentificationService: ObservableObject {
                     InlineDataPart(data: imageData, mimeType: "image/jpeg")
                 )
             } catch {
-                print("⚠️ First attempt failed: \(error.localizedDescription). Retrying...")
-                try await Task.sleep(nanoseconds: 1_500_000_000)
-                response = try await self.model.generateContent(
+                print("⚠️ Primary model failed: \(error.localizedDescription). Trying fallback model...")
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                response = try await self.fallbackModel.generateContent(
                     prompt,
                     InlineDataPart(data: imageData, mimeType: "image/jpeg")
                 )
             }
-            
             guard let text = response.text else {
                 return .failure(VehicleIDError.apiError("No response"))
             }
@@ -320,9 +321,9 @@ class VehicleIdentificationService: ObservableObject {
                     InlineDataPart(data: imageData, mimeType: "image/jpeg")
                 )
             } catch {
-                print("⚠️ First attempt failed: \(error.localizedDescription). Retrying...")
+                print("⚠️ Primary model failed: \(error.localizedDescription). Trying fallback model...")
                 try await Task.sleep(nanoseconds: 1_000_000_000)
-                response = try await self.model.generateContent(
+                response = try await self.fallbackModel.generateContent(
                     prompt,
                     InlineDataPart(data: imageData, mimeType: "image/jpeg")
                 )
