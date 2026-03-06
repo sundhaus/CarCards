@@ -163,8 +163,21 @@ class VehicleIdentificationService: ObservableObject {
     
     init() {
         ai = FirebaseAI.firebaseAI(backend: .googleAI())
-        model = ai.generativeModel(modelName: "gemini-3-flash-preview")
-        fallbackModel = ai.generativeModel(modelName: "gemini-2.5-flash")
+        
+        // Disable thinking — vehicle ID doesn't need chain-of-thought reasoning.
+        // This cuts ~44K thinking tokens per request down to zero.
+        let noThinkingConfig = GenerationConfig(
+            thinkingConfig: ThinkingConfig(thinkingBudget: 0)
+        )
+        
+        model = ai.generativeModel(
+            modelName: "gemini-3-flash-preview",
+            generationConfig: noThinkingConfig
+        )
+        fallbackModel = ai.generativeModel(
+            modelName: "gemini-2.5-flash",
+            generationConfig: noThinkingConfig
+        )
         
         #if DEBUG
         print("🤖 VehicleIdentificationService initialized")
