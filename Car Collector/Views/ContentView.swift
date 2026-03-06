@@ -230,15 +230,12 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(isPresented: $showCamera, onDismiss: {
-            // Camera dismissed — if it's a non-vehicle card (no specs to fetch),
-            // trigger reveal immediately. Vehicle cards wait for specs.
-            if let card = revealCard, card.make.isEmpty || card.model.isEmpty || card.year.isEmpty {
-                // Non-vehicle or incomplete — reveal now with Common rarity
+            // Camera dismissed — show reveal immediately (specs load in background)
+            if revealCard != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                     showRarityReveal = true
                 }
             }
-            // Vehicle cards: reveal is triggered from fetchSpecsForNewCard after rarity is known
         }) {
             CameraView(
                 isPresented: $showCamera,
@@ -254,7 +251,7 @@ struct ContentView: View {
         }
         .fullScreenCover(isPresented: $showRarityReveal) {
             if let card = revealCard {
-                RarityRevealView(card: card.asAnyCard) {
+                CardRevealView(card: card, savedCards: $savedCards) {
                     showRarityReveal = false
                     revealCard = nil
                 }
@@ -442,20 +439,17 @@ struct ContentView: View {
                         CardRenderer.shared.clearCache(for: card.id)
                         print("✅ Pre-fetched specs for \(card.make) \(card.model) — rarity: \(specs.rarity?.rawValue ?? "none")")
                         
-                        // Update revealCard with specs-enriched version and trigger reveal
-                        if revealCard?.id == card.id {
-                            revealCard = savedCards[index]
-                            // Award correct XP/coins now that real rarity is known
-                            // (handleCardSaved already awarded for .common, add the difference)
-                            let realRarity = specs.rarity ?? .common
-                            if realRarity != .common {
-                                let bonusXP = RewardConfig.captureXP(for: realRarity) - RewardConfig.captureXP(for: .common)
-                                let bonusCoins = RewardConfig.captureCoins(for: realRarity) - RewardConfig.captureCoins(for: .common)
-                                if bonusXP > 0 { levelSystem.addXP(bonusXP) }
-                                if bonusCoins > 0 { levelSystem.addCoins(bonusCoins) }
-                            }
-                            showRarityReveal = true
+                        // Award correct XP/coins now that real rarity is known
+                        let realRarity = specs.rarity ?? .common
+                        if realRarity != .common {
+                            let bonusXP = RewardConfig.captureXP(for: realRarity) - RewardConfig.captureXP(for: .common)
+                            let bonusCoins = RewardConfig.captureCoins(for: realRarity) - RewardConfig.captureCoins(for: .common)
+                            if bonusXP > 0 { levelSystem.addXP(bonusXP) }
+                            if bonusCoins > 0 { levelSystem.addCoins(bonusCoins) }
                         }
+                        
+                        // Notify CardRevealView that specs are ready
+                        NotificationCenter.default.post(name: NSNotification.Name("SpecsReady"), object: card.id)
                         
                         // Track category-based daily/weekly challenge progress now that we have specs
                         if let category = specs.category, let uid = FirebaseManager.shared.currentUserId {
@@ -508,11 +502,9 @@ struct ContentView: View {
                 }
             } catch {
                 print("⚠️ Pre-fetch specs failed: \(error)")
-                // Still show reveal with Common rarity if specs failed
+                // Notify reveal to proceed with Common rarity
                 await MainActor.run {
-                    if revealCard?.id == card.id && !showRarityReveal {
-                        showRarityReveal = true
-                    }
+                    NotificationCenter.default.post(name: NSNotification.Name("SpecsReady"), object: card.id)
                 }
             }
         }
