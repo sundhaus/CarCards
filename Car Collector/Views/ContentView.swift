@@ -229,19 +229,24 @@ struct ContentView: View {
                 .zIndex(100)
             }
         }
-        .fullScreenCover(isPresented: $showCamera) {
+        .fullScreenCover(isPresented: $showCamera, onDismiss: {
+            // Camera cover has fully dismissed — safe to present reveal
+            if revealCard != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    showRarityReveal = true
+                }
+            }
+        }) {
             CameraView(
                 isPresented: $showCamera,
                 onCardSaved: { card in
                     handleCardSaved(card)
-                    showCamera = false
                     OrientationManager.lockToPortrait()
                     
-                    // Trigger rarity reveal animation
+                    // Store card for reveal, then dismiss camera
+                    // Reveal triggers in onDismiss above after animation completes
                     revealCard = card
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showRarityReveal = true
-                    }
+                    showCamera = false
                 }
             )
         }
