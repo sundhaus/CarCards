@@ -230,12 +230,15 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(isPresented: $showCamera, onDismiss: {
-            // Camera cover has fully dismissed — safe to present reveal
-            if revealCard != nil {
+            // Camera dismissed — if it's a non-vehicle card (no specs to fetch),
+            // trigger reveal immediately. Vehicle cards wait for specs.
+            if let card = revealCard, card.make.isEmpty || card.model.isEmpty || card.year.isEmpty {
+                // Non-vehicle or incomplete — reveal now with Common rarity
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                     showRarityReveal = true
                 }
             }
+            // Vehicle cards: reveal is triggered from fetchSpecsForNewCard after rarity is known
         }) {
             CameraView(
                 isPresented: $showCamera,
@@ -244,7 +247,6 @@ struct ContentView: View {
                     OrientationManager.lockToPortrait()
                     
                     // Store card for reveal, then dismiss camera
-                    // Reveal triggers in onDismiss above after animation completes
                     revealCard = card
                     showCamera = false
                 }
@@ -440,6 +442,21 @@ struct ContentView: View {
                         CardRenderer.shared.clearCache(for: card.id)
                         print("✅ Pre-fetched specs for \(card.make) \(card.model) — rarity: \(specs.rarity?.rawValue ?? "none")")
                         
+                        // Update revealCard with specs-enriched version and trigger reveal
+                        if revealCard?.id == card.id {
+                            revealCard = savedCards[index]
+                            // Award correct XP/coins now that real rarity is known
+                            // (handleCardSaved already awarded for .common, add the difference)
+                            let realRarity = specs.rarity ?? .common
+                            if realRarity != .common {
+                                let bonusXP = RewardConfig.captureXP(for: realRarity) - RewardConfig.captureXP(for: .common)
+                                let bonusCoins = RewardConfig.captureCoins(for: realRarity) - RewardConfig.captureCoins(for: .common)
+                                if bonusXP > 0 { levelSystem.addXP(bonusXP) }
+                                if bonusCoins > 0 { levelSystem.addCoins(bonusCoins) }
+                            }
+                            showRarityReveal = true
+                        }
+                        
                         // Track category-based daily/weekly challenge progress now that we have specs
                         if let category = specs.category, let uid = FirebaseManager.shared.currentUserId {
                             DailyChallengeService.shared.onCardCaptured(
@@ -491,6 +508,12 @@ struct ContentView: View {
                 }
             } catch {
                 print("⚠️ Pre-fetch specs failed: \(error)")
+                // Still show reveal with Common rarity if specs failed
+                await MainActor.run {
+                    if revealCard?.id == card.id && !showRarityReveal {
+                        showRarityReveal = true
+                    }
+                }
             }
         }
     }
