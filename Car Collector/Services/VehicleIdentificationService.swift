@@ -162,7 +162,7 @@ class VehicleIdentificationService: ObservableObject {
     
     init() {
         ai = FirebaseAI.firebaseAI(backend: .googleAI())
-        model = ai.generativeModel(modelName: "gemini-2.5-flash")
+        model = ai.generativeModel(modelName: "gemini-3-flash-preview")
         
         #if DEBUG
         print("🤖 VehicleIdentificationService initialized (OPTIMIZED)")
